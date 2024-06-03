@@ -14,8 +14,10 @@ echo "Installing Homebrew. Please following the intructions on the screen"
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Set environment variables
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
-eval "$(/opt/homebrew/bin/brew shellenv)"
+
+(echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc
+(echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile
+eval "$(/usr/local/bin/brew shellenv)"
 
 # update terminal 
 hash -r 
@@ -38,6 +40,13 @@ else
     brew install --cask miniconda
 fi
 
+# Finally downgrade python version of base environment to 3.11
+conda init 
+# need to restart terminal to activate conda
+# restart terminal and continue
+
+hash -r 
+
 # check if vs code is installed
 # using multipleVersionsMac to check 
 
@@ -53,12 +62,12 @@ hash -r
 
 # install extensions for vs code
 # install python extension, jupyter, vscode-pdf
-
+#python extension
 code --install-extension ms-python.python
+#jupyter extension
 code --install-extension ms-toolsai.jupyter
+#pdf extension (for viewing pdfs inside vs code)
 code --install-extension tomoki1207.pdf
 
 hash -r 
 
-# Finally downgrade python version of base environment to 3.11
-conda install python=3.11
