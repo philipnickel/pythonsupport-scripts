@@ -11,7 +11,7 @@ TODO
 Run the following command in a terminal 
 
 ```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/Scipts/main/multipleVersionsMac.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/multipleVersionsMac.sh)"
 ```
 
 # Installing dependancies for converting Jupyter notebooks to PDFs.
@@ -19,7 +19,7 @@ Run the following command in a terminal
 Open a terminal and run the following command:
 
 ```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/Scipts/main/script_VsCode_PDF-fix_MacOS.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/script_VsCode_PDF-fix_MacOS.sh)"
 ```
 ## Windows
 
@@ -28,7 +28,7 @@ Open powershell in administrator mode. Search for powershell -> right click -> R
 Run the following command: 
 
 ```{powershell}
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/philipnickel/Scipts/main/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
 ```
 
 
