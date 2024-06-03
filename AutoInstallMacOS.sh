@@ -50,7 +50,7 @@ if conda --version > /dev/null; then
     echo "Miniconda or anaconda is already installed"
 else
     echo "Installing Miniconda"
-    brew install --cask miniconda
+    brew install --cask miniconda 
 fi
 
 # Finally downgrade python version of base environment to 3.11
@@ -66,7 +66,7 @@ hash -r
 clear 
 # Install anaconda GUI
 echo "Installing Anaconda Navigator GUI"
-conda install anaconda-navigator
+conda install anaconda-navigator --yes
 
 # Check if python version is 3.11
 # if not, downgrade python version to 3.11
@@ -74,7 +74,7 @@ if python --version | grep "3.11" > /dev/null; then
     echo "Python version is 3.11"
 else
     echo "Downgrading python version to 3.11"
-    conda install python=3.11
+    conda install python=3.11 --yes
 fi
 clear 
 # check if vs code is installed
@@ -90,6 +90,8 @@ fi
 clear
 hash -r 
 echo "Installing extensions for Visual Studio Code"
+eval "$(/usr/local/bin/brew shellenv)"
+
 # install extensions for vs code
 # install python extension, jupyter, vscode-pdf
 #python extension
