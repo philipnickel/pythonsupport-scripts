@@ -15,12 +15,16 @@ else
     exit 1
 fi
 
+clear
+
 # First install homebrew 
 echo "Installing Homebrew. Please following the intructions on the screen"
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Set environment variables
+
+clear
 
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile
@@ -39,7 +43,9 @@ fi
 
 # Install miniconda
 # Check if miniconda is installed
+clear
 
+echo "Installing Miniconda"
 if conda --version > /dev/null; then
     echo "Miniconda or anaconda is already installed"
 else
@@ -57,8 +63,9 @@ conda init
 eval "$(/usr/local/bin/brew shellenv)"
 
 hash -r 
-
+clear 
 # Install anaconda GUI
+echo "Installing Anaconda Navigator GUI"
 conda install anaconda-navigator
 
 # Check if python version is 3.11
@@ -69,10 +76,10 @@ else
     echo "Downgrading python version to 3.11"
     conda install python=3.11
 fi
-
+clear 
 # check if vs code is installed
 # using multipleVersionsMac to check 
-
+echo "Installing Visual Studio Code if not already installed"
 # if output is empty, then install vs code
 if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/multipleVersionsMac.sh)" > /dev/null; then
     echo "Visual Studio Code is already installed"
@@ -80,9 +87,9 @@ else
     echo "Installing Visual Studio Code"
     brew install --cask visual-studio-code
 fi
-
+clear
 hash -r 
-
+echo "Installing extensions for Visual Studio Code"
 # install extensions for vs code
 # install python extension, jupyter, vscode-pdf
 #python extension
@@ -93,4 +100,7 @@ code --install-extension ms-toolsai.jupyter
 code --install-extension tomoki1207.pdf
 
 hash -r 
+
+echo "Script has finished"
+
 
