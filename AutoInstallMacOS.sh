@@ -8,6 +8,13 @@ echo "This might take a while depending on your internet connection and what dep
 # Do you want to continue?
 read -p "Do you want to continue? (y/n): " choice
 
+if [ $choice == "y" ]; then
+    echo "Continuing with the installation"
+else
+    echo "Exiting the installation"
+    exit 1
+fi
+
 # First install homebrew 
 echo "Installing Homebrew. Please following the intructions on the screen"
 
@@ -45,7 +52,23 @@ conda init
 # need to restart terminal to activate conda
 # restart terminal and continue
 
+
+# 'restart' terminal
+eval "$(/usr/local/bin/brew shellenv)"
+
 hash -r 
+
+# Install anaconda GUI
+conda install anaconda-navigator
+
+# Check if python version is 3.11
+# if not, downgrade python version to 3.11
+if python --version | grep "3.11" > /dev/null; then
+    echo "Python version is 3.11"
+else
+    echo "Downgrading python version to 3.11"
+    conda install python=3.11
+fi
 
 # check if vs code is installed
 # using multipleVersionsMac to check 
