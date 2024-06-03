@@ -81,7 +81,8 @@ clear
 # using multipleVersionsMac to check 
 echo "Installing Visual Studio Code if not already installed"
 # if output is empty, then install vs code
-if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/multipleVersionsMac.sh)" > ; then
+vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/multipleVersionsMac.sh)")
+if [ -z "$vspath" ]; then
     echo "Visual Studio Code is already installed"
 else
     echo "Installing Visual Studio Code"
