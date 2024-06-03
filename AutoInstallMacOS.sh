@@ -1,3 +1,12 @@
+# Error function 
+# Print error message, contact information and exits script
+
+exit_message () {
+    echo "Oh no! Something went wrong"
+    echo "Please try to install manually or contact the Python Support Team: pythonsupport@dtu.dk or visit us during our office hours"
+}
+
+
 # Script installs miniconda and vs code 
 # Welcome text 
 
@@ -15,6 +24,7 @@ else
     exit 1
 fi
 
+clear -x
 
 # First install homebrew 
 echo "Installing Homebrew. Please following the intructions on the screen"
@@ -36,6 +46,7 @@ if brew help > /dev/null; then
     echo "Homebrew installed successfully"
 else
     echo "Homebrew installation failed. Exiting"
+    exit_message
     exit 1
 fi
 
@@ -86,6 +97,15 @@ fi
 hash -r 
 echo "Installing extensions for Visual Studio Code"
 eval "$(/usr/local/bin/brew shellenv)"
+
+# Test if code is installed correctly
+if code --version > /dev/null; then
+    echo "Visual Studio Code installed successfully"
+else
+    echo "Visual Studio Code installation failed. Exiting"
+    exit_message
+    exit 1
+fi
 
 # install extensions for vs code
 # install python extension, jupyter, vscode-pdf
