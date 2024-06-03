@@ -34,7 +34,7 @@ fi
 # using multipleVersionsMac to check 
 
 # if output is empty, then install vs code
-if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/Scipts/main/multipleVersionsMac.sh)" > /dev/null; then
+if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/multipleVersionsMac.sh)" > /dev/null; then
     echo "Visual Studio Code is already installed"
 else
     echo "Installing Visual Studio Code"
@@ -52,4 +52,5 @@ code --install-extension tomoki1207.pdf
 
 hash -r 
 
-#
+# Finally downgrade python version of base environment to 3.11
+conda install python=3.11
