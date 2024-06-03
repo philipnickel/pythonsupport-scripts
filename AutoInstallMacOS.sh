@@ -15,7 +15,6 @@ else
     exit 1
 fi
 
-clear
 
 # First install homebrew 
 echo "Installing Homebrew. Please following the intructions on the screen"
@@ -24,7 +23,6 @@ echo "Installing Homebrew. Please following the intructions on the screen"
 
 # Set environment variables
 
-clear
 
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile
@@ -43,7 +41,6 @@ fi
 
 # Install miniconda
 # Check if miniconda is installed
-clear
 
 echo "Installing Miniconda"
 if conda --version > /dev/null; then
@@ -63,7 +60,6 @@ conda init
 eval "$(/usr/local/bin/brew shellenv)"
 
 hash -r 
-clear 
 # Install anaconda GUI
 echo "Installing Anaconda Navigator GUI"
 conda install anaconda-navigator --yes
@@ -76,7 +72,6 @@ else
     echo "Downgrading python version to 3.11"
     conda install python=3.11 --yes
 fi
-clear 
 # check if vs code is installed
 # using multipleVersionsMac to check 
 echo "Installing Visual Studio Code if not already installed"
@@ -89,7 +84,6 @@ else
     echo "Installing Visual Studio Code"
     brew install --cask visual-studio-code
 fi
-clear
 hash -r 
 echo "Installing extensions for Visual Studio Code"
 eval "$(/usr/local/bin/brew shellenv)"
