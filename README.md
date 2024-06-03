@@ -31,6 +31,9 @@ Run the following command:
 ```{powershell}
 PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
 ```
+# Deleting Homebrew 
+```{bash}
 
-
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+```
 
