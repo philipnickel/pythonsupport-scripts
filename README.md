@@ -36,4 +36,11 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
 ```
+# One liner install Homebrew
 
+```{bash}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" | 
+(echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc | 
+(echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile | 
+eval "$(/usr/local/bin/brew shellenv)"
+```
