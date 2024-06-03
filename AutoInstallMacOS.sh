@@ -1,4 +1,11 @@
 # Script installs miniconda and vs code 
+# Welcome text 
+
+echo "Welcome to the MacOS Auto Installer Script"
+echo "This script will install miniconda and Visual Studio Code on your MacOS"
+echo "Please don't close the terminal until the installation is complete"
+# Do you want to continue?
+read -p "Do you want to continue? (y/n): " choice
 
 # First install homebrew 
 echo "Installing Homebrew. Please following the intructions on the screen"
