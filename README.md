@@ -4,7 +4,7 @@ Open a terminal and run the following command:
 
 ```{bash}
 
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/AutoInstallMacOS.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS.sh)"
 ```
 
 
@@ -12,7 +12,7 @@ Open a terminal and run the following command:
 Run the following command in a terminal 
 
 ```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/multipleVersionsMac.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/multipleVersionsMac.sh)"
 ```
 
 # Installing dependancies for converting Jupyter notebooks to PDFs.
@@ -20,7 +20,7 @@ Run the following command in a terminal
 Open a terminal and run the following command:
 
 ```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/script_VsCode_PDF-fix_MacOS.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/script_VsCode_PDF-fix_MacOS.sh)"
 ```
 ## Windows
 
