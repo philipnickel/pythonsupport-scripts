@@ -3,7 +3,8 @@
 Open a terminal and run the following command:
 
 ```{bash}
-TODO
+
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/AutoInstallMacOS.sh)"
 ```
 
 
