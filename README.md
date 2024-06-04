@@ -39,5 +39,5 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 # One liner install Homebrew
 
 ```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"  && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile && eval "$(/usr/local/bin/brew shellenv)" && echo "Homebrew installed. Note: You do not need to run anything else in the terminal" && clear 
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"  && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile && eval "$(/usr/local/bin/brew shellenv)" && echo "Homebrew installed. Note: You do not need to run anything else in the terminal" && clear && echo 'Homebrew installed' 
 ```
