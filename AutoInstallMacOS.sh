@@ -74,15 +74,15 @@ hash -r
 # Install anaconda GUI
 echo "Installing Anaconda Navigator GUI"
 conda install anaconda-navigator --yes
-
+conda install -c conda-forge dtumathtools uncertainties --yes
 # Check if python version is 3.11
 # if not, downgrade python version to 3.11
 if python --version | grep "3.11" > /dev/null; then
-    echo "Python version is 3.11"
+    echo "Python version is 3.11
 else
     echo "Downgrading python version to 3.11"
     conda install python=3.11 --yes
-fi
+fi 
 # check if vs code is installed
 # using multipleVersionsMac to check 
 echo "Installing Visual Studio Code if not already installed"
