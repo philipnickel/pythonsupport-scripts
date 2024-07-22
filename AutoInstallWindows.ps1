@@ -1,54 +1,44 @@
-# echo 
-Write-Host "Script by Python Installation Support DTU"
-Write-Host "This script will install python along with visual studio code - and everything you need to get started with programming"
 
+# Script by Python Installation Support DTU
+Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
 
 Write-Host "This script will take a while to run, please be patient, and don't close your terminal before it says 'script finished'."
 Start-Sleep -Seconds 1
 
-# check for chocolatey
-if (Get-Command choco -ErrorAction SilentlyContinue) {
-    Write-Host "Chocolatey is already installed."
-}
-else {
-    Write-Host "Chocolatey is not installed. Installing chocolatey..."
-    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-}
+# Download the Miniconda installer
+$minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+$minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-x86_64.exe"
+Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
 
-# reset terminal to use chocolatey
-RefreshEnv
+# Install Miniconda
+Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
-# install miniconda using chocolatey
+# Refresh environment variables
+& "$env:USERPROFILE\Miniconda3\Scripts\activate"
 
-choco install miniconda3 -y
+# Install the GUI (Anaconda Navigator)
+conda install anaconda-navigator -y
 
-RefreshEnv
+# Ensure version of Python
+conda install python=3.11 -y 
 
-# isntall the GUI
+# Install packages
+conda install -c conda-forge dtumathtools uncertainties -y
 
-conda install anaconda-navigator -yes
+# Download the VS Code installer
+$vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+$vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
+Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
 
-# ensure version of python 
+# Install VS Code
+Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart" -Wait
 
-conda install python=3.11 -yes 
+# Refresh environment variables again
+& "$env:USERPROFILE\Miniconda3\Scripts\activate"
 
-# install packages 
-
-conda install -c conda-forge dtumathtools uncertainties 
-
-# install vs-code 
-
-choco install vscode -y 
-RefreshEnv 
-
-# install extensions 
-
-# install python extension, jupyter, vscode-pdf
-#python extension
+# Install VS Code extensions
 code --install-extension ms-python.python
-#jupyter extension
 code --install-extension ms-toolsai.jupyter
-#pdf extension (for viewing pdfs inside vs code)
 code --install-extension tomoki1207.pdf
 
 Write-Host "Script finished"
