@@ -6,7 +6,12 @@ Open a terminal and run the following command:
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS.sh)"
 ```
+## Windows 
 
+```{powershell}
+
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/AutoInstallWindows.ps1' -UseBasicParsing).Content}"
+```
 
 # Checking for multiple versions of VsCode
 Run the following command in a terminal 
