@@ -74,10 +74,12 @@ hash -r
 # Install anaconda GUI
 echo "Installing Anaconda Navigator GUI"
 conda install anaconda-navigator --yes
+
+conda install python=3.11 --yes
+
 conda install -c conda-forge dtumathtools uncertainties --yes
 
 
-conda install python=3.11 --yes
 
 # check if vs code is installed
 # using multipleVersionsMac to check 
