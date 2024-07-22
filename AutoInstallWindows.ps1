@@ -4,7 +4,13 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
-
+# Add Miniconda to PATH environment variable
+function Add-CondaToPath {
+    $minicondaPath = "$env:USERPROFILE\Miniconda3\Scripts"
+    if (-not ($env:Path -contains $minicondaPath)) {
+        [System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$minicondaPath", [System.EnvironmentVariableTarget]::User)
+    }
+}
 
 # Script by Python Installation Support DTU
 Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
@@ -29,8 +35,10 @@ Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType
 
 
 # Refresh environment variables
+Add-CondaToPath
 Refresh-Env
-
+# Activate conda base environment
+& "$env:USERPROFILE\Miniconda3\Scripts\activate"
 
 # Install the GUI (Anaconda Navigator)
 conda install anaconda-navigator -y
