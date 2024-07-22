@@ -10,7 +10,7 @@ Open a terminal and run the following command:
 
 ```{powershell}
 
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/AutoInstallWindows.ps1' -UseBasicParsing).Content}"
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallWindows.ps1' -UseBasicParsing).Content}"
 ```
 
 # Checking for multiple versions of VsCode
@@ -34,7 +34,7 @@ Open powershell in administrator mode. Search for powershell -> right click -> R
 Run the following command: 
 
 ```{powershell}
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
 ```
 # Deleting Homebrew 
 ```{bash}
