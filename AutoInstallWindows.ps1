@@ -8,10 +8,16 @@ Start-Sleep -Seconds 1
 # Download the Miniconda installer
 $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
 $minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-x86_64.exe"
+
+Write-Host "Downloading installer for miniconda..."
+
 Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
 
+
+Write-Host "Will now install miniconda..."
+
 # Install Miniconda
-Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /D=$env:USERPROFILE\Miniconda3" -Wait
+Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
 # Refresh environment variables
 & "$env:USERPROFILE\Miniconda3\Scripts\activate"
@@ -28,13 +34,21 @@ conda install -c conda-forge dtumathtools uncertainties -y
 # Download the VS Code installer
 $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
 $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
+
+Write-Host "Downloading installer for VsCode..."
+
 Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
 
+Write-Host "installing VsCode..."
+
 # Install VS Code
-Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/norestart" -Wait
+Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart" -Wait
 
 # Refresh environment variables again
 & "$env:USERPROFILE\Miniconda3\Scripts\activate"
+
+
+Write-Host "Installing extensions for VsCode"
 
 # Install VS Code extensions
 code --install-extension ms-python.python
