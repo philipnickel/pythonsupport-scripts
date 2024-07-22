@@ -30,7 +30,7 @@ Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
 Write-Host "Will now install miniconda..."
 
 # Install Miniconda
-Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
+Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /AddToPath=1 /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
 
 
