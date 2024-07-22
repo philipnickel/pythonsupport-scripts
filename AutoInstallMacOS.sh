@@ -62,7 +62,8 @@ else
 fi
 
 # Finally downgrade python version of base environment to 3.11
-conda init 
+conda init bash 
+conda init zsh
 # need to restart terminal to activate conda
 # restart terminal and continue
 
