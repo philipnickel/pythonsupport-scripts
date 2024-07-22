@@ -11,7 +11,7 @@ $minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-
 Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
 
 # Install Miniconda
-Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
+Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /D=$env:USERPROFILE\Miniconda3" -Wait
 
 # Refresh environment variables
 & "$env:USERPROFILE\Miniconda3\Scripts\activate"
