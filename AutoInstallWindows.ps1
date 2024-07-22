@@ -35,10 +35,10 @@ Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType
 
 
 # Refresh environment variables
-Add-CondaToPath
+# Add-CondaToPath
 Refresh-Env
 # Activate conda base environment
-& "$env:USERPROFILE\Miniconda3\Scripts\activate"
+#& "$env:USERPROFILE\Miniconda3\Scripts\activate"
 
 # Install the GUI (Anaconda Navigator)
 conda install anaconda-navigator -y
