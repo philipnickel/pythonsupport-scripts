@@ -4,11 +4,19 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
-# Add Miniconda to PATH environment variable
+# Add Anaconda to PATH environment variable
 function Add-CondaToPath {
-    $minicondaPath = "$env:USERPROFILE\Miniconda3\Scripts"
-    if (-not ($env:Path -contains $minicondaPath)) {
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$minicondaPath", [System.EnvironmentVariableTarget]::User)
+    if (Test-Path "$env:USERPROFILE\Anaconda3\condabin") {
+        $condaPath = "$env:USERPROFILE\Anaconda3\condabin"
+    } elseif (Test-Path "C:\ProgramData\Anaconda3\condabin") {
+        $condaPath = "C:\ProgramData\Anaconda3\condabin"
+    } else {
+        Write-Host "Anaconda is not installed."
+        return
+    }
+
+    if (-not ($env:Path -contains $condaPath)) {
+        [System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$condaPath", [System.EnvironmentVariableTarget]::User)
     }
 }
 
@@ -22,23 +30,24 @@ Start-Sleep -Seconds 1
 $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
 $minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-x86_64.exe"
 
-Write-Host "Downloading installer for miniconda..."
+Write-Host "Downloading installer for Miniconda..."
 
 Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
 
-
-Write-Host "Will now install miniconda..."
+Write-Host "Will now install Miniconda..."
 
 # Install Miniconda
-Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /AddToPath=1 /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
+Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
-
-
-# Refresh environment variables
-# Add-CondaToPath
+# Add Anaconda to PATH and refresh environment variables
+Add-CondaToPath
 Refresh-Env
+
+# Initialize conda
+conda init
+
 # Activate conda base environment
-& "$env:USERPROFILE\Miniconda3\Scripts\activate"
+& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
 
 # Install the GUI (Anaconda Navigator)
 conda install anaconda-navigator -y
@@ -53,22 +62,19 @@ conda install -c conda-forge dtumathtools uncertainties -y
 $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
 $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
 
-Write-Host "Downloading installer for VsCode..."
+Write-Host "Downloading installer for Visual Studio Code..."
 
 Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
 
-Write-Host "installing VsCode..."
+Write-Host "Installing Visual Studio Code..."
 
 # Install VS Code
 Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait 
 
-
 # Refresh environment variables
 Refresh-Env
 
-
-
-Write-Host "Installing extensions for VsCode"
+Write-Host "Installing extensions for Visual Studio Code"
 
 # Install VS Code extensions
 code --install-extension ms-python.python
