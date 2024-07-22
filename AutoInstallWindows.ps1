@@ -20,7 +20,7 @@ RefreshEnv
 
 # install miniconda using chocolatey
 
-choco install miniconda3 
+choco install miniconda3 -y
 
 RefreshEnv
 
@@ -38,7 +38,7 @@ conda install -c conda-forge dtumathtools uncertainties
 
 # install vs-code 
 
-choco install vscode 
+choco install vscode -y 
 RefreshEnv 
 
 # install extensions 
