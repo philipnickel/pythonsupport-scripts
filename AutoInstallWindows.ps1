@@ -1,4 +1,11 @@
 
+# Function to refresh environment variables in the current session
+function Refresh-Env {
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+}
+
+
+
 # Script by Python Installation Support DTU
 Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
 
@@ -19,8 +26,11 @@ Write-Host "Will now install miniconda..."
 # Install Miniconda
 Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
+
+
 # Refresh environment variables
-& "$env:USERPROFILE\Miniconda3\Scripts\activate"
+Refresh-Env
+
 
 # Install the GUI (Anaconda Navigator)
 conda install anaconda-navigator -y
@@ -42,10 +52,12 @@ Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
 Write-Host "installing VsCode..."
 
 # Install VS Code
-Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart" -Wait
+Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait 
 
-# Refresh environment variables again
-& "$env:USERPROFILE\Miniconda3\Scripts\activate"
+
+# Refresh environment variables
+Refresh-Env
+
 
 
 Write-Host "Installing extensions for VsCode"
