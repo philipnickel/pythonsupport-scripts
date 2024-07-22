@@ -31,7 +31,7 @@ $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
 Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
 
 # Install VS Code
-Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart" -Wait
+Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/norestart" -Wait
 
 # Refresh environment variables again
 & "$env:USERPROFILE\Miniconda3\Scripts\activate"
