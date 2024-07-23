@@ -4,8 +4,8 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
-# Executionpolicy 
 
+# Executionpolicy 
 set-executionpolicy remotesigned 
 
 
@@ -29,7 +29,7 @@ function Add-CondaToPath {
 Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
 
 Write-Host "This script will take a while to run, please be patient, and don't close your terminal before it says 'script finished'."
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 3
 
 # Download the Miniconda installer
 $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
@@ -44,8 +44,10 @@ Write-Host "Will now install Miniconda..."
 # Install Miniconda
 Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
 
+Write-Host "Miniconda installed..."
+
 # Add Anaconda to PATH and refresh environment variables
-Add-CondaToPath
+# Add-CondaToPath
 Refresh-Env
 
 # Re-import the updated PATH for the current session
@@ -78,6 +80,7 @@ Write-Host "Installing Visual Studio Code..."
 # Install VS Code
 Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait 
 
+Write-Host "Vs Code installed..."
 # Refresh environment variables
 Refresh-Env
 
@@ -91,4 +94,4 @@ code --install-extension ms-python.python
 code --install-extension ms-toolsai.jupyter
 code --install-extension tomoki1207.pdf
 
-Write-Host "Script finished"
+Write-Host "Script finished. You may now close the terminal"
