@@ -4,6 +4,11 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
+# Executionpolicy 
+
+set-executionpolicy remotesigned 
+
+
 # Add Anaconda to PATH environment variable
 function Add-CondaToPath {
     if (Test-Path "$env:USERPROFILE\Miniconda3\condabin") {
