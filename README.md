@@ -8,6 +8,9 @@ Open a terminal and run the following command:
 ```
 ## Windows 
 
+Paste following line in powershell in administrator mode. Search for powershell -> right click -> Run as administrator 
+
+
 ```{powershell}
 
 PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallWindows.ps1' -UseBasicParsing).Content}"
@@ -42,3 +45,11 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 ```{bash}
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"  && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc && (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile && eval "$(/usr/local/bin/brew shellenv)" && echo "Homebrew installed. Note: You do not need to run anything else in the terminal" && clear && echo 'Homebrew installed' 
 ```
+
+# Deleting Python 
+
+
+```{bash}
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/deletePythonMac.sh)"
+```
+
