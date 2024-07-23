@@ -48,12 +48,12 @@ conda init
 
 # Activate conda base environment
 & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
+# Ensure version of Python
+conda install python=3.11 -y 
 
 # Install the GUI (Anaconda Navigator)
 conda install anaconda-navigator -y
 
-# Ensure version of Python
-conda install python=3.11 -y 
 
 # Install packages
 conda install -c conda-forge dtumathtools uncertainties -y

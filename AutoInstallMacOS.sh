@@ -74,11 +74,11 @@ eval "$(/usr/local/bin/brew shellenv)"
 hash -r 
 # Install anaconda GUI
 echo "Installing Anaconda Navigator GUI"
-conda install anaconda-navigator --yes
+conda install anaconda-navigator -y
 
-conda install python=3.11 --yes
+conda install python=3.11 -y
 
-conda install -c conda-forge dtumathtools uncertainties --yes
+conda install -c conda-forge dtumathtools uncertainties -y
 
 
 
