@@ -43,11 +43,12 @@ Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType
 Add-CondaToPath
 Refresh-Env
 
-# Initialize conda
-conda init
+
 
 # Activate conda base environment
 & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
+# Initialize conda
+conda init
 # Ensure version of Python
 conda install python=3.11 -y 
 
