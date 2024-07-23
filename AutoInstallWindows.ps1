@@ -6,12 +6,12 @@ function Refresh-Env {
 
 # Add Anaconda to PATH environment variable
 function Add-CondaToPath {
-    if (Test-Path "$env:USERPROFILE\Anaconda3\condabin") {
-        $condaPath = "$env:USERPROFILE\Anaconda3\condabin"
-    } elseif (Test-Path "C:\ProgramData\Anaconda3\condabin") {
-        $condaPath = "C:\ProgramData\Anaconda3\condabin"
+    if (Test-Path "$env:USERPROFILE\Miniconda3\condabin") {
+        $condaPath = "$env:USERPROFILE\Miniconda3\condabin"
+    } elseif (Test-Path "C:\ProgramData\Miniconda3\condabin") {
+        $condaPath = "C:\ProgramData\Miniconda3\condabin"
     } else {
-        Write-Host "Anaconda is not installed."
+        Write-Host "Miniconda is not installed."
         return
     }
 
