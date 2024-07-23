@@ -43,21 +43,22 @@ Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType
 Add-CondaToPath
 Refresh-Env
 
-
+# Re-import the updated PATH for the current session
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 
 # Activate conda base environment
 & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
 # Initialize conda
-conda init
+& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" init
+
 # Ensure version of Python
-conda install python=3.11 -y 
+& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=3.11 -y 
 
 # Install the GUI (Anaconda Navigator)
-conda install anaconda-navigator -y
-
+& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
 
 # Install packages
-conda install -c conda-forge dtumathtools uncertainties -y
+& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install -c conda-forge dtumathtools uncertainties -y
 
 # Download the VS Code installer
 $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
@@ -74,6 +75,9 @@ Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /noresta
 
 # Refresh environment variables
 Refresh-Env
+
+# Re-import the updated PATH for the current session
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 
 Write-Host "Installing extensions for Visual Studio Code"
 
