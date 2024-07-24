@@ -37,7 +37,7 @@ echo "Installing Homebrew. Please following the intructions on the screen"
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.zshrc
 (echo; echo 'eval "$(/usr/local/bin/brew shellenv)"') >> ~/.bash_profile
 eval "$(/usr/local/bin/brew shellenv)"
-
+eval "$(/opt/homebrew/bin/brew shellenv)"
 # update terminal 
 hash -r 
 
