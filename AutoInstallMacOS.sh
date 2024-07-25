@@ -14,6 +14,8 @@ echo "Welcome to the MacOS Auto Installer Script"
 echo "This script will install miniconda and Visual Studio Code on your MacOS"
 echo "Please don't close the terminal until the installation is complete"
 echo "This might take a while depending on your internet connection and what dependencies needs to be installed"
+echo "The script will take 5-15 minutes to complete depending on your internet connection and computer..."
+sleep 3
 clear -x
 
 # First install homebrew 
