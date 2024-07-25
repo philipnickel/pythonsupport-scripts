@@ -174,4 +174,4 @@ if ($?) {
     Exit-Message
 }
 
-Write-Host "Script finished. You may now close the terminal"
+Write-Host "Script finished. You may now close PowerShell."
