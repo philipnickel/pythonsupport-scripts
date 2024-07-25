@@ -1,6 +1,6 @@
 # Autoinstalling python 
 ## MacOS
-Open a terminal and run the following command:
+Open a terminal (command + space, search for terminal) and run the following command:
 
 ```{bash}
 
