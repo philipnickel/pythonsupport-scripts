@@ -1,3 +1,4 @@
+
 # Function to refresh environment variables in the current session
 function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
@@ -13,16 +14,20 @@ function Exit-Message {
 }
 
 # Check and set execution policy if necessary
-$currentExecutionPolicy = Get-ExecutionPolicy
-if ($currentExecutionPolicy -ne "RemoteSigned" -and $currentExecutionPolicy -ne "Unrestricted") {
-    set-executionpolicy remotesigned -Force
+$executionPolicies = Get-ExecutionPolicy -List
+$currentUserPolicy = $executionPolicies | Where-Object { $_.Scope -eq "CurrentUser" } | Select-Object -ExpandProperty ExecutionPolicy
+$localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMachine" } | Select-Object -ExpandProperty ExecutionPolicy
+
+if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestricted" -and
+    $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted") {
+    set-executionpolicy remotesigned -Scope CurrentUser -Force
     if ($?) {
-        Write-Host "Execution policy set to remotesigned."
+        Write-Host "Execution policy set to remotesigned for CurrentUser."
     } else {
         Exit-Message
     }
 } else {
-    Write-Host "Execution policy is already set to $currentExecutionPolicy."
+    Write-Host "Execution policy is already set appropriately."
 }
 
 # Add Anaconda to PATH environment variable
@@ -174,4 +179,4 @@ if ($?) {
     Exit-Message
 }
 
-Write-Host "Script finished. You may now close PowerShell."
+Write-Host "Script finished. You may now close the terminal"
