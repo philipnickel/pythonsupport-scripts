@@ -48,7 +48,7 @@ function Add-CondaToPath {
 
 # Script by Python Installation Support DTU
 Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
-Write-Host "This script will take a while to run, please be patient, and don't close your terminal before it says 'script finished'."
+Write-Host "This script will take a while to run, please be patient, and don't close PowerShell before it says 'script finished'."
 Start-Sleep -Seconds 3
 
 # Download the Miniconda installer
