@@ -38,7 +38,7 @@ $anacondaPath2 = "C:\ProgramData\Anaconda3"
 
 if (Test-Path $minicondaPath1 -or Test-Path $minicondaPath2 -or Test-Path $anacondaPath1 -or Test-Path $anacondaPath2) {
     Write-Host "Miniconda or Anaconda is already installed. Skipping Miniconda installation."
-    Write-Host "If you wish to install Miniconda using this script, please uninstall the existing Anaconda/Miniconda and run the script again."
+    Write-Host "If you wish to install Miniconda using this script, please uninstall the existing Anaconda/Miniconda installation and run the script again."
     goto vscode_installation
 }
 
