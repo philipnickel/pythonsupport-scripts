@@ -6,13 +6,6 @@ Open a terminal (command + space, search for terminal) and run the following com
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS.sh)"
 ```
-'Pretty version'
-```{bash}
-
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS_pretty.sh)"
-```
-
-
 ## Windows 
 
 Paste following line in powershell in administrator mode. Search for powershell -> right click -> Run as administrator 
