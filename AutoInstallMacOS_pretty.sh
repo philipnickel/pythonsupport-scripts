@@ -1,5 +1,4 @@
 
-
 #!/bin/bash
 
 # Function to handle error messages
@@ -73,7 +72,7 @@ echo "Installing Homebrew..."
 if $DEBUG; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-    yes | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &> /dev/null &
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &> /dev/null &
     loading_animation $!
 fi
 [ $? -ne 0 ] && exit_message
