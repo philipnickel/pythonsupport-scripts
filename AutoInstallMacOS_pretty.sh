@@ -1,4 +1,5 @@
 
+
 #!/bin/bash
 
 # Function to handle error messages
@@ -18,7 +19,7 @@ loading_animation () {
     local pid=$1
     local delay=0.1
     local spinstr='|/-\'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+    while kill -0 $pid 2>/dev/null; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         spinstr=$temp${spinstr%"$temp"}
@@ -69,7 +70,13 @@ _py_version=3.11
 
 # First install homebrew 
 echo "Installing Homebrew..."
-execute_command 'yes | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+if $DEBUG; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+    yes | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &> /dev/null &
+    loading_animation $!
+fi
+[ $? -ne 0 ] && exit_message
 
 clear -x 
 
