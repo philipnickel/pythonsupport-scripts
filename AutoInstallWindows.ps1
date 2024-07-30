@@ -20,9 +20,9 @@ $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMac
 
 if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestricted" -and
     $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted") {
-    set-executionpolicy remotesigned -Scope CurrentUser -Force
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     if ($?) {
-        Write-Host "Execution policy set to remotesigned for CurrentUser."
+        Write-Host "Execution policy set to RemoteSigned for CurrentUser."
     } else {
         Exit-Message
     }
@@ -30,20 +30,16 @@ if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestric
     Write-Host "Execution policy is already set appropriately."
 }
 
-# Add Anaconda to PATH environment variable
-function Add-CondaToPath {
-    if (Test-Path "$env:USERPROFILE\Miniconda3\condabin") {
-        $condaPath = "$env:USERPROFILE\Miniconda3\condabin"
-    } elseif (Test-Path "C:\ProgramData\Miniconda3\condabin") {
-        $condaPath = "C:\ProgramData\Miniconda3\condabin"
-    } else {
-        Write-Host "Miniconda is not installed."
-        Exit-Message
-    }
+# Check if Miniconda or Anaconda is already installed
+$minicondaPath1 = "$env:USERPROFILE\Miniconda3"
+$minicondaPath2 = "C:\ProgramData\Miniconda3"
+$anacondaPath1 = "$env:USERPROFILE\Anaconda3"
+$anacondaPath2 = "C:\ProgramData\Anaconda3"
 
-    if (-not ($env:Path -contains $condaPath)) {
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$condaPath", [System.EnvironmentVariableTarget]::User)
-    }
+if (Test-Path $minicondaPath1 -or Test-Path $minicondaPath2 -or Test-Path $anacondaPath1 -or Test-Path $anacondaPath2) {
+    Write-Host "Miniconda or Anaconda is already installed. Skipping Miniconda installation."
+    Write-Host "If you wish to install Miniconda using this script, please uninstall the existing Anaconda/Miniconda and run the script again."
+    goto vscode_installation
 }
 
 # Script by Python Installation Support DTU
@@ -73,6 +69,21 @@ if ($?) {
 }
 
 # Add Anaconda to PATH and refresh environment variables
+function Add-CondaToPath {
+    if (Test-Path "$env:USERPROFILE\Miniconda3\condabin") {
+        $condaPath = "$env:USERPROFILE\Miniconda3\condabin"
+    } elseif (Test-Path "C:\ProgramData\Miniconda3\condabin") {
+        $condaPath = "C:\ProgramData\Miniconda3\condabin"
+    } else {
+        Write-Host "Miniconda is not installed."
+        Exit-Message
+    }
+
+    if (-not ($env:Path -contains $condaPath)) {
+        [System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";$condaPath", [System.EnvironmentVariableTarget]::User)
+    }
+}
+
 Add-CondaToPath
 if ($?) {
     Refresh-Env
@@ -123,6 +134,8 @@ if ($?) {
 } else {
     Exit-Message
 }
+
+:vscode_installation
 
 # Download the VS Code installer
 $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
@@ -179,4 +192,4 @@ if ($?) {
     Exit-Message
 }
 
-Write-Host "Script finished. You may now close the terminal"
+Write-Host "Script finished. You may now close the terminal."
