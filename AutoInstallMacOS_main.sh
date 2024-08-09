@@ -11,12 +11,10 @@ fi
 
 # set path 
 
-path = "https://raw.githubusercontent.com/$REMOTE/pythonsupport-scripts/$BRANCH"
+path="https://raw.githubusercontent.com/$REMOTE/pythonsupport-scripts/$BRANCH"
 
 # links to full
-#
-# installs homebrew
-/bin/bash -c "$(curl -fsSL $path/AutoInstallMacOS_Homebrew.sh)"
+
 
 # installs python
 /bin/bash -c "$(curl -fsSL $path/AutoInstallMacOS_python.sh)"
