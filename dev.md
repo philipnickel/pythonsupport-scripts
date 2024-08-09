@@ -58,6 +58,6 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 # MacOS 
 
 ```{bash}
- /bin/bash -c "REMOTE_PS=philipnickel ; BRANCH_PS=mac_devided ;$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/AutoInstallMacOS_main.sh)"
+ /bin/bash -c "REMOTE_PS=philipnickel ; BRANCH_PS=mac_devided ; $(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/AutoInstallMacOS_main.sh)"
 
 ```
