@@ -11,7 +11,7 @@ fi
 # set path 
 
 path="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
-
+echo $path
 # links to full
 
 
