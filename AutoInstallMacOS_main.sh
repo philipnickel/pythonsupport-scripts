@@ -9,7 +9,7 @@ if [ -z "$BRANCH_PS" ]; then
 fi
 
 # set path 
-
+echo "Setting path"
 path="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
 echo $path
 # links to full
