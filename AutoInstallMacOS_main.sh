@@ -17,10 +17,10 @@ path="https://raw.githubusercontent.com/$REMOTE/pythonsupport-scripts/$BRANCH"
 
 
 # installs python
-/bin/bash -c "$(curl -fsSL $path/AutoInstallMacOS_python.sh)"
+/bin/bash -c "$(curl -fsSL $path/MacOSAuto_python.sh)"
 
 # install vscode
-/bin/bash -c "$(curl -fsSL $path/AutoInstallMacOS_VSC.sh)"
+/bin/bash -c "$(curl -fsSL $path/MacOSAuto_VSC.sh)"
 
 
 # links to placeholder
