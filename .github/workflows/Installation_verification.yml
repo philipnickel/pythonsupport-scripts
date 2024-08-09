@@ -1,51 +1,69 @@
-defaults: 
-  run: 
+name: Verification of installation scripts
+
+defaults:
+  run:
     shell: bash -l {0}
-# This is a basic workflow to help you get started with Actions
 
-name: Verification of installation scripts 
-
-# Controls when the workflow will run
 on:
   pull_request:
     branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test_macos_intel:
-    runs-on: macos-12
+  test_macos:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-12, macos-11]  # macos-12 is for Intel, macos-11 for ARM
+        python-version: [3.8, 3.9, 3.10, 3.11]  # Test multiple Python versions
+
     steps:
-      - name: python pre-check
+      - name: Python pre-check
         run: |
-          # python version
+          # Python version
           python3 --version 
           which python3 
-      
+
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Run MacOS installation script 
+      - name: Run macOS installation script
         env: 
           REMOTE_PS: ${{ github.repository_owner }}
-          BRANCH_PS: ${{ github.head_ref }}
-          
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS"
+          echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/AutoInstallMacOS_main.sh)"
-      
-      - name: Verification 
+
+      - name: Verification
         run: |
-          # check python version
-          python3 --version
-          which python3
-          # vs code
-          code --version
-          # conda 
-          conda --version
+          # Check Python version
+          installed_python_version=$(python3 --version | awk '{print $2}')
+          expected_python_version="${{ matrix.python-version }}"
+          if [[ "$installed_python_version" == "$expected_python_version" ]]
+          then 
+            echo "Correct Python version installed: $installed_python_version"
+          else
+            echo "Incorrect Python version. Expected: $expected_python_version, Found: $installed_python_version"
+            exit 1
+          fi
+          
+          python_location=$(which python3)
+          if [[ "$python_location" == "/usr/local/miniconda/bin/python3" ]]
+          then
+            echo "Correct location of python: $python_location"
+          else
+            echo "Incorrect location of python: $python_location"
+            exit 1
+          fi
+          
+          # Check VS Code
+          code --version || { echo "VS Code not installed correctly"; exit 1; }
+
+          # Check Conda
+          conda --version || { echo "Conda not installed correctly"; exit 1; }
           which conda
-          # packages 
-          python3 -c "import dtumathtools; import uncertainties; print('Packages imported successfully')"
-      
+          
+          # Verify Python package imports
+          python3 -c "import dtumathtools; import uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
