@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-12, macos-11]  # macos-12 is for Intel, macos-11 for ARM
-        python-version: [3.10, 3.11]  # Test multiple Python versions
+        python-version: ["3.10", "3.11"]  # Test multiple Python versions
 
     steps:
       - name: Python pre-check
