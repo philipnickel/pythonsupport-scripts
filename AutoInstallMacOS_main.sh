@@ -12,17 +12,15 @@ export REMOTE_PS
 export BRANCH_PS
 
 # set path 
-echo "Setting path"
-path="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
-echo $path
+path_ps="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
 # links to full
-
+export path_ps
 
 # installs python
-/bin/bash -c "$(curl -fsSL $path/MacOSAuto_python.sh)"
+/bin/bash -c "$(curl -fsSL $path_ps/MacOSAuto_python.sh)"
 
 # install vscode
-/bin/bash -c "$(curl -fsSL $path/MacOSAuto_VSC.sh)"
+/bin/bash -c "$(curl -fsSL $path_ps/MacOSAuto_VSC.sh)"
 
 
 # links to placeholder
