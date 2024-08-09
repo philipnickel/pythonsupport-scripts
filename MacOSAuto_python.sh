@@ -1,7 +1,7 @@
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
-  /bin/bash -c "$(curl -fsSL $path/AutoInstallMacOS_Homebrew.sh)"
+  /bin/bash -c "$(curl -fsSL $path/MacOSAuto_Homebrew.sh)"
 fi
 
 
