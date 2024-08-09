@@ -1,16 +1,16 @@
 # checks for environmental variables for remote and branch 
 
 if [ -z "$REMOTE_PS" ]; then
-  REMOTE="dtudk"
+  REMOTE_PS="dtudk"
 fi
 
 if [ -z "$BRANCH_PS" ]; then
-  BRANCH="main"
+  BRANCH_PS="main"
 fi
 
 # set path 
 
-path="https://raw.githubusercontent.com/$REMOTE/pythonsupport-scripts/$BRANCH"
+path="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
 
 # links to full
 
