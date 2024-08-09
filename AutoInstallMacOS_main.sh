@@ -8,6 +8,9 @@ if [ -z "$BRANCH_PS" ]; then
   BRANCH_PS="main"
 fi
 
+export REMOTE_PS
+export BRANCH_PS
+
 # set path 
 echo "Setting path"
 path="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS"
