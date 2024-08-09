@@ -18,7 +18,12 @@ exit_message () {
     echo "Or visit us during our office hours"
     exit 1
 }
-_py_version=3.11
+
+if [ -z "$PYTHON_VERSION_PS" ]; then
+    PYTHON_VERSION_PS="3.11"
+fi
+
+_py_version=$PYTHON_VERSION_PS
 
 # Install miniconda
 # Check if miniconda is installed
