@@ -34,6 +34,7 @@ jobs:
         run: |
           # check python version
           python3 --version
+          which python3
           # vs code
           code --version
           # conda 
