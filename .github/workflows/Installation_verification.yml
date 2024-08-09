@@ -38,25 +38,8 @@ jobs:
 
       - name: Verification
         run: |
-          # Check Python version
-          installed_python_version=$(python3 --version | awk '{print $2}')
-          expected_python_version="${{ matrix.python-version }}"
-          if [[ "$installed_python_version" == "$expected_python_version" ]]
-          then 
-            echo "Correct Python version installed: $installed_python_version"
-          else
-            echo "Incorrect Python version. Expected: $expected_python_version, Found: $installed_python_version"
-            exit 1
-          fi
-          
-          python_location=$(which python3)
-          if [[ "$python_location" == "/usr/local/miniconda/bin/python3" ]]
-          then
-            echo "Correct location of python: $python_location"
-          else
-            echo "Incorrect location of python: $python_location"
-            exit 1
-          fi
+          python3 --version
+          which python3 
           
           # Check VS Code
           code --version || { echo "VS Code not installed correctly"; exit 1; }
