@@ -1,9 +1,12 @@
 # checks for environmental variables for remote and branch 
 
-: "${REMOTE_PS:=dtudk}"
+if [ -z "$REMOTE_PS" ]; then
+  REMOTE_PS="dtudk"
+fi
 
-: "${BRANCH_PS:=main}"
-
+if [ -z "$BRANCH_PS" ]; then
+  BRANCH_PS="main"
+fi
 
 # set path 
 echo "Setting path"
