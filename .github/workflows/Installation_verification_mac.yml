@@ -14,19 +14,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, macos-12]  # macos-13 is for Intel, macos-latest for ARM
+        os: [macos-latest, macos-12]  # Test on different macOS versions
         python-version: ["3.10", "3.11"]  # Test multiple Python versions
 
     steps:
-      - name: Python pre-check
-        run: |
-          # Python version
-          python3 --version 
-          which python3 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Checkout code
         uses: actions/checkout@v3
-        
+
       - name: Run macOS installation script
         env: 
           REMOTE_PS: ${{ github.repository_owner }}
@@ -38,9 +37,18 @@ jobs:
 
       - name: Verification
         run: |
-          python3 --version
-          which python3 
-          
+          # Verify the installed Python version
+          EXPECTED_VERSION="${{ matrix.python-version }}"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python location
+          which python3
+
           # Check VS Code
           code --version || { echo "VS Code not installed correctly"; exit 1; }
 
