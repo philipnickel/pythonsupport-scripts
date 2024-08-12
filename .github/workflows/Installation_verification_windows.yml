@@ -1,5 +1,9 @@
 name: Verification of installation scripts
 
+defaults:
+  run:
+    shell: pwsh -Login {0}
+
 on:
   pull_request:
     branches: ["main"]
