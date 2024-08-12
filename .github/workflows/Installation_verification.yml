@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, macos-13]  # macos-12 is for Intel, macos-11 for ARM
+        os: [macos-latest, macos-13]  # macos-13 is for Intel, macos-latest for ARM
         python-version: ["3.10", "3.11"]  # Test multiple Python versions
 
     steps:
