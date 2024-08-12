@@ -1,0 +1,57 @@
+name: Verification of installation scripts
+
+defaults:
+  run:
+    shell: pwsh -Login {0}
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  test_windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]  # Test multiple Python versions
+
+    steps:
+    
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Windows installation script
+        shell: pwsh
+        env: 
+          REMOTE_PS: ${{ github.repository_owner }}
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
+
+      - name: Verification
+        shell: pwsh
+        run: |
+          # Verify the installed Python version
+          $expectedVersion = '${{ matrix.python-version }}'
+          $installedVersion = (python --version).Split(" ")[1].Trim()
+          if (-not $installedVersion.StartsWith($expectedVersion)) {
+            Write-Error "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            exit 1
+          }
+          Write-Output "Correct Python version $installedVersion is installed."
+
+          # Verify Python location
+          Get-Command python
+
+          
+
+          # Verify Python package imports
+          try {
+            python -c "import dtumathtools; import uncertainties; print('Packages imported successfully')"
+          } catch {
+            Write-Error "Failed to import Python packages"
+            exit 1
+          }
