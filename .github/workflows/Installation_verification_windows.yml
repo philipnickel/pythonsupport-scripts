@@ -34,7 +34,7 @@ jobs:
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
+          Write-Output "Running script from remote ENV:REMOTE_PS on branch ENV:BRANCH_PS with Python ENV:PYTHON_VERSION_PS"
           Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
 
       - name: Verification
