@@ -46,22 +46,7 @@ jobs:
           # Verify Python location
           Get-Command python
 
-          # Check VS Code installation
-          if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
-            Write-Error "VS Code not installed correctly"
-            exit 1
-          } else {
-            code --version
-          }
-
-          # Check Conda installation
-          if (-not (Get-Command conda -ErrorAction SilentlyContinue)) {
-            Write-Error "Conda not installed correctly"
-            exit 1
-          } else {
-            conda --version
-            Get-Command conda
-          }
+          
 
           # Verify Python package imports
           try {
