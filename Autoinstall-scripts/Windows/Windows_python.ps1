@@ -1,8 +1,8 @@
 # check for env variable PYTHONVERSIONPS 
 # if it isn't set set it to 3.11
 
-if (-not $env:PS_PYTHONVERSIONP) {
-    $env:PS_PYTHONVERSIONP = "3.11"
+if (-not $env:PYTHON_VERSION_PS) {
+    $env:PYTHON_VERSION_PS = "3.11"
 }
 
 
@@ -118,9 +118,9 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
 
     # Ensure version of Python
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python= $PS_PYTHONVERSIONP -yauto
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python= $PYTHON_VERSION_PS -yauto
     if ($?) {
-        Write-Host "Python 3.11 installed."
+        Write-Host "Python updated version installed."
     } else {
         Exit-Message
     }
