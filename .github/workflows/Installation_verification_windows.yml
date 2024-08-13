@@ -24,15 +24,7 @@ jobs:
     
       - name: Checkout code
         uses: actions/checkout@v4
-#
-#      - name: Installation from main
-#        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
- #       env:
-  #        PYTHON_VERSION_PS: ${{ matrix.python-version }}
-   #     run: |
-    #      Write-Output "Running script from remote dtudk on branch main with Python ENV:PYTHON_VERSION_PS"
-     #     Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Autoinstall-scripts/Windows/Windows_main.ps1" -UseBasicParsing).Content
-
+        
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env: 
