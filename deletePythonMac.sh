@@ -13,22 +13,24 @@ sudo rm -rf /Library/Frameworks/Python.framework
 
 names="pip pydoc python idle 2to3"
 
-for name in ${names} ; do
-	echo Searching for executable named: $name
-	for file in /usr/local/bin/${name}* ; do 
-	echo Checking file $file
-  # TODO typo? &&
-		[ -e $file ] || sudo rm $file
-	done 
-done
+# TODO
+# I have commented this out, since Mac will ship
+# a default Python installation (required for the OS to work)
+#for name in ${names} ; do
+#	echo Searching for executable named: $name
+#	for file in /usr/local/bin/${name}* ; do
+#    echo Checking file $file
+#		[ -e $file ] && sudo rm $file
+#	done
+#done
 
 echo Now deleting anaconda and/or miniconda
 
 # if anaconda is installed, delete it
 if [ -d ~/anaconda* ] ; then
 	source ~/anaconda3/bin/activate
-	conda install anaconda-clean --yes
-	anaconda-clean --yes
+	conda install anaconda-clean -y
+	anaconda-clean -y
 	conda deactivate
 	rm -rf ~/anaconda*
 	rm -rf ~/.anaconda_backup

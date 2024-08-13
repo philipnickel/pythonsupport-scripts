@@ -29,6 +29,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      #- name: Show context
+      #  env:
+      #    GITHUB_CONTEXT: ${{ toJSON(github) }}
+      #  run: |
+      #    echo "Context: $GITHUB_CONTEXT"
+
       - name: Installation from main
         if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         env:
@@ -39,8 +45,9 @@ jobs:
 
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
-        env: 
-          REMOTE_PS: ${{ github.repository_owner }}
+        env:
+          # TODO, this will *not* catch when a user forks the repo, and change the name of the project
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |

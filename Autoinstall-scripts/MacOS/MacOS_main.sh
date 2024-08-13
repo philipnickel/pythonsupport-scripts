@@ -1,9 +1,7 @@
 # checks for environmental variables for remote and branch 
-
 if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk"
+  REMOTE_PS="dtudk/pythonsupport-scripts"
 fi
-
 if [ -z "$BRANCH_PS" ]; then
   BRANCH_PS="main"
 fi
@@ -11,20 +9,12 @@ fi
 export REMOTE_PS
 export BRANCH_PS
 
-# set path 
-path_ps="https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/Autoinstall-scripts/MacOS"
-# links to full
-export path_ps
+# set URL
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS"
 
-# installs python
-/bin/bash -c "$(curl -fsSL $path_ps/MacOS_python.sh)"
+# install python
+/bin/bash -c "$(curl -fsSL $url_ps/MacOSAuto_python.sh)"
 
 # install vscode
-/bin/bash -c "$(curl -fsSL $path_ps/MacOS_VSC.sh)"
-
-
-# links to placeholder
-#
-
-#/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Autoinstall-scripts/MacOS/MacOS_placeholder.sh)"
+/bin/bash -c "$(curl -fsSL $url_ps/MacOSAuto_VSC.sh)"
 

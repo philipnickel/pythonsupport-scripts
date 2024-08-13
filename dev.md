@@ -59,7 +59,11 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 
 ```{bash}
 
+<<<<<<< HEAD
 export PYTHON_VERSION_PS=3.11 && export REMOTE_PS=philipnickel && export BRANCH_PS=mac_devided && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/Autoinstall-scripts/MacOS/MacOS_main.sh)"
+=======
+export PYTHON_VERSION_PS=3.11 && export REMOTE_PS=philipnickel/pythonsupport-scripts && export BRANCH_PS=mac_devided && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/AutoInstallMacOS.sh)"
+>>>>>>> 2056246f97cd330a13d34f6e9754ba084f19cb97
 ```
 
 ## Windows

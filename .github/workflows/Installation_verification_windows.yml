@@ -36,7 +36,7 @@ jobs:
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env: 
-          REMOTE_PS: ${{ github.repository_owner }}
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
