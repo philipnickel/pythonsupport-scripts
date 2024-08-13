@@ -36,12 +36,12 @@ jobs:
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env: 
-          REMOTE_PS: ${{ github.repository_owner }}
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
 
       - name: Verification
         run: |

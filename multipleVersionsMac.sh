@@ -26,7 +26,6 @@ if [ -d /Applications ]; then
 fi
 
 # Check in Desktop folder
-
 if [ -d ~/Desktop ]; then
     for file in ~/Desktop/*; do
         if [[ $file == *"Visual Studio Code"* ]]; then
@@ -35,5 +34,4 @@ if [ -d ~/Desktop ]; then
         fi
     done
 fi
-
 

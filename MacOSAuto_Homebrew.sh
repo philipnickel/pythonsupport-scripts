@@ -27,7 +27,8 @@ clear -x
 echo "Checking for existing homebrew installation..."
 
 if command -v brew > /dev/null; then
-    exit 0
+  echo "Already found Homebrew, no need to install Homebrew..."
+  exit 0
 fi
 
 # First install homebrew 
