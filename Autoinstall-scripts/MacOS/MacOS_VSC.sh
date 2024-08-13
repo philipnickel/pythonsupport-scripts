@@ -23,7 +23,7 @@ exit_message () {
 # using multipleVersionsMac to check 
 echo "Installing Visual Studio Code if not already installed..."
 # if output is empty, then install vs code
-vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/multipleVersionsMac.sh)")
+vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Autoinstall-scripts/MacOS/multipleVersionsMac.sh)")
 [ $? -ne 0 ] && exit_message
 
 if [ -n "$vspath" ]  ; then
