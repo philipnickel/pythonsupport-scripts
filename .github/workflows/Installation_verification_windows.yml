@@ -30,8 +30,8 @@ jobs:
         env:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          Write-Output "Running script from remote dtudk on branch main with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallWindows.ps1" -UseBasicParsing).Content
+          Write-Output "Running script from remote dtudk on branch main with Python ENV:PYTHON_VERSION_PS"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Autoinstall-scripts/Windows/Windows_main.ps1" -UseBasicParsing).Content
 
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
@@ -40,8 +40,8 @@ jobs:
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
+          Write-Output "Running script from remote ENV:REMOTE_PS on branch ENV:BRANCH_PS with Python ENV:PYTHON_VERSION_PS"
+          $env:PS_PYTHONVERSION = 3.11; $env:PS_DEVELOPERMODE = 1; $env:PS_remote = philipnickel; $env:PS_branch = windows_devided; PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$remote/pythonsupport-scripts/$branch/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
 
       - name: Verification
         run: |
