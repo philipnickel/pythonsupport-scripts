@@ -45,7 +45,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/Autoinstall-scripts/MacOS/MacOS_main.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/AutoInstallMacOS.sh)"
 
       - name: Verification
         run: |
