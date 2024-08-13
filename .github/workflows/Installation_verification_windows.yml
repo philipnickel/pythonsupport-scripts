@@ -41,7 +41,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote ENV:REMOTE_PS on branch ENV:BRANCH_PS with Python ENV:PYTHON_VERSION_PS"
-          $env:PS_PYTHONVERSION = 3.11; $env:PS_DEVELOPERMODE = 1; $env:PS_remote = philipnickel; $env:PS_branch = windows_devided; PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$remote/pythonsupport-scripts/$branch/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
+          PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$remote/pythonsupport-scripts/$branch/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
 
       - name: Verification
         run: |
