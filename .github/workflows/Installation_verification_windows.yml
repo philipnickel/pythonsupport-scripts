@@ -1,4 +1,4 @@
-name: Verification of installation scripts
+name: Windows tests
 
 defaults:
   run:
@@ -8,21 +8,32 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
 
 jobs:
   test_windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [windows-latest]
         python-version: ["3.10", "3.11"]  # Test multiple Python versions
 
     steps:
     
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Run Windows installation script
-        shell: pwsh
+      - name: Scheduled installation
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          Write-Output "Running script from remote dtudk on branch main with Python $env:PYTHON_VERSION_PS"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallWindows.ps1" -UseBasicParsing).Content
+
+      - name: Pull request installation
+        if: ${{ github.event_name != 'schedule' }}
         env: 
           REMOTE_PS: ${{ github.repository_owner }}
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
@@ -32,7 +43,6 @@ jobs:
           Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
 
       - name: Verification
-        shell: pwsh
         run: |
           # Verify the installed Python version
           $expectedVersion = '${{ matrix.python-version }}'
@@ -45,7 +55,6 @@ jobs:
 
           # Verify Python location
           Get-Command python
-
           
 
           # Verify Python package imports

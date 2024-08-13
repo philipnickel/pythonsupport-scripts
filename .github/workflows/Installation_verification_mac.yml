@@ -1,4 +1,4 @@
-name: Verification of installation scripts
+name: Mac tests
 
 defaults:
   run:
@@ -8,6 +8,8 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
 
 jobs:
   test_macos:
@@ -24,9 +26,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Run macOS installation script
+      - name: Scheduled installation
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          echo "Running script from remote dtudk on branch main with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS_main.sh)"
+
+      - name: Pull request installation
+        if: ${{ github.event_name != 'schedule' }}
         env: 
           REMOTE_PS: ${{ github.repository_owner }}
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
