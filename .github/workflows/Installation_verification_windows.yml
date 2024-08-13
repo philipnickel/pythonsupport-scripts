@@ -41,7 +41,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/Autoinstall-scripts/Windows_Windows_main.ps1" -UseBasicParsing).Content
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/Autoinstall-scripts/Windows/Windows_main.ps1" -UseBasicParsing).Content
 
       - name: Verification
         run: |
