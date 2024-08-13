@@ -31,8 +31,8 @@ jobs:
           BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          Write-Output "Running script from remote ENV:REMOTE_PS on branch ENV:BRANCH_PS with Python ENV:PYTHON_VERSION_PS"
-          PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$remote/pythonsupport-scripts/$branch/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
+          Write-Output "Running script from remote Env:REMOTE_PS on branch Env:BRANCH_PS with Python Env:PYTHON_VERSION_PS"
+          PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$REMOTE_PS/pythonsupport-scripts/$BRANCH_PS/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
 
       - name: Verification
         run: |
