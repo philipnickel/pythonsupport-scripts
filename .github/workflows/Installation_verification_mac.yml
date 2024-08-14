@@ -41,7 +41,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           echo "Running script from remote dtudk on branch main with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallMacOS.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS_AutoInstall.sh)"
 
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
@@ -52,7 +52,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/AutoInstallMacOS.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
 
       - name: Verification
         run: |
