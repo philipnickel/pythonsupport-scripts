@@ -1,4 +1,3 @@
-# T
 name: Windows tests
 
 defaults:
@@ -25,6 +24,15 @@ jobs:
     
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Installation from main
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          Write-Output "Running script from remote dtudk on branch main with Python $env:PYTHON_VERSION_PS"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows_AutoInstall.ps1" -UseBasicParsing).Content
+
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env: 
@@ -33,7 +41,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
-          PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/$env:REMOTE_PS/pythonsupport-scripts/$env:BRANCH_PS/Autoinstall-scripts/Windows/Windows_main.ps1\" -UseBasicParsing).Content}"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows_AutoInstall.ps1" -UseBasicParsing).Content
 
       - name: Verification
         run: |

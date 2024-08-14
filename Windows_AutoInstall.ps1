@@ -18,7 +18,3 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri '$path_temp/Windows_VSC.ps1' -UseBasicParsing).Content}"
 
 
-# Link to placeholder
-#
-
-# PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Autoinstall-scripts/windows/Windows_placeholder.ps1' -UseBasicParsing).Content}"
