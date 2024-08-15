@@ -118,6 +118,17 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+    # Ensuring correct channels are set
+    Write-Host "Removing defaults channel (due to licensing problems)"
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
+    if (-not $?) {
+        Exit-Message
+    }
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --remove channels defaults
+    if (-not $?) {
+        Exit-Message
+    }
+
     # Ensure version of Python
     Write-Host "Updating Python to version $env:PYTHON_VERSION_PS..."
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
@@ -127,16 +138,20 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+    # We will not install the Anaconda GUI
+    # There may be license issues due to DTU being
+    # a rather big institution. So our installation guides
+    # Will be pre-cautious here, and remove the defaults channels.
     # Install the GUI (Anaconda Navigator)
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
-    if ($?) {
-        Write-Host "Anaconda Navigator installed."
-    } else {
-        Exit-Message
-    }
+    #& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
+    #if ($?) {
+    #    Write-Host "Anaconda Navigator installed."
+    #} else {
+    #    Exit-Message
+    #}
 
     # Install packages
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install -c conda-forge dtumathtools uncertainties -y
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools uncertainties -y
     if ($?) {
         Write-Host "Additional packages installed."
     } else {

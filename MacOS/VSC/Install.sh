@@ -15,7 +15,6 @@ url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 
 
-
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
@@ -85,3 +84,4 @@ code --install-extension tomoki1207.pdf
 
 echo ""
 echo "Script has finished. You may now close the terminal..."
+
