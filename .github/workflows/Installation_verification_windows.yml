@@ -31,7 +31,7 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote dtudk on branch main with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/AutoInstallWindows.ps1" -UseBasicParsing).Content
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows_AutoInstall.ps1" -UseBasicParsing).Content
 
       - name: Branch specific installation
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
@@ -41,7 +41,8 @@ jobs:
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
-          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/AutoInstallWindows.ps1" -UseBasicParsing).Content
+          Write-Output "Running Windows_AutoInstall.ps1"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows_AutoInstall.ps1" -UseBasicParsing).Content
 
       - name: Verification
         run: |

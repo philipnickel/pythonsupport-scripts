@@ -1,4 +1,5 @@
-# Get URL
+
+# checks for environmental variables for remote and branch 
 if [ -z "$REMOTE_PS" ]; then
   REMOTE_PS="dtudk/pythonsupport-scripts"
 fi
@@ -9,14 +10,17 @@ fi
 export REMOTE_PS
 export BRANCH_PS
 
-# set URL 
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS"
+# set URL
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
+
+
+Echo "get's to python installation"
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
   echo "Homebrew is not installed. Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL $url_ps/MacOSAuto_Homebrew.sh)"
+  /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 fi
 
 
@@ -68,18 +72,26 @@ eval "$($brew_path shellenv)"
 hash -r 
 clear -x
 
+echo "Removing defaults channel (due to licensing problems)"
+conda config --add channels conda-forge
+conda config --remove channels defaults
+
+
 echo "Downgrading python version to ${_py_version}..."
 conda install python=${_py_version} -y
 [ $? -ne 0 ] && exit_message
 clear -x 
 
-# Install anaconda GUI
-echo "Installing Anaconda Navigator GUI"
-conda install anaconda-navigator -y
-[ $? -ne 0 ] && exit_message
+# We will not install the Anaconda GUI
+# There may be license issues due to DTU being
+# a rather big institution. So our installation guides
+# Will be pre-cautious here, and remove the defaults channels.
+#echo "Installing Anaconda Navigator GUI"
+#conda install anaconda-navigator -y
+#[ $? -ne 0 ] && exit_message
 
 echo "Installing packages..."
-conda install -c conda-forge dtumathtools uncertainties -y
+conda install dtumathtools uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
 

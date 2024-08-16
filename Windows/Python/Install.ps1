@@ -1,4 +1,13 @@
 
+# check for env variable PYTHONVERSIONPS 
+# if it isn't set set it to 3.11
+
+if (-not $env:PYTHON_VERSION_PS) {
+    $env:PYTHON_VERSION_PS = "3.11"
+}
+
+
+
 # Function to refresh environment variables in the current session
 function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
@@ -109,90 +118,44 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+    # Ensuring correct channels are set
+    Write-Host "Removing defaults channel (due to licensing problems)"
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
+    if (-not $?) {
+        Exit-Message
+    }
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --remove channels defaults
+    if (-not $?) {
+        Exit-Message
+    }
+
     # Ensure version of Python
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=3.11 -y
+    Write-Host "Updating Python to version $env:PYTHON_VERSION_PS..."
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
     if ($?) {
-        Write-Host "Python 3.11 installed."
+        Write-Host "Python updated version installed."
     } else {
         Exit-Message
     }
 
+    # We will not install the Anaconda GUI
+    # There may be license issues due to DTU being
+    # a rather big institution. So our installation guides
+    # Will be pre-cautious here, and remove the defaults channels.
     # Install the GUI (Anaconda Navigator)
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
-    if ($?) {
-        Write-Host "Anaconda Navigator installed."
-    } else {
-        Exit-Message
-    }
+    #& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
+    #if ($?) {
+    #    Write-Host "Anaconda Navigator installed."
+    #} else {
+    #    Exit-Message
+    #}
 
     # Install packages
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install -c conda-forge dtumathtools uncertainties -y
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools uncertainties -y
     if ($?) {
         Write-Host "Additional packages installed."
     } else {
         Exit-Message
     }
 }
-
-# Check if VS Code is already installed
-$vscodePath = "C:\Users\$env:USERNAME\AppData\Local\Programs\Microsoft VS Code\Code.exe"
-if (Test-Path $vscodePath) {
-    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation."
-} else {
-    # Download the VS Code installer
-    $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
-    $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
-
-    Write-Host "Downloading installer for Visual Studio Code..."
-    Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
-    if ($?) {
-        Write-Host "VS Code installer downloaded."
-    } else {
-        Exit-Message
-    }
-
-    Write-Host "Installing Visual Studio Code..."
-    # Install VS Code
-    Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait
-    if ($?) {
-        Write-Host "VS Code installed."
-    } else {
-        Exit-Message
-    }
-}
-
-# Refresh environment variables
-Refresh-Env
-if ($?) {
-    Write-Host "Environment variables refreshed."
-} else {
-    Exit-Message
-}
-
-# Re-import the updated PATH for the current session
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
-
-Write-Host "Installing extensions for Visual Studio Code"
-# Install VS Code extensions
-code --install-extension ms-python.python
-if ($?) {
-    Write-Host "Python extension installed."
-} else {
-    Exit-Message
-}
-
-code --install-extension ms-toolsai.jupyter
-if ($?) {
-    Write-Host "Jupyter extension installed."
-} else {
-    Exit-Message
-}
-
-code --install-extension tomoki1207.pdf
-if ($?) {
-    Write-Host "PDF extension installed."
-} else {
-    Exit-Message
-}
-
 Write-Host "Script finished. You may now close the terminal."

@@ -1,4 +1,5 @@
-# Get URL
+
+# checks for environmental variables for remote and branch 
 if [ -z "$REMOTE_PS" ]; then
   REMOTE_PS="dtudk/pythonsupport-scripts"
 fi
@@ -10,14 +11,15 @@ export REMOTE_PS
 export BRANCH_PS
 
 # set URL
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS"
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
+
 
 
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
   echo "Homebrew is not installed. Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL $url_ps/MacOSAuto_Homebrew.sh)"
+  /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 fi
 
 
@@ -82,3 +84,4 @@ code --install-extension tomoki1207.pdf
 
 echo ""
 echo "Script has finished. You may now close the terminal..."
+
