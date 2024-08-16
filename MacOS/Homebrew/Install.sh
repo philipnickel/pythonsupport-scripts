@@ -7,13 +7,13 @@ exit_message () {
     echo "Please visit the following web page:"
     echo ""
     echo "https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
     echo ""
     echo "or contact the Python Support Team:" 
     echo ""
     echo "  pythonsupport@dtu.dk"
     echo ""
     echo "Or visit us during our office hours"
+    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
     exit 1
 }
 
