@@ -10,7 +10,7 @@ if (-not $env:BRANCH_PS) {
 $url_ps =  "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows"
 
 
-Write-Output "Path: $url_ps"
+Write-Output "Path before invoking webrequests: $url_ps"
 
 
 Write-Output "Running Windows_python.ps1"

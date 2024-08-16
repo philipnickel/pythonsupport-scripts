@@ -12,6 +12,9 @@ export BRANCH_PS
 # set URL
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
+# echo url for debugging
+echo "URL set before curling sub-scripts $url_ps"
+
 
 # install python
 /bin/bash -c "$(curl -fsSL $url_ps/Python/Install.sh)"

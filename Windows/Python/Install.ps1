@@ -16,8 +16,14 @@ function Refresh-Env {
 # Function to handle errors and exit
 function Exit-Message {
     Write-Host "Oh no! Something went wrong."
-    Write-Host "Please try to install manually or contact the Python Support Team:"
-    Write-Host "Pythonsupport@dtu.dk"
+    Write-Host "Please visit the following web page for more info:"
+    Write-Host ""
+    Write-Host "          https://pythonsupport.dtu.dk/install/windows/automated-error.html "
+    Write-Host ""
+    Write-Host "or contact the Python Support Team:"
+    Write-Host ""
+    Write-Host "          Pythonsupport@dtu.dk"
+    Write-Host ""
     Write-Host "Or visit us during our office hours"
     exit 1
 }
@@ -75,7 +81,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
-    # Add Anaconda to PATH and refresh environment variables
+    # Add miniconda to PATH and refresh environment variables
     function Add-CondaToPath {
         if (Test-Path "$env:USERPROFILE\Miniconda3\condabin") {
             $condaPath = "$env:USERPROFILE\Miniconda3\condabin"
@@ -142,15 +148,8 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # There may be license issues due to DTU being
     # a rather big institution. So our installation guides
     # Will be pre-cautious here, and remove the defaults channels.
-    # Install the GUI (Anaconda Navigator)
-    #& "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install anaconda-navigator -y
-    #if ($?) {
-    #    Write-Host "Anaconda Navigator installed."
-    #} else {
-    #    Exit-Message
-    #}
-
-    # Install packages
+        # Install packages
+        
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools uncertainties -y
     if ($?) {
         Write-Host "Additional packages installed."
