@@ -4,14 +4,18 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
+
 # Function to handle errors and exit
 function Exit-Message {
     Write-Host "Oh no! Something went wrong."
-    Write-Host "Please try to install manually or contact the Python Support Team:"
+    Write-Host "Please visit the following web page for more info:"
+    Write-Host "https://pythonsupport.dtu.dk/install/windows/automated-error.html"
+    Write-Host "or contact the Python Support Team:"
     Write-Host "Pythonsupport@dtu.dk"
     Write-Host "Or visit us during our office hours"
     exit 1
 }
+
 
 # Check and set execution policy if necessary
 $executionPolicies = Get-ExecutionPolicy -List

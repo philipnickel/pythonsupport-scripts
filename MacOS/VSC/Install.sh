@@ -22,19 +22,27 @@ if ! command -v brew > /dev/null; then
   /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 fi
 
-
 # Error function 
 # Print error message, contact information and exits script
 exit_message () {
     echo ""
     echo "Oh no! Something went wrong"
-    echo "Please try to install manually or contact the Python Support Team:" 
+    echo ""
+    echo "Please visit the following web page:"
+    echo ""
+    echo "https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
+    echo ""
+    echo "or contact the Python Support Team:" 
     echo ""
     echo "  pythonsupport@dtu.dk"
     echo ""
     echo "Or visit us during our office hours"
     exit 1
 }
+
+
+
 
 # check if vs code is installed
 # using multipleVersionsMac to check 

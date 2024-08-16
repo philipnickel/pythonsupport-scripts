@@ -29,13 +29,22 @@ fi
 exit_message () {
     echo ""
     echo "Oh no! Something went wrong"
-    echo "Please try to install manually or contact the Python Support Team:" 
+    echo ""
+    echo "Please visit the following web page:"
+    echo ""
+    echo "https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
+    echo ""
+    echo "or contact the Python Support Team:" 
     echo ""
     echo "  pythonsupport@dtu.dk"
     echo ""
     echo "Or visit us during our office hours"
     exit 1
 }
+
+
+
 
 if [ -z "$PYTHON_VERSION_PS" ]; then
     PYTHON_VERSION_PS="3.11"
@@ -86,9 +95,6 @@ clear -x
 # There may be license issues due to DTU being
 # a rather big institution. So our installation guides
 # Will be pre-cautious here, and remove the defaults channels.
-#echo "Installing Anaconda Navigator GUI"
-#conda install anaconda-navigator -y
-#[ $? -ne 0 ] && exit_message
 
 echo "Installing packages..."
 conda install dtumathtools uncertainties -y
