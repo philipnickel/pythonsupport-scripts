@@ -14,12 +14,12 @@ export BRANCH_PS
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 
-
 Echo "get's to python installation"
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
   echo "Homebrew is not installed. Installing Homebrew..."
+  echo "installing from $url_ps/Homebrew/Install.sh"
   /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 fi
 
