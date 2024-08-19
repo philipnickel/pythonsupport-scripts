@@ -61,7 +61,7 @@ jobs:
 
           # Verify Python package imports
           try {
-            python -c "import dtumathtools; import uncertainties; print('Packages imported successfully')"
+            python -c "import dtumathtools, pandas, uncertainties; print('Packages imported successfully')"
           } catch {
             Write-Error "Failed to import Python packages"
             exit 1

@@ -76,4 +76,4 @@ jobs:
           which conda
           
           # Verify Python package imports
-          python3 -c "import dtumathtools; import uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          python3 -c "import dtumathtools, pandas, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
