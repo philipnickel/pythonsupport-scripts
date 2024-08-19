@@ -97,7 +97,7 @@ clear -x
 # Will be pre-cautious here, and remove the defaults channels.
 
 echo "Installing packages..."
-conda install dtumathtools pandas uncertainties -y
+conda install dtumathtools pandas scipy statsmodels uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
 
