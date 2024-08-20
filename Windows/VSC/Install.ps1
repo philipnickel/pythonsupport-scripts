@@ -40,9 +40,9 @@ if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestric
 
 
 # Check if VS Code is already installed
-$vscodePath = "C:\Users\$env:USERNAME\AppData\Local\Programs\Microsoft VS Code\Code.exe"
-if (Test-Path $vscodePath) {
-    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation."
+$vsc_paths = Get-Command code
+if ( $vsc_paths.Count -gt 0 ) {
+    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation.."
 } else {
     # Download the VS Code installer
     $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
