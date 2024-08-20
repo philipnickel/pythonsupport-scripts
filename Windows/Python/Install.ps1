@@ -150,7 +150,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # Will be pre-cautious here, and remove the defaults channels.
         # Install packages
         
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas uncertainties -y
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas scipy statsmodels uncertainties -y
     if ($?) {
         Write-Host "Additional packages installed."
     } else {
