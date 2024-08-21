@@ -4,14 +4,22 @@ function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 }
 
+
 # Function to handle errors and exit
 function Exit-Message {
     Write-Host "Oh no! Something went wrong."
-    Write-Host "Please try to install manually or contact the Python Support Team:"
-    Write-Host "Pythonsupport@dtu.dk"
+    Write-Host "Please visit the following web page for more info:"
+    Write-Host ""
+    Write-Host "          https://pythonsupport.dtu.dk/install/windows/automated-error.html "
+    Write-Host ""
+    Write-Host "or contact the Python Support Team:"
+    Write-Host ""
+    Write-Host "          Pythonsupport@dtu.dk"
+    Write-Host ""
     Write-Host "Or visit us during our office hours"
     exit 1
 }
+
 
 # Check and set execution policy if necessary
 $executionPolicies = Get-ExecutionPolicy -List
@@ -32,9 +40,9 @@ if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestric
 
 
 # Check if VS Code is already installed
-$vscodePath = "C:\Users\$env:USERNAME\AppData\Local\Programs\Microsoft VS Code\Code.exe"
-if (Test-Path $vscodePath) {
-    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation."
+$vsc_paths = Get-Command code
+if ( $vsc_paths.Count -gt 0 ) {
+    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation.."
 } else {
     # Download the VS Code installer
     $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
