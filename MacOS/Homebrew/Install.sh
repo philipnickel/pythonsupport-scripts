@@ -39,6 +39,10 @@ fi
 
 # First install homebrew 
 echo "Installing Homebrew..."
+echo ""
+echo "This will require you to type your password in the terminal."
+echo "For security reasons you will not see what you type... It will be hidden while typing!"
+echo ""
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 [ $? -ne 0 ] && exit_message
