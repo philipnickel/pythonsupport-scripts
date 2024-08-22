@@ -10,11 +10,11 @@ function Exit-Message {
     Write-Host "Oh no! Something went wrong."
     Write-Host "Please visit the following web page for more info:"
     Write-Host ""
-    Write-Host "          https://pythonsupport.dtu.dk/install/windows/automated-error.html "
+    Write-Host "   https://pythonsupport.dtu.dk/install/windows/automated-error.html "
     Write-Host ""
     Write-Host "or contact the Python Support Team:"
     Write-Host ""
-    Write-Host "          Pythonsupport@dtu.dk"
+    Write-Host "   pythonsupport@dtu.dk"
     Write-Host ""
     Write-Host "Or visit us during our office hours"
     exit 1

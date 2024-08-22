@@ -6,11 +6,11 @@ exit_message () {
     echo ""
     echo "Please visit the following web page:"
     echo ""
-    echo "https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+    echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
     echo ""
     echo "or contact the Python Support Team:" 
     echo ""
-    echo "  pythonsupport@dtu.dk"
+    echo "   pythonsupport@dtu.dk"
     echo ""
     echo "Or visit us during our office hours"
     open https://pythonsupport.dtu.dk/install/macos/automated-error.html
@@ -19,9 +19,9 @@ exit_message () {
 
 # Script installs miniconda and vs code 
 # Welcome text 
-echo "Welcome to Python supports MacOS Auto Installer Script"
+echo "Welcome to Python supports MacOS Auto Homebrew Installer Script"
 echo ""
-echo "This script will install miniconda and Visual Studio Code on your MacOS"
+echo "This script will install Homebrew MacOS"
 echo ""
 echo "Please do not close the terminal until the installation is complete"
 echo "This might take a while depending on your internet connection and what dependencies needs to be installed"
@@ -30,7 +30,7 @@ sleep 3
 clear -x
 
 # check for homebrew
-echo "Checking for existing homebrew installation..."
+echo "Checking for existing Homebrew installation..."
 
 if command -v brew > /dev/null; then
   echo "Already found Homebrew, no need to install Homebrew..."
@@ -71,7 +71,7 @@ eval "$($brew_path shellenv)"
 
 clear -x
 
-# update terminal 
+# update binary locations 
 hash -r 
 
 # if homebrew is installed correctly proceed, otherwise exit
