@@ -107,3 +107,5 @@ conda install dtumathtools pandas scipy statsmodels uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
 
+echo ""
+echo "Installed conda and related packages for 1st year at DTU!"

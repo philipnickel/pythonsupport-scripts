@@ -23,3 +23,5 @@ Write-Output "Running Windows_VSC.ps1"
 PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri '$url_ps/VSC/Install.ps1' -UseBasicParsing).Content}"
 
 
+Write-Output ""
+Write-Output "Script has finished. You may now close the terminal..."

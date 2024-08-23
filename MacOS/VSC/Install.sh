@@ -99,4 +99,4 @@ code --install-extension tomoki1207.pdf
 [ $? -ne 0 ] && exit_message
 
 echo ""
-
+echo "Installed Visual Studio Code successfully!"
