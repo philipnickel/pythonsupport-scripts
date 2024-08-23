@@ -7,16 +7,16 @@ function Refresh-Env {
 
 # Function to handle errors and exit
 function Exit-Message {
-    Write-Host "Oh no! Something went wrong."
-    Write-Host "Please visit the following web page for more info:"
-    Write-Host ""
-    Write-Host "   https://pythonsupport.dtu.dk/install/windows/automated-error.html "
-    Write-Host ""
-    Write-Host "or contact the Python Support Team:"
-    Write-Host ""
-    Write-Host "   pythonsupport@dtu.dk"
-    Write-Host ""
-    Write-Host "Or visit us during our office hours"
+    Write-Output "Oh no! Something went wrong."
+    Write-Output "Please visit the following web page for more info:"
+    Write-Output ""
+    Write-Output "   https://pythonsupport.dtu.dk/install/windows/automated-error.html "
+    Write-Output ""
+    Write-Output "or contact the Python Support Team:"
+    Write-Output ""
+    Write-Output "   pythonsupport@dtu.dk"
+    Write-Output ""
+    Write-Output "Or visit us during our office hours"
     exit 1
 }
 
@@ -30,37 +30,37 @@ if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestric
     $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted") {
     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     if ($?) {
-        Write-Host "Execution policy set to RemoteSigned for CurrentUser."
+        Write-Output "Execution policy set to RemoteSigned for CurrentUser."
     } else {
         Exit-Message
     }
 } else {
-    Write-Host "Execution policy is already set appropriately."
+    Write-Output "Execution policy is already set appropriately."
 }
 
 
 # Check if VS Code is already installed
 $vsc_paths = Get-Command code
 if ( $vsc_paths.Count -gt 0 ) {
-    Write-Host "Visual Studio Code is already installed. Skipping VS Code installation.."
+    Write-Output "Visual Studio Code is already installed. Skipping VS Code installation.."
 } else {
     # Download the VS Code installer
     $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
     $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
 
-    Write-Host "Downloading installer for Visual Studio Code..."
+    Write-Output "Downloading installer for Visual Studio Code..."
     Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
     if ($?) {
-        Write-Host "VS Code installer downloaded."
+        Write-Output "VS Code installer downloaded."
     } else {
         Exit-Message
     }
 
-    Write-Host "Installing Visual Studio Code..."
+    Write-Output "Installing Visual Studio Code..."
     # Install VS Code
     Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait
     if ($?) {
-        Write-Host "VS Code installed."
+        Write-Output "VS Code installed."
     } else {
         Exit-Message
     }
@@ -69,7 +69,7 @@ if ( $vsc_paths.Count -gt 0 ) {
 # Refresh environment variables
 Refresh-Env
 if ($?) {
-    Write-Host "Environment variables refreshed."
+    Write-Output "Environment variables refreshed."
 } else {
     Exit-Message
 }
@@ -77,27 +77,27 @@ if ($?) {
 # Re-import the updated PATH for the current session
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 
-Write-Host "Installing extensions for Visual Studio Code"
+Write-Output "Installing extensions for Visual Studio Code"
 # Install VS Code extensions
 code --install-extension ms-python.python
 if ($?) {
-    Write-Host "Python extension installed."
+    Write-Output "Python extension installed."
 } else {
     Exit-Message
 }
 
 code --install-extension ms-toolsai.jupyter
 if ($?) {
-    Write-Host "Jupyter extension installed."
+    Write-Output "Jupyter extension installed."
 } else {
     Exit-Message
 }
 
 code --install-extension tomoki1207.pdf
 if ($?) {
-    Write-Host "PDF extension installed."
+    Write-Output "PDF extension installed."
 } else {
     Exit-Message
 }
 
-Write-Host "Script finished. You may now close the terminal."
+Write-Output "Installed Visual Studio Code successfully!"

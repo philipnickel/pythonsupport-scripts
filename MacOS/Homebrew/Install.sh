@@ -80,7 +80,8 @@ hash -r
 
 # if homebrew is installed correctly proceed, otherwise exit
 if brew help > /dev/null; then
-    echo "Homebrew installed successfully!"
+    echo ""
+    echo "Installed Homebrew successfully!"
 else
     echo "Homebrew installation failed. Exiting..."
     exit_message
