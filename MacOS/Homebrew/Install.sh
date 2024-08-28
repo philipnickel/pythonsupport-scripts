@@ -8,7 +8,7 @@ exit_message () {
     echo ""
     echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
     echo ""
-    echo "or contact the Python Support Team:" 
+    echo "or contact the Python Support Team:"
     echo ""
     echo "   pythonsupport@dtu.dk"
     echo ""
@@ -17,7 +17,6 @@ exit_message () {
     exit 1
 }
 
-# Script installs miniconda and vs code 
 # Welcome text 
 echo "Welcome to Python supports MacOS Auto Homebrew Installer Script"
 echo ""

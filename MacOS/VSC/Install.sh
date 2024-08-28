@@ -24,7 +24,7 @@ if ! command -v brew > /dev/null; then
 
   # The above will install everything in a subshell.
   # So just to be sure we have it on the path
-  source ~/.bash_profile
+  [ -e ~/.bash_profile ] && source ~/.bash_profile
 
   # update binary locations 
   hash -r 
@@ -40,7 +40,7 @@ exit_message () {
     echo ""
     echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
     echo ""
-    echo "or contact the Python Support Team:" 
+    echo "or contact the Python Support Team:"
     echo ""
     echo "   pythonsupport@dtu.dk"
     echo ""
@@ -72,7 +72,7 @@ clear -x
 
 
 echo "Installing extensions for Visual Studio Code"
-eval "$($brew_path shellenv)"
+eval "$(brew shellenv)"
 
 # Test if code is installed correctly
 if code --version > /dev/null; then

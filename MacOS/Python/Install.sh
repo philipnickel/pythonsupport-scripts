@@ -25,7 +25,7 @@ if ! command -v brew > /dev/null; then
 
   # The above will install everything in a subshell.
   # So just to be sure we have it on the path
-  source ~/.bash_profile
+  [ -e ~/.bash_profile ] && source ~/.bash_profile
 
   # update binary locations 
   hash -r 
@@ -35,20 +35,20 @@ fi
 # Error function 
 # Print error message, contact information and exits script
 exit_message () {
-    echo ""
-    echo "Oh no! Something went wrong"
-    echo ""
-    echo "Please visit the following web page:"
-    echo ""
-    echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    echo ""
-    echo "or contact the Python Support Team:" 
-    echo ""
-    echo "   pythonsupport@dtu.dk"
-    echo ""
-    echo "Or visit us during our office hours"
-    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
-    exit 1
+  echo ""
+  echo "Oh no! Something went wrong"
+  echo ""
+  echo "Please visit the following web page:"
+  echo ""
+  echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+  echo ""
+  echo "or contact the Python Support Team:"
+  echo ""
+  echo "   pythonsupport@dtu.dk"
+  echo ""
+  echo "Or visit us during our office hours"
+  open https://pythonsupport.dtu.dk/install/macos/automated-error.html
+  exit 1
 }
 
 
@@ -64,10 +64,10 @@ _py_version=$PYTHON_VERSION_PS
 
 echo "Installing Miniconda..."
 if conda --version > /dev/null; then
-    echo "Miniconda or anaconda is already installed"
+  echo "Miniconda or anaconda is already installed"
 else
-    brew install --cask miniconda 
-    [ $? -ne 0 ] && exit_message
+  brew install --cask miniconda
+  [ $? -ne 0 ] && exit_message
 fi
 clear -x
 
@@ -82,7 +82,7 @@ conda init zsh
 # need to restart terminal to activate conda
 # restart terminal and continue
 # conda puts its source stuff in the bashrc file
-source ~/.bashrc
+[ -e ~/.bashrc ] && source ~/.bashrc
 
 hash -r 
 clear -x
