@@ -33,8 +33,8 @@ $executionPolicies = Get-ExecutionPolicy -List
 $currentUserPolicy = $executionPolicies | Where-Object { $_.Scope -eq "CurrentUser" } | Select-Object -ExpandProperty ExecutionPolicy
 $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMachine" } | Select-Object -ExpandProperty ExecutionPolicy
 
-if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestricted" -and
-    $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted") {
+if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Bypass" -and $currentUserPolicy -ne "Unrestricted" -and
+    $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted" -and $localMachinePolicy -ne "Bypass") {
     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     if ($?) {
         Write-Output "Execution policy set to RemoteSigned for CurrentUser."
