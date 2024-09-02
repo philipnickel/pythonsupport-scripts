@@ -28,13 +28,6 @@ $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMac
 if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Bypass" -and $currentUserPolicy -ne "Unrestricted" -and
     $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted" -and $localMachinePolicy -ne "Bypass") {
     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    if ($?) {
-        Write-Output "Execution policy set to RemoteSigned for CurrentUser."
-    } else {
-        Exit-Message
-    }
-} else {
-    Write-Output "Execution policy is already set appropriately."
 }
 
 
