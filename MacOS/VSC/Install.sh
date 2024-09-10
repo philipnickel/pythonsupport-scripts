@@ -1,3 +1,4 @@
+_prefix="PYS:"
 
 # checks for environmental variables for remote and branch 
 if [ -z "$REMOTE_PS" ]; then
@@ -18,8 +19,8 @@ url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
-  echo "Homebrew is not installed. Installing Homebrew..."
-  echo "Installing from $url_ps/Homebrew/Install.sh"
+  echo "$_prefix Homebrew is not installed. Installing Homebrew..."
+  echo "$_prefix Installing from $url_ps/Homebrew/Install.sh"
   /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 
   # The above will install everything in a subshell.
@@ -54,15 +55,15 @@ exit_message () {
 
 # check if vs code is installed
 # using multipleVersionsMac to check 
-echo "Installing Visual Studio Code if not already installed..."
+echo "$_prefix Installing Visual Studio Code if not already installed..."
 # if output is empty, then install vs code
 vspath=$(/bin/bash -c "$(curl -fsSL $url_ps/VSC/multipleVersions.sh)")
 [ $? -ne 0 ] && exit_message
 
 if [ -n "$vspath" ]  ; then
-    echo "Visual Studio Code is already installed"
+    echo "$_prefix Visual Studio Code is already installed"
 else
-    echo "Installing Visual Studio Code"
+    echo "$_prefix Installing Visual Studio Code"
     brew install --cask visual-studio-code
     [ $? -ne 0 ] && exit_message
 fi
@@ -71,19 +72,19 @@ hash -r
 clear -x
 
 
-echo "Installing extensions for Visual Studio Code"
+echo "$_prefix Installing extensions for Visual Studio Code"
 eval "$(brew shellenv)"
 
 # Test if code is installed correctly
 if code --version > /dev/null; then
-    echo "Visual Studio Code installed successfully"
+    echo "$_prefix Visual Studio Code installed successfully"
 else
-    echo "Visual Studio Code installation failed. Exiting"
+    echo "$_prefix Visual Studio Code installation failed. Exiting"
     exit_message
 fi
 clear -x
 
-echo "Installing extensions for Visual Studio Code..."
+echo "$_prefix Installing extensions for Visual Studio Code..."
 # install extensions for vs code
 # install python extension, jupyter, vscode-pdf
 #python extension
@@ -99,4 +100,4 @@ code --install-extension tomoki1207.pdf
 [ $? -ne 0 ] && exit_message
 
 echo ""
-echo "Installed Visual Studio Code successfully!"
+echo "$_prefix Installed Visual Studio Code successfully!"

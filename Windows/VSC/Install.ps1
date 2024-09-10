@@ -1,3 +1,4 @@
+$_prefix = "PYS:"
 
 # Function to refresh environment variables in the current session
 function Refresh-Env {
@@ -27,33 +28,33 @@ $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMac
 
 if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Bypass" -and $currentUserPolicy -ne "Unrestricted" -and
     $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted" -and $localMachinePolicy -ne "Bypass") {
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Set-ExecutionPolicy -WarningAction:SilentlyContinue RemoteSigned -Scope CurrentUser -Force
 }
 
 
 
 # Check if VS Code is already installed
-$vsc_paths = Get-Command code
+$vsc_paths = Get-Command -ErrorAction:SilentlyContinue code
 if ( $vsc_paths.Count -gt 0 ) {
-    Write-Output "Visual Studio Code is already installed. Skipping VS Code installation.."
+    Write-Output "$_prefix Visual Studio Code is already installed. Skipping VS Code installation.."
 } else {
     # Download the VS Code installer
     $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
     $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
 
-    Write-Output "Downloading installer for Visual Studio Code..."
+    Write-Output "$_prefix Downloading installer for Visual Studio Code..."
     Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
     if ($?) {
-        Write-Output "VS Code installer downloaded."
+        Write-Output "$_prefix VS Code installer downloaded."
     } else {
         Exit-Message
     }
 
-    Write-Output "Installing Visual Studio Code..."
+    Write-Output "$_prefix Installing Visual Studio Code..."
     # Install VS Code
     Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait
     if ($?) {
-        Write-Output "VS Code installed."
+        Write-Output "$_prefix VS Code installed."
     } else {
         Exit-Message
     }
@@ -62,35 +63,32 @@ if ( $vsc_paths.Count -gt 0 ) {
 # Refresh environment variables
 Refresh-Env
 if ($?) {
-    Write-Output "Environment variables refreshed."
+    Write-Output "$_prefix Environment variables refreshed."
 } else {
     Exit-Message
 }
 
-# Re-import the updated PATH for the current session
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
-
-Write-Output "Installing extensions for Visual Studio Code"
+Write-Output "$_prefix Installing extensions for Visual Studio Code"
 # Install VS Code extensions
 code --install-extension ms-python.python
 if ($?) {
-    Write-Output "Python extension installed."
+    Write-Output "$_prefix Python extension installed."
 } else {
     Exit-Message
 }
 
 code --install-extension ms-toolsai.jupyter
 if ($?) {
-    Write-Output "Jupyter extension installed."
+    Write-Output "$_prefix Jupyter extension installed."
 } else {
     Exit-Message
 }
 
 code --install-extension tomoki1207.pdf
 if ($?) {
-    Write-Output "PDF extension installed."
+    Write-Output "$_prefix PDF extension installed."
 } else {
     Exit-Message
 }
 
-Write-Output "Installed Visual Studio Code successfully!"
+Write-Output "$_prefix Installed Visual Studio Code successfully!"
