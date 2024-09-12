@@ -1,3 +1,4 @@
+$_prefix = "PYS:"
 
 # check for env variable PYTHONVERSIONPS 
 # if it isn't set set it to 3.11
@@ -35,7 +36,7 @@ $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMac
 
 if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Bypass" -and $currentUserPolicy -ne "Unrestricted" -and
     $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted" -and $localMachinePolicy -ne "Bypass") {
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Set-ExecutionPolicy -WarningAction:SilentlyContinue RemoteSigned -Scope CurrentUser -Force
 }
 
 # Check if Miniconda or Anaconda is already installed
@@ -57,19 +58,19 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
     $minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-x86_64.exe"
 
-    Write-Output "Downloading installer for Miniconda..."
+    Write-Output "$_prefix Downloading installer for Miniconda..."
     Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
     if ($?) {
-        Write-Output "Miniconda installer downloaded."
+        Write-Output "$_prefix Miniconda installer downloaded."
     } else {
         Exit-Message
     }
 
-    Write-Output "Will now install Miniconda..."
+    Write-Output "$_prefix Installing Miniconda..."
     # Install Miniconda
     Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
     if ($?) {
-        Write-Output "Miniconda installed."
+        Write-Output "$_prefix Miniconda installed."
     } else {
         Exit-Message
     }
@@ -81,7 +82,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         } elseif (Test-Path "C:\ProgramData\Miniconda3\condabin") {
             $condaPath = "C:\ProgramData\Miniconda3\condabin"
         } else {
-            Write-Output "Miniconda is not installed."
+            Write-Output "$_prefix Miniconda is not installed."
             Exit-Message
         }
 
@@ -91,34 +92,44 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
 
     Add-CondaToPath
+    Refresh-Env
     if ($?) {
-        Refresh-Env
-        Write-Output "Environment variables refreshed."
+        Write-Output "$_prefix Environment variables refreshed."
     } else {
         Exit-Message
     }
 
-    # Re-import the updated PATH for the current session
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 
-    # Activate conda base environment
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
+    # Check conda-paths
+    $conda_paths = Get-Command -ErrorAction:SilentlyContinue conda
     if ($?) {
-        Write-Output "Conda base environment activated."
+        Write-Output "$conda_paths"
+
+        # Forcefully running the conda.bat file
+        & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
     } else {
+        conda activate
+    }
+    if (-not $?) {
+        Write-Output "$_prefix Conda base environment failed to activate."
         Exit-Message
     }
 
     # Initialize conda
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" init
-    if ($?) {
-        Write-Output "Conda initialized."
-    } else {
+    Write-Output "$_prefix Initialising conda..."
+    conda init
+    if (-not $?) {
+        Exit-Message
+    }
+
+    Write-Output "$_prefix Showing where it is installed:"
+    conda info --base
+    if (-not $?) {
         Exit-Message
     }
 
     # Ensuring correct channels are set
-    Write-Output "Removing defaults channel (due to licensing problems)"
+    Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
     if (-not $?) {
         Exit-Message
@@ -127,13 +138,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
         Exit-Message
     }
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --set channel_priority strict
+    if (-not $?) {
+        Exit-Message
+    }
 
-    # Ensure version of Python
-    Write-Output "Updating Python to version $env:PYTHON_VERSION_PS..."
+    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
-    if ($?) {
-        Write-Output "Python updated version installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
@@ -141,14 +153,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # There may be license issues due to DTU being
     # a rather big institution. So our installation guides
     # Will be pre-cautious here, and remove the defaults channels.
-        # Install packages
+    # Install packages
         
+    Write-Output "$_prefix Installing packages..."
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas scipy statsmodels uncertainties -y
-    if ($?) {
-        Write-Output "Additional packages installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 }
 
-Write-Output "Installed conda and related packages for 1st year at DTU!"
+Write-Output "$_prefix Installed conda and related packages for 1st year at DTU!"

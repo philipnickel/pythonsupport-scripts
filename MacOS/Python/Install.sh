@@ -1,3 +1,4 @@
+_prefix="PYS:"
 
 # checks for environmental variables for remote and branch 
 if [ -z "$REMOTE_PS" ]; then
@@ -14,13 +15,13 @@ export BRANCH_PS
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 
-echo "Python installation"
+echo "$_prefix Python installation"
 
 # Check for homebrew
 # if not installed call homebrew installation script
 if ! command -v brew > /dev/null; then
-  echo "Homebrew is not installed. Installing Homebrew..."
-  echo "Installing from $url_ps/Homebrew/Install.sh"
+  echo "$_prefix Homebrew is not installed. Installing Homebrew..."
+  echo "$_prefix Installing from $url_ps/Homebrew/Install.sh"
   /bin/bash -c "$(curl -fsSL $url_ps/Homebrew/Install.sh)"
 
   # The above will install everything in a subshell.
@@ -62,17 +63,17 @@ _py_version=$PYTHON_VERSION_PS
 # Install miniconda
 # Check if miniconda is installed
 
-echo "Installing Miniconda..."
+echo "$_prefix Installing Miniconda..."
 if conda --version > /dev/null; then
-  echo "Miniconda or anaconda is already installed"
+  echo "$_prefix Miniconda or anaconda is already installed"
 else
+  echo "$_prefix Miniconda or anaconda not found, installing Miniconda"
   brew install --cask miniconda
   [ $? -ne 0 ] && exit_message
 fi
 clear -x
 
-
-echo "Initialising conda..."
+echo "$_prefix Initialising conda..."
 conda init bash 
 [ $? -ne 0 ] && exit_message
 
@@ -84,15 +85,20 @@ conda init zsh
 # conda puts its source stuff in the bashrc file
 [ -e ~/.bashrc ] && source ~/.bashrc
 
+echo "$_prefix Showing where it is installed:"
+conda info --base
+[ $? -ne 0 ] && exit_message
+
 hash -r 
 clear -x
 
-echo "Removing defaults channel (due to licensing problems)"
-conda config --add channels conda-forge
+echo "$_prefix Removing defaults channel (due to licensing problems)"
 conda config --remove channels defaults
+conda config --add channels conda-forge
+# Forcefully try to always use conda-forge
+conda config --set channel_priority strict
 
-
-echo "Ensuring Python version ${_py_version}..."
+echo "$_prefix Ensuring Python version ${_py_version}..."
 conda install python=${_py_version} -y
 [ $? -ne 0 ] && exit_message
 clear -x 
@@ -102,10 +108,10 @@ clear -x
 # a rather big institution. So our installation guides
 # Will be pre-cautious here, and remove the defaults channels.
 
-echo "Installing packages..."
+echo "$_prefix Installing packages..."
 conda install dtumathtools pandas scipy statsmodels uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
 
 echo ""
-echo "Installed conda and related packages for 1st year at DTU!"
+echo "$_prefix Installed conda and related packages for 1st year at DTU!"

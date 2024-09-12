@@ -1,0 +1,135 @@
+name: Mac tests
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        has-conda: [true, false]  # Test with pre-installed conda
+        python-version: ["3.10", "3.11"]  # Test multiple Python versions
+        os: [macos-latest, macos-12]  # Test on different macOS versions
+
+    steps:
+
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        if: ${{ matrix.has-conda }}
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Remove conda (if present)
+        if: ${{ !matrix.has-conda }}
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Install from main
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          echo "Running script from remote dtudk on branch main with Python $PYTHON_VERSION_PS"
+          if [[ "${{ matrix.has-conda }}" == "true" ]]; then
+            { yes yes || true; } | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS_AutoInstall.sh)"
+          else
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS_AutoInstall.sh)"
+          fi
+
+      - name: Install from ${{ github.event.pull_request.head.ref }}
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          # TODO, this will *not* catch when a user forks the repo, and change the name of the project
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
+          if [[ "${{ matrix.has-conda }}" == "true" ]]; then
+            { yes yes || true; } | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
+          else
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
+          fi
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+          fi
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (${{ matrix.python-version }})
+        run: |
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="${{ matrix.python-version }}"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
