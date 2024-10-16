@@ -144,7 +144,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
 
     Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
+    $env:USERPROFILE\Miniconda3\condabin\conda.bat install python=$env:PYTHON_VERSION_PS -y
     if (-not $?) {
         Exit-Message
     }
