@@ -128,13 +128,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
-    Write-Output "Debugging 1: "
-    $output = & $condaBatPath install python=$env:PYTHON_VERSION_PS -y 2>&1  # Capture both stdout and stderr
+
+    Write-Output "Debugging 1 running command: & '"$condaBatPath"' install python=$env:PYTHON_VERSION_PS -y"
+    $output = & $condaBatPath "install" "python=$env:PYTHON_VERSION_PS" "-y" 2>&1  # Capture both stdout and stderr
     Write-Output $output
 
     Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
     # Ensures correct version of python
-    & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
+    & $condaBatPath "install" "python=$env:PYTHON_VERSION_PS" "-y"
     if (-not $?) {
         Exit-Message
     }
