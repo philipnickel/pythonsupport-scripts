@@ -1,3 +1,4 @@
+$_prefix = "PYS:"
 
 # check for env variable PYTHONVERSIONPS 
 # if it isn't set set it to 3.11
@@ -15,16 +16,16 @@ function Refresh-Env {
 
 # Function to handle errors and exit
 function Exit-Message {
-    Write-Host "Oh no! Something went wrong."
-    Write-Host "Please visit the following web page for more info:"
-    Write-Host ""
-    Write-Host "          https://pythonsupport.dtu.dk/install/windows/automated-error.html "
-    Write-Host ""
-    Write-Host "or contact the Python Support Team:"
-    Write-Host ""
-    Write-Host "          Pythonsupport@dtu.dk"
-    Write-Host ""
-    Write-Host "Or visit us during our office hours"
+    Write-Output "Oh no! Something went wrong."
+    Write-Output "Please visit the following web page for more info:"
+    Write-Output ""
+    Write-Output "   https://pythonsupport.dtu.dk/install/windows/automated-error.html "
+    Write-Output ""
+    Write-Output "or contact the Python Support Team:"
+    Write-Output ""
+    Write-Output "   pythonsupport@dtu.dk"
+    Write-Output ""
+    Write-Output "Or visit us during our office hours"
     exit 1
 }
 
@@ -33,16 +34,9 @@ $executionPolicies = Get-ExecutionPolicy -List
 $currentUserPolicy = $executionPolicies | Where-Object { $_.Scope -eq "CurrentUser" } | Select-Object -ExpandProperty ExecutionPolicy
 $localMachinePolicy = $executionPolicies | Where-Object { $_.Scope -eq "LocalMachine" } | Select-Object -ExpandProperty ExecutionPolicy
 
-if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Unrestricted" -and
-    $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted") {
-    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-    if ($?) {
-        Write-Host "Execution policy set to RemoteSigned for CurrentUser."
-    } else {
-        Exit-Message
-    }
-} else {
-    Write-Host "Execution policy is already set appropriately."
+if ($currentUserPolicy -ne "RemoteSigned" -and $currentUserPolicy -ne "Bypass" -and $currentUserPolicy -ne "Unrestricted" -and
+    $localMachinePolicy -ne "RemoteSigned" -and $localMachinePolicy -ne "Unrestricted" -and $localMachinePolicy -ne "Bypass") {
+    Set-ExecutionPolicy -WarningAction:SilentlyContinue RemoteSigned -Scope CurrentUser -Force
 }
 
 # Check if Miniconda or Anaconda is already installed
@@ -52,31 +46,31 @@ $anacondaPath1 = "$env:USERPROFILE\Anaconda3"
 $anacondaPath2 = "C:\ProgramData\Anaconda3"
 
 if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $anacondaPath1) -or (Test-Path $anacondaPath2)) {
-    Write-Host "Miniconda or Anaconda is already installed. Skipping Miniconda installation."
-    Write-Host "If you wish to install Miniconda using this script, please uninstall the existing Anaconda/Miniconda installation and run the script again."
+    Write-Output "Miniconda or Anaconda is already installed. Skipping Miniconda installation."
+    Write-Output "If you wish to install Miniconda using this script, please uninstall the existing Anaconda/Miniconda installation and run the script again."
 } else {
     # Script by Python Installation Support DTU
-    Write-Host "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
-    Write-Host "This script will take a while to run, please be patient, and don't close PowerShell before it says 'script finished'."
+    Write-Output "This script will install Python along with Visual Studio Code - and everything you need to get started with programming"
+    Write-Output "This script will take a while to run, please be patient, and don't close PowerShell before it says 'script finished'."
     Start-Sleep -Seconds 3
 
     # Download the Miniconda installer
     $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
     $minicondaInstallerPath = "$env:USERPROFILE\Downloads\Miniconda3-latest-Windows-x86_64.exe"
 
-    Write-Host "Downloading installer for Miniconda..."
+    Write-Output "$_prefix Downloading installer for Miniconda..."
     Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
     if ($?) {
-        Write-Host "Miniconda installer downloaded."
+        Write-Output "$_prefix Miniconda installer downloaded."
     } else {
         Exit-Message
     }
 
-    Write-Host "Will now install Miniconda..."
+    Write-Output "$_prefix Installing Miniconda..."
     # Install Miniconda
     Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
     if ($?) {
-        Write-Host "Miniconda installed."
+        Write-Output "$_prefix Miniconda installed."
     } else {
         Exit-Message
     }
@@ -88,7 +82,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         } elseif (Test-Path "C:\ProgramData\Miniconda3\condabin") {
             $condaPath = "C:\ProgramData\Miniconda3\condabin"
         } else {
-            Write-Host "Miniconda is not installed."
+            Write-Output "$_prefix Miniconda is not installed."
             Exit-Message
         }
 
@@ -98,34 +92,44 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
 
     Add-CondaToPath
+    Refresh-Env
     if ($?) {
-        Refresh-Env
-        Write-Host "Environment variables refreshed."
+        Write-Output "$_prefix Environment variables refreshed."
     } else {
         Exit-Message
     }
 
-    # Re-import the updated PATH for the current session
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
 
-    # Activate conda base environment
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
+    # Check conda-paths
+    $conda_paths = Get-Command -ErrorAction:SilentlyContinue conda
     if ($?) {
-        Write-Host "Conda base environment activated."
+        Write-Output "$conda_paths"
+
+        # Forcefully running the conda.bat file
+        & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" activate
     } else {
+        conda activate
+    }
+    if (-not $?) {
+        Write-Output "$_prefix Conda base environment failed to activate."
         Exit-Message
     }
 
     # Initialize conda
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" init
-    if ($?) {
-        Write-Host "Conda initialized."
-    } else {
+    Write-Output "$_prefix Initialising conda..."
+    conda init
+    if (-not $?) {
+        Exit-Message
+    }
+
+    Write-Output "$_prefix Showing where it is installed:"
+    conda info --base
+    if (-not $?) {
         Exit-Message
     }
 
     # Ensuring correct channels are set
-    Write-Host "Removing defaults channel (due to licensing problems)"
+    Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
     if (-not $?) {
         Exit-Message
@@ -134,13 +138,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
         Exit-Message
     }
+    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --set channel_priority strict
+    if (-not $?) {
+        Exit-Message
+    }
 
-    # Ensure version of Python
-    Write-Host "Updating Python to version $env:PYTHON_VERSION_PS..."
+    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
-    if ($?) {
-        Write-Host "Python updated version installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
@@ -148,13 +153,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # There may be license issues due to DTU being
     # a rather big institution. So our installation guides
     # Will be pre-cautious here, and remove the defaults channels.
-        # Install packages
+    # Install packages
         
+    Write-Output "$_prefix Installing packages..."
     & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas scipy statsmodels uncertainties -y
-    if ($?) {
-        Write-Host "Additional packages installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 }
-Write-Host "Script finished. You may now close the terminal."
+
+Write-Output "$_prefix Installed conda and related packages for 1st year at DTU!"

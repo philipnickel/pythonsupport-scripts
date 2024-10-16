@@ -1,0 +1,126 @@
+name: Windows tests
+
+defaults:
+  run:
+    shell: pwsh -Login {0}
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        has-conda: [true, false]  # Test with pre-installed conda
+        python-version: ["3.10", "3.11"]  # Test multiple Python versions
+        os: [windows-latest]
+
+    steps:
+
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        if: ${{ matrix.has-conda }}
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Remove conda (if present)
+        if: ${{ !matrix.has-conda }}
+        run: |
+          try {
+            Get-Command conda
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          } catch {
+            Write-Output "Conda was never installed..."
+            Write-Output $_
+          }
+
+      - name: Check conda
+        run: |
+          try {
+            Get-Command conda
+            Write-Output "Base environment location:"
+            conda info --base
+          } catch {
+            Write-Output "Conda not found..."
+            Write-Output $_
+          }
+
+      - name: Install from main
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          Write-Output "Running script from remote dtudk on branch main with Python $env:PYTHON_VERSION_PS"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows_AutoInstall.ps1" -UseBasicParsing).Content
+
+      - name: Install from ${{ github.event.pull_request.head.ref }}
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env: 
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          Write-Output "Running script from remote $env:REMOTE_PS on branch $env:BRANCH_PS with Python $env:PYTHON_VERSION_PS"
+          Write-Output "Running Windows_AutoInstall.ps1"
+          Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows_AutoInstall.ps1" -UseBasicParsing).Content
+
+      - name: Verify VS Code
+        run: |
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          try {
+            Get-Command code
+            code --version
+          } catch {
+            Write-Output "VS Code not installed correctly"
+            Write-Output $_
+            exit 1
+          }
+
+      - name: Verify conda
+        run: |
+          #$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          try {
+            Get-Command conda
+            conda --version
+            conda info --base
+          } catch {
+            Write-Output "Conda not installed correctly"
+            Write-Output $_
+            exit 1
+          }
+
+      - name: Verify python (${{ matrix.python-version }})
+        run: |
+          #$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          Get-Command python
+
+          # Verify the installed Python version
+          $expectedVersion = "${{ matrix.python-version }}"
+          $installedVersion = (python --version).Split(" ")[1].Trim()
+          if (-not $installedVersion.StartsWith($expectedVersion)) {
+            Write-Output "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            exit 1
+          }
+          Write-Output "Correct Python version $installedVersion is installed."
+
+          # Verify Python package imports
+          try {
+            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+          } catch {
+            Write-Output "Failed to import Python packages"
+            Write-Output $_
+            exit 1
+          }
+
