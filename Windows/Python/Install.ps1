@@ -128,24 +128,28 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+    # Define the conda.bat path
+    $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
+
     # Ensuring correct channels are set
     Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
+    & $condaBatPath config --add channels conda-forge
     if (-not $?) {
         Exit-Message
     }
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --remove channels defaults
+    & $condaBatPath config --remove channels defaults
     if (-not $?) {
         Exit-Message
     }
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --set channel_priority strict
+    & $condaBatPath config --set channel_priority strict
     if (-not $?) {
         Exit-Message
     }
-    Write-Output "Checkpoint!!!!"
+    
+    # Now ensures correct version of python
 
     Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
+    & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
     if (-not $?) {
         Exit-Message
     }
@@ -157,7 +161,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # Install packages
         
     Write-Output "$_prefix Installing packages..."
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas scipy statsmodels uncertainties -y
+    & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {
         Exit-Message
     }
