@@ -131,6 +131,16 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     # Define the conda.bat path
     $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
 
+    Write-Output "Debugging 1: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
+
+    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
+    # Ensures correct version of python
+    & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
+    if (-not $?) {
+        Exit-Message
+    }
+
+
     # Ensuring correct channels are set
     Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
     & $condaBatPath config --add channels conda-forge
@@ -147,15 +157,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
     
     # Now ensures correct version of python
-    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    Write-Output "Debugging: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
-
-    # Ensures correct version of python
-    & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
-    if (-not $?) {
-        Exit-Message
-    }
-
+    Write-Output "Debugging 2: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
     # We will not install the Anaconda GUI
     # There may be license issues due to DTU being
     # a rather big institution. So our installation guides
