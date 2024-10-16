@@ -147,8 +147,10 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
     
     # Now ensures correct version of python
-
     Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
+    Write-Output "Debugging: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
+
+    # Ensures correct version of python
     & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
     if (-not $?) {
         Exit-Message
