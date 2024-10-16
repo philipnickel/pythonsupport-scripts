@@ -128,10 +128,9 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
-    # Define the conda.bat path
-    $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
-
-    Write-Output "Debugging 1: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
+    Write-Output "Debugging 1: "
+    $output = & $condaBatPath install python=$env:PYTHON_VERSION_PS -y 2>&1  # Capture both stdout and stderr
+    Write-Output $output
 
     Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
     # Ensures correct version of python
@@ -156,12 +155,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
     
-    # Now ensures correct version of python
-    Write-Output "Debugging 2: $condaBatPath install python=$env:PYTHON_VERSION_PS -y"
-    # We will not install the Anaconda GUI
-    # There may be license issues due to DTU being
-    # a rather big institution. So our installation guides
-    # Will be pre-cautious here, and remove the defaults channels.
     # Install packages
         
     Write-Output "$_prefix Installing packages..."
