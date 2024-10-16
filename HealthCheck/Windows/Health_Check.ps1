@@ -30,7 +30,7 @@ $healthCheckResults =
         "path"      = $null
         "version"   = $null
     }
-    "conda"             = @{
+    "conda"            = @{
         "name"      = "Conda"
         "installed" = $null
         "path"      = $null
@@ -105,7 +105,23 @@ foreach ($program in $requiredPrograms) {
     if ($programPath) {
         $healthCheckResults.$program.installed = $true
         $healthCheckResults.$program.path = $programPath
-        $healthCheckResults.$program.version = & $program --version 2>&1
+        
+        if ($program -eq "conda") {
+            # Check if it's Miniconda or Anaconda
+            $condaInstallPath = $healthCheckResults.conda.path
+
+            if ($condaInstallPath -match "miniconda") {
+                $healthCheckResults.conda.name = "Default Conda - Miniconda"
+            } elseif ($condaInstallPath -match "anaconda") {
+                $healthCheckResults.conda.name = "Default Conda - Anaconda"
+            }
+
+            # Get the conda version
+            $condaVersion = & conda --version
+            $healthCheckResults.conda.version = $condaVersion
+        } else {
+            $healthCheckResults.$program.version = & $program --version 2>&1
+        }
     } else {
         $healthCheckResults.$program.installed = $false
         $healthCheckResults.$program.path = $null
