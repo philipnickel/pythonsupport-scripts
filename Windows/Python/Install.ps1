@@ -147,19 +147,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
      # Ensures correct version of python
-    #Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    # Ensures correct version of python
-    Write-Output "Command to be executed:"
-    Write-Output "& `"$condaBatPath`" install python=$env:PYTHON_VERSION_PS -y"
 
     if (-not $env:PYTHON_INSTALL_COMMAND_EXECUTED) {
-        Write-Output "Executing the command"
         & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
         $env:PYTHON_INSTALL_COMMAND_EXECUTED = "true"
     } else {
         Write-Output "Python installation command has already been executed, skipping..."
     }
-
     if (-not $?) {
         Exit-Message
     }
@@ -168,9 +162,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
    # Install packages
         
     Write-Output "$_prefix Installing packages..."
-    Write-Host "Installing packages"
-    Write-Output "Command to be executed:"
-    Write-Output "& `"$condaBatPath`" install dtumathtools pandas scipy statsmodels uncertainties -y"
     & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {
         Exit-Message
