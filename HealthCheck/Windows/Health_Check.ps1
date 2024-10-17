@@ -187,7 +187,7 @@ $displayWidth = 30
 
 function Get-CondaEnvironments {
     Write-Host
-    Write-Host "`nChecking for Conda/Anaconda installations..."
+    Write-Host "`nChecking for Conda enviroment and installations"
     Write-Host ("=" * $displayWidth)
     
 
