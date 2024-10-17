@@ -22,6 +22,10 @@ $topBottomSide
 
 Write-Host $banner
 
+$colorCodeGreen = "[1;42m"
+$colorCodeRed = "[1;41m"
+$resetColor = "[0m"  # Reset to default color
+
 $healthCheckResults = 
 [ordered]@{
     "python"            = @{
@@ -30,7 +34,7 @@ $healthCheckResults =
         "path"      = $null
         "version"   = $null
     }
-    "conda"             = @{
+    "conda"            = @{
         "name"      = "Conda"
         "installed" = $null
         "path"      = $null
@@ -105,7 +109,23 @@ foreach ($program in $requiredPrograms) {
     if ($programPath) {
         $healthCheckResults.$program.installed = $true
         $healthCheckResults.$program.path = $programPath
-        $healthCheckResults.$program.version = & $program --version 2>&1
+        
+        if ($program -eq "conda") {
+            # Check if it's Miniconda or Anaconda
+            $condaInstallPath = $healthCheckResults.conda.path
+
+            if ($condaInstallPath -match "miniconda") {
+                $healthCheckResults.conda.name = "Default Conda - Miniconda"
+            } elseif ($condaInstallPath -match "anaconda") {
+                $healthCheckResults.conda.name = "Default Conda - Anaconda"
+            }
+
+            # Get the conda version
+            $condaVersion = & conda --version
+            $healthCheckResults.conda.version = $condaVersion
+        } else {
+            $healthCheckResults.$program.version = & $program --version 2>&1
+        }
     } else {
         $healthCheckResults.$program.installed = $false
         $healthCheckResults.$program.path = $null
@@ -167,7 +187,7 @@ $displayWidth = 30
 
 function Get-CondaEnvironments {
     Write-Host
-    Write-Host "`nChecking for Conda/Anaconda installations..."
+    Write-Host "`nChecking for Conda enviroment and installations"
     Write-Host ("=" * $displayWidth)
     
 
@@ -200,122 +220,8 @@ function Get-CondaEnvironments {
         "$env:ProgramFiles\Anaconda3",
         "$env:ProgramFiles(x86)\Anaconda3",
         "$env:LOCALAPPDATA\Continuum\anaconda3",
-        "$env:SystemDrive\Anaconda3"
-    )
-
-    $AenvFound = $false
-    foreach ($location in $anacondaLocations) {
-        if (Test-Path $location) {
-            Write-Host "`nAnaconda installation found"
-            
-            # Get the list of environments
-            $anacondaEnvs = & "$location\Scripts\conda.exe" info --envs 2>$null
-
-            if ($anacondaEnvs -match "^\s*#") { # Extract environment names
-                $envLines = $anacondaEnvs -split "`n" | Where-Object { $_ -match "^\s*[^#]" }
-
-                if ($envLines.Count -gt 0) {
-                    foreach ($line in $envLines) {
-                        $envName = $line -replace '^\s*-\s*', '' -replace '\s+\S*$', ''
-                        Write-Host $envName
-                    }
-                    $AenvFound = $true
-                }
-            }
-        }
-    }
-    if (-not $AenvFound) {
-        Write-Host "`nNo Anaconda installation found."
-    } elseif (-not $AenvFound) {
-        Write-Host "`nNo Anaconda environments found."
-    }
-}
-
-function Get-CondaEnvironmentsVerbose {
-    param (
-        [string[]]$pn = @("dtumathtools", "scipy", "pandas", "statsmodels", "uncertainties")  # List of packages to check
-    )
-
-    Write-Host
-    Write-Host "`nChecking for Conda/Anaconda installations..."
-    Write-Host ("=" * $displayWidth)
-
-    # Function to check if packages are installed in a given environment and display their versions
-    function Test-PackagesInEnvironment {
-        param (
-            [string]$envName,
-            [string]$condaPath
-        )
-
-        $colorCodeGreen = "[1;42m"
-        $colorCodeRed = "[1;41m"
-        $resetColor = "[0m"  # Reset to default color
-
-        # Get the Python version for the environment
-        $pythonVersion = & $condaPath run -n $envName python --version 2>$null
-
-        Write-Host "`nEnvironment: $envName ($pythonVersion)"
-        Write-Host ("----")
-
-        # Print header for columns
-        Write-Host ("{0,-20} {1,-15} {2,-10}" -f "Package", "Status", "Version")
-
-        foreach ($packageName in $pn) {
-            # List the package in the specific environment
-            $packageCheck = & $condaPath list -n $envName $packageName 2>$null
-            if ($packageCheck -match $packageName) {
-                # Extract the package info line containing the version
-                $packageInfo = $packageCheck | Where-Object { $_ -match $packageName }
-
-                # Extract the version number from the package info
-                $packageVersion = ($packageInfo -split '\s+') | Select-Object -Index 1
-                
-                if ($packageVersion) {
-                    # Print aligned output with status and version
-                    Write-Host ("{0,-20} {1,-20} {2,-10}" -f $packageName, "${colorCodeGreen}INSTALLED${resetColor}      ", $packageVersion)
-                } else {
-                    Write-Host ("{0,-20} {1,-20} {2,-10}" -f $packageName, "${colorCodeGreen}INSTALLED${resetColor}      ", "N/A")
-                }
-            } else {
-                # Print not installed packages
-                Write-Host ("{0,-20} {1,-15}" -f $packageName, "${colorCodeRed}NOT INSTALLED${resetColor}")
-            }
-        }
-    }
-
-    # Check if Conda is in the PATH
-    $condaInPath = Get-Command conda -ErrorAction SilentlyContinue
-    if ($condaInPath) {
-        $CenvFound = $false
-        # Get the list of environments
-        $condaEnvs = & conda info --envs 2>$null
-
-        # Check if any environments were found
-        if ($condaEnvs -match "^\s*#") {
-            # Extract environment names
-            $envLines = $condaEnvs -split "`n" | Where-Object { $_ -match "^\s*[^#]" }
-
-            if ($envLines.Count -gt 0) {
-                Write-Host "`nConda environments found:"
-                foreach ($line in $envLines) {
-                    $envName = $line -replace '^\s*-\s*', '' -replace '\s+\S*$', ''
-                    Test-PackagesInEnvironment -envName $envName -condaPath "conda"
-                }
-                $CenvFound = $true
-            }
-        }
-
-        if (-not $CenvFound) {
-            Write-Host "`nNo Conda environments found."
-        }
-    }
-
-    # Check for Anaconda installations (in case conda is not in PATH)
-    $anacondaLocations = @(
-        "$env:ProgramFiles\Anaconda3",
-        "$env:ProgramFiles(x86)\Anaconda3",
-        "$env:LOCALAPPDATA\Continuum\anaconda3",
-        "$env:SystemDrive\Anaconda3"
+        "$env:SystemDrive\Anaconda3",
+        "$env:USERPROFILE\Anaconda3" 
     )
 
     $AenvFound = $false
@@ -323,32 +229,34 @@ function Get-CondaEnvironmentsVerbose {
         if (Test-Path $location) {
             Write-Host "`nAnaconda installation found"
             $AenvFound = $true
-            
-            # Get the list of environments
-            $anacondaEnvs = & "$location\Scripts\conda.exe" info --envs 2>$null
-
-            # Check if any environments were found
-            if ($anacondaEnvs -match "^\s*#") {
-                # Extract environment names
-                $envLines = $anacondaEnvs -split "`n" | Where-Object { $_ -match "^\s*[^#]" }
-
-                if ($envLines.Count -gt 0) {
-                    Write-Host "`nAnaconda environments found:"
-                    foreach ($line in $envLines) {
-                        $envName = $line -replace '^\s*-\s*', '' -replace '\s+\S*$', ''
-                        Test-PackagesInEnvironment -envName $envName -condaPath "$location\Scripts\conda.exe"
-                    }
-                    $AenvFound = $true
-                }
-            }
         }
     }
-    
     if (-not $AenvFound) {
         Write-Host "`nNo Anaconda installation found."
-    } elseif (-not $AenvFound) {
-        Write-Host "`nNo Anaconda environments found."
     }
+}
+
+
+
+function Test-PythonPackages {
+    Write-Host "`n"
+    Write-Host "`nVerifying Importation of Required Python Packages"
+    Write-Host ("=" * $displayWidth)
+
+    $result = python -c "
+try:
+    import dtumathtools, pandas, scipy, statsmodels, uncertainties
+    print('Success')
+except ImportError:
+    print('Failed')
+" 2>$null
+
+    if ($result -eq 'Success') {
+        Write-Host ("{0,-30} {1,-20}"  -f "Verification", "${colorCodeGreen}SUCCESS${resetColor}")
+    } else {
+        Write-Host ("{0,-30} {1,-20}"  -f "Verification", "${colorCodeRed}FAILED${resetColor}")
+    }
+    Write-Host "`n"
 }
 
 
@@ -516,6 +424,7 @@ function nonVerboseOutput {
     }
 
     Write-Output $allinfo
+    Test-PythonPackages
     Get-CondaEnvironments
 }
 
@@ -525,14 +434,4 @@ if ($args[0] -contains "--verbose" -or $args[0] -contains "-v") {
 }
 else {
     nonVerboseOutput
-}
-
-# Check for Conda environments and package specifictaion
-if ($args[1] -contains "--ce" -or $args[1] -contains "-ce") {
-    if ($args[2]) {
-        Get-CondaEnvironmentsVerbose -pn @($args[2..($args.Length-1)])
-    }
-    else {
-        Get-CondaEnvironmentsVerbose
-    }
 }
