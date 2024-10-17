@@ -165,6 +165,9 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
    # Install packages
         
     Write-Output "$_prefix Installing packages..."
+    Write-Host "Installing packages"
+    Write-Output "Command to be executed:"
+    Write-Output "& `"$condaBatPath`" install dtumathtools pandas scipy statsmodels uncertainties -y"
     & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {
         Exit-Message
