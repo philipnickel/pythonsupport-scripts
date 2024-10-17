@@ -153,7 +153,9 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     Write-Output "Command to be executed:"
     Write-Output "& `"$condaBatPath`" install python=$env:PYTHON_VERSION_PS -y"
 
-    & $condaBatPath install python #install python -y
+
+    Write-Output "Only now running the command"
+    & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
     if (-not $?) {
         Exit-Message
     }
