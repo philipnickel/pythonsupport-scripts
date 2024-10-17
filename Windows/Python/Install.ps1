@@ -166,6 +166,12 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
         Exit-Message
     }
+
+    Write-Output "$_prefix Changing channel priority back to flexible..."
+    & $condaBatPath config --set channel_priority flexible
+    if (-not $?) {
+        Exit-Message
+    }
 }
 
 Write-Output "$_prefix Installed conda and related packages for 1st year at DTU!"

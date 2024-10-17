@@ -113,5 +113,11 @@ conda install dtumathtools pandas scipy statsmodels uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
 
+echo "$_prefix Changing channel priority back to flexible..."
+conda config --set channel_priority flexible
+[ $? -ne 0 ] && exit_message
+clear -x
+
+
 echo ""
 echo "$_prefix Installed conda and related packages for 1st year at DTU!"
