@@ -228,27 +228,11 @@ function Get-CondaEnvironments {
     foreach ($location in $anacondaLocations) {
         if (Test-Path $location) {
             Write-Host "`nAnaconda installation found"
-            
-            # Get the list of environments
-            $anacondaEnvs = & "$location\Scripts\conda.exe" info --envs 2>$null
-
-            if ($anacondaEnvs -match "^\s*#") { # Extract environment names
-                $envLines = $anacondaEnvs -split "`n" | Where-Object { $_ -match "^\s*[^#]" }
-
-                if ($envLines.Count -gt 0) {
-                    foreach ($line in $envLines) {
-                        $envName = $line -replace '^\s*-\s*', '' -replace '\s+\S*$', ''
-                        Write-Host $envName
-                    }
-                    $AenvFound = $true
-                }
-            }
+            $AenvFound = $true
         }
     }
     if (-not $AenvFound) {
         Write-Host "`nNo Anaconda installation found."
-    } elseif (-not $AenvFound) {
-        Write-Host "`nNo Anaconda environments found."
     }
 }
 
