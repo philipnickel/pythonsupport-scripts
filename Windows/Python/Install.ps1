@@ -155,6 +155,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 
 
     Write-Output "Only now running the command"
+    Write-Host "Only now running the command"
     & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
     if (-not $?) {
         Exit-Message
