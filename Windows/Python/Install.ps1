@@ -130,6 +130,17 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 
 
     $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
+
+    # Ensures correct version of python
+    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
+    # Ensures correct version of python
+    conda install python=$env:PYTHON_VERSION_PS -y
+    if (-not $?) {
+        Exit-Message
+    }
+
+
+
     # Ensuring correct channels are set
     Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
     & $condaBatPath config --add channels conda-forge
@@ -145,14 +156,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
     
-    # Ensures correct version of python
-    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    # Ensures correct version of python
-    conda install python=$env:PYTHON_VERSION_PS -y
-    if (-not $?) {
-        Exit-Message
-    }
-
    # Install packages
         
     Write-Output "$_prefix Installing packages..."
