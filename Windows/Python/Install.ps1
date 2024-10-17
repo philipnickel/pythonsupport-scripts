@@ -131,14 +131,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 
     $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
 
-    # Ensures correct version of python
-    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    # Ensures correct version of python
-    conda install python=$env:PYTHON_VERSION_PS -y
-    if (-not $?) {
-        Exit-Message
-    }
-
 
 
     # Ensuring correct channels are set
@@ -155,7 +147,15 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
         Exit-Message
     }
-    
+     # Ensures correct version of python
+    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
+    # Ensures correct version of python
+    conda install python #=$env:PYTHON_VERSION_PS -y
+    if (-not $?) {
+        Exit-Message
+    }
+
+   
    # Install packages
         
     Write-Output "$_prefix Installing packages..."
