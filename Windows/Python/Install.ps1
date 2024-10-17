@@ -8,7 +8,6 @@ if (-not $env:PYTHON_VERSION_PS) {
 }
 
 
-
 # Function to refresh environment variables in the current session
 function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
@@ -128,35 +127,42 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+
+    $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
+
+
+
     # Ensuring correct channels are set
     Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --add channels conda-forge
+    & $condaBatPath config --add channels conda-forge
     if (-not $?) {
         Exit-Message
     }
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --remove channels defaults
+    & $condaBatPath config --remove channels defaults
     if (-not $?) {
         Exit-Message
     }
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" config --set channel_priority strict
+    & $condaBatPath config --set channel_priority strict
+    if (-not $?) {
+        Exit-Message
+    }
+     # Ensures correct version of python
+
+    if (-not $env:PYTHON_INSTALL_COMMAND_EXECUTED) {
+        & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
+        $env:PYTHON_INSTALL_COMMAND_EXECUTED = "true"
+    } else {
+        Write-Output "Python installation command has already been executed, skipping..."
+    }
     if (-not $?) {
         Exit-Message
     }
 
-    Write-Output "$_prefix Ensuring Python version $env:PYTHON_VERSION_PS..."
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install python=$env:PYTHON_VERSION_PS -y
-    if (-not $?) {
-        Exit-Message
-    }
-
-    # We will not install the Anaconda GUI
-    # There may be license issues due to DTU being
-    # a rather big institution. So our installation guides
-    # Will be pre-cautious here, and remove the defaults channels.
-    # Install packages
+   
+   # Install packages
         
     Write-Output "$_prefix Installing packages..."
-    & "$env:USERPROFILE\Miniconda3\condabin\conda.bat" install dtumathtools pandas scipy statsmodels uncertainties -y
+    & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {
         Exit-Message
     }
