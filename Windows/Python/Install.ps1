@@ -7,12 +7,6 @@ if (-not $env:PYTHON_VERSION_PS) {
     $env:PYTHON_VERSION_PS = "3.11"
 }
 
-if ($env:PYTHON_INSTALL_EXECUTED) {
-    Write-Output "Python installation has already been executed, skipping..."
-    return
-}
-$env:PYTHON_INSTALL_EXECUTED = "true"
-
 
 # Function to refresh environment variables in the current session
 function Refresh-Env {
@@ -158,7 +152,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     Write-Output "Command to be executed:"
     Write-Output "& `"$condaBatPath`" install python=$env:PYTHON_VERSION_PS -y"
 
-
     if (-not $env:PYTHON_INSTALL_COMMAND_EXECUTED) {
         Write-Output "Executing the command"
         & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
@@ -166,7 +159,7 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     } else {
         Write-Output "Python installation command has already been executed, skipping..."
     }
-    
+
     if (-not $?) {
         Exit-Message
     }
