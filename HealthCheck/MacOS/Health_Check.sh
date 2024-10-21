@@ -1,35 +1,47 @@
 #!/bin/bash
 
-# Template for how to source the scripts from github
-#source <(curl -s https://raw.githubusercontent.com/user/repo/branch/path/to/script.sh)
+# checks for environmental variables for remote and branch 
+if [ -z "$REMOTE_PS" ]; then
+  REMOTE_PS="TheWolf534/pythonsupport-scripts"
+fi
+if [ -z "$BRANCH_PS" ]; then
+  BRANCH_PS="main"
+fi
 
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/HealthCheck/MacOS"
 
-script_full_path=$(dirname "$0")
-source "$script_full_path/output.sh"
-source "$script_full_path/check_python.sh"
-source "$script_full_path/check_vsCode.sh"
-source "$script_full_path/check_firstYearPackages.sh"
+checkPython_tmp=$(mktemp)
+checkVsCode_tmp=$(mktemp)
+checkFirstYearPackages_tmp=$(mktemp)
+map_tmp=$(mktemp)
+output_tmp=$(mktemp)
+
+curl -s -o $checkPython_tmp $url_ps/check_python.sh
+curl -s -o $checkVsCode_tmp $url_ps/check_vsCode.sh
+curl -s -o $checkFirstYearPackages_tmp $url_ps/check_firstYearPackages.sh
+curl -s -o $map_tmp $url_ps/map.sh
+curl -s -o $output_tmp $url_ps/output.sh
+
+source $checkPython_tmp
+source $checkVsCode_tmp
+source $checkFirstYearPackages_tmp
+source $map_tmp
+source $output_tmp
 
 # Function to clean up resources and exit
 cleanup() {
     echo -e "\nCleaning up and exiting..."
-    running=false
     # Kill the non_verbose_output process if it's still running
     if [ ! -z "$output_pid" ]; then
         kill $output_pid 2>/dev/null
     fi
 
     tput cnorm
-    rm /tmp/healthCheckResults
-
+    map_cleanup "healthCheckResults"
+    release_lock "healthCheckResults"
+    
     exit 1
 }
-
-save_healthCheckResults() {
-    declare -p healthCheckResults > /tmp/healthCheckResults
-}
-
-export -f save_healthCheckResults
 
 # Set up the trap for SIGINT (Ctrl+C)
 trap cleanup SIGINT
@@ -37,25 +49,20 @@ trap cleanup SIGINT
 main() {
     create_banner
 
-    declare -A healthCheckResults
-    healthCheckResults=(
-        ["python3,name"]="Python"
-        ["conda,name"]="Conda"
-        ["code,name"]="Visual Studio Code"
-        ["ms-python.python,name"]="Python Extension"
-        ["ms-toolsai.jupyter,name"]="Jupyter Extension"
-        ["numpy,name"]="Numpy"
-        ["dtumathtools,name"]="DTU Math Tools"
-        ["pandas,name"]="Pandas"
-        ["scipy,name"]="Scipy"
-        ["statsmodels,name"]="Statsmodels"
-        ["uncertainties,name"]="Uncertainties"
-    )
-    save_healthCheckResults
-
+    # Initialize the health check results map
+    map_set "healthCheckResults" "python3,name" "Python"
+    map_set "healthCheckResults" "conda,name" "Conda"
+    map_set "healthCheckResults" "code,name" "Visual Studio Code"
+    map_set "healthCheckResults" "ms-python.python,name" "Python Extension"
+    map_set "healthCheckResults" "ms-toolsai.jupyter,name" "Jupyter Extension"
+    map_set "healthCheckResults" "numpy,name" "Numpy"
+    map_set "healthCheckResults" "dtumathtools,name" "DTU Math Tools"
+    map_set "healthCheckResults" "pandas,name" "Pandas"
+    map_set "healthCheckResults" "scipy,name" "Scipy"
+    map_set "healthCheckResults" "statsmodels,name" "Statsmodels"
+    map_set "healthCheckResults" "uncertainties,name" "Uncertainties"
     
-
-    # Start non_verbose_output in background
+    
     non_verbose_output &
     output_pid=$!
 
@@ -64,6 +71,10 @@ main() {
     check_vsCode
     check_firstYearPackages
 
+    if [[ "$1" == "--verbose" || "$1" == "-v" ]]; then
+    verbose_output
+    fi
+
     # Wait for the checks to finish being output
     wait
 
@@ -71,9 +82,4 @@ main() {
 }
 
 # Main execution
-if [[ "$1" == "--verbose" || "$1" == "-v" ]]; then
-    ## NEED TO REIMPLEMENT THIS ##
-    verbose_output
-else
-    main
-fi
+main $1

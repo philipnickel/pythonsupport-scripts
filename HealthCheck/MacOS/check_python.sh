@@ -1,49 +1,122 @@
 #!/bin/bash
 
-brew_path=$(which brew 2>/dev/null) 
-user_python_dir="usr/local/bin"
-conda_dir=("$HOME/miniconda3/" "$HOME/anaconda3/" "/opt/miniconda3/" "/opt/anaconda3/")
-brew_conda_path="$brew_path/miniconda/"
+# Common paths
+brew_path=$(which brew 2>/dev/null)
+python_common_dirs=(
+    "/usr/local/bin"
+    "/usr/bin"
+    "/opt/homebrew/bin"
+    "$HOME/.local/bin"
+)
+conda_common_dirs=(
+    "$HOME/miniconda3/bin/conda"
+    "$HOME/anaconda3/bin/conda"
+    "/opt/miniconda3/bin/conda"
+    "/opt/anaconda3/bin/conda"
+    "/usr/local/anaconda3/bin/conda"
+    "/usr/local/miniconda3/bin/conda"
+    "/usr/local/Caskroom/miniconda/base/condabin/conda"
+)
+
+check_command_exists() {
+    local cmd=$1
+    # Check if command exists using various methods
+    command -v "$cmd" >/dev/null 2>&1 || \
+    hash "$cmd" 2>/dev/null || \
+    type -P "$cmd" >/dev/null 2>&1
+    return $?
+}
 
 check_python() {
-    user_python_path=$(ls $python_path 2>/dev/null | grep "python")
-
-    conda_path=()
-    for path in "${conda_dir[@]}"; do
-        if [ -d $path ]; then
-            conda_python+=("$path")
+    local python_found=false
+    local conda_found=false
+    local python_paths=()
+    local python_versions=()
+    local conda_paths=()
+    local conda_versions=()
+    
+    # Check Python installation
+    # 1. Check common Python paths
+    for dir in "${python_common_dirs[@]}"; do
+        if [ -x "$dir/python3" ]; then
+            python_found=true
+            python_paths+=("$dir/python3")
+            version=$("$dir/python3" --version 2>/dev/null | cut -d' ' -f2)
+            if [ -n "$version" ]; then
+                python_versions+=("$version")
+            fi
         fi
     done
 
-
-    if [ -d "$brew_conda" ]; then
-        conda_python+=("$brew_conda")
+    # 2. Check Python in PATH
+    if check_command_exists python3; then
+        python_found=true
+        path=$(which python3 2>/dev/null)
+        if [[ ! " ${python_paths[*]} " =~ " ${path} " ]]; then
+            python_paths+=("$path")
+            version=$(python3 --version 2>/dev/null | cut -d' ' -f2)
+            if [ -n "$version" ]; then
+                python_versions+=("$version")
+            fi
+        fi
     fi
 
-    default_conda=$(which conda 2>/dev/null)
-    default_conda_version=$(conda --version 2>/dev/null | cut -d " " -f 2)
+    # Check Conda installation
+    # 1. Check common Conda directories
+    for dir in "${conda_common_dirs[@]}"; do
+        if [ -d "$dir" ] && [ -x "$dir/bin/conda" ]; then
+            conda_found=true
+            conda_paths+=("$dir")
+            version=$($dir --version 2>/dev/null | cut -d' ' -f2)
+            if [ -n "$version" ]; then
+                conda_versions+=("$version")
+            fi
+        fi
+    done
 
-    eval "$(conda shell.bash hook)" 2>/dev/null
-    conda activate 2>/dev/null
-    default_conda_python=$(which python3)
-    conda deactivate 2>/dev/null
-    default_conda_python_version=$($default_conda_python --version 2>/dev/null | cut -d " " -f 2)
+    # 2. Check Conda in PATH
+    if check_command_exists conda; then
+        conda_found=true
+        path=$(dirname "$(which conda)" 2>/dev/null)
+        if [[ ! " ${conda_paths[*]} " =~ " ${path} " ]]; then
+            conda_paths+=("$path")
+            version=$(conda --version 2>/dev/null | cut -d' ' -f2)
+            if [ -n "$version" ]; then
+                conda_versions+=("$version")
+            fi
+        fi
+    fi
 
-    default_python=$(which python3)
-    default_python_version=$($default_python --version 2>/dev/null | cut -d " " -f 2)
+    # Check Conda Python
+    local conda_python_path=""
+    local conda_python_version=""
+    if $conda_found; then
+        eval "$(conda shell.bash hook)" 2>/dev/null
+        conda activate base 2>/dev/null
+        if check_command_exists python3; then
+            conda_python_path=$(which python3 2>/dev/null)
+            conda_python_version=$("$conda_python_path" --version 2>/dev/null | cut -d' ' -f2)
+        fi
+        conda deactivate 2>/dev/null
+    fi
+
+    # Verify installations by attempting to run
+    if $python_found; then
+        python3 -c "print('test')" >/dev/null 2>&1 || python_found=false
+    fi
+    if $conda_found; then
+        conda info >/dev/null 2>&1 || conda_found=false
+    fi
+
+
+    # Store results
+    map_set "healthCheckResults" "python3,installed" "$python_found"
+    map_set "healthCheckResults" "python3,paths" "${python_paths[*]}"
+    map_set "healthCheckResults" "python3,versions" "${python_versions[*]}"
     
-
-    source /tmp/healthCheckResults
-
-    healthCheckResults["python3,installed"]="$([ ${#user_python[@]} -eq 0 ] && echo false || echo true)"
-    healthCheckResults["python3,path"]="$python_path"
-    healthCheckResults["python3,version"]="$default_python_version"
-
-    healthCheckResults["conda,installed"]="$([ ${#conda_python[@]} -eq 0 ] && echo false || echo true)"
-    healthCheckResults["conda,version"]=$default_conda_version
-    healthCheckResults["conda,path"]="$default_conda"
-    healthCheckResults["conda,python_version"]="$default_conda_python_version"
-    healthCheckResults["conda,python_path"]="$default_conda_python"
-
-    save_healthCheckResults
+    map_set "healthCheckResults" "conda,installed" "$conda_found"
+    map_set "healthCheckResults" "conda,paths" "${conda_paths[*]}"
+    map_set "healthCheckResults" "conda,versions" "${conda_versions[*]}"
+    map_set "healthCheckResults" "conda,python_path" "$conda_python_path"
+    map_set "healthCheckResults" "conda,python_version" "$conda_python_version"
 }
