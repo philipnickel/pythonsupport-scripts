@@ -55,7 +55,9 @@ $healthCheckResults =
                 "version"   = $null
             }
         }
-    }
+    }                              
+    #Here you can edit which packages you want to check for. 
+    #The name should be the package name and the value should be the package name
     "firstYearPackages" = @{
         "dtumathtools"  = @{
             "name"      = "DTU Math Tools"
@@ -264,9 +266,10 @@ function Test-PythonPackages {
     Write-Host "`nVerifying Importation of Required Python Packages"
     Write-Host ("=" * $displayWidth)
 
+    $importpackages = $requiredPackages -join ", "
     $result = python -c "
 try:
-    import dtumathtools, pandas, scipy, statsmodels, uncertainties
+    import $importpackages
     print('Success')
 except ImportError:
     print('Failed')
