@@ -284,6 +284,12 @@ except ImportError:
 }
 
 function condachannels {
+
+    if ($healthCheckResults.conda.installed -eq $false) {
+        Write-Host "`nConda not installed. Skipping channel check."
+        return
+    }
+
     Write-Host "`n`n"
     Write-Host "Checking for Conda channels"
     Write-Host ("=" * $displayWidth)
@@ -303,6 +309,23 @@ function condachannels {
      # Split the channels output by newline and write each on a new line
     $channels -split "`n" | ForEach-Object {
         Write-Host $_
+    }
+}
+
+function listpythons {
+
+    if ($healthCheckResults.python.installed -eq $false) {
+        Write-Host "`nConda not installed. Skipping channel check."
+        return
+    }
+
+    
+    Write-Host "`n`n"
+    Write-Host "Python installations in path"
+    Write-Host ("=" * $displayWidth + "`n")
+
+    foreach ($python in $healthCheckResults.python.path) {
+        Write-Host $python
     }
 }
 
@@ -472,6 +495,7 @@ function nonVerboseOutput {
     Test-PythonPackages
     Get-CondaEnvironments
     condachannels
+    listpythons
 }
 
 # Check if the script is run in verbose mode
