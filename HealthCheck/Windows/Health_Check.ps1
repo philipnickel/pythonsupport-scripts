@@ -315,7 +315,7 @@ function condachannels {
 function listpythons {
 
     if ($healthCheckResults.python.installed -eq $false) {
-        Write-Host "`nConda not installed. Skipping channel check."
+        Write-Host "`nPython not installed. Skipping python installations check."
         return
     }
 
