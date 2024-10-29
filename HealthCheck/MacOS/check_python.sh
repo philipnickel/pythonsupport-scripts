@@ -18,6 +18,8 @@ conda_common_dirs=(
     "/usr/local/Caskroom/miniconda/base/condabin/conda"
 )
 
+sys_architecture=$(uname -m)
+
 check_command_exists() {
     local cmd=$1
     # Check if command exists using various methods

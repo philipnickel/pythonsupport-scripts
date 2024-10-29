@@ -10,7 +10,6 @@ conda deactivate 2>/dev/null
 
 python_path=$(which python3 2>/dev/null)
 
-python_packages=("numpy" "dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
 
 check_package_installed() {
     local package=$1
@@ -45,7 +44,7 @@ check_package_info() {
 }
 
 check_firstYearPackages() {
-    for package in "${python_packages[@]}"; do
+    for package in "${python_package_requirements[@]}"; do
         # Check if package is installed
         if check_package_installed "$package"; then
             map_set "healthCheckResults" "${package},installed" "true"

@@ -4,7 +4,6 @@
 #source /path/to/kv_store.sh  # Make sure to update this path
 
 code_path=$(which code 2>/dev/null)
-code_extensions=("ms-python.python" "ms-toolsai.jupyter")
 
 check_vsCode() {
     # Check VSCode itself
@@ -21,7 +20,7 @@ check_vsCode() {
     map_set "healthCheckResults" "code,version" "$version"
     
     # Check each extension
-    for extension in "${code_extensions[@]}"; do
+    for extension in "${VSCode_extension_requirements[@]}"; do
         # Get extension version
         version=$(code --list-extensions --show-versions 2>/dev/null | grep "${extension}" | cut -d "@" -f 2)
         

@@ -1,21 +1,5 @@
 # Requirements arrays remain unchanged
-program_requirements=(
-    "python3"
-    "conda"
-    "code"
-)
-extension_requirements=(
-    "ms-python.python"
-    "ms-toolsai.jupyter"
-)
-package_requirements=(
-    "numpy"
-    "dtumathtools"
-    "pandas"
-    "scipy"
-    "statsmodels"
-    "uncertainties"
-)
+
 width=60
 
 # Create a colorful banner - unchanged
@@ -68,7 +52,7 @@ install_status() {
 # Non-verbose output function remains the same
 non_verbose_output() {
     tput civis
-    requirements=( "${program_requirements[@]}" "${extension_requirements[@]}" "${package_requirements[@]}")
+    requirements=( "${program_requirements[@]}" "${VSCode_extension_requirements[@]}" "${python_package_requirements[@]}")
     
     # First loop: Display initial status for all requirements
     for i in ${!requirements[@]}; do
@@ -127,6 +111,16 @@ print_install_status() {
     fi
 }
 
+# Func
+print_path_status() {
+    local status=$1
+    if [ "$status" = "true" ]; then
+        echo -e "\x1B[1;32mYES\x1B[0m"
+    elif [ "$status" = "false" ]; then
+        echo -e "\x1B[1;31mNO\x1B[0m"
+    fi
+}
+
 verbose_output() {
     clear
     create_banner
@@ -157,10 +151,18 @@ verbose_output() {
     print_info "Path" "$(map_get "healthCheckResults" "code,path")"
     print_info "Version" "$(map_get "healthCheckResults" "code,version")"
 
+    # Homebrew Information
+    echo -e "\n\x1B[1;33mHomebrew Information:\x1B[0m"
+    print_info "Name" "$(map_get "healthCheckResults" "brew,name")"
+    print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "brew,installed")")"
+    print_info "Path" "$(map_get "healthCheckResults" "brew,path")"
+    print_info "Version" "$(map_get "healthCheckResults" "brew,version")"
+    print_info "In Path" "$(print_path_status "$(map_get "healthCheckResults" "brew,in-path")")"
+
     # Extensions Section
     print_section_header "VSCode Extensions"
     
-    for ext in "${extension_requirements[@]}"; do
+    for ext in "${VSCode_extension_requirements[@]}"; do
         echo -e "\n\x1B[1;33m$(map_get "healthCheckResults" "${ext},name"):\x1B[0m"
         print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "${ext},installed")")"
         print_info "Version" "$(map_get "healthCheckResults" "${ext},version")"
@@ -169,7 +171,7 @@ verbose_output() {
     # Python Packages Section
     print_section_header "Python Packages"
     
-    for package in "${package_requirements[@]}"; do
+    for package in "${python_package_requirements[@]}"; do
         echo -e "\n\x1B[1;33m$(map_get "healthCheckResults" "${package},name"):\x1B[0m"
         print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "${package},installed")")"
         print_info "Source" "$(map_get "healthCheckResults" "${package},source")"
