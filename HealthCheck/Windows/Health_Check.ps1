@@ -1,5 +1,3 @@
-
-
 # Create a colorful banner
 $text = "Welcome to the Python Support Health Check"
 $textLength = $text.Length
@@ -57,7 +55,9 @@ $healthCheckResults =
                 "version"   = $null
             }
         }
-    }
+    }                              
+    #Here you can edit which packages you want to check for. 
+    #The name should be the package name and the value should be the package name
     "firstYearPackages" = @{
         "dtumathtools"  = @{
             "name"      = "DTU Math Tools"
@@ -197,17 +197,40 @@ function Get-CondaEnvironments {
         $condaEnvs = & conda info --envs 2>$null
 
 
+        # Get the name of the currently active Conda environment
+        $activeEnv = conda info --json | ConvertFrom-Json | Select-Object -ExpandProperty "active_prefix_name"
+
         if ($condaEnvs -match "^\s*#") { # Check if any environments were found
             $envLines = $condaEnvs -split "`n" | Where-Object { $_ -match "^\s*[^#]" }
 
             if ($envLines.Count -gt 0) {
-                Write-Host "`nConda environments found:"
+                Write-Host ("{0,-30} {1,-20}" -f "`nEnviroment Name", "Python Version")
+                Write-Host ("-" * $displayWidth)
+                
                 foreach ($line in $envLines) {
-                    $envName = $line -replace '^\s*-\s*', '' -replace '\s+\S*$', ''
-                    Write-Host $envName
+                    $envPath = $line -replace '^\s*-\s*', ''
+                    $envName = $envPath -replace '\s+\S*$', ''
+                    $envName = $envName -replace '\s*\*?$', '' # Remove trailing spaces and asterisk
+                    $pythonVersion = ""
+
+                    # Activate the environment and get Python version
+                    if ($envName -eq $activeEnv) {
+                        # For the active environment, directly check Python version in current session
+                        $pythonOutput = python --version 2>$null
+                        $envIndicator = "*"
+                    } else {
+                        # For other environments, use conda run
+                        $pythonOutput = & conda run -n $envName python --version 2>$null
+                        $envIndicator = ""
+                    }
+                    if ($pythonOutput) {
+                        $pythonVersion = $pythonOutput -replace 'Python ', ''
+                    }
+
+                    Write-Host ("{0,-30} {1,-20}" -f "$envName $envIndicator", "$pythonVersion")
                 }
-                $CenvFound = $true
             }
+            $CenvFound = $true
         }
         
         if (-not $CenvFound) {
@@ -243,9 +266,10 @@ function Test-PythonPackages {
     Write-Host "`nVerifying Importation of Required Python Packages"
     Write-Host ("=" * $displayWidth)
 
+    $importpackages = $requiredPackages -join ", "
     $result = python -c "
 try:
-    import dtumathtools, pandas, scipy, statsmodels, uncertainties
+    import $importpackages
     print('Success')
 except ImportError:
     print('Failed')
@@ -259,7 +283,51 @@ except ImportError:
     Write-Host "`n"
 }
 
+function condachannels {
 
+    if ($healthCheckResults.conda.installed -eq $false) {
+        Write-Host "`nConda not installed. Skipping channel check."
+        return
+    }
+
+    Write-Host "`n`n"
+    Write-Host "Checking for Conda channels"
+    Write-Host ("=" * $displayWidth)
+
+    # Get the list of conda channels
+    $channels = & conda config --show channels
+
+    # Check if conda-forge is in the list of channels
+    if ($channels -match "conda-forge") {
+        Write-Host ("{0,-30} {1,-20}"  -f "Conda-forge", "${colorCodeGreen}INSTALLED${resetColor}")
+    } else {
+        Write-Host ("{0,-30} {1,-20}"  -f "Conda-forge", "${colorCodeGreen}NOT INSTALLED${resetColor}")
+    }
+
+    Write-Host "`nListing all Conda channels:"
+    Write-Host ("-" * $displayWidth)
+     # Split the channels output by newline and write each on a new line
+    $channels -split "`n" | ForEach-Object {
+        Write-Host $_
+    }
+}
+
+function listpythons {
+
+    if ($healthCheckResults.python.installed -eq $false) {
+        Write-Host "`nPython not installed. Skipping python installations check."
+        return
+    }
+
+    
+    Write-Host "`n`n"
+    Write-Host "Python installations in path"
+    Write-Host ("=" * $displayWidth + "`n")
+
+    foreach ($python in $healthCheckResults.python.path) {
+        Write-Host $python
+    }
+}
 
 # Verbose output
 function verboseOutput {
@@ -426,6 +494,8 @@ function nonVerboseOutput {
     Write-Output $allinfo
     Test-PythonPackages
     Get-CondaEnvironments
+    condachannels
+    listpythons
 }
 
 # Check if the script is run in verbose mode
