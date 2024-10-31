@@ -2,7 +2,7 @@
 
 # checks for environmental variables for remote and branch 
 if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="TheWolf534/pythonsupport-scripts"
+  REMOTE_PS="dtudk/pythonsupport-scripts"
 fi
 if [ -z "$BRANCH_PS" ]; then
   BRANCH_PS="main"
