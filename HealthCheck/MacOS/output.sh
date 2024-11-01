@@ -141,6 +141,7 @@ verbose_output() {
     print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "conda,installed")")"
     print_info "Paths" "$(map_get "healthCheckResults" "conda,paths")"
     print_info "Versions" "$(map_get "healthCheckResults" "conda,versions")"
+    print_info "Forge Installed" "$(print_path_status "$(map_get "healthCheckResults" "conda,forge_installed")")"
     print_info "Python Path" "$(map_get "healthCheckResults" "conda,python_path")"
     print_info "Python Version" "$(map_get "healthCheckResults" "conda,python_version")"
     
