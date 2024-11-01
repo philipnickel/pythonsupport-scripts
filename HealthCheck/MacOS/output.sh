@@ -150,6 +150,7 @@ verbose_output() {
     print_info "Name" "$(map_get "healthCheckResults" "code,name")"
     print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "code,installed")")"
     print_info "Path" "$(map_get "healthCheckResults" "code,path")"
+    print_info "In PATH" "$(print_path_status "$(map_get "healthCheckResults" "code,in-path")")"
     print_info "Version" "$(map_get "healthCheckResults" "code,version")"
 
     # Homebrew Information
@@ -157,8 +158,8 @@ verbose_output() {
     print_info "Name" "$(map_get "healthCheckResults" "brew,name")"
     print_info "Installation Status" "$(print_install_status "$(map_get "healthCheckResults" "brew,installed")")"
     print_info "Path" "$(map_get "healthCheckResults" "brew,path")"
+    print_info "In PATH" "$(print_path_status "$(map_get "healthCheckResults" "brew,in-path")")"
     print_info "Version" "$(map_get "healthCheckResults" "brew,version")"
-    print_info "In Path" "$(print_path_status "$(map_get "healthCheckResults" "brew,in-path")")"
 
     # Extensions Section
     print_section_header "VSCode Extensions"
