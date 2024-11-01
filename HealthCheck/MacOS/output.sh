@@ -125,6 +125,12 @@ verbose_output() {
     clear
     create_banner
     
+    # System Section
+    print_section_header "System Information"
+    print_info "CPU Architecture" "$(map_get "healthCheckResults" "sys-info,architecture")"
+    print_info "Remaining Disk Space" "$(map_get "healthCheckResults" "sys-info,disk-space")"
+    print_info "Rosseta 2 status" "$(print_install_status "$(map_get "healthCheckResults" "sys-info,rosseta2,installed")")"
+    
     # Programs Section
     print_section_header "System Programs"
     
