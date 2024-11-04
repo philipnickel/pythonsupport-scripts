@@ -19,7 +19,6 @@ check_brew() {
             break
         else
             map_set "healthCheckResults" "brew,installed" "false"
-            brew_path=""
         fi
     done
 

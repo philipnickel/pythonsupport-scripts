@@ -10,6 +10,7 @@ fi
 
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/HealthCheck/MacOS"
 
+checkSysInfo_tmp=$(mktemp)
 checkPython_tmp=$(mktemp)
 checkVsCode_tmp=$(mktemp)
 checkBrew_tmp=$(mktemp)
@@ -17,6 +18,7 @@ checkFirstYearPackages_tmp=$(mktemp)
 map_tmp=$(mktemp)
 output_tmp=$(mktemp)
 
+curl -s -o $checkSysInfo_tmp $url_ps/sysInfo_check.sh
 curl -s -o $checkPython_tmp $url_ps/check_python.sh
 curl -s -o $checkVsCode_tmp $url_ps/check_vsCode.sh
 curl -s -o $checkBrew_tmp $url_ps/check_brew.sh
@@ -24,6 +26,7 @@ curl -s -o $checkFirstYearPackages_tmp $url_ps/check_firstYearPackages.sh
 curl -s -o $map_tmp $url_ps/map.sh
 curl -s -o $output_tmp $url_ps/output.sh
 
+source $checkSysInfo_tmp
 source $checkPython_tmp
 source $checkVsCode_tmp
 source $checkBrew_tmp
@@ -92,6 +95,7 @@ main() {
     output_pid=$!
 
     # Run checks sequentially
+    check_sysInfo
     check_python
     check_vsCode
     check_brew

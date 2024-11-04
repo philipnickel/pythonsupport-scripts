@@ -9,13 +9,14 @@ python_common_dirs=(
     "$HOME/.local/bin"
 )
 conda_common_dirs=(
-    "$HOME/miniconda3/bin/conda"
-    "$HOME/anaconda3/bin/conda"
-    "/opt/miniconda3/bin/conda"
-    "/opt/anaconda3/bin/conda"
-    "/usr/local/anaconda3/bin/conda"
-    "/usr/local/miniconda3/bin/conda"
-    "/usr/local/Caskroom/miniconda/base/condabin/conda"
+    "$HOME/miniconda3/bin"
+    "$HOME/anaconda3/bin"
+    "/opt/miniconda3/bin"
+    "/opt/anaconda3/bin"
+    "/usr/local/anaconda3/bin"
+    "/usr/local/miniconda3/bin"
+    "/usr/local/Caskroom/miniconda/base/bin"
+    "/usr/local/bin"
 )
 
 sys_architecture=$(uname -m)
@@ -66,7 +67,7 @@ check_python() {
     # Check Conda installation
     # 1. Check common Conda directories
     for dir in "${conda_common_dirs[@]}"; do
-        if [ -d "$dir" ] && [ -x "$dir/bin/conda" ]; then
+        if [ -d "$dir" ] && [ -x "$dir/conda" ]; then
             conda_found=true
             conda_paths+=("$dir")
             version=$($dir --version 2>/dev/null | cut -d' ' -f2)
@@ -108,6 +109,7 @@ check_python() {
     fi
     if $conda_found; then
         conda info >/dev/null 2>&1 || conda_found=false
+        conda_forge_installed=$([ $(conda config --show channels | grep -c "conda-forge") -gt 0 ] && echo "true" || echo "false")
     fi
 
 
@@ -119,6 +121,8 @@ check_python() {
     map_set "healthCheckResults" "conda,installed" "$conda_found"
     map_set "healthCheckResults" "conda,paths" "${conda_paths[*]}"
     map_set "healthCheckResults" "conda,versions" "${conda_versions[*]}"
+    map_set "healthCheckResults" "conda,forge_installed" "$conda_forge_installed"
+    
     map_set "healthCheckResults" "conda,python_path" "$conda_python_path"
     map_set "healthCheckResults" "conda,python_version" "$conda_python_version"
 }
