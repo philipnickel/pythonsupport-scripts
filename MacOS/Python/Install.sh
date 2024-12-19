@@ -76,6 +76,11 @@ conda init bash
 conda init zsh
 [ $? -ne 0 ] && exit_message
 
+# Anaconda has this package which tracks usage metrics
+# We will disable this, and if it fails, so be it.
+# I.e. we shouldn't check whether it actually succeeds
+conda config --set anaconda_anon_usage off
+
 # need to restart terminal to activate conda
 # restart terminal and continue
 # conda puts its source stuff in the bashrc file
@@ -92,13 +97,28 @@ clear -x
 echo "$_prefix Removing defaults channel (due to licensing problems)"
 conda config --remove channels defaults
 conda config --add channels conda-forge
-# Forcefully try to always use conda-forge
-conda config --set channel_priority strict
+
+# Sadly, there can be a deadlock here
+# When channel_priority == strict
+# newer versions of conda will sometimes be unable to downgrade.
+# However, when channel_priority == flexible
+# it will sometimes not revert the libmamba suite which breaks
+# the following conda install commands.
+# Hmmm.... :(
+conda config --set channel_priority flexible
 
 echo "$_prefix Ensuring Python version ${_py_version}..."
-conda install python=${_py_version} -y
-[ $? -ne 0 ] && exit_message
-clear -x 
+# Doing local strict channel-priority
+conda install --strict-channel-priority python=${_py_version} -y
+retval=$?
+# If it fails, try to use the flexible way, but manually downgrade libmamba to conda-forge
+if [ $retval -ne 0 ]; then
+  echo "$_prefix Trying manual downgrading..."
+  conda install python=${_py_version} conda-forge::libmamba conda-forge::libmambapy -y
+  retval=$?
+fi
+[ $retval -ne 0 ] && exit_message
+clear -x
 
 # We will not install the Anaconda GUI
 # There may be license issues due to DTU being
@@ -109,12 +129,6 @@ echo "$_prefix Installing packages..."
 conda install dtumathtools pandas scipy statsmodels uncertainties -y
 [ $? -ne 0 ] && exit_message
 clear -x
-
-echo "$_prefix Changing channel priority back to flexible..."
-conda config --set channel_priority flexible
-[ $? -ne 0 ] && exit_message
-clear -x
-
 
 echo ""
 echo "$_prefix Installed conda and related packages for 1st year at DTU!"

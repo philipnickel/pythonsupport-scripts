@@ -29,6 +29,9 @@ jobs:
         with:
           auto-activate-base: true
           activate-environment: ""
+          # Using "latest" can result in conda not being able to downgrade
+          # So better not use it... Although it does pose some problems
+          #miniconda-version: "latest"
 
       - name: Remove conda (if present)
         if: ${{ !matrix.has-conda }}
