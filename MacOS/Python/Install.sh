@@ -7,13 +7,17 @@ fi
 if [ -z "$BRANCH_PS" ]; then
   BRANCH_PS="main"
 fi
+if [ -z "$PYTHON_VERSION_PS" ]; then
+  PYTHON_VERSION_PS="3.11"
+fi
 
 export REMOTE_PS
 export BRANCH_PS
 
-# set URL
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
+_py_version=$PYTHON_VERSION_PS
+
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 echo "$_prefix Python installation"
 
@@ -29,7 +33,7 @@ if ! command -v brew > /dev/null; then
   [ -e ~/.bash_profile ] && source ~/.bash_profile
 
   # update binary locations 
-  hash -r 
+  hash -r
 fi
 
 
@@ -53,16 +57,8 @@ exit_message () {
 }
 
 
-
-if [ -z "$PYTHON_VERSION_PS" ]; then
-    PYTHON_VERSION_PS="3.11"
-fi
-
-_py_version=$PYTHON_VERSION_PS
-
 # Install miniconda
 # Check if miniconda is installed
-
 echo "$_prefix Installing Miniconda..."
 if conda --version > /dev/null; then
   echo "$_prefix Miniconda or anaconda is already installed"
@@ -74,7 +70,7 @@ fi
 clear -x
 
 echo "$_prefix Initialising conda..."
-conda init bash 
+conda init bash
 [ $? -ne 0 ] && exit_message
 
 conda init zsh
@@ -89,7 +85,8 @@ echo "$_prefix Showing where it is installed:"
 conda info --base
 [ $? -ne 0 ] && exit_message
 
-hash -r 
+echo "$_prefix Updating environment variables"
+hash -r
 clear -x
 
 echo "$_prefix Removing defaults channel (due to licensing problems)"

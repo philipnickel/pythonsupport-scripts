@@ -1,11 +1,12 @@
 $_prefix = "PYS:"
 
-# check for env variable PYTHONVERSIONPS 
+# check for env variable PYTHON_VERSION_PS
 # if it isn't set set it to 3.11
-
 if (-not $env:PYTHON_VERSION_PS) {
     $env:PYTHON_VERSION_PS = "3.11"
 }
+
+Write-Output "$_prefix Python installation"
 
 
 # Function to refresh environment variables in the current session
@@ -59,18 +60,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 
     Write-Output "$_prefix Downloading installer for Miniconda..."
     Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
-    if ($?) {
-        Write-Output "$_prefix Miniconda installer downloaded."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
     Write-Output "$_prefix Installing Miniconda..."
     # Install Miniconda
     Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
-    if ($?) {
-        Write-Output "$_prefix Miniconda installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
@@ -90,14 +87,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         }
     }
 
+
+    Write-Output "$_prefix Environment variables refreshed."
     Add-CondaToPath
     Refresh-Env
-    if ($?) {
-        Write-Output "$_prefix Environment variables refreshed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
-
 
     # Check conda-paths
     $conda_paths = Get-Command -ErrorAction:SilentlyContinue conda
@@ -131,7 +127,6 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
 
 
-
     # Ensuring correct channels are set
     Write-Output "$_prefix Removing defaults channel (due to licensing problems)"
     & $condaBatPath config --add channels conda-forge
@@ -144,12 +139,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
        Write-Output "$_prefix Failed to remove defaults channel"
     }
+    # Forcefully try to always use conda-forge
     & $condaBatPath config --set channel_priority strict
     if (-not $?) {
         Exit-Message
     }
-     # Ensures correct version of python
 
+
+    # Ensures correct version of python
     if (-not $env:PYTHON_INSTALL_COMMAND_EXECUTED) {
         & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
         $env:PYTHON_INSTALL_COMMAND_EXECUTED = "true"
@@ -160,9 +157,8 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
-   
-   # Install packages
-        
+
+    # Install packages
     Write-Output "$_prefix Installing packages..."
     & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {

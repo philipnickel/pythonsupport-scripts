@@ -1,5 +1,7 @@
 $_prefix = "PYS:"
 
+Write-Output "$_prefix VS Code installation"
+
 # Function to refresh environment variables in the current session
 function Refresh-Env {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
@@ -44,50 +46,45 @@ if ( $vsc_paths.Count -gt 0 ) {
 
     Write-Output "$_prefix Downloading installer for Visual Studio Code..."
     Invoke-WebRequest -Uri $vscodeUrl -OutFile $vscodeInstallerPath
-    if ($?) {
-        Write-Output "$_prefix VS Code installer downloaded."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
     Write-Output "$_prefix Installing Visual Studio Code..."
     # Install VS Code
     Start-Process -FilePath $vscodeInstallerPath -ArgumentList "/verysilent /norestart /mergetasks=!runcode" -Wait
-    if ($?) {
-        Write-Output "$_prefix VS Code installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 }
 
 # Refresh environment variables
+Write-Output "$_prefix Updating environment variables"
 Refresh-Env
-if ($?) {
-    Write-Output "$_prefix Environment variables refreshed."
-} else {
+if (-not $?) {
     Exit-Message
 }
+
+Clear-Host
+
 
 Write-Output "$_prefix Installing extensions for Visual Studio Code"
-# Install VS Code extensions
+
+# install python extension
 code --install-extension ms-python.python
-if ($?) {
-    Write-Output "$_prefix Python extension installed."
-} else {
+if (-not $?) {
     Exit-Message
 }
 
+#jupyter extension
 code --install-extension ms-toolsai.jupyter
-if ($?) {
-    Write-Output "$_prefix Jupyter extension installed."
-} else {
+if (-not $?) {
     Exit-Message
 }
 
+#pdf extension (for viewing pdfs inside vs code)
 code --install-extension tomoki1207.pdf
-if ($?) {
-    Write-Output "$_prefix PDF extension installed."
-} else {
+if (-not $?) {
     Exit-Message
 }
 
