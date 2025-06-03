@@ -94,6 +94,10 @@ echo "$_prefix Updating environment variables"
 hash -r
 clear -x
 
+# We will not install the Anaconda GUI
+# There may be license issues due to DTU being
+# a rather big institution. So our installation guides
+# will be pre-cautious here, and remove the defaults channels.
 echo "$_prefix Removing defaults channel (due to licensing problems)"
 conda config --remove channels defaults
 conda config --add channels conda-forge
@@ -119,11 +123,6 @@ if [ $retval -ne 0 ]; then
 fi
 [ $retval -ne 0 ] && exit_message
 clear -x
-
-# We will not install the Anaconda GUI
-# There may be license issues due to DTU being
-# a rather big institution. So our installation guides
-# Will be pre-cautious here, and remove the defaults channels.
 
 echo "$_prefix Installing packages..."
 conda install dtumathtools pandas scipy statsmodels uncertainties -y
