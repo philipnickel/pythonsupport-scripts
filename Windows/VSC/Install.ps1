@@ -41,7 +41,11 @@ if ( $vsc_paths.Count -gt 0 ) {
     Write-Output "$_prefix Visual Studio Code is already installed. Skipping VS Code installation.."
 } else {
     # Download the VS Code installer
-    $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+    switch($ENV:PROCESSOR_ARCHITECTURE) {
+        "ARM64" { $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-arm64-user/stable" }
+        default { $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable" }
+    }
+    
     $vscodeInstallerPath = "$env:USERPROFILE\Downloads\vscode-installer.exe"
 
     Write-Output "$_prefix Downloading installer for Visual Studio Code..."
