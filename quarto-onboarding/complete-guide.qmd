@@ -1,0 +1,256 @@
+---
+title: "Python Installation Support - Complete Onboarding Guide"
+subtitle: "Team Onboarding Guide"
+author: "Python Support Team"
+date: today
+format: 
+  pdf:
+    documentclass: scrreprt
+    toc: true
+    toc-depth: 3
+---
+
+# Welcome to Python Installation Support!
+
+We're excited to have you on board. This guide is designed to help you get started smoothly, understand our support philosophy, tools, workflows, and key expectations.
+
+## How to Use This Guide
+
+This complete onboarding guide covers three main sections:
+
+**Your Role in the Team**  
+Learn about your responsibilities, support workflow, documentation practices, and team values.
+
+**Introduction Process**  
+Get set up with essential accounts, information about key introduction meetings, and complete required training.
+
+**Tools & Practicals**  
+Access daily tools, time registration systems, practical guidelines, and operational procedures.
+
+**Welcome to the team!**
+
+\newpage
+
+# Your Role in the Team
+
+## Our Mission & Your Responsibilities
+
+:::{.callout-note}
+## Our Mission
+We aim to provide prompt, dependable, and compassionate support to our users.
+:::
+
+## Team Values
+
+:::{.callout-note}
+## Our Core Principles
+
+- **Empathy first:** Every interaction matters
+- **Be curious:** Ask questions, seek clarity
+- **Collaborate:** Work openly with team members
+- **Own it:** Take initiative, follow through
+- **Improve constantly:** Be proactive, suggest better processes and tools
+:::
+
+## Support Workflow
+
+### The 4-Step Process
+
+1. **Ticket Intake**
+   - Regularly check for new requests
+   - Assign and acknowledge them within your shift
+
+2. **Triage & Troubleshoot**
+   - Identify the root issue
+   - Check documentation before escalating
+
+3. **Resolution**
+   - Provide solutions or workarounds
+   - Follow up to confirm resolution
+
+4. **Student Hands-on**
+   - Guide the user in solving the issue(s)
+   - Let the user do the work
+
+### Your Responsibilities
+
+As a Python Installation Support team member, you will:
+
+- Respond to requests, inquiries or tickets via physical presence/chat/support portal
+- Troubleshoot technical or operational issues
+- Document solutions and processes
+- Report your findings in Discord
+- Collaborate with team members to resolve issues
+- Help maintain and improve our support knowledge base
+- Participate in teamwork on various projects
+- Suggest edits to existing articles
+- Create internal guides when gaps are identified
+
+:::{.callout-tip}
+## Golden Rule
+**If you solve a problem more than twice, document it.**
+:::
+
+\newpage
+
+# Introduction Process
+
+## Getting Started
+
+### Accounts & Access
+
+You'll need access to these essential systems:
+
+| System | Purpose | Link |
+|--------|---------|------|
+| **Discord** | Internal communication | [Discord Server](https://discord.gg/CSp6xS22) |
+| **RT Ticketing** | Ticket management | [RT System](https://pythonsupport-rt.dtu.dk/rt/) |
+| **SharePoint** | Documents & time registration | [Students documents](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=LVnQbU) |
+
+### Key Meetings
+
+:::{.callout-important}
+## Important Schedule
+- **Team kick-off** in August 2025
+- **One-on-one** with your direct manager
+- **Team introductions** with all members
+:::
+
+### Required Training
+
+Before you start, you'll complete training on:
+
+- Product walkthrough (internal tools, user-facing systems)
+- Using the ticketing system and Discord
+- DTU FUSION time registration system setup and usage
+
+## Success Milestones
+
+### After 30 Days...
+
+By the end of your first month, you should be able to:
+
+- **Confidently use all core tools**
+- **Independently manage and resolve tickets**
+- **Be familiar with team workflows**
+- **Feel comfortable asking for help when needed**
+
+\newpage
+
+# Tools & Practicals
+
+## Primary Tools
+
+| Tool | Purpose | Access |
+|------|---------|--------|
+| **RT Ticketing** | Ticket management | [RT System](https://pythonsupport-rt.dtu.dk/rt/) |
+| **Discord** | Internal communication | [Discord Server](https://discord.gg/CSp6xS22) |
+| **Support Website** | Main support portal | [Support Website](https://pythonsupport.dtu.dk/) |
+| **Website GitHub** | Documentation | [GitHub Repository](https://github.com/dtudk/pythonsupport-page/) |
+| **Scripts GitHub** | Scripts for auto installation ect. | [GitHub Repository](https://github.com/dtudk/pythonsupport-scripts/) |
+| **Teams/SharePoint** | Documents & Personal hour registration| [Students documents](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=eEhaCK) |
+| **Course Reference** | Programming materials | [Course Materials](https://02002.compute.dtu.dk/) |
+| **DTU FUSION** | Time registration system | [DTU FUSION](https://efzu.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome) |
+
+## Registering Working Hours
+
+### DTU FUSION 
+
+:::{.callout-tip}
+## About DTU FUSION
+DTU FUSION serves as the central time tracking platform for all workers at the university. This system is mandatory for recording work hours and ensures compliance with labor regulations.
+:::
+
+#### How to Register Your Hours
+
+Follow these steps to record your working hours in FUSION:
+
+1. **Log into FUSION**
+   - Navigate to: <https://efzu.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome>
+
+2. **Access Time Sheet**
+   - Go to **'Time and Absence'** to edit your current time sheet
+   
+   ![Step 2: Access time Sheet](contents/fusion_steps/step1.png)
+
+3. **Register Working Hours**
+   - Pick a day to register your total working hours for the month
+   - Calculate total hours: Number of working days × 1.8 hours (for normal contracts) or 2.0 hours (exchange students)
+   
+   ![Step 3.1: Add Entry](contents/fusion_steps/step2.png)
+
+   ![Step 3.2: Register Hours](contents/fusion_steps/step3.png)
+
+4. **Register Free Days**
+   - Register two free days with 1.8 hours each (or 2.0 hours for exchange students): Chose absence under *Task*)
+
+5. **Submit Timesheet**
+   - Review and submit your completed timesheet
+   
+   ![Step 4: Submit Timesheet](contents/fusion_steps/step4.png)
+
+#### Getting Help with FUSION
+
+If you need assistance with FUSION, contact:
+- Your colleagues during shifts
+- Your direct supervisor
+- HR support for technical issues
+
+:::{.callout-important}
+## IMPORTANT: Monthly Deadline
+You must register your hours before the end of the month. Otherwise you will get a warning from HR requiring you to do it.
+:::
+
+:::{.callout-tip}
+## Quick Reference
+You can check the number of working days for any month at: <https://ugenr.dk/arbejdsdage>
+
+**Remember:** Subtract 2 from the total to account for your two free days per month.
+:::
+
+### SharePoint Time Registration
+
+Monthly tasks also include:
+
+- **Register personal working hours** on [SharePoint](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=eEhaCK)
+- This is in addition to the DTU FUSION registration
+
+## Daily, Weekly and Monthly Tasks 
+
+### Daily Tasks
+
+:::{.callout-note}
+## Every Shift
+- **Check RT Ticketing System** for new support requests
+- **Monitor Discord channels** for team communications, updates and questions from students
+- **Follow the 4-step support workflow** for all user interactions
+- **Document solutions** as you resolve repeated issues (and notify the rest of the team on discord)
+:::
+
+### Weekly Tasks
+
+:::{.callout-note}
+## Every Week
+- **Review shift schedules** on Discord for any changes and updates
+:::
+
+### Monthly Tasks
+
+:::{.callout-important}
+## Before Month End
+- **Register hours in DTU FUSION** 
+- **Register personal working hours** on SharePoint
+
+**Needs to be done before last team meeting in current month!**
+:::
+
+## Getting Help & Support
+
+### Where to Get Help
+
+| Contact | Purpose | When to Use |
+|---------|---------|-------------|
+| **The Team** | Support & collaboration | During your shift |
+| **Team Lead** | Daily questions & priorities | Regular guidance |
+| **Discord Channel** | Quick team-wide help | Immediate assistance |
+| **Knowledge Base** | Self-service resources | Research & learning |

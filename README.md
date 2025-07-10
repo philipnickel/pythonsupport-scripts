@@ -1,3 +1,8 @@
+# Quarto PIS Onboarding website 
+
+
+🌐 **Live Site:** https://dtudk.github.io/pythonsupport-scripts/
+
 # Autoinstalling python 
 ## MacOS
 Open a terminal (command + space, search for terminal) and run the following command:
