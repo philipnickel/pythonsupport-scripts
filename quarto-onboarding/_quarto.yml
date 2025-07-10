@@ -1,0 +1,33 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Python Installation Support - Onboarding and Practicals"
+  navbar:
+    pinned: true
+    left:
+      - href: index.qmd
+        text: Home
+      - href: contents/your-role.qmd
+        text: "Your Role in the Team"
+      - href: contents/introduction-process.qmd
+        text: "Introduction Process"
+      - href: contents/tools-practicals.qmd
+        text: "Tools & Practicals"
+
+format:
+  html:
+    theme: 
+      light: flatly
+      dark: darkly
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: false
+    code-tools: false
+    smooth-scroll: true
+  pdf:
+    documentclass: scrreprt
+    toc: true
