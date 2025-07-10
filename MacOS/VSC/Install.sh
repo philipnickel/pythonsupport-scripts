@@ -68,7 +68,7 @@ else
     [ $? -ne 0 ] && exit_message
 fi
 
-hash -r 
+hash -r
 clear -x
 
 
@@ -85,9 +85,8 @@ fi
 clear -x
 
 echo "$_prefix Installing extensions for Visual Studio Code..."
-# install extensions for vs code
-# install python extension, jupyter, vscode-pdf
-#python extension
+
+# install python extension
 code --install-extension ms-python.python
 [ $? -ne 0 ] && exit_message
 

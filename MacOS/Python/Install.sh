@@ -7,13 +7,17 @@ fi
 if [ -z "$BRANCH_PS" ]; then
   BRANCH_PS="main"
 fi
+if [ -z "$PYTHON_VERSION_PS" ]; then
+  PYTHON_VERSION_PS="3.11"
+fi
 
 export REMOTE_PS
 export BRANCH_PS
 
-# set URL
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
+_py_version=$PYTHON_VERSION_PS
+
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 echo "$_prefix Python installation"
 
@@ -29,7 +33,7 @@ if ! command -v brew > /dev/null; then
   [ -e ~/.bash_profile ] && source ~/.bash_profile
 
   # update binary locations 
-  hash -r 
+  hash -r
 fi
 
 
@@ -53,16 +57,8 @@ exit_message () {
 }
 
 
-
-if [ -z "$PYTHON_VERSION_PS" ]; then
-    PYTHON_VERSION_PS="3.11"
-fi
-
-_py_version=$PYTHON_VERSION_PS
-
 # Install miniconda
 # Check if miniconda is installed
-
 echo "$_prefix Installing Miniconda..."
 if conda --version > /dev/null; then
   echo "$_prefix Miniconda or anaconda is already installed"
@@ -74,11 +70,16 @@ fi
 clear -x
 
 echo "$_prefix Initialising conda..."
-conda init bash 
+conda init bash
 [ $? -ne 0 ] && exit_message
 
 conda init zsh
 [ $? -ne 0 ] && exit_message
+
+# Anaconda has this package which tracks usage metrics
+# We will disable this, and if it fails, so be it.
+# I.e. we shouldn't check whether it actually succeeds
+conda config --set anaconda_anon_usage off
 
 # need to restart terminal to activate conda
 # restart terminal and continue
@@ -89,24 +90,39 @@ echo "$_prefix Showing where it is installed:"
 conda info --base
 [ $? -ne 0 ] && exit_message
 
-hash -r 
+echo "$_prefix Updating environment variables"
+hash -r
 clear -x
-
-echo "$_prefix Removing defaults channel (due to licensing problems)"
-conda config --remove channels defaults
-conda config --add channels conda-forge
-# Forcefully try to always use conda-forge
-conda config --set channel_priority strict
-
-echo "$_prefix Ensuring Python version ${_py_version}..."
-conda install python=${_py_version} -y
-[ $? -ne 0 ] && exit_message
-clear -x 
 
 # We will not install the Anaconda GUI
 # There may be license issues due to DTU being
 # a rather big institution. So our installation guides
-# Will be pre-cautious here, and remove the defaults channels.
+# will be pre-cautious here, and remove the defaults channels.
+echo "$_prefix Removing defaults channel (due to licensing problems)"
+conda config --remove channels defaults
+conda config --add channels conda-forge
+
+# Sadly, there can be a deadlock here
+# When channel_priority == strict
+# newer versions of conda will sometimes be unable to downgrade.
+# However, when channel_priority == flexible
+# it will sometimes not revert the libmamba suite which breaks
+# the following conda install commands.
+# Hmmm.... :(
+conda config --set channel_priority flexible
+
+echo "$_prefix Ensuring Python version ${_py_version}..."
+# Doing local strict channel-priority
+conda install --strict-channel-priority python=${_py_version} -y
+retval=$?
+# If it fails, try to use the flexible way, but manually downgrade libmamba to conda-forge
+if [ $retval -ne 0 ]; then
+  echo "$_prefix Trying manual downgrading..."
+  conda install python=${_py_version} conda-forge::libmamba conda-forge::libmambapy -y
+  retval=$?
+fi
+[ $retval -ne 0 ] && exit_message
+clear -x
 
 echo "$_prefix Installing packages..."
 conda install dtumathtools pandas scipy statsmodels uncertainties -y

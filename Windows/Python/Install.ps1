@@ -1,11 +1,12 @@
 $_prefix = "PYS:"
 
-# check for env variable PYTHONVERSIONPS 
+# check for env variable PYTHON_VERSION_PS
 # if it isn't set set it to 3.11
-
 if (-not $env:PYTHON_VERSION_PS) {
     $env:PYTHON_VERSION_PS = "3.11"
 }
+
+Write-Output "$_prefix Python installation"
 
 
 # Function to refresh environment variables in the current session
@@ -59,18 +60,14 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 
     Write-Output "$_prefix Downloading installer for Miniconda..."
     Invoke-WebRequest -Uri $minicondaUrl -OutFile $minicondaInstallerPath
-    if ($?) {
-        Write-Output "$_prefix Miniconda installer downloaded."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
     Write-Output "$_prefix Installing Miniconda..."
     # Install Miniconda
     Start-Process -FilePath $minicondaInstallerPath -ArgumentList "/InstallationType=JustMe /RegisterPython=1 /S /D=$env:USERPROFILE\Miniconda3" -Wait
-    if ($?) {
-        Write-Output "$_prefix Miniconda installed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
 
@@ -90,14 +87,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         }
     }
 
+
+    Write-Output "$_prefix Environment variables refreshed."
     Add-CondaToPath
     Refresh-Env
-    if ($?) {
-        Write-Output "$_prefix Environment variables refreshed."
-    } else {
+    if (-not $?) {
         Exit-Message
     }
-
 
     # Check conda-paths
     $conda_paths = Get-Command -ErrorAction:SilentlyContinue conda
@@ -114,6 +110,11 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
         Exit-Message
     }
 
+    # Anaconda has this package which tracks usage metrics
+    # We will disable this, and if it fails, so be it.
+    # I.e. we shouldn't check whether it actually succeeds
+    conda config --set anaconda_anon_usage off
+
     # Initialize conda
     Write-Output "$_prefix Initialising conda..."
     conda init
@@ -128,8 +129,13 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     }
 
 
+    # Later, we should check if this is even necessary?
+    # I can see a few problems:
+    # 1. If the user has a previous Conda installation then this will
+    #    explicitly install things in the newly installed version.
+    # 2. If the above happens there may be some inconsistency between
+    #    commands.
     $condaBatPath = "$env:USERPROFILE\Miniconda3\condabin\conda.bat"
-
 
 
     # Ensuring correct channels are set
@@ -138,29 +144,47 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
     if (-not $?) {
         Exit-Message
     }
+
+    # Attempts to remove defaults channel (due to licensing problems
     & $condaBatPath config --remove channels defaults
     if (-not $?) {
-        Exit-Message
+       Write-Output "$_prefix Failed to remove defaults channel"
     }
-    & $condaBatPath config --set channel_priority strict
+
+    # Sadly, there can be a deadlock here
+    # When channel_priority == strict
+    # newer versions of conda will sometimes be unable to downgrade.
+    # However, when channel_priority == flexible
+    # it will sometimes not revert the libmamba suite which breaks
+    # the following conda install commands.
+    # Hmmm.... :(
+    & $condaBatPath config --set channel_priority flexible
     if (-not $?) {
         Exit-Message
     }
-     # Ensures correct version of python
 
+    # Ensures correct version of python
     if (-not $env:PYTHON_INSTALL_COMMAND_EXECUTED) {
-        & $condaBatPath install python=$env:PYTHON_VERSION_PS -y
-        $env:PYTHON_INSTALL_COMMAND_EXECUTED = "true"
+        & $condaBatPath install --strict-channel-priority python=$env:PYTHON_VERSION_PS -y
+        $retval = $?
+        # If it fails, try to use the flexible way, but manually downgrade libmamba to conda-forge
+        if ( -not $retval ) {
+            Write-Output "$_prefix Trying manual downgrading..."
+            & $condaBatPath install python=$env:PYTHON_VERSION_PS conda-forge::libmamba conda-forge::libmambapy -y
+            $retval = $?
+        }
     } else {
-        Write-Output "Python installation command has already been executed, skipping..."
+        Write-Output "$_prefix Python installation command has already been executed, skipping..."
+        $retval = 0
     }
-    if (-not $?) {
+    if (-not $retval) {
         Exit-Message
     }
+    # It has been runned, inform the environment
+    $env:PYTHON_INSTALL_COMMAND_EXECUTED = "true"
 
-   
-   # Install packages
-        
+
+    # Install packages
     Write-Output "$_prefix Installing packages..."
     & $condaBatPath install dtumathtools pandas scipy statsmodels uncertainties -y
     if (-not $?) {

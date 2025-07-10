@@ -19,7 +19,8 @@ jobs:
       matrix:
         has-conda: [true, false]  # Test with pre-installed conda
         python-version: ["3.10", "3.11"]  # Test multiple Python versions
-        os: [macos-latest, macos-12]  # Test on different macOS versions
+        # macos-12 has been deprecated
+        os: [macos-latest, macos-13]  # Test on different macOS versions
 
     steps:
 
@@ -29,6 +30,9 @@ jobs:
         with:
           auto-activate-base: true
           activate-environment: ""
+          # Using "latest" can result in conda not being able to downgrade
+          # So better not use it... Although it does pose some problems
+          #miniconda-version: "latest"
 
       - name: Remove conda (if present)
         if: ${{ !matrix.has-conda }}
