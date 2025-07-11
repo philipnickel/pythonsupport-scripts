@@ -16,7 +16,7 @@ date: today
 | **Scripts GitHub** | Scripts for auto installation ect. | [GitHub Repository](https://github.com/dtudk/pythonsupport-scripts/){target="_blank"} |
 | **Teams/SharePoint** | Documents & Personal hour registration| [Students documents](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=eEhaCK){target="_blank"} |
 | **Course Reference** | Programming materials | [Course Materials](https://02002.compute.dtu.dk/){target="_blank"} |
-| **DTU FUSION** | Time registration system | [DTU FUSION](https://efzu.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome){target="_blank"} |
+| **DTU FUSION** | Time registration system | [DTU FUSION](https://www.fusion.dtu.dk){target="_blank"} |
 
 ## Registering Working Hours
 
@@ -32,7 +32,7 @@ DTU FUSION serves as the central time tracking platform for all workers at the u
 Follow these steps to record your working hours in FUSION:
 
 1. **Log into FUSION**
-   - Navigate to: <https://efzu.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome>
+   - Navigate to: <https://https://www.fusion.dtu.dk>
    
 
 2. **Access Time Sheet**
