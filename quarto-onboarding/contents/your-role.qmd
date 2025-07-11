@@ -36,7 +36,7 @@ We aim to provide prompt, dependable, and compassionate support to our users.
 
 2. **Triage & Troubleshoot**
    - Identify the root issue
-   - Check documentation before escalating
+   - Check the documentation before escalating
 
 3. **Resolution**
    - Provide solutions or workarounds
@@ -64,5 +64,5 @@ As a Python Installation Support team member, you will:
 
 :::{.callout-tip}
 ## Golden Rule
-**If you solve a problem more than twice, document it.**
+**If you solve a problem more than twice, document it in GitHub.**
 :::
