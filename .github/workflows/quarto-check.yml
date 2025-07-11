@@ -1,0 +1,66 @@
+name: Quarto Render Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths: 
+      - 'quarto-onboarding/**'
+      - '.github/workflows/quarto-check.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quarto-render:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        
+      - name: Install Python dependencies (if needed)
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+      - name: Render Quarto project
+        run: |
+          cd quarto-onboarding
+          quarto render
+          
+      - name: Check if render was successful
+        run: |
+          if [ -d "quarto-onboarding/docs" ] && [ "$(ls -A quarto-onboarding/docs)" ]; then
+            echo "✅ Quarto render successful - output files generated"
+            echo "Generated files:"
+            ls -la quarto-onboarding/docs/
+          else
+            echo "❌ Quarto render failed - no output files found"
+            exit 1
+          fi
+          
+      - name: Comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const success = fs.existsSync('quarto-onboarding/docs') && 
+                           fs.readdirSync('quarto-onboarding/docs').length > 0;
+            
+            const message = success 
+              ? '✅ **Quarto Render Check: PASSED**\n\nThe Quarto documentation rendered successfully!'
+              : '❌ **Quarto Render Check: FAILED**\n\nThere was an issue rendering the Quarto documentation. Please check the workflow logs for details.';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
