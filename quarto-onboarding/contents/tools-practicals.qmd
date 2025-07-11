@@ -20,6 +20,8 @@ date: today
 
 ## Registering Working Hours
 
+To simplify the process, we have provided two options for registering hours: the official method, via Fusion, and the unofficial method, via an Excel sheet on Teams (Student Documents). In the Excel sheet, the actual hours are recorded, ensuring that the semester's total number of hours balances when the semester is over.
+
 ## DTU FUSION 
 
 :::{.callout-tip}
@@ -74,6 +76,8 @@ You must register your hours before the end of the month. Otherwise you will get
 You can check the number of working days for any month at: <https://ugenr.dk/arbejdsdage>
 
 **Remember:** Subtract 2 from the total to account for your two free days per month.
+
+**Please note:** Working days between Christmas and New Year's are mandatory vacation days, as well as the Friday after Ascension Day.
 :::
 
 ## SharePoint
