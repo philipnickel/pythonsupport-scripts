@@ -17,9 +17,6 @@ jobs:
     
     steps:
       - name: Check Quarto Render
-        uses: quarto-dev/quarto-actions/publish@v2
+        uses: quarto-dev/quarto-actions/render@v2
         with:
-          target: local
           path: quarto-onboarding
-        env:
-          QUARTO_PRINT_STACK: true
