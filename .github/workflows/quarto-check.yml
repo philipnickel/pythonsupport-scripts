@@ -16,7 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Check Quarto Render
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        
+      - name: Render Quarto Project
         uses: quarto-dev/quarto-actions/render@v2
         with:
           path: quarto-onboarding
