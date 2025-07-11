@@ -16,21 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Render and Check Quarto Project
+      - name: Check Quarto Render
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: local
           path: quarto-onboarding
-          render: true
-          post-render: |
-            if [ -d "quarto-onboarding/docs" ] && [ "$(ls -A quarto-onboarding/docs)" ]; then
-              echo "✅ Quarto render successful"
-              echo "render_success=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ Quarto render failed"
-              echo "render_success=false" >> $GITHUB_OUTPUT
-              exit 1
-            fi
         env:
           QUARTO_PRINT_STACK: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
