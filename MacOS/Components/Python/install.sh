@@ -16,6 +16,7 @@ export BRANCH_PS
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 echo "$_prefix Python (Miniconda) installation"
+echo "$_prefix Starting installation process..."
 
 # Check for homebrew
 # if not installed call homebrew installation script
