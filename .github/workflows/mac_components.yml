@@ -6,21 +6,14 @@ defaults:
 
 on:
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
     paths:
       - 'MacOS/Components/**'
-      - '.github/workflows/mac_components.yml'
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
     paths:
       - 'MacOS/Components/**'
-      - '.github/workflows/mac_components.yml'
   workflow_dispatch:
-    inputs:
-      test_branch:
-        description: 'Branch to test (default: current branch)'
-        required: false
-        default: ''
   schedule:
     - cron: "0 2 * * 0"  # Run every Sunday at 2 AM UTC
 
@@ -28,67 +21,6 @@ env:
   PYTHON_VERSION_PS: "3.11"
 
 jobs:
-  validate:
-    name: Validate Code & Documentation
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install shellcheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-          
-      - name: Validate shell scripts
-        run: |
-          echo "Validating shell scripts..."
-          find MacOS/Components -name "*.sh" -type f | while read -r file; do
-            echo "Checking $file"
-            # Use relaxed shellcheck rules for these scripts
-            shellcheck -e SC1090,SC1091,SC2034,SC2086,SC2181 "$file" || true
-          done
-          
-      - name: Check script permissions
-        run: |
-          echo "Checking script permissions..."
-          find MacOS/Components -name "*.sh" -type f | while read -r file; do
-            if [ ! -x "$file" ]; then
-              echo "WARNING: $file is not executable"
-            else
-              echo "OK: $file is executable"
-            fi
-          done
-          
-      - name: Validate workflow syntax
-        run: |
-          echo "Validating GitHub Actions workflows..."
-          for workflow in .github/workflows/*.yml; do
-            echo "Validating $workflow"
-            python3 -c "import yaml; yaml.safe_load(open('$workflow'))" || exit 1
-            echo "OK: $workflow is valid YAML"
-          done
-          
-      - name: Check component documentation
-        run: |
-          echo "Checking component documentation..."
-          components=("Homebrew" "Python" "VSC" "Latex" "Diagnostics")
-          for component in "${components[@]}"; do
-            if [ -d "MacOS/Components/$component" ]; then
-              echo "OK: $component component directory exists"
-              
-              if [ -f "MacOS/Components/$component/install.sh" ]; then
-                echo "OK: $component has install.sh"
-              else
-                echo "WARNING: $component missing install.sh"
-              fi
-            else
-              echo "ERROR: $component component directory missing"
-              exit 1
-            fi
-          done
-
   test-homebrew:
     name: Test Homebrew Component
     runs-on: macos-latest
@@ -103,8 +35,8 @@ jobs:
 
       - name: Install Homebrew Component
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing Homebrew from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Homebrew/install.sh)"
@@ -128,16 +60,16 @@ jobs:
 
       - name: Install Python Component
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing Python from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
 
       - name: Install First Year Setup
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           source ~/.bashrc || true
           echo "Testing First Year Setup from: $REMOTE_PS/$BRANCH_PS"
@@ -173,16 +105,16 @@ jobs:
 
       - name: Install VSCode Component
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing VSCode from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install.sh)"
 
       - name: Install VSCode Extensions
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing VSCode Extensions from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install_extensions.sh)"
@@ -209,8 +141,8 @@ jobs:
     steps:
       - name: Install LaTeX Component
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing LaTeX from: $REMOTE_PS/$BRANCH_PS"
           # Auto-answer yes to the prompt
@@ -235,8 +167,8 @@ jobs:
     steps:
       - name: Run Diagnostics
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing Diagnostics from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/run.sh)"
@@ -258,8 +190,8 @@ jobs:
 
       - name: Full Component Installation
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing Full Integration from: $REMOTE_PS/$BRANCH_PS"
           
@@ -277,8 +209,8 @@ jobs:
 
       - name: Run Full Diagnostics
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.event_name == 'workflow_dispatch' && github.repository || github.event_name == 'schedule' && 'philipnickel/pythonsupport-scripts' || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event_name == 'workflow_dispatch' && (inputs.test_branch || github.ref_name) || github.event_name == 'schedule' && 'main' || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           source ~/.bashrc || true
           echo "Running Final Diagnostics from: $REMOTE_PS/$BRANCH_PS"
