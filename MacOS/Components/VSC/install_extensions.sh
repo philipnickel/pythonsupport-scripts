@@ -16,6 +16,7 @@ export BRANCH_PS
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
 
 echo "$_prefix Installing Visual Studio Code extensions"
+echo "$_prefix This will install Python, Jupyter, and PDF extensions..."
 
 # Check if VS Code is installed, if not install it first
 if ! command -v code > /dev/null; then

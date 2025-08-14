@@ -3,6 +3,7 @@
 _prefix="PYS:"
 
 echo "$_prefix Running Python Support Diagnostics"
+echo "$_prefix System analysis starting..."
 echo "========================================="
 echo ""
 
