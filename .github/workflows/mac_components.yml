@@ -10,11 +10,6 @@ on:
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_components.yml'
-  pull_request_target:
-    branches: [ "main", "dev" ]
-    paths:
-      - 'MacOS/Components/**'
-      - '.github/workflows/mac_components.yml'
   push:
     branches: [ "dev" ]
     paths:
@@ -49,8 +44,8 @@ jobs:
       - name: Install Homebrew Component (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Homebrew/install.sh)"
@@ -85,8 +80,8 @@ jobs:
       - name: Install Python Component (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
@@ -102,8 +97,8 @@ jobs:
       - name: Test First Year Setup (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           source ~/.bashrc || true
@@ -150,8 +145,8 @@ jobs:
       - name: Install VSCode Component (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install.sh)"
@@ -164,8 +159,8 @@ jobs:
       - name: Install VSCode Extensions (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install_extensions.sh)"
@@ -203,8 +198,8 @@ jobs:
       - name: Install LaTeX Component (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           # Auto-answer yes to the prompt
@@ -239,8 +234,8 @@ jobs:
       - name: Run Diagnostics (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/run.sh)"
@@ -285,8 +280,8 @@ jobs:
       - name: Full Component Installation (from branch/fork)
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
@@ -308,8 +303,8 @@ jobs:
           if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"
           else
-            REMOTE_PS="${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}"
-            BRANCH_PS="${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}"
+            REMOTE_PS="${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}"
+            BRANCH_PS="${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}"
             echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/run.sh)"
           fi
