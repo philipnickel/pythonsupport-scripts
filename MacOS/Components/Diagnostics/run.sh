@@ -4,6 +4,7 @@ _prefix="PYS:"
 
 echo "$_prefix Running Python Support Diagnostics"
 echo "$_prefix System analysis starting..."
+echo "$_prefix Checking system compatibility..."
 echo "========================================="
 echo ""
 
