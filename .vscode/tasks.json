@@ -4,23 +4,41 @@
     {
       "label": "Docs: Serve",
       "type": "shell",
-      "command": "mkdocs serve --dev-addr 127.0.0.1:8000 -f mkdocs.yml",
+      "command": "mkdocs",
+      "args": ["serve", "--dev-addr", "127.0.0.1:8000", "--config-file", "mkdocs.yml"],
       "options": {
         "cwd": "${workspaceFolder}/docs"
       },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
       "problemMatcher": [],
-      "detail": "Start MkDocs local dev server on http://127.0.0.1:8000"
+      "detail": "Start MkDocs development server at http://127.0.0.1:8000"
     },
     {
       "label": "Docs: Build",
       "type": "shell",
-      "command": "mkdocs build -f mkdocs.yml",
+      "command": "mkdocs",
+      "args": ["build", "--config-file", "mkdocs.yml"],
       "options": {
         "cwd": "${workspaceFolder}/docs"
       },
       "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
       "problemMatcher": [],
-      "detail": "Build static site into ./site"
+      "detail": "Build MkDocs site to ./docs/site directory"
     },
     {
       "label": "Build Demo App",

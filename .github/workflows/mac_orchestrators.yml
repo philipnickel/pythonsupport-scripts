@@ -107,8 +107,9 @@ jobs:
           fi
           exit $retval
 
-      - name: Verify conda
+      - name: Verify Miniconda Installation
         run: |
+          # Check that conda is available
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -116,22 +117,93 @@ jobs:
             exit $retval
           fi
 
-          # Some more output
+          # Verify conda info
           conda --version
           conda info --base
 
-      - name: Verify python (${{ matrix.python-version }})
-        run: |
-          which python3
+          # Verify python3 runs through miniconda (not system Python)
+          PYTHON_PATH=$(which python3)
+          CONDA_BASE=$(conda info --base)
+          
+          if [[ "$PYTHON_PATH" == *"$CONDA_BASE"* ]]; then
+            echo "✓ python3 correctly uses Miniconda: $PYTHON_PATH"
+          else
+            echo "✗ python3 not using Miniconda. Found: $PYTHON_PATH"
+            echo "Expected path to contain: $CONDA_BASE"
+            exit 1
+          fi
 
-          # Verify the installed Python version
+      - name: Verify VSCode and Extensions
+        run: |
+          # Check VS Code installation
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+            exit $retval
+          fi
+
+          # Check for Python extensions
+          echo "Checking for Python development extensions..."
+          code --list-extensions | grep -i python || { 
+            echo "Python extension not found"
+            echo "Installed extensions:"
+            code --list-extensions
+            exit 1
+          }
+
+      - name: Verify First Year Setup
+        run: |
+          # Verify the installed Python version matches expectations
           EXPECTED_VERSION="${{ matrix.python-version }}"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
-          echo "Correct Python version $INSTALLED_VERSION is installed."
+          echo "✓ Correct Python version $INSTALLED_VERSION is installed."
 
-          # Verify Python package imports
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          # Verify Python package imports for first-year courses
+          echo "Testing first-year course packages..."
+          python3 -c "
+import sys
+print(f'Python executable: {sys.executable}')
+print('Testing package imports...')
+
+try:
+    import dtumathtools
+    print('✓ dtumathtools imported successfully')
+except ImportError as e:
+    print(f'✗ dtumathtools import failed: {e}')
+    sys.exit(1)
+
+try:
+    import pandas
+    print('✓ pandas imported successfully')
+except ImportError as e:
+    print(f'✗ pandas import failed: {e}')
+    sys.exit(1)
+
+try:
+    import scipy
+    print('✓ scipy imported successfully')
+except ImportError as e:
+    print(f'✗ scipy import failed: {e}')
+    sys.exit(1)
+
+try:
+    import statsmodels
+    print('✓ statsmodels imported successfully')
+except ImportError as e:
+    print(f'✗ statsmodels import failed: {e}')
+    sys.exit(1)
+
+try:
+    import uncertainties
+    print('✓ uncertainties imported successfully')
+except ImportError as e:
+    print(f'✗ uncertainties import failed: {e}')
+    sys.exit(1)
+
+print('All first-year course packages imported successfully!')
+" || { echo "First-year package verification failed"; exit 1; }

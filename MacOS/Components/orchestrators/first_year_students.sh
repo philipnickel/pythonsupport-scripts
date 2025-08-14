@@ -25,6 +25,24 @@ _python_ret=$?
 /bin/bash -c "$(curl -fsSL $url_ps/VSC/install.sh)"
 _vsc_ret=$?
 
+# run first year python setup (install specific version and packages)
+if [ $_python_ret -eq 0 ]; then
+  echo "$_prefix Running first year Python environment setup..."
+  /bin/bash -c "$(curl -fsSL $url_ps/Python/first_year_setup.sh)"
+  _first_year_ret=$?
+else
+  _first_year_ret=0  # Skip if Python installation failed
+fi
+
+# install vscode extensions
+if [ $_vsc_ret -eq 0 ]; then
+  echo "$_prefix Installing VSCode extensions for Python development..."
+  /bin/bash -c "$(curl -fsSL $url_ps/VSC/install_extensions.sh)"
+  _extensions_ret=$?
+else
+  _extensions_ret=0  # Skip if VSCode installation failed
+fi
+
 exit_message() {
   echo ""
   echo "Something went wrong in one of the installation runs."
@@ -38,6 +56,14 @@ if [ $_python_ret -ne 0 ]; then
 elif [ $_vsc_ret -ne 0 ]; then
   exit_message
   exit $_vsc_ret
+elif [ $_first_year_ret -ne 0 ]; then
+  exit_message
+  exit $_first_year_ret
+elif [ $_extensions_ret -ne 0 ]; then
+  echo ""
+  echo "VSCode extensions installation failed, but core installation succeeded."
+  echo "You can install extensions manually later."
+  echo ""
 fi
 
 echo ""
