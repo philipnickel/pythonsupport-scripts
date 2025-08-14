@@ -4,12 +4,21 @@ defaults:
   run:
     shell: bash -l {0}
 
+# DISABLED - Use mac_components.yml instead
+# on:
+#   pull_request:
+#     branches: [ "main" ]
+#   workflow_dispatch:
+#   schedule:
+#     - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+
 on:
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+    inputs:
+      force_run:
+        description: 'Force run this legacy workflow (use mac_components.yml instead)'
+        required: true
+        default: 'false'
 
 jobs:
   test:
