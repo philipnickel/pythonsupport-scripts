@@ -43,7 +43,7 @@ jobs:
           
       - name: Validate shell scripts
         run: |
-          echo "🔍 Validating shell scripts..."
+          echo "Validating shell scripts..."
           find MacOS/Components -name "*.sh" -type f | while read -r file; do
             echo "Checking $file"
             # Use relaxed shellcheck rules for these scripts
@@ -52,39 +52,39 @@ jobs:
           
       - name: Check script permissions
         run: |
-          echo "🔒 Checking script permissions..."
+          echo "Checking script permissions..."
           find MacOS/Components -name "*.sh" -type f | while read -r file; do
             if [ ! -x "$file" ]; then
-              echo "⚠️  $file is not executable"
+              echo "WARNING: $file is not executable"
             else
-              echo "✓ $file is executable"
+              echo "OK: $file is executable"
             fi
           done
           
       - name: Validate workflow syntax
         run: |
-          echo "📋 Validating GitHub Actions workflows..."
+          echo "Validating GitHub Actions workflows..."
           for workflow in .github/workflows/*.yml; do
             echo "Validating $workflow"
             python3 -c "import yaml; yaml.safe_load(open('$workflow'))" || exit 1
-            echo "✓ $workflow is valid YAML"
+            echo "OK: $workflow is valid YAML"
           done
           
       - name: Check component documentation
         run: |
-          echo "📚 Checking component documentation..."
+          echo "Checking component documentation..."
           components=("Homebrew" "Python" "VSC" "Latex" "Diagnostics")
           for component in "${components[@]}"; do
             if [ -d "MacOS/Components/$component" ]; then
-              echo "✓ $component component directory exists"
+              echo "OK: $component component directory exists"
               
               if [ -f "MacOS/Components/$component/install.sh" ]; then
-                echo "✓ $component has install.sh"
+                echo "OK: $component has install.sh"
               else
-                echo "⚠️  $component missing install.sh"
+                echo "WARNING: $component missing install.sh"
               fi
             else
-              echo "❌ $component component directory missing"
+              echo "ERROR: $component component directory missing"
               exit 1
             fi
           done
@@ -198,7 +198,7 @@ jobs:
               echo "Extension $ext not installed"
               exit 1
             else
-              echo "✓ Extension $ext is installed"
+              echo "OK: Extension $ext is installed"
             fi
           done
 
