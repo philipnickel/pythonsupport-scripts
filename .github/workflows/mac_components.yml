@@ -1,0 +1,315 @@
+name: Mac Components Tests
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_components.yml'
+  pull_request_target:
+    branches: [ "main", "dev" ]
+    paths:
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_components.yml'
+  push:
+    branches: [ "dev" ]
+    paths:
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_components.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 0"  # Run every Sunday at 2 AM UTC
+
+jobs:
+  test-homebrew:
+    name: Test Homebrew Component
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        
+    steps:
+      - name: Remove existing Homebrew
+        run: |
+          if command -v brew > /dev/null; then
+            echo "Removing existing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
+          fi
+
+      - name: Install Homebrew Component (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Homebrew/install.sh)"
+
+      - name: Install Homebrew Component (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Homebrew/install.sh)"
+
+      - name: Verify Homebrew Installation
+        run: |
+          brew --version
+          brew doctor || echo "Homebrew doctor found issues (expected in CI)"
+
+  test-python:
+    name: Test Python Component
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        python-version: ["3.10", "3.11"]
+        
+    steps:
+      - name: Clean existing conda installations
+        run: |
+          if command -v conda > /dev/null; then
+            conda init --reverse --all || true
+          fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+
+      - name: Install Python Component (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
+
+      - name: Install Python Component (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
+
+      - name: Test First Year Setup (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          source ~/.bashrc || true
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
+
+      - name: Test First Year Setup (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          source ~/.bashrc || true
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/first_year_setup.sh)"
+
+      - name: Verify Python Installation
+        run: |
+          source ~/.bashrc || true
+          which conda
+          conda --version
+          conda info --base
+          
+          # Verify Python version
+          EXPECTED_VERSION="${{ matrix.python-version }}"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          
+          # Verify packages
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')"
+
+  test-vscode:
+    name: Test VSCode Component
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        
+    steps:
+      - name: Remove existing VS Code
+        run: |
+          rm -rf "/Applications/Visual Studio Code.app" || true
+          rm -rf ~/.vscode* || true
+
+      - name: Install VSCode Component (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
+
+      - name: Install VSCode Component (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install.sh)"
+
+      - name: Install VSCode Extensions (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install_extensions.sh)"
+
+      - name: Install VSCode Extensions (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install_extensions.sh)"
+
+      - name: Verify VSCode Installation
+        run: |
+          code --version
+          
+          # Verify extensions
+          extensions=("ms-python.python" "ms-toolsai.jupyter" "tomoki1207.pdf")
+          for ext in "${extensions[@]}"; do
+            if ! code --list-extensions | grep -q "^$ext$"; then
+              echo "Extension $ext not installed"
+              exit 1
+            else
+              echo "✓ Extension $ext is installed"
+            fi
+          done
+
+  test-latex:
+    name: Test LaTeX Component
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        
+    steps:
+      - name: Install LaTeX Component (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          # Auto-answer yes to the prompt
+          echo "y" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/install.sh)"
+
+      - name: Install LaTeX Component (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          # Auto-answer yes to the prompt
+          echo "y" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/install.sh)"
+
+      - name: Verify LaTeX Installation
+        run: |
+          # Verify pandoc
+          pandoc --version
+          
+          # Verify TeX
+          tlmgr --version
+          
+          # Verify nbconvert
+          python3 -c "import nbconvert; print('nbconvert available')"
+
+  test-diagnostics:
+    name: Test Diagnostics Component
+    runs-on: ${{ matrix.os }}
+    needs: [test-homebrew, test-python, test-vscode]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        
+    steps:
+      - name: Run Diagnostics (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"
+
+      - name: Run Diagnostics (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/run.sh)"
+
+  test-integration:
+    name: Test Full Integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+        python-version: ["3.11"]
+        
+    steps:
+      - name: Clean System
+        run: |
+          # Remove existing installations
+          if command -v brew > /dev/null; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
+          fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+          rm -rf "/Applications/Visual Studio Code.app" || true
+          rm -rf ~/.vscode* || true
+
+      - name: Full Component Installation (from main)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          # Install all components in sequence
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Homebrew/install.sh)"
+          source ~/.bash_profile || true
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
+          source ~/.bashrc || true
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install_extensions.sh)"
+
+      - name: Full Component Installation (from branch/fork)
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          PYTHON_VERSION_PS: ${{ matrix.python-version }}
+        run: |
+          echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+          # Install all components in sequence
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Homebrew/install.sh)"
+          source ~/.bash_profile || true
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
+          source ~/.bashrc || true
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/first_year_setup.sh)"
+          
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install_extensions.sh)"
+
+      - name: Run Full Diagnostics
+        run: |
+          source ~/.bashrc || true
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"
+          else
+            REMOTE_PS="${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}"
+            BRANCH_PS="${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}"
+            echo "Testing from repository: $REMOTE_PS, branch: $BRANCH_PS"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/run.sh)"
+          fi
