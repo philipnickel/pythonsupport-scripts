@@ -132,8 +132,7 @@ jobs:
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing LaTeX from: $REMOTE_PS/$BRANCH_PS"
-          # Auto-answer yes to the prompt
-          echo "y" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/install.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/install.sh)"
 
       - name: Verify LaTeX Installation
         run: |

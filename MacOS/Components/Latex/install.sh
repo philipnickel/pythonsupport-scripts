@@ -7,12 +7,17 @@ echo "$_prefix This script will install dependencies for exporting Jupyter Noteb
 echo "$_prefix You will need to type your password to the computer at some point during the installation."
 
 # do you wish to continue? You will need to enter your password to the computer.
-read -p "Do you wish to continue? (y/n) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    echo "Script aborted."
-    exit 1
+# Skip prompt in CI environments
+if [[ -z "$CI" && -z "$GITHUB_ACTIONS" ]]; then
+    read -p "Do you wish to continue? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "Script aborted."
+        exit 1
+    fi
+else
+    echo "Running in automated environment, skipping user prompt."
 fi
 
 echo "$_prefix This script will take a while to run, please be patient, and don't close your terminal before it says 'script finished'."
