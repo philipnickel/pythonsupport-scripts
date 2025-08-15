@@ -126,6 +126,21 @@ jobs:
     runs-on: macos-latest
     
     steps:
+      - name: Clean existing conda installations
+        run: |
+          if command -v conda > /dev/null; then
+            conda init --reverse --all || true
+          fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+
+      - name: Install Python Component (dependency for LaTeX)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Installing Python dependency from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
+
       - name: Install LaTeX Component
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
@@ -136,6 +151,9 @@ jobs:
 
       - name: Verify LaTeX Installation
         run: |
+          # Source conda environment
+          source ~/.bashrc || true
+          
           # Update PATH to include TeX binaries
           export PATH="/usr/local/texlive/2024basic/bin/universal-darwin:/usr/local/texlive/2023basic/bin/universal-darwin:$PATH"
           
@@ -158,9 +176,10 @@ jobs:
             fi
           fi
           
-          # Verify basic LaTeX functionality (core components only)
-          # Note: nbconvert testing is done in integration tests where Python is available
-          echo "LaTeX component verification: pandoc and TeX tools installed successfully"
+          # Verify nbconvert (now that Python is available)
+          python3 -c "import nbconvert; print('nbconvert available and working')"
+          
+          echo "LaTeX component verification: all components working successfully"
 
   test-diagnostics:
     name: Test Diagnostics Component
