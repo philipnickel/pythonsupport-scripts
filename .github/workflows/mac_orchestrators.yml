@@ -10,6 +10,11 @@ on:
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'
+  push:
+    branches: [ "mac-scripts-components" ]  # Test on this branch
+    paths:
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
