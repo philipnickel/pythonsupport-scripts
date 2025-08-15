@@ -4,16 +4,17 @@ Installs MacTeX (TeXLive distribution) for LaTeX document preparation.
 
 ## What it does
 
-1. **Dependency Check**: Ensures Homebrew is installed
-2. **MacTeX Installation**: Installs full TeXLive distribution via Homebrew
-3. **Path Configuration**: Adds TeX binaries to PATH
-4. **Verification**: Tests that `pdflatex` and other tools work
+1. **Pandoc Installation**: Installs pandoc for document conversion (architecture-specific)
+2. **BasicTeX Installation**: Installs lightweight TeXLive distribution  
+3. **Package Installation**: Installs additional TeX packages (amsmath, amsfonts, etc.)
+4. **Python Integration**: Updates nbconvert for Jupyter notebook PDF export
+5. **Non-interactive**: Fully automated with no user prompts
 
 ## Requirements
 
-- MacTeX is a large installation (~4GB)
-- Installation can take significant time depending on network
-- Working python installation
+- Working Homebrew installation (automatically installed if missing)
+- Working Python installation for nbconvert functionality  
+- BasicTeX is smaller than full MacTeX (~500MB vs 4GB)
 
 ---
 
@@ -25,14 +26,18 @@ Main installation script for MacTeX.
 
 **Installation Process:**
 
-- Installs `mactex` cask via Homebrew
-- Large download (~4GB) - includes full TeXLive
-- Updates PATH for TeX binaries
+- Fully automated installation (no user prompts)
+- Installs pandoc for document conversion
+- Installs BasicTeX (lightweight TeXLive distribution)  
+- Installs additional TeX packages for document compilation
+- Updates nbconvert for Jupyter notebook PDF export
 
 **Expected Outcome:**
 
-- Full TeXLive distribution installed
-- VSCode pdf-export configuration for LaTeX
+- BasicTeX TeXLive distribution installed
+- Pandoc available for document conversion
+- nbconvert configured for PDF export
+- VSCode pdf-export functionality enabled
 
 ---
 
