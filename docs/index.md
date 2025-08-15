@@ -29,4 +29,4 @@ Each component is a self-contained installation module:
 - **Python**: Miniconda installation and configuration
 - **VSCode**: Visual Studio Code and extensions
 - **LaTeX**: LaTeX distribution (Experimental with limited support)
-- **Utilities**: Common utilities used across components for error handling and logging
+- **Utilities**: Common utilities used across components for error handling and loggingtrigger new deployment
