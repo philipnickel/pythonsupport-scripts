@@ -1,3 +1,9 @@
+# Python Support Scripts
+
+📚 **[View Complete Documentation](https://philipnickel.github.io/pythonsupport-scripts/)**
+
+This repository contains automated installation scripts for Python development environments and associated tools for macOS and Windows.
+
 # Autoinstalling python 
 ## MacOS
 Open a terminal (command + space, search for terminal) and run the following command:
