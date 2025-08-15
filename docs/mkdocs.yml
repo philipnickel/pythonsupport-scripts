@@ -46,6 +46,8 @@ nav:
     - Overview: windows/index.md
     - Components:
       - Overview: windows/components/index.md
+  - Development:
+    - Testing & CI: development/ci.md
 
 markdown_extensions:
   - admonition
