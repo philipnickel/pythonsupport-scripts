@@ -1,11 +1,32 @@
 site_name: Python Support Scripts Documentation
 site_description: Documentation for DTU Python Support installation scripts
-site_url: https://dtudk.github.io/pythonsupport-scripts
+site_url: https://philipnickel.github.io/pythonsupport-scripts
 
 docs_dir: .
 
 theme:
-  name: readthedocs
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
 
 nav:
   - Home: index.md
