@@ -10,11 +10,6 @@ on:
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'
-  push:
-    branches: [ "mac-scripts-components" ]
-    paths:
-      - 'MacOS/Components/**'
-      - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
 
 env:
