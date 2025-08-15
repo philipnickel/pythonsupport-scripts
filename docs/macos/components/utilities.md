@@ -17,50 +17,73 @@ Analytics tracking utility for monitoring installation events and system informa
 **Purpose:**
 Track installation events, system information, and user interactions to improve the installation experience and identify common issues.
 
-**Functions Available:**
-
-- `piwik_log(event_name, [result])`: Track an installation event with optional result status
-- `get_system_info()`: Collect system information (OS, architecture, version)
-
-**Usage in Components:**
+**Usage:**
+Replace any command with `piwik_log` to automatically track its execution:
 
 ```bash
 # Source the utility
 source MacOS/Components/Shared/piwik_utility.sh
 
-# Track installation events
-piwik_log "Python_Installation_Start"
-piwik_log "Python_Installation_Success"
-piwik_log "Python_Installation_Failed" "network_error"
-piwik_log "VS_Code_Installation_Cancelled" "user_cancelled"
+# Instead of:
+python_install_command
+
+# Use:
+piwik_log 'python_installation' python_install_command
 ```
 
 **Environment Variables:**
 
-- `TESTING_MODE=true`: Use "Installer_TEST" category instead of "Installer" (for testing)
-- `DISABLE_ANALYTICS=true`: Disable all tracking
-- `DISABLE_PIWIK=true`: Disable Piwik tracking
+- `TESTING_MODE=true`: Use "Installer_TEST" category (for testing/development)
+- `GITHUB_CI=true`: Use "Installer_CI" category (for GitHub workflows)
 
 **Event Categories:**
-- **Production**: `Installer` (default)
+- **Local Development**: `Installer` (default)
 - **Testing**: `Installer_TEST` (when `TESTING_MODE=true`)
+- **CI/Production**: `Installer_CI` (when `GITHUB_CI=true`)
 
-**Session Dimensions Tracked:**
-- **Operating System**: macOS version and architecture
-- **Architecture**: System architecture (x86_64, arm64, etc.)
-- **Script Version**: Version of the utility script
+**What Gets Tracked:**
+- **Event Name**: The name you provide (e.g., 'python_installation')
+- **Event Value**: 1 for success, 0 for failure
+- **Event Category**: Based on environment variables
+- **System Info**: OS, architecture, commit SHA
+- **Error Messages**: Full error output when commands fail
 
-**Example Events:**
+**Example Usage in Components:**
+
 ```bash
-# Installation lifecycle
-piwik_log "Python_Installation_Start"
-piwik_log "Python_Installation_Success"
-piwik_log "Python_Installation_Failed" "permission_denied"
+#!/bin/bash
+source MacOS/Components/Shared/piwik_utility.sh
 
-# Component-specific events
-piwik_log "Homebrew_Installation_Success"
-piwik_log "VS_Code_Extension_Installation_Failed" "network_error"
-piwik_log "LaTeX_Installation_Cancelled" "user_cancelled"
+# Python installation
+piwik_log 'python_download' curl -L https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg -o python.pkg
+piwik_log 'python_install' sudo installer -pkg python.pkg -target /
+
+# VS Code installation
+piwik_log 'vscode_download' curl -L https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal -o vscode.zip
+piwik_log 'vscode_extract' unzip vscode.zip -d /Applications/
+
+# Homebrew installation
+piwik_log 'homebrew_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**GitHub Workflow Example:**
+
+```yaml
+name: Install Python Support
+on: [push, pull_request]
+
+jobs:
+  install:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python Support
+        env:
+          GITHUB_CI: true
+        run: |
+          source MacOS/Components/Shared/piwik_utility.sh
+          piwik_log 'python_install' brew install python
+          piwik_log 'vscode_install' brew install --cask visual-studio-code
 ```
 
 ### `MacOS/Components/Utilities/utils.sh`
@@ -101,3 +124,5 @@ Components can leverage shared utilities for:
 - **Reliability**: Well-tested functions reduce component-specific bugs
 - **Standardization**: Common patterns for error messages and logging
 - **Analytics**: Track installation success rates and identify common issues
+- **Simplicity**: Just wrap commands with `piwik_log` for automatic tracking
+- **Flexibility**: Different event categories for different environments (local, testing, CI)
