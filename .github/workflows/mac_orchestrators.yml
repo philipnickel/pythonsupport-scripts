@@ -89,12 +89,12 @@ jobs:
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/${{ matrix.orchestrator }}.sh)"
           fi
 
-      - name: Install from ${{ github.event.pull_request.head.ref }}
+      - name: Install from current branch
         if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
         env:
-          # TODO, this will *not* catch when a user forks the repo, and change the name of the project
-          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
-          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          # Handle both push and pull_request events
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
           echo "Running orchestrator ${{ matrix.orchestrator }} from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
