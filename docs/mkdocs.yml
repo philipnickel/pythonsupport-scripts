@@ -3,6 +3,7 @@ site_description: Documentation for DTU Python Support installation scripts
 site_url: https://philipnickel.github.io/pythonsupport-scripts
 
 docs_dir: .
+site_dir: ../site
 
 theme:
   name: material
