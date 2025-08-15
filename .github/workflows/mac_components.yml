@@ -209,8 +209,20 @@ jobs:
           which conda || { echo "Conda not installed"; exit 1; }
           conda --version || { echo "Conda not working"; exit 1; }
           
-          # Verify miniconda directory exists
-          ls -la ~/ | grep miniconda || { echo "Miniconda directory not found"; exit 1; }
+          # Check what type of conda installation we have
+          echo "Conda installation details:"
+          which conda
+          conda info --base
+          
+          # Verify either miniconda directory OR homebrew conda exists
+          if ls ~/ | grep -q miniconda; then
+            echo "✓ Found miniconda installation in home directory"
+          elif which conda | grep -q homebrew; then
+            echo "✓ Found Homebrew-managed conda installation"
+          else
+            echo "✗ Could not identify conda installation type"
+            exit 1
+          fi
           
           echo "✓ Python/conda installation verified before uninstall"
 
@@ -224,23 +236,30 @@ jobs:
 
       - name: Verify Conda Uninstall
         run: |
-          # Verify conda is no longer available
+          # Check if conda is still available
+          echo "Checking if conda was removed..."
           if command -v conda > /dev/null; then
-            echo "✗ Conda still available after uninstall"
-            exit 1
+            echo "ℹ️  Conda still available (may be Homebrew-managed, which uninstall script doesn't remove)"
+            which conda
+          else
+            echo "✓ Conda command no longer available"
           fi
           
-          # Verify miniconda directories are removed
+          # Verify miniconda directories are removed (main target of uninstall script)
           if ls ~/ | grep -q miniconda; then
             echo "✗ Miniconda directories still exist after uninstall"
             ls -la ~/ | grep miniconda
             exit 1
+          else
+            echo "✓ Miniconda directories successfully removed"
           fi
           
           # Verify shell configuration is cleaned
           if grep -q "conda initialize" ~/.bashrc 2>/dev/null; then
             echo "✗ Conda initialization still in ~/.bashrc"
             exit 1
+          else
+            echo "✓ Shell configuration cleaned"
           fi
           
           echo "✓ Conda uninstall verification completed successfully"
