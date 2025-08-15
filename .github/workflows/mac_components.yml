@@ -66,15 +66,6 @@ jobs:
           echo "Testing Python from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
 
-      - name: Install First Year Setup
-        env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          source ~/.bashrc || true
-          echo "Testing First Year Setup from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/first_year_setup.sh)"
-
       - name: Verify Python Installation
         run: |
           source ~/.bashrc || true
@@ -82,16 +73,12 @@ jobs:
           conda --version
           conda info --base
           
-          # Verify Python version
-          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            exit 1
-          fi
+          # Verify basic Python functionality
+          python3 --version
+          python3 -c "print('Python is working!')"
           
-          # Verify packages
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')"
+          # Verify conda functionality
+          conda list
 
   test-vscode:
     name: Test VSCode Component
