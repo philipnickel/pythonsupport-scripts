@@ -137,11 +137,27 @@ jobs:
 
       - name: Verify LaTeX Installation
         run: |
+          # Update PATH to include TeX binaries
+          export PATH="/usr/local/texlive/2024basic/bin/universal-darwin:/usr/local/texlive/2023basic/bin/universal-darwin:$PATH"
+          
           # Verify pandoc
           pandoc --version
           
-          # Verify TeX
-          tlmgr --version
+          # Verify TeX (check if tlmgr is available)
+          if command -v tlmgr >/dev/null 2>&1; then
+            tlmgr --version
+            echo "tlmgr is working"
+          else
+            echo "tlmgr not found in PATH, checking TeX installation"
+            # Just verify that BasicTeX was installed by checking for pdflatex
+            if command -v pdflatex >/dev/null 2>&1; then
+              pdflatex --version | head -1
+              echo "TeX installation verified via pdflatex"
+            else
+              echo "TeX installation failed - neither tlmgr nor pdflatex found"
+              exit 1
+            fi
+          fi
           
           # Verify nbconvert
           python3 -c "import nbconvert; print('nbconvert available')"
