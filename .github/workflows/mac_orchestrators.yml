@@ -39,52 +39,40 @@ jobs:
           echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
 
-      - name: Verify Installation
+      - name: Verify VS Code
         run: |
-          # Source all possible environment files to ensure proper setup
-          source ~/.bashrc || true
-          source ~/.bash_profile || true
-          source ~/.zshrc || true
-          
-          # Debug: Check what Python version we have
-          echo "Python version check:"
-          python3 --version || echo "python3 not found"
-          which python3 || echo "python3 path not found"
-          
-          # Debug: Check conda environment
-          echo "Conda environment check:"
-          which conda || echo "conda not found"
-          if command -v conda > /dev/null; then
-            conda --version
-            conda info --base
-            conda info --envs
-          fi
-          
-          # Verify VS Code
-          echo "VSCode version check:"
           code --version
-          
-          # Verify Python version (with more flexibility for orchestrator)
-          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
-          if command -v python3 > /dev/null; then
-            INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-            if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-              echo "Warning: Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-              echo "This may be expected in orchestrator testing - checking if packages work anyway"
-            else
-              echo "✓ Correct Python version $INSTALLED_VERSION is installed"
-            fi
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
           fi
-          
-          # Verify first-year packages (main requirement)
-          echo "Testing first-year packages:"
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All first-year packages imported successfully')" || {
-            echo "Package import failed - this is the main requirement for first-year setup"
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (${{ env.PYTHON_VERSION_PS }})
+        run: |
+          which python3
+
+          # Verify the installed Python version - MUST match exactly like legacy script
+          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
-          }
-          
-          # Verify VSCode extensions
-          echo "VSCode extensions check:"
-          code --list-extensions | grep -i python || { echo "Python extension not found"; exit 1; }
-          
-          echo "✓ First Year Orchestrator verification completed successfully"
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports - exact same test as legacy
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
