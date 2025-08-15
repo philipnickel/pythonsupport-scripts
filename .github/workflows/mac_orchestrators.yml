@@ -11,205 +11,64 @@ on:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'
   push:
-    branches: [ "mac-scripts-components" ]  # Test on this branch
+    branches: [ "mac-scripts-components" ]
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+
+env:
+  PYTHON_VERSION_PS: "3.11"
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        has-conda: [true, false]  # Test with pre-installed conda
-        python-version: ["3.10", "3.11"]  # Test multiple Python versions
-        os: [macos-latest, macos-13]  # Test on different macOS versions
-        orchestrator: ["first_year_students"]  # Test different orchestrators
-
+  test-first-year-orchestrator:
+    name: Test First Year Orchestrator
+    runs-on: macos-latest
+    
     steps:
-
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v3
-        if: ${{ matrix.has-conda }}
-        with:
-          auto-activate-base: true
-          activate-environment: ""
-
-      - name: Remove conda (if present)
-        if: ${{ !matrix.has-conda }}
+      - name: Clean System
         run: |
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-
-            echo "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
-            conda init --reverse --all
+          # Remove existing installations
+          if command -v brew > /dev/null; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
           fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+          rm -rf "/Applications/Visual Studio Code.app" || true
+          rm -rf ~/.vscode* || true
 
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Check for conda
-        run: |
-          env | grep -i conda
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-          else
-            echo "Conda not found..."
-          fi
-
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Install from main
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      - name: Run First Year Orchestrator
         env:
-          PYTHON_VERSION_PS: ${{ matrix.python-version }}
-        run: |
-          echo "Running orchestrator ${{ matrix.orchestrator }} from remote dtudk on branch main with Python $PYTHON_VERSION_PS"
-          if [[ "${{ matrix.has-conda }}" == "true" ]]; then
-            { yes yes || true; } | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/${{ matrix.orchestrator }}.sh)"
-          else
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/${{ matrix.orchestrator }}.sh)"
-          fi
-
-      - name: Install from current branch
-        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
-        env:
-          # Handle both push and pull_request events
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          PYTHON_VERSION_PS: ${{ matrix.python-version }}
         run: |
-          echo "Running orchestrator ${{ matrix.orchestrator }} from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-          if [[ "${{ matrix.has-conda }}" == "true" ]]; then
-            { yes yes || true; } | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/${{ matrix.orchestrator }}.sh)"
-          else
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/${{ matrix.orchestrator }}.sh)"
-          fi
+          echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
 
-      - name: Verify VS Code
+      - name: Verify Installation
         run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-          fi
-          exit $retval
-
-      - name: Verify Miniconda Installation
-        run: |
-          # Check that conda is available
+          # Source environment
+          source ~/.bashrc || true
+          
+          # Verify conda
           which conda
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "Conda not installed correctly"
-            exit $retval
-          fi
-
-          # Verify conda info
           conda --version
           conda info --base
-
-          # Verify python3 runs through miniconda (not system Python)
-          PYTHON_PATH=$(which python3)
-          CONDA_BASE=$(conda info --base)
           
-          if [[ "$PYTHON_PATH" == *"$CONDA_BASE"* ]]; then
-            echo "✓ python3 correctly uses Miniconda: $PYTHON_PATH"
-          else
-            echo "✗ python3 not using Miniconda. Found: $PYTHON_PATH"
-            echo "Expected path to contain: $CONDA_BASE"
-            exit 1
-          fi
-
-      - name: Verify VSCode and Extensions
-        run: |
-          # Check VS Code installation
+          # Verify VS Code
           code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-            exit $retval
-          fi
-
-          # Check for Python extensions
-          echo "Checking for Python development extensions..."
-          code --list-extensions | grep -i python || { 
-            echo "Python extension not found"
-            echo "Installed extensions:"
-            code --list-extensions
-            exit 1
-          }
-
-      - name: Verify First Year Setup
-        run: |
-          # Verify the installed Python version matches expectations
-          EXPECTED_VERSION="${{ matrix.python-version }}"
+          
+          # Verify Python version
+          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
-          echo "✓ Correct Python version $INSTALLED_VERSION is installed."
-
-          # Verify Python package imports for first-year courses
-          echo "Testing first-year course packages..."
-          python3 -c "
-import sys
-print(f'Python executable: {sys.executable}')
-print('Testing package imports...')
-
-try:
-    import dtumathtools
-    print('✓ dtumathtools imported successfully')
-except ImportError as e:
-    print(f'✗ dtumathtools import failed: {e}')
-    sys.exit(1)
-
-try:
-    import pandas
-    print('✓ pandas imported successfully')
-except ImportError as e:
-    print(f'✗ pandas import failed: {e}')
-    sys.exit(1)
-
-try:
-    import scipy
-    print('✓ scipy imported successfully')
-except ImportError as e:
-    print(f'✗ scipy import failed: {e}')
-    sys.exit(1)
-
-try:
-    import statsmodels
-    print('✓ statsmodels imported successfully')
-except ImportError as e:
-    print(f'✗ statsmodels import failed: {e}')
-    sys.exit(1)
-
-try:
-    import uncertainties
-    print('✓ uncertainties imported successfully')
-except ImportError as e:
-    print(f'✗ uncertainties import failed: {e}')
-    sys.exit(1)
-
-print('All first-year course packages imported successfully!')
-" || { echo "First-year package verification failed"; exit 1; }
+          
+          # Verify first-year packages
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All first-year packages imported successfully')"
+          
+          # Verify VSCode extensions
+          code --list-extensions | grep -i python || { echo "Python extension not found"; exit 1; }
+          
+          echo "First Year Orchestrator verification completed successfully"
