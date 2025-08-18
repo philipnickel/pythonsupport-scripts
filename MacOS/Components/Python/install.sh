@@ -1,43 +1,75 @@
 #!/bin/bash
-# @doc
-# @name: Python Component Installer
-# @description: Installs Python via Miniconda with essential packages for data science and academic work
-# @category: Python
-# @requires: macOS, Internet connection, Homebrew (will be installed if missing)
-# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
-# @example: PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/.../Python/install.sh)"
-# @notes: Uses shared utilities for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
-# @author: Python Support Team
-# @version: 2024-08-18
-# @/doc
 
-# Load shared utilities
-source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/load_utils.sh")
+_prefix="PYS:"
 
-log_info "Python (Miniconda) installation"
-log_info "Starting installation process..."
+# checks for environmental variables for remote and branch 
+if [ -z "$REMOTE_PS" ]; then
+  REMOTE_PS="dtudk/pythonsupport-scripts"
+fi
+if [ -z "$BRANCH_PS" ]; then
+  BRANCH_PS="main"
+fi
 
-# Check for homebrew and install if needed
-ensure_homebrew
+export REMOTE_PS
+export BRANCH_PS
+
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
+
+echo "$_prefix Python (Miniconda) installation"
+echo "$_prefix Starting installation process..."
+
+# Check for homebrew
+# if not installed call homebrew installation script
+if ! command -v brew > /dev/null; then
+  echo "$_prefix Homebrew is not installed. Installing Homebrew..."
+  echo "$_prefix Installing from $url_ps/Components/Homebrew/install.sh"
+  /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
+
+  # The above will install everything in a subshell.
+  # So just to be sure we have it on the path
+  [ -e ~/.bash_profile ] && source ~/.bash_profile
+
+  # update binary locations 
+  hash -r
+fi
+
+# Error function 
+# Print error message, contact information and exits script
+exit_message () {
+  echo ""
+  echo "Oh no! Something went wrong"
+  echo ""
+  echo "Please visit the following web page:"
+  echo ""
+  echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+  echo ""
+  echo "or contact the Python Support Team:"
+  echo ""
+  echo "   pythonsupport@dtu.dk"
+  echo ""
+  echo "Or visit us during our office hours"
+  open https://pythonsupport.dtu.dk/install/macos/automated-error.html
+  exit 1
+}
 
 # Install miniconda
 # Check if miniconda is installed
-log_info "Installing Miniconda..."
+echo "$_prefix Installing Miniconda..."
 if conda --version > /dev/null; then
-  log_success "Miniconda or anaconda is already installed"
+  echo "$_prefix Miniconda or anaconda is already installed"
 else
-  log_info "Miniconda or anaconda not found, installing Miniconda"
+  echo "$_prefix Miniconda or anaconda not found, installing Miniconda"
   brew install --cask miniconda
-  check_exit_code "Failed to install Miniconda"
+  [ $? -ne 0 ] && exit_message
 fi
 clear -x
 
-log_info "Initialising conda..."
+echo "$_prefix Initialising conda..."
 conda init bash
-check_exit_code "Failed to initialize conda for bash"
+[ $? -ne 0 ] && exit_message
 
 conda init zsh
-check_exit_code "Failed to initialize conda for zsh"
+[ $? -ne 0 ] && exit_message
 
 # Anaconda has this package which tracks usage metrics
 # We will disable this, and if it fails, so be it.
@@ -49,12 +81,13 @@ conda config --set anaconda_anon_usage off
 # conda puts its source stuff in the bashrc file
 [ -e ~/.bashrc ] && source ~/.bashrc
 
-log_info "Showing where it is installed:"
+echo "$_prefix Showing where it is installed:"
 conda info --base
-check_exit_code "Failed to get conda base directory"
+[ $? -ne 0 ] && exit_message
 
-log_info "Updating environment variables"
+echo "$_prefix Updating environment variables"
 hash -r
+clear -x
 
 # We will not install the Anaconda GUI
 # There may be license issues due to DTU being
