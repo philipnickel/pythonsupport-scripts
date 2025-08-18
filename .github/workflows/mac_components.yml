@@ -121,6 +121,91 @@ jobs:
             fi
           done
 
+  test-vscode-clean-uninstall:
+    name: Test VSCode Clean Uninstall
+    runs-on: macos-latest
+    
+    steps:
+      - name: Install VSCode Component (for testing uninstall)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Installing VSCode for uninstall testing from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install.sh)"
+
+      - name: Install VSCode Extensions (for testing uninstall)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Installing VSCode Extensions for uninstall testing from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/install_extensions.sh)"
+
+      - name: Verify Installation Before Uninstall
+        run: |
+          # Verify VS Code is installed and working
+          if ! command -v code >/dev/null 2>&1; then
+            echo "VS Code not found before uninstall test"
+            exit 1
+          fi
+          
+          code --version || { echo "VS Code not working properly"; exit 1; }
+          echo "✓ VS Code installation verified before uninstall"
+          
+          # Check that some expected files exist
+          if [ ! -e "/Applications/Visual Studio Code.app" ]; then
+            echo "VS Code.app not found in Applications"
+            exit 1
+          fi
+          echo "✓ VS Code.app found in Applications"
+
+      - name: Run VSCode Clean Uninstall
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing VSCode Clean Uninstall from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/VSC/clean_uninstall.sh)"
+
+      - name: Verify Clean Uninstall
+        run: |
+          # Verify VS Code application is removed
+          if [ -e "/Applications/Visual Studio Code.app" ]; then
+            echo "✗ VS Code.app still exists after uninstall"
+            exit 1
+          fi
+          echo "✓ VS Code.app successfully removed"
+          
+          # Verify user data directories are removed
+          if [ -d "$HOME/.vscode" ]; then
+            echo "✗ ~/.vscode directory still exists"
+            exit 1
+          fi
+          echo "✓ ~/.vscode directory removed"
+          
+          if [ -d "$HOME/Library/Application Support/Code" ]; then
+            echo "✗ Application Support/Code directory still exists"
+            exit 1
+          fi
+          echo "✓ Application Support/Code directory removed"
+          
+          # Check preferences files
+          if [ -e "$HOME/Library/Preferences/com.microsoft.VSCode.plist" ]; then
+            echo "✗ VS Code preferences still exist"
+            exit 1
+          fi
+          echo "✓ VS Code preferences removed"
+          
+          # Check cache directories
+          if [ -d "$HOME/Library/Caches/com.microsoft.VSCode" ]; then
+            echo "✗ VS Code cache directories still exist"
+            exit 1
+          fi
+          echo "✓ VS Code cache directories removed"
+          
+          echo "✓ VS Code clean uninstall verification completed successfully"
+
   test-latex:
     name: Test LaTeX Component
     runs-on: macos-latest
