@@ -38,6 +38,12 @@ echo "$_prefix Found test notebook: $TEST_NOTEBOOK"
 # Update PATH to include TeX binaries (both BasicTeX and MacTeX locations)
 export PATH="/usr/local/texlive/2024/bin/universal-darwin:/usr/local/texlive/2023/bin/universal-darwin:/usr/local/texlive/2024basic/bin/universal-darwin:/usr/local/texlive/2023basic/bin/universal-darwin:$PATH"
 
+# Setup conda environment if available
+if command -v conda >/dev/null 2>&1; then
+    echo "$_prefix Setting up conda environment..."
+    eval "$(conda shell.bash hook)" 2>/dev/null || true
+fi
+
 # Check if required tools are available
 echo "$_prefix Checking required tools..."
 
@@ -45,7 +51,7 @@ if ! command -v python3 >/dev/null 2>&1; then
     echo "$_prefix Error: python3 not found"
     exit 1
 fi
-echo "$_prefix ✓ python3 found"
+echo "$_prefix ✓ python3 found: $(python3 --version)"
 
 if ! command -v pandoc >/dev/null 2>&1; then
     echo "$_prefix Error: pandoc not found"
@@ -62,9 +68,21 @@ echo "$_prefix ✓ pdflatex found: $(pdflatex --version | head -1)"
 # Check if nbconvert is available
 if ! python3 -c "import nbconvert" >/dev/null 2>&1; then
     echo "$_prefix Error: nbconvert not available"
-    exit 1
+    echo "$_prefix Attempting to install nbconvert..."
+    python3 -m pip install nbconvert || {
+        echo "$_prefix Error: Failed to install nbconvert"
+        exit 1
+    }
 fi
 echo "$_prefix ✓ nbconvert available"
+
+# Also check for jupyter
+if ! python3 -c "import jupyter" >/dev/null 2>&1; then
+    echo "$_prefix Warning: jupyter not available, installing..."
+    python3 -m pip install jupyter || {
+        echo "$_prefix Warning: Failed to install jupyter (continuing anyway)"
+    }
+fi
 
 # Attempt to convert notebook to PDF
 echo "$_prefix Attempting to convert notebook to PDF..."

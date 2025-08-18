@@ -220,6 +220,27 @@ jobs:
           echo "Testing LaTeX Minimal from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/minimal_install.sh)"
 
+      - name: Setup Python Environment for Testing
+        run: |
+          # Source conda environment to ensure Python/conda are available
+          source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
+          
+          # Verify Python and conda are working
+          echo "Checking Python environment..."
+          which python3 || echo "python3 not found"
+          python3 --version || echo "python3 not working"
+          which conda || echo "conda not found" 
+          conda --version || echo "conda not working"
+          
+          # Install jupyter if not present
+          echo "Installing/updating jupyter and nbconvert..."
+          python3 -m pip install --upgrade jupyter nbconvert || echo "pip install failed"
+          
+          # Verify jupyter is available
+          python3 -c "import jupyter; print('Jupyter available')" || echo "Jupyter not available"
+          python3 -c "import nbconvert; print('nbconvert available')" || echo "nbconvert not available"
+
       - name: Test PDF Export from Jupyter Notebook
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
@@ -227,6 +248,7 @@ jobs:
         run: |
           # Source conda environment
           source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
           
           echo "Testing PDF export functionality with minimal LaTeX installation..."
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
@@ -259,6 +281,27 @@ jobs:
           echo "Testing LaTeX Full from: $REMOTE_PS/$BRANCH_PS"
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/full_install.sh)"
 
+      - name: Setup Python Environment for Testing
+        run: |
+          # Source conda environment to ensure Python/conda are available
+          source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
+          
+          # Verify Python and conda are working
+          echo "Checking Python environment..."
+          which python3 || echo "python3 not found"
+          python3 --version || echo "python3 not working"
+          which conda || echo "conda not found" 
+          conda --version || echo "conda not working"
+          
+          # Install jupyter if not present
+          echo "Installing/updating jupyter and nbconvert..."
+          python3 -m pip install --upgrade jupyter nbconvert || echo "pip install failed"
+          
+          # Verify jupyter is available
+          python3 -c "import jupyter; print('Jupyter available')" || echo "Jupyter not available"
+          python3 -c "import nbconvert; print('nbconvert available')" || echo "nbconvert not available"
+
       - name: Test PDF Export from Jupyter Notebook
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
@@ -266,6 +309,7 @@ jobs:
         run: |
           # Source conda environment
           source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
           
           echo "Testing PDF export functionality with full LaTeX installation..."
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
