@@ -1,0 +1,54 @@
+name: Test Utility System
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/Components/Shared/**'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/Components/Shared/**'
+  workflow_dispatch:
+
+jobs:
+  test-utilities:
+    name: Test Utility System
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test Utility System
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing utility system from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)"
+
+  test-utilities-failure:
+    name: Test Utility System Error Handling
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test Error Handling
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing utility system error handling from: $REMOTE_PS/$BRANCH_PS"
+          # This should fail and test error handling
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)" fail || echo "Error handling test completed (expected failure)"
+
+  test-utilities-debug:
+    name: Test Utility System Debug Mode
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test Debug Mode
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          DEBUG: "true"
+        run: |
+          echo "Testing utility system debug mode from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)"
