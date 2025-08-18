@@ -1,75 +1,43 @@
 #!/bin/bash
+# @doc
+# @name: Python Component Installer
+# @description: Installs Python via Miniconda with essential packages for data science and academic work
+# @category: Python
+# @requires: macOS, Internet connection, Homebrew (will be installed if missing)
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
+# @example: PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/.../Python/install.sh)"
+# @notes: Uses master utility system for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+# @author: Python Support Team
+# @version: 2024-08-18
+# @/doc
 
-_prefix="PYS:"
+# Load master utilities
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-macos-components}/MacOS/Components/Shared/master_utils.sh")
 
-# checks for environmental variables for remote and branch 
-if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk/pythonsupport-scripts"
-fi
-if [ -z "$BRANCH_PS" ]; then
-  BRANCH_PS="main"
-fi
+log_info "Python (Miniconda) installation"
+log_info "Starting installation process..."
 
-export REMOTE_PS
-export BRANCH_PS
-
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
-
-echo "$_prefix Python (Miniconda) installation"
-echo "$_prefix Starting installation process..."
-
-# Check for homebrew
-# if not installed call homebrew installation script
-if ! command -v brew > /dev/null; then
-  echo "$_prefix Homebrew is not installed. Installing Homebrew..."
-  echo "$_prefix Installing from $url_ps/Components/Homebrew/install.sh"
-  /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
-
-  # The above will install everything in a subshell.
-  # So just to be sure we have it on the path
-  [ -e ~/.bash_profile ] && source ~/.bash_profile
-
-  # update binary locations 
-  hash -r
-fi
-
-# Error function 
-# Print error message, contact information and exits script
-exit_message () {
-  echo ""
-  echo "Oh no! Something went wrong"
-  echo ""
-  echo "Please visit the following web page:"
-  echo ""
-  echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-  echo ""
-  echo "or contact the Python Support Team:"
-  echo ""
-  echo "   pythonsupport@dtu.dk"
-  echo ""
-  echo "Or visit us during our office hours"
-  open https://pythonsupport.dtu.dk/install/macos/automated-error.html
-  exit 1
-}
+# Check for homebrew and install if needed
+ensure_homebrew
 
 # Install miniconda
 # Check if miniconda is installed
-echo "$_prefix Installing Miniconda..."
+log_info "Installing Miniconda..."
 if conda --version > /dev/null; then
-  echo "$_prefix Miniconda or anaconda is already installed"
+  log_success "Miniconda or anaconda is already installed"
 else
-  echo "$_prefix Miniconda or anaconda not found, installing Miniconda"
+  log_info "Miniconda or anaconda not found, installing Miniconda"
   brew install --cask miniconda
-  [ $? -ne 0 ] && exit_message
+  check_exit_code "Failed to install Miniconda"
 fi
 clear -x
 
-echo "$_prefix Initialising conda..."
+log_info "Initialising conda..."
 conda init bash
-[ $? -ne 0 ] && exit_message
+check_exit_code "Failed to initialize conda for bash"
 
 conda init zsh
-[ $? -ne 0 ] && exit_message
+check_exit_code "Failed to initialize conda for zsh"
 
 # Anaconda has this package which tracks usage metrics
 # We will disable this, and if it fails, so be it.
@@ -81,11 +49,11 @@ conda config --set anaconda_anon_usage off
 # conda puts its source stuff in the bashrc file
 [ -e ~/.bashrc ] && source ~/.bashrc
 
-echo "$_prefix Showing where it is installed:"
+log_info "Showing where it is installed:"
 conda info --base
-[ $? -ne 0 ] && exit_message
+check_exit_code "Failed to get conda base directory"
 
-echo "$_prefix Updating environment variables"
+log_info "Updating environment variables"
 hash -r
 clear -x
 
@@ -93,7 +61,7 @@ clear -x
 # There may be license issues due to DTU being
 # a rather big institution. So our installation guides
 # will be pre-cautious here, and remove the defaults channels.
-echo "$_prefix Removing defaults channel (due to licensing problems)"
+log_info "Removing defaults channel (due to licensing problems)"
 conda config --remove channels defaults
 conda config --add channels conda-forge
 
@@ -106,5 +74,4 @@ conda config --add channels conda-forge
 # Hmmm.... :(
 conda config --set channel_priority flexible
 
-echo ""
-echo "$_prefix Installed Miniconda successfully!"
+log_success "Installed Miniconda successfully!"

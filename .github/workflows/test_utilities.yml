@@ -23,7 +23,7 @@ jobs:
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing utility system from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/tests/test_utilities.sh)"
 
   test-utilities-failure:
     name: Test Utility System Error Handling
@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "Testing utility system error handling from: $REMOTE_PS/$BRANCH_PS"
           # This should fail and test error handling
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)" fail || echo "Error handling test completed (expected failure)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/tests/test_utilities.sh)" fail || echo "Error handling test completed (expected failure)"
 
   test-utilities-debug:
     name: Test Utility System Debug Mode
@@ -51,4 +51,4 @@ jobs:
           DEBUG: "true"
         run: |
           echo "Testing utility system debug mode from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/test_utilities.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/tests/test_utilities.sh)"
