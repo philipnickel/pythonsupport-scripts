@@ -4,10 +4,16 @@ _prefix="PYS:"
 
 echo "$_prefix Testing PDF export functionality from Jupyter notebook..."
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEST_NOTEBOOK="$SCRIPT_DIR/test_notebook.ipynb"
-OUTPUT_PDF="$SCRIPT_DIR/test_output.pdf"
+# Download the test notebook
+TEST_NOTEBOOK="test_notebook.ipynb"
+OUTPUT_PDF="test_output.pdf"
+
+echo "$_prefix Downloading test notebook..."
+if [ -n "$REMOTE_PS" ] && [ -n "$BRANCH_PS" ]; then
+    curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_notebook.ipynb" -o "$TEST_NOTEBOOK"
+else
+    curl -fsSL "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/test_notebook.ipynb" -o "$TEST_NOTEBOOK"
+fi
 
 # Check if test notebook exists
 if [ ! -f "$TEST_NOTEBOOK" ]; then
@@ -53,7 +59,7 @@ echo "$_prefix Attempting to convert notebook to PDF..."
 echo "$_prefix Running: jupyter nbconvert --to pdf \"$TEST_NOTEBOOK\" --output \"$OUTPUT_PDF\""
 
 # Use jupyter nbconvert to export to PDF
-if python3 -m jupyter nbconvert --to pdf "$TEST_NOTEBOOK" --output-dir="$SCRIPT_DIR" --output="test_output" 2>/dev/null; then
+if python3 -m jupyter nbconvert --to pdf "$TEST_NOTEBOOK" --output="test_output" 2>/dev/null; then
     echo "$_prefix ✓ PDF export successful!"
     
     # Check if PDF file was created and has reasonable size
@@ -62,9 +68,9 @@ if python3 -m jupyter nbconvert --to pdf "$TEST_NOTEBOOK" --output-dir="$SCRIPT_
         if [ "$file_size" -gt 1000 ]; then
             echo "$_prefix ✓ PDF file created successfully (size: $file_size bytes)"
             
-            # Clean up test file
-            rm -f "$OUTPUT_PDF"
-            echo "$_prefix ✓ Cleaned up test PDF file"
+            # Clean up test files
+            rm -f "$OUTPUT_PDF" "$TEST_NOTEBOOK"
+            echo "$_prefix ✓ Cleaned up test files"
             
             echo "$_prefix PDF export test completed successfully!"
             exit 0
