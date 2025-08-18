@@ -19,7 +19,7 @@ url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components
 source_piwik_utility() {
     # Try to source the piwik utility - if it fails, define a fallback
     local piwik_script
-    if piwik_script=$(curl -fsSL "$url_ps/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
+    if piwik_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-macos-components}/MacOS/Components/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
         eval "$piwik_script"
         echo "$_prefix Piwik analytics initialized"
     else
