@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'docs/**'
+      - 'MacOS/Components/**/*.sh'
   workflow_dispatch:
 
 permissions:
@@ -31,10 +32,6 @@ jobs:
       - name: Install MkDocs
         run: |
           pip install mkdocs mkdocs-material
-          
-      - name: Generate documentation from scripts
-        run: |
-          python3 docs/tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
           
       - name: Build documentation
         run: |
