@@ -13,28 +13,12 @@ fi
 export REMOTE_PS
 export BRANCH_PS
 
-# Source Piwik utility for analytics tracking
-if [ -n "$REMOTE_PS" ] && [ -n "$BRANCH_PS" ]; then
-    # Download and source the utility
-    TEMP_UTILITY=$(mktemp)
-    if curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared/piwik_utility.sh" -o "$TEMP_UTILITY"; then
-        source "$TEMP_UTILITY"
-        rm "$TEMP_UTILITY"
-    else
-        echo "$_prefix Warning: Could not download Piwik utility, analytics disabled"
-        piwik_log() {
-            "$@"
-            return $?
-        }
-    fi
-else
-    # Fallback if environment variables not set
-    echo "$_prefix Warning: Piwik utility not available, analytics disabled"
-    piwik_log() {
-        "$@"
-        return $?
-    }
-fi
+# Define piwik_log as a pass-through function for now
+# TODO: Re-enable Piwik analytics once basic functionality is working
+piwik_log() {
+    "$@"
+    return $?
+}
 
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
 
