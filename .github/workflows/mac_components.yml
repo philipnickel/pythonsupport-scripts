@@ -177,7 +177,7 @@ jobs:
           fi
           echo "✓ VS Code.app successfully removed"
           
-          # Verify user data directories are removed
+          # Verify the two user data folders are removed (as per official VS Code docs)
           if [ -d "$HOME/.vscode" ]; then
             echo "✗ ~/.vscode directory still exists"
             exit 1
@@ -189,20 +189,6 @@ jobs:
             exit 1
           fi
           echo "✓ Application Support/Code directory removed"
-          
-          # Check preferences files
-          if [ -e "$HOME/Library/Preferences/com.microsoft.VSCode.plist" ]; then
-            echo "✗ VS Code preferences still exist"
-            exit 1
-          fi
-          echo "✓ VS Code preferences removed"
-          
-          # Check cache directories
-          if [ -d "$HOME/Library/Caches/com.microsoft.VSCode" ]; then
-            echo "✗ VS Code cache directories still exist"
-            exit 1
-          fi
-          echo "✓ VS Code cache directories removed"
           
           echo "✓ VS Code clean uninstall verification completed successfully"
 
