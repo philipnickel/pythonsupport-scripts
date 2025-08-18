@@ -17,13 +17,8 @@ log_info "Installing Visual Studio Code"
 ensure_homebrew
 
 # check if vs code is installed
-# using multipleVersions script to check 
-log_info "Installing Visual Studio Code if not already installed..."
-# if output is empty, then install vs code
-vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/VSC/multipleVersions.sh)")
-check_exit_code "Failed to check VSCode installation status"
-
-if [ -n "$vspath" ]  ; then
+log_info "Checking if Visual Studio Code is already installed..."
+if command -v code > /dev/null 2>&1 || [ -d "/Applications/Visual Studio Code.app" ]; then
     log_success "Visual Studio Code is already installed"
 else
     log_info "Installing Visual Studio Code"
