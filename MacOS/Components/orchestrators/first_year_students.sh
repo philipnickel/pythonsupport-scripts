@@ -24,8 +24,7 @@ url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components
 
 echo "$_prefix URL used for fetching scripts $url_ps"
 
-# Track orchestrator start
-piwik_log 'orchestrator_start' echo "First year students orchestrator started"
+echo "$_prefix First year students orchestrator started"
 
 # install python using component
 piwik_log 'python_component_install' /bin/bash -c "$(curl -fsSL $url_ps/Python/install.sh)"

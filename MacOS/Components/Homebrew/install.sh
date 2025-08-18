@@ -86,3 +86,16 @@ else
     exit_message
 fi
 
+# Additional CI environment setup
+if [ -n "$GITHUB_CI" ]; then
+    echo "Running in CI environment, setting up additional paths..."
+    # Ensure brew is in PATH for CI
+    if [ -f /opt/homebrew/bin/brew ]; then
+        export PATH="/opt/homebrew/bin:$PATH"
+    elif [ -f /usr/local/bin/brew ]; then
+        export PATH="/usr/local/bin:$PATH"
+    fi
+    # Update hash table
+    hash -r
+fi
+
