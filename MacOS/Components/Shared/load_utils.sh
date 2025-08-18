@@ -19,6 +19,9 @@ if [ -z "$BRANCH_PS" ]; then
     BRANCH_PS="macos-components"
 fi
 
+export REMOTE_PS
+export BRANCH_PS
+
 BASE_UTIL_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared"
 
 # Function to safely source a utility script
