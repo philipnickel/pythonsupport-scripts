@@ -126,9 +126,37 @@ for package in "${essential_packages[@]}"; do
     install_package_with_retries $package
 done
 
-echo "$_prefix Installing/updating nbconvert..."
-python3 -m pip install --force-reinstall nbconvert > /dev/null
-echo "$_prefix nbconvert installation complete"
+# Check if Jupyter ecosystem is available and install if needed
+echo "$_prefix Checking Jupyter ecosystem for PDF export..."
+
+# Check if jupyter is available
+if ! python3 -c "import jupyter" >/dev/null 2>&1; then
+    echo "$_prefix Jupyter not found, installing Jupyter ecosystem..."
+    python3 -m pip install --upgrade jupyter jupyterlab notebook >/dev/null 2>&1
+    echo "$_prefix Jupyter ecosystem installed"
+else
+    echo "$_prefix Jupyter already available"
+fi
+
+# Check if nbconvert is available
+if ! python3 -c "import nbconvert" >/dev/null 2>&1; then
+    echo "$_prefix nbconvert not found, installing..."
+    python3 -m pip install --upgrade nbconvert >/dev/null 2>&1
+    echo "$_prefix nbconvert installed"
+else
+    echo "$_prefix nbconvert already available, updating..."
+    python3 -m pip install --upgrade nbconvert >/dev/null 2>&1
+fi
+
+# Install essential packages for notebook functionality
+echo "$_prefix Installing essential packages for notebook functionality..."
+python3 -m pip install --upgrade ipykernel ipywidgets matplotlib >/dev/null 2>&1
+
+# Install Python kernel for Jupyter
+echo "$_prefix Setting up Python kernel for Jupyter..."
+python3 -m ipykernel install --user --name python3 --display-name "Python 3" >/dev/null 2>&1 || true
+
+echo "$_prefix Jupyter/nbconvert setup complete"
 
 echo ""
 echo "$_prefix LaTeX minimal installation completed!"

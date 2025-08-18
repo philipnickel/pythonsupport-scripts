@@ -65,24 +65,21 @@ if ! command -v pdflatex >/dev/null 2>&1; then
 fi
 echo "$_prefix ✓ pdflatex found: $(pdflatex --version | head -1)"
 
-# Check if nbconvert is available
+# Check if nbconvert is available (should be installed by LaTeX install script)
 if ! python3 -c "import nbconvert" >/dev/null 2>&1; then
     echo "$_prefix Error: nbconvert not available"
-    echo "$_prefix Attempting to install nbconvert..."
-    python3 -m pip install nbconvert || {
-        echo "$_prefix Error: Failed to install nbconvert"
-        exit 1
-    }
+    echo "$_prefix This should have been installed by the LaTeX install script"
+    exit 1
 fi
 echo "$_prefix ✓ nbconvert available"
 
-# Also check for jupyter
+# Check if jupyter is available (should be installed by LaTeX install script)
 if ! python3 -c "import jupyter" >/dev/null 2>&1; then
-    echo "$_prefix Warning: jupyter not available, installing..."
-    python3 -m pip install jupyter || {
-        echo "$_prefix Warning: Failed to install jupyter (continuing anyway)"
-    }
+    echo "$_prefix Error: jupyter not available"
+    echo "$_prefix This should have been installed by the LaTeX install script"
+    exit 1
 fi
+echo "$_prefix ✓ jupyter available"
 
 # Attempt to convert notebook to PDF
 echo "$_prefix Attempting to convert notebook to PDF..."
