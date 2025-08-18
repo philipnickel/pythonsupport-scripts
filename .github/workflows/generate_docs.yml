@@ -1,0 +1,87 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [ "main", "macos-components" ]
+    paths:
+      - 'MacOS/Components/**/*.sh'
+      - 'tools/extract_docs.py'
+      - '.github/workflows/generate_docs.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/Components/**/*.sh'
+      - 'tools/extract_docs.py'
+      - '.github/workflows/generate_docs.yml'
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    name: Generate Documentation from Script Docstrings
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Generate documentation
+        run: |
+          echo "Generating documentation from script docstrings..."
+          python3 tools/extract_docs.py --input MacOS/Components --output docs/generated --verbose
+          
+      - name: Check if documentation changed
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Documentation files have been updated:"
+            git status --short
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes detected"
+          fi
+          
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        if: steps.verify-changed-files.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        with:
+          name: generated-documentation
+          path: docs/generated/
+          retention-days: 30
+          
+      - name: Display documentation preview
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          echo "## 📚 Generated Documentation Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Documentation has been generated from script docstrings:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f docs/generated/index.md ]; then
+            echo "### Index Summary" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            head -20 docs/generated/index.md >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Files Generated" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find docs/generated -name "*.md" -exec echo "{}" \; -exec wc -l {} \; >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+      - name: Commit and push documentation (main branch only)
+        if: github.ref == 'refs/heads/main' && steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/generated/
+          git commit -m "docs: Auto-update documentation from script docstrings
+
+Generated from latest script changes" || exit 0
+          git push

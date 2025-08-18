@@ -1,4 +1,15 @@
 #!/bin/bash
+# @doc
+# @name: VS Code Clean Uninstaller
+# @description: Completely removes Visual Studio Code and all user data according to official documentation
+# @category: VSCode
+# @requires: macOS, Administrator privileges
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/clean_uninstall.sh)"
+# @example: ./clean_uninstall.sh
+# @notes: Removes VS Code application, user settings folder (~/.vscode), and application support data (~/Library/Application Support/Code). Also handles Homebrew-installed VS Code. This follows the official VS Code uninstall documentation exactly.
+# @author: Python Support Team
+# @version: 2024-08-18
+# @/doc
 
 _prefix="PYS:"
 

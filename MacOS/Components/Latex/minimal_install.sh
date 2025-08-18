@@ -1,4 +1,15 @@
 #!/bin/bash
+# @doc
+# @name: LaTeX Minimal Installer
+# @description: Installs BasicTeX with essential packages for PDF export from Jupyter notebooks
+# @category: LaTeX
+# @requires: macOS, Internet connection, Administrator privileges, Python with nbconvert
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/minimal_install.sh)"
+# @example: ./minimal_install.sh
+# @notes: Installs BasicTeX (~100MB) plus essential packages from original install.sh. Designed for basic PDF export functionality from Jupyter notebooks in VS Code. For advanced LaTeX features, use full_install.sh instead.
+# @author: Python Support Team
+# @version: 2024-08-18
+# @/doc
 
 _prefix="PYS:"
 

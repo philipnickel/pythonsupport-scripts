@@ -1,4 +1,15 @@
 #!/bin/bash
+# @doc
+# @name: Python Component Installer
+# @description: Installs Python via Miniconda with essential packages for data science and academic work
+# @category: Python
+# @requires: macOS, Internet connection, Homebrew (will be installed if missing)
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
+# @example: PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/.../Python/install.sh)"
+# @notes: Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+# @author: Python Support Team
+# @version: 2024-08-18
+# @/doc
 
 _prefix="PYS:"
 
