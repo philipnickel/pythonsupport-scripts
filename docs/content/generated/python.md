@@ -31,7 +31,7 @@ bash first_year_setup.sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
 ```
 
-**Notes:** Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+**Notes:** Uses shared utilities for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
 
 **Installation:**
 ```bash

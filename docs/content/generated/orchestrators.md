@@ -13,7 +13,7 @@ bash first_year_students.sh
 
 **Requirements:** macOS system with admin privileges, internet connection
 
-**Notes:** Includes Piwik analytics tracking, comprehensive error handling, and component verification
+**Notes:** Uses shared utilities for consistent error handling, logging, and analytics tracking
 
 **Installation:**
 ```bash

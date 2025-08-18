@@ -44,7 +44,7 @@ Installs Visual Studio Code on macOS with Python extension setup
 bash install.sh
 ```
 
-**Notes:** Configures remote repository settings and installs via Homebrew cask
+**Notes:** Uses shared utilities for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
 
 
 ---
@@ -137,7 +137,7 @@ Complete installation orchestrator for DTU first year students - installs Homebr
 bash first_year_students.sh
 ```
 
-**Notes:** Includes Piwik analytics tracking, comprehensive error handling, and component verification
+**Notes:** Uses shared utilities for consistent error handling, logging, and analytics tracking
 
 
 ---
@@ -196,7 +196,7 @@ Installs Python via Miniconda with essential packages for data science and acade
 PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/.../Python/install.sh)"
 ```
 
-**Notes:** Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+**Notes:** Uses shared utilities for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
 
 *Version: 2024-08-18 | Author: Python Support Team*
 

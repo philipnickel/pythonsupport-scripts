@@ -31,7 +31,7 @@ bash install.sh
 
 **Requirements:** macOS system, Homebrew (for cask installation)
 
-**Notes:** Configures remote repository settings and installs via Homebrew cask
+**Notes:** Uses shared utilities for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
 
 **Installation:**
 ```bash
