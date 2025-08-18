@@ -75,8 +75,8 @@ piwik_log() {
         event_value="0"
     fi
     
-    # Send request and capture HTTP status code
-    HTTP_CODE=$(curl -s -w "%{http_code}" -G "$PIWIK_URL" \
+    # Send request and capture HTTP status code, discard response body
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -G "$PIWIK_URL" \
         --max-time 10 \
         --connect-timeout 5 \
         --data-urlencode "idsite=$SITE_ID" \
