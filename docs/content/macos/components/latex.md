@@ -1,14 +1,12 @@
 # LaTeX Component
 
-Installs MacTeX (TeXLive distribution) for LaTeX document preparation.
+📖 **This content has been moved to auto-generated documentation: [LaTeX Components](../../generated/components.md#latex)**
 
-## What it does
-
-1. **Pandoc Installation**: Installs pandoc for document conversion (architecture-specific)
-2. **BasicTeX Installation**: Installs lightweight TeXLive distribution  
-3. **Package Installation**: Installs additional TeX packages (amsmath, amsfonts, etc.)
-4. **Python Integration**: Updates nbconvert for Jupyter notebook PDF export
-5. **Non-interactive**: Fully automated with no user prompts
+The auto-generated docs include:
+- **LaTeX Minimal Install**: BasicTeX with essential packages for PDF export
+- **LaTeX Full Install**: Complete MacTeX distribution (~4GB) 
+- **PDF Export Testing**: Verification scripts for Jupyter notebook conversion
+- Usage examples, requirements, and installation notes extracted directly from scripts
 
 ## Requirements
 

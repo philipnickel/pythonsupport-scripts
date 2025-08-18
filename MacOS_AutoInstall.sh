@@ -1,44 +1,37 @@
-_prefix="PYS:"
+#!/bin/bash
+# @doc
+# @name: MacOS Auto Installer
+# @description: Main installation script for Python Support on macOS - installs Python and VSCode
+# @category: Orchestrator
+# @usage: bash MacOS_AutoInstall.sh
+# @requirements: macOS system with admin privileges, internet connection
+# @notes: Uses shared utilities for consistent error handling and logging
+# @/doc
 
-# checks for environmental variables for remote and branch
-if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk/pythonsupport-scripts"
-fi
-if [ -z "$BRANCH_PS" ]; then
-  BRANCH_PS="main"
-fi
+# Load shared utilities
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/load_utils.sh")
 
-export REMOTE_PS
-export BRANCH_PS
-
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
-
-echo "$_prefix URL used for fetching scripts $url_ps"
+log_info "MacOS Auto Installer started"
 
 # install python
-/bin/bash -c "$(curl -fsSL $url_ps/Python/Install.sh)"
+log_info "Installing Python..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Python/Install.sh)"
 _python_ret=$?
 
 # install vscode
-/bin/bash -c "$(curl -fsSL $url_ps/VSC/Install.sh)"
+log_info "Installing VSCode..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/VSC/Install.sh)"
 _vsc_ret=$?
 
-
-exit_message() {
-  echo ""
-  echo "Something went wrong in one of the installation runs."
-  echo "Please see further up in the output for an error message..."
-  echo ""
-}
-
+# Check results and provide appropriate feedback
 if [ $_python_ret -ne 0 ]; then
+  log_error "Python installation failed"
   exit_message
-  exit $_python_ret
 elif [ $_vsc_ret -ne 0 ]; then
+  log_error "VSCode installation failed"
   exit_message
-  exit $_vsc_ret
+else
+  log_success "All installations completed successfully!"
 fi
 
-echo ""
-echo ""
-echo "Script has finished. You may now close the terminal..."
+log_info "Script has finished. You may now close the terminal..."

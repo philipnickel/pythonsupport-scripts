@@ -1,4 +1,12 @@
 #!/bin/bash
+# @doc
+# @name: Conda Uninstaller
+# @description: Completely removes conda/miniconda installations from macOS
+# @category: Python
+# @usage: bash uninstall_conda.sh
+# @requirements: macOS system, existing conda installation
+# @notes: Removes both Anaconda and Miniconda installations, cleans configuration files and PATH modifications
+# @/doc
 
 # Copyright 2023
 # Python Installation Support

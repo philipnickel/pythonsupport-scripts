@@ -1,0 +1,13 @@
+# Suggested MkDocs navigation structure:
+nav:
+  - Home: index.md
+  - MacOS:
+    - Diagnostics: generated/diagnostics.md
+    - Homebrew: generated/homebrew.md
+    - Latex: generated/latex.md
+    - Python: generated/python.md
+    - Utilities: generated/utilities.md
+    - VSC: generated/vsc.md
+    - orchestrators: generated/orchestrators.md
+  - Windows:
+    - Components: windows/components/index.md

@@ -32,7 +32,7 @@ jobs:
       - name: Generate documentation
         run: |
           echo "Generating documentation from script docstrings..."
-          python3 tools/extract_docs.py --input MacOS/Components --output docs/generated --verbose
+          python3 tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
           
       - name: Check if documentation changed
         id: verify-changed-files
@@ -62,17 +62,17 @@ jobs:
           echo "Documentation has been generated from script docstrings:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ -f docs/generated/index.md ]; then
+          if [ -f docs/content/generated/index.md ]; then
             echo "### Index Summary" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            head -20 docs/generated/index.md >> $GITHUB_STEP_SUMMARY
+            head -20 docs/content/generated/index.md >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "### Files Generated" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          find docs/generated -name "*.md" -exec echo "{}" \; -exec wc -l {} \; >> $GITHUB_STEP_SUMMARY
+          find docs/content/generated -name "*.md" -exec echo "{}" \; -exec wc -l {} \; >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           
       - name: Commit and push documentation (main branch only)
@@ -80,7 +80,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add docs/generated/
+          git add docs/content/generated/
           git commit -m "docs: Auto-update documentation from script docstrings
 
 Generated from latest script changes" || exit 0

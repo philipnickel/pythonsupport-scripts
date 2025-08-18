@@ -1,29 +1,25 @@
 #!/bin/bash
+# @doc
+# @name: First Year Students Setup
+# @description: Complete installation orchestrator for DTU first year students - installs Homebrew, Python, VSCode, and LaTeX
+# @category: Orchestrator
+# @usage: bash first_year_students.sh
+# @requirements: macOS system with admin privileges, internet connection
+# @notes: Uses shared utilities for consistent error handling, logging, and analytics tracking
+# @/doc
 
-_prefix="PYS:"
-
-# checks for environmental variables for remote and branch
-if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk/pythonsupport-scripts"
-fi
-if [ -z "$BRANCH_PS" ]; then
-  BRANCH_PS="main"
-fi
-
-export REMOTE_PS
-export BRANCH_PS
-
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
+# Load shared utilities
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/load_utils.sh")
 
 # Source the Piwik utility for analytics tracking
 source_piwik_utility() {
-    # Try to source the piwik utility - if it fails, define a fallback
-    local piwik_script
-    if piwik_script=$(curl -fsSL "$url_ps/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
+    local piwik_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/piwik_utility.sh"
+    
+    if piwik_script=$(curl -fsSL "$piwik_url" 2>/dev/null) && [ -n "$piwik_script" ]; then
         eval "$piwik_script"
-        echo "$_prefix Piwik analytics initialized"
+        log_success "Piwik analytics initialized"
     else
-        echo "$_prefix Piwik utility not available, using fallback"
+        log_warning "Piwik utility not available, using fallback"
         # Fallback: define piwik_log as a pass-through function
         piwik_log() {
             shift  # Remove the event name (first argument)
@@ -36,22 +32,22 @@ source_piwik_utility() {
 # Initialize Piwik utility
 source_piwik_utility
 
-echo "$_prefix URL used for fetching scripts $url_ps"
-
-echo "$_prefix First year students orchestrator started"
+log_info "First year students orchestrator started"
 
 # install python using component
-piwik_log 'python_component_install' /bin/bash -c "$(curl -fsSL $url_ps/Python/install.sh)"
+log_info "Installing Python..."
+piwik_log 'python_component_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
 _python_ret=$?
 
 # install vscode using component
-piwik_log 'vscode_component_install' /bin/bash -c "$(curl -fsSL $url_ps/VSC/install.sh)"
+log_info "Installing VSCode..."
+piwik_log 'vscode_component_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"
 _vsc_ret=$?
 
 # run first year python setup (install specific version and packages)
 if [ $_python_ret -eq 0 ]; then
-  echo "$_prefix Running first year Python environment setup..."
-  piwik_log 'python_first_year_setup' /bin/bash -c "$(curl -fsSL $url_ps/Python/first_year_setup.sh)"
+  log_info "Running first year Python environment setup..."
+  piwik_log 'python_first_year_setup' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"
   _first_year_ret=$?
 else
   _first_year_ret=0  # Skip if Python installation failed
@@ -59,43 +55,28 @@ fi
 
 # install vscode extensions
 if [ $_vsc_ret -eq 0 ]; then
-  echo "$_prefix Installing VSCode extensions for Python development..."
-  piwik_log 'vscode_extensions_install' /bin/bash -c "$(curl -fsSL $url_ps/VSC/install_extensions.sh)"
+  log_info "Installing VSCode extensions for Python development..."
+  piwik_log 'vscode_extensions_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install_extensions.sh)"
   _extensions_ret=$?
 else
   _extensions_ret=0  # Skip if VSCode installation failed
 fi
 
-exit_message() {
-  echo ""
-  echo "Something went wrong in one of the installation runs."
-  echo "Please see further up in the output for an error message..."
-  echo ""
-}
-
+# Check results and provide appropriate feedback
 if [ $_python_ret -ne 0 ]; then
+  log_error "Python installation failed"
   exit_message
-  exit $_python_ret
 elif [ $_vsc_ret -ne 0 ]; then
+  log_error "VSCode installation failed"
   exit_message
-  exit $_vsc_ret
 elif [ $_first_year_ret -ne 0 ]; then
+  log_error "First year Python setup failed"
   exit_message
-  exit $_first_year_ret
 elif [ $_extensions_ret -ne 0 ]; then
-  echo ""
-  echo "VSCode extensions installation failed, but core installation succeeded."
-  echo "You can install extensions manually later."
-  echo ""
+  log_warning "VSCode extensions installation failed, but core installation succeeded"
+  log_info "You can install extensions manually later"
+else
+  log_success "All installations completed successfully!"
 fi
 
 # Track overall success/failure
-if [ $_python_ret -eq 0 ] && [ $_vsc_ret -eq 0 ] && [ $_first_year_ret -eq 0 ] && [ $_extensions_ret -eq 0 ]; then
-    piwik_log 'orchestrator_success' echo "All components installed successfully"
-else
-    piwik_log 'orchestrator_partial_failure' echo "Some components failed to install"
-fi
-
-echo ""
-echo ""
-echo "Script has finished. You may now close the terminal..."

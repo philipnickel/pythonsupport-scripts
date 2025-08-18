@@ -1,4 +1,12 @@
 #!/bin/bash
+# @doc
+# @name: Piwik Analytics Utility
+# @description: Analytics tracking utility for monitoring installation script usage and success rates
+# @category: Utilities
+# @usage: source piwik_utility.sh; piwik_log "event_name" command args
+# @requirements: curl, internet connection
+# @notes: Tracks installation events to Piwik PRO for usage analytics and error monitoring
+# @/doc
 
 # Piwik PRO Analytics Utility Script
 # A utility for tracking installation events

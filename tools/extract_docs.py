@@ -171,11 +171,81 @@ class MarkdownGenerator:
         
         # Quick links
         markdown += "## Documentation Pages\n\n"
-        markdown += "- [Component Documentation](components.md) - Detailed documentation for all components\n"
-        markdown += "- [Installation Guide](installation.md) - How to use the installation scripts\n"
-        markdown += "- [API Reference](api.md) - Technical reference for developers\n\n"
+        markdown += "- [Components Documentation](components.md) - Detailed documentation for all components\n\n"
         
         return markdown
+    
+    def generate_structured_docs(self, docs: Dict[str, Dict[str, str]], output_dir: str, verbose: bool = False):
+        """Generate documentation files organized by directory structure."""
+        # Group docs by directory structure
+        structure = {}
+        
+        for script_path, doc in docs.items():
+            # Parse directory path (e.g., "Python/install.sh" -> ["Python"])
+            path_parts = script_path.split('/')
+            dir_name = path_parts[0] if len(path_parts) > 1 else 'Root'
+            
+            # Rename "Shared" to "Utilities" for better documentation organization
+            if dir_name == 'Shared':
+                dir_name = 'Utilities'
+            
+            if dir_name not in structure:
+                structure[dir_name] = []
+            structure[dir_name].append((script_path, doc))
+        
+        # Generate directory-specific files
+        for dir_name, dir_docs in structure.items():
+            dir_markdown = f"# {dir_name} Components\n\n"
+            dir_markdown += f"Documentation for {dir_name} installation scripts.\n\n"
+            
+            for script_path, doc in sorted(dir_docs):
+                script_name = os.path.basename(script_path).replace('.sh', '')
+                dir_markdown += f"## {doc.get('name', script_name)}\n\n"
+                
+                if doc.get('description'):
+                    dir_markdown += f"**Description:** {doc['description']}\n\n"
+                
+                if doc.get('usage'):
+                    dir_markdown += f"**Usage:**\n```bash\n{doc['usage']}\n```\n\n"
+                
+                if doc.get('requirements'):
+                    dir_markdown += f"**Requirements:** {doc['requirements']}\n\n"
+                
+                if doc.get('notes'):
+                    dir_markdown += f"**Notes:** {doc['notes']}\n\n"
+                
+                # Add installation command
+                github_url = f"https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/{script_path}"
+                dir_markdown += f"**Installation:**\n```bash\n/bin/bash -c \"$(curl -fsSL {github_url})\"\n```\n\n"
+                dir_markdown += "---\n\n"
+            
+            # Write directory-specific file
+            filename = f"{dir_name.lower()}.md"
+            with open(os.path.join(output_dir, filename), 'w') as f:
+                f.write(dir_markdown)
+            
+            if verbose:
+                print(f"  - {filename} ({len(dir_docs)} scripts)")
+        
+        # Generate navigation structure for MkDocs
+        nav_items = []
+        for dir_name in sorted(structure.keys()):
+            filename = f"{dir_name.lower()}.md"
+            nav_items.append(f"    - {dir_name}: generated/{filename}")
+        
+        nav_structure = "  - MacOS:\n" + "\n".join(nav_items)
+        
+        # Write navigation suggestion to a file
+        with open(os.path.join(output_dir, 'mkdocs_nav.yml'), 'w') as f:
+            f.write("# Suggested MkDocs navigation structure:\n")
+            f.write("nav:\n")
+            f.write("  - Home: index.md\n")
+            f.write(nav_structure + "\n")
+            f.write("  - Windows:\n")
+            f.write("    - Components: windows/components/index.md\n")
+        
+        if verbose:
+            print(f"  - mkdocs_nav.yml (navigation structure)")
 
 
 def main():
@@ -205,7 +275,10 @@ def main():
     # Generate markdown
     generator = MarkdownGenerator()
     
-    # Generate component documentation
+    # Generate structured documentation
+    generator.generate_structured_docs(docs, args.output, args.verbose)
+    
+    # Also generate the combined components.md for backward compatibility
     component_docs = generator.generate_component_docs(docs)
     with open(os.path.join(args.output, 'components.md'), 'w') as f:
         f.write(component_docs)
@@ -215,9 +288,10 @@ def main():
     with open(os.path.join(args.output, 'index.md'), 'w') as f:
         f.write(index_docs)
     
-    print(f"Documentation generated in {args.output}/")
-    print(f"  - index.md ({len(docs)} scripts)")
-    print(f"  - components.md (detailed documentation)")
+    if not args.verbose:
+        print(f"Documentation generated in {args.output}/")
+        print(f"  - index.md ({len(docs)} scripts)")
+        print(f"  - components.md (combined documentation)")
     
     return 0
 

@@ -1,30 +1,24 @@
-# Error function 
-# Print error message, contact information and exits script
-exit_message () {
-    echo ""
-    echo "Oh no! Something went wrong"
-    echo ""
-    echo "Please visit the following web page:"
-    echo ""
-    echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    echo ""
-    echo "or contact the Python Support Team:"
-    echo ""
-    echo "   pythonsupport@dtu.dk"
-    echo ""
-    echo "Or visit us during our office hours"
-    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
-    exit 1
-}
+#!/bin/bash
+# @doc
+# @name: Homebrew Installation
+# @description: Installs Homebrew package manager on macOS with error handling and user guidance
+# @category: Package Manager
+# @usage: bash install.sh
+# @requirements: macOS system with internet connection
+# @notes: Uses shared utilities for consistent error handling and logging
+# @/doc
+
+# Load shared utilities
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/load_utils.sh")
 
 # Welcome text 
-echo "Welcome to Python supports MacOS Auto Homebrew Installer Script"
+log_info "Welcome to Python supports MacOS Auto Homebrew Installer Script"
 echo ""
-echo "This script will install Homebrew MacOS"
+log_info "This script will install Homebrew MacOS"
 echo ""
-echo "Please do not close the terminal until the installation is complete"
-echo "This might take a while depending on your internet connection and what dependencies needs to be installed"
-echo "The script will take at least 5 minutes to complete depending on your internet connection and computer..."
+log_info "Please do not close the terminal until the installation is complete"
+log_info "This might take a while depending on your internet connection and what dependencies needs to be installed"
+log_info "The script will take at least 5 minutes to complete depending on your internet connection and computer..."
 sleep 3
 clear -x
 
@@ -84,18 +78,5 @@ if brew help > /dev/null; then
 else
     echo "Homebrew installation failed. Exiting..."
     exit_message
-fi
-
-# Additional CI environment setup
-if [ -n "$GITHUB_CI" ]; then
-    echo "Running in CI environment, setting up additional paths..."
-    # Ensure brew is in PATH for CI
-    if [ -f /opt/homebrew/bin/brew ]; then
-        export PATH="/opt/homebrew/bin:$PATH"
-    elif [ -f /usr/local/bin/brew ]; then
-        export PATH="/usr/local/bin:$PATH"
-    fi
-    # Update hash table
-    hash -r
 fi
 

@@ -1,12 +1,11 @@
 # Python Component
 
-Installs and configures Miniconda for Python development.
+📖 **This content has been moved to auto-generated documentation: [Python Components](../../generated/components.md#python)**
 
----
-
-## Overview
-
-This component provides scripts for installing, configuring, and managing Python development environments using Miniconda.
+The auto-generated docs include:
+- **Python Installation**: Main Miniconda setup
+- **Python First Year Setup**: Environment configuration for DTU students
+- Usage examples, requirements, and notes extracted directly from scripts
 
 ---
 

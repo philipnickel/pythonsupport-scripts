@@ -1,5 +1,12 @@
 #!/bin/bash
-
+# @doc
+# @name: Piwik Installation Simulator
+# @description: Testing utility that simulates installation events for Piwik analytics validation
+# @category: Utilities
+# @usage: bash piwik_installation_simulator.sh
+# @requirements: piwik_utility.sh, curl, internet connection
+# @notes: Used for testing and validating Piwik analytics tracking without running actual installations
+# @/doc
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UTILITY_SCRIPT="$SCRIPT_DIR/piwik_utility.sh"

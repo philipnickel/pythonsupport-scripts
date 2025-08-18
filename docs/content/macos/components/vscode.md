@@ -1,12 +1,12 @@
 # VSCode Component
 
-Installs Visual Studio Code and essential extensions for Python development.
+📖 **This content has been moved to auto-generated documentation: [VSCode Components](../../generated/components.md#ide)**
 
----
-
-## Overview
-
-This component provides scripts for installing Visual Studio Code and configuring it with essential extensions for Python development.
+The auto-generated docs include:
+- **VSCode Installation**: Main IDE setup via Homebrew
+- **VSCode Extensions Installation**: Essential Python development extensions  
+- **VSCode Clean Uninstall**: Complete removal following official documentation
+- Usage examples and requirements extracted directly from scripts
 
 ---
 

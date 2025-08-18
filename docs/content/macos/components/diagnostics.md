@@ -1,13 +1,11 @@
 # Diagnostics Component
 
-Performs system compatibility checks before installation.
+📖 **This content has been moved to auto-generated documentation: [System Diagnostics](../../generated/components.md#system-diagnostics)**
 
-## What it does
-
-1. **System Information**: Collects macOS version, hardware details
-2. **Compatibility Checks**: Verifies system meets requirements
-3. **Existing Software Detection**: Checks for conflicting installations
-4. **Resource Availability**: Verifies disk space and memory
+The auto-generated docs include:
+- Comprehensive system analysis and compatibility checks
+- macOS version, architecture, and environment verification  
+- Usage examples and requirements extracted directly from scripts
 
 ---
 

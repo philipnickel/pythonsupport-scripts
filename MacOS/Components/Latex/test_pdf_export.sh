@@ -1,4 +1,12 @@
 #!/bin/bash
+# @doc
+# @name: LaTeX PDF Export Test
+# @description: Tests PDF export functionality from Jupyter notebooks using LaTeX
+# @category: LaTeX
+# @usage: bash test_pdf_export.sh
+# @requirements: LaTeX installation, Python with nbconvert, Jupyter
+# @notes: Downloads test notebook and verifies PDF export pipeline works correctly
+# @/doc
 
 _prefix="PYS:"
 

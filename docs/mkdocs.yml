@@ -2,7 +2,7 @@ site_name: Python Support Scripts Documentation
 site_description: Documentation for DTU Python Support installation scripts
 site_url: https://philipnickel.github.io/pythonsupport-scripts
 
-docs_dir: .
+docs_dir: content
 site_dir: ../site
 
 theme:
@@ -32,22 +32,15 @@ theme:
 nav:
   - Home: index.md
   - MacOS:
-    - Components:
-      - Overview: macos/components/index.md
-      - Diagnostics: macos/components/diagnostics.md
-      - Homebrew: macos/components/homebrew.md
-      - LaTeX: macos/components/latex.md
-      - Python: macos/components/python.md
-      - VSCode: macos/components/vscode.md
-      - Utilities: macos/components/utilities.md
-    - Complete Installations:
-      - Overview: macos/orchestrators/index.md
+    - Diagnostics: generated/diagnostics.md
+    - Homebrew: generated/homebrew.md
+    - LaTeX: generated/latex.md
+    - Python: generated/python.md
+    - VSCode: generated/vsc.md
+    - Utilities: generated/utilities.md
+    - Orchestrators: generated/orchestrators.md
   - Windows:
-    - Overview: windows/index.md
-    - Components:
-      - Overview: windows/components/index.md
-  - Development:
-    - Testing & CI: development/ci.md
+    - Components: windows/components/index.md
 
 markdown_extensions:
   - admonition

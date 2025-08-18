@@ -32,6 +32,10 @@ jobs:
         run: |
           pip install mkdocs mkdocs-material
           
+      - name: Generate documentation from scripts
+        run: |
+          python3 tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
+          
       - name: Build documentation
         run: |
           mkdocs build -f docs/mkdocs.yml

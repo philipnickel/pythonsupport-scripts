@@ -1,85 +1,48 @@
 #!/bin/bash
+# @doc
+# @name: VSCode Installation
+# @description: Installs Visual Studio Code on macOS with Python extension setup
+# @category: IDE
+# @usage: bash install.sh
+# @requirements: macOS system, Homebrew (for cask installation)
+# @notes: Uses shared utilities for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
+# @/doc
 
-_prefix="PYS:"
+# Load shared utilities
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/load_utils.sh")
 
-# checks for environmental variables for remote and branch 
-if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk/pythonsupport-scripts"
-fi
-if [ -z "$BRANCH_PS" ]; then
-  BRANCH_PS="main"
-fi
+log_info "Installing Visual Studio Code"
 
-export REMOTE_PS
-export BRANCH_PS
-
-# set URL
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
-
-echo "$_prefix Installing Visual Studio Code"
-
-# Check for homebrew
-# if not installed call homebrew installation script
-if ! command -v brew > /dev/null; then
-  echo "$_prefix Homebrew is not installed. Installing Homebrew..."
-  echo "$_prefix Installing from $url_ps/Components/Homebrew/install.sh"
-  /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
-
-  # The above will install everything in a subshell.
-  # So just to be sure we have it on the path
-  [ -e ~/.bash_profile ] && source ~/.bash_profile
-
-  # update binary locations 
-  hash -r 
-fi
-
-# Error function 
-# Print error message, contact information and exits script
-exit_message () {
-    echo ""
-    echo "Oh no! Something went wrong"
-    echo ""
-    echo "Please visit the following web page:"
-    echo ""
-    echo "   https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    echo ""
-    echo "or contact the Python Support Team:"
-    echo ""
-    echo "   pythonsupport@dtu.dk"
-    echo ""
-    echo "Or visit us during our office hours"
-    open https://pythonsupport.dtu.dk/install/macos/automated-error.html
-    exit 1
-}
+# Check for homebrew and install if needed
+ensure_homebrew
 
 # check if vs code is installed
 # using multipleVersions script to check 
-echo "$_prefix Installing Visual Studio Code if not already installed..."
+log_info "Installing Visual Studio Code if not already installed..."
 # if output is empty, then install vs code
-vspath=$(/bin/bash -c "$(curl -fsSL $url_ps/VSC/multipleVersions.sh)")
-[ $? -ne 0 ] && exit_message
+vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/VSC/multipleVersions.sh)")
+check_exit_code "Failed to check VSCode installation status"
 
 if [ -n "$vspath" ]  ; then
-    echo "$_prefix Visual Studio Code is already installed"
+    log_success "Visual Studio Code is already installed"
 else
-    echo "$_prefix Installing Visual Studio Code"
+    log_info "Installing Visual Studio Code"
     brew install --cask visual-studio-code
-    [ $? -ne 0 ] && exit_message
+    check_exit_code "Failed to install Visual Studio Code"
 fi
 
 hash -r
 clear -x
 
-echo "$_prefix Setting up Visual Studio Code environment..."
+log_info "Setting up Visual Studio Code environment..."
 eval "$(brew shellenv)"
 
 # Test if code is installed correctly
 if code --version > /dev/null; then
-    echo "$_prefix Visual Studio Code installed successfully"
+    log_success "Visual Studio Code installed successfully"
 else
-    echo "$_prefix Visual Studio Code installation failed. Exiting"
+    log_error "Visual Studio Code installation failed"
     exit_message
 fi
 
-echo ""
-echo "$_prefix Visual Studio Code installation completed!"
+log_success "Visual Studio Code installation completed!"

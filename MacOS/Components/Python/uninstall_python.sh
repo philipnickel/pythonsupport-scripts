@@ -1,4 +1,12 @@
 #!/bin/bash
+# @doc
+# @name: Python Uninstaller
+# @description: Removes Python installations and related files from macOS system
+# @category: Python
+# @usage: bash uninstall_python.sh
+# @requirements: macOS system with admin privileges
+# @notes: Removes Python from multiple locations including Library, Applications, and system paths. Requires sudo access.
+# @/doc
 
 # Copyright 2023
 # Python Installation Support

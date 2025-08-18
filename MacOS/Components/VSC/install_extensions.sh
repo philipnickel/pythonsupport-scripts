@@ -1,4 +1,12 @@
 #!/bin/bash
+# @doc
+# @name: VSCode Extensions Installation
+# @description: Installs essential VSCode extensions for Python development
+# @category: IDE
+# @usage: bash install_extensions.sh
+# @requirements: VSCode installed on system
+# @notes: Installs Python extension pack and other development tools
+# @/doc
 
 _prefix="PYS:"
 
