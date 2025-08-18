@@ -14,60 +14,33 @@
 # Standard prefix for all Python Support scripts
 _prefix="PYS:"
 
-# Load all utilities at once
-load_all_utilities() {
-    # Try to load all utilities from the master utilities script
-    local master_script
-    if master_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-macos-components}/MacOS/Components/Shared/load_utils.sh" 2>/dev/null) && [ -n "$master_script" ]; then
-        eval "$master_script"
-        echo "$_prefix ✓ Loaded all utilities successfully"
+# Function to safely source a utility script
+load_utility() {
+    local util_name="$1"
+    local util_script
+    if util_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/${util_name}.sh" 2>/dev/null) && [ -n "$util_script" ]; then
+        eval "$util_script"
+        echo "$_prefix ✓ Loaded $util_name utilities"
     else
-        echo "$_prefix ✗ Failed to load utilities from load_utils.sh"
-        echo "$_prefix Falling back to basic functionality..."
-        
-        # Basic fallback functions
-        log_info() { echo "$_prefix $1"; }
-        log_error() { echo "$_prefix ERROR: $1" >&2; }
-        log_success() { echo "$_prefix ✓ $1"; }
-        log_warning() { echo "$_prefix WARNING: $1"; }
-        log_debug() {
-            if [ "$DEBUG" = "true" ]; then
-                echo "$_prefix DEBUG: $1" >&2
-            fi
-        }
-        exit_message() {
-            echo "$_prefix Something went wrong. Please contact pythonsupport@dtu.dk"
-            exit 1
-        }
-        check_exit_code() {
-            local exit_code=$?
-            if [ $exit_code -ne 0 ]; then
-                if [ $# -gt 0 ]; then
-                    log_error "$1"
-                fi
-                exit_message
-            fi
-        }
-        ensure_homebrew() {
-            if ! command -v brew > /dev/null; then
-                log_info "Homebrew is not installed. Installing Homebrew..."
-                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-                check_exit_code "Failed to install Homebrew"
-                [ -e ~/.bash_profile ] && source ~/.bash_profile
-                hash -r
-            fi
-        }
-        # Fallback: define piwik_log as a pass-through function
-        piwik_log() {
-            shift  # Remove the event name (first argument)
-            "$@"   # Execute the actual command
-            return $?
-        }
+        echo "$_prefix ✗ Failed to load $util_name utilities"
     fi
 }
 
+# Load all utilities at once
+load_all_utilities() {
+    echo "$_prefix Loading Python Support utilities..."
+    
+    # Load utilities in dependency order
+    load_utility "error_handling"
+    load_utility "environment"
+    load_utility "dependencies"
+    load_utility "remote_utils"
+    load_utility "piwik_utility"
+    
+    echo "$_prefix ✓ All utilities loaded successfully"
+}
+
 # Load all utilities
-echo "$_prefix Loading Python Support utilities..."
 load_all_utilities
 
 # Set up default environment
