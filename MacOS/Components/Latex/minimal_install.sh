@@ -126,35 +126,65 @@ for package in "${essential_packages[@]}"; do
     install_package_with_retries $package
 done
 
+# Setup conda environment if available
+if command -v conda >/dev/null 2>&1; then
+    echo "$_prefix Setting up conda environment for Jupyter installation..."
+    eval "$(conda shell.bash hook)" 2>/dev/null || true
+    # Try to activate the base environment
+    conda activate base 2>/dev/null || true
+fi
+
 # Check if Jupyter ecosystem is available and install if needed
 echo "$_prefix Checking Jupyter ecosystem for PDF export..."
 
-# Check if jupyter is available
+# Determine which pip to use (prefer conda's pip if available)
+PIP_CMD="python3 -m pip"
+if command -v conda >/dev/null 2>&1; then
+    echo "$_prefix Using conda environment for package installation"
+    # Install using conda first, then pip for missing packages
+    conda install -y jupyter nbconvert ipykernel >/dev/null 2>&1 || echo "$_prefix Conda install failed, falling back to pip"
+fi
+
+# Check if jupyter is available and install if not
 if ! python3 -c "import jupyter" >/dev/null 2>&1; then
     echo "$_prefix Jupyter not found, installing Jupyter ecosystem..."
-    python3 -m pip install --upgrade jupyter jupyterlab notebook >/dev/null 2>&1
+    $PIP_CMD install --upgrade --user jupyter jupyterlab notebook >/dev/null 2>&1
     echo "$_prefix Jupyter ecosystem installed"
 else
     echo "$_prefix Jupyter already available"
 fi
 
-# Check if nbconvert is available
+# Check if nbconvert is available and install if not
 if ! python3 -c "import nbconvert" >/dev/null 2>&1; then
     echo "$_prefix nbconvert not found, installing..."
-    python3 -m pip install --upgrade nbconvert >/dev/null 2>&1
+    $PIP_CMD install --upgrade --user nbconvert >/dev/null 2>&1
     echo "$_prefix nbconvert installed"
 else
     echo "$_prefix nbconvert already available, updating..."
-    python3 -m pip install --upgrade nbconvert >/dev/null 2>&1
+    $PIP_CMD install --upgrade --user nbconvert >/dev/null 2>&1
 fi
 
 # Install essential packages for notebook functionality
 echo "$_prefix Installing essential packages for notebook functionality..."
-python3 -m pip install --upgrade ipykernel ipywidgets matplotlib >/dev/null 2>&1
+$PIP_CMD install --upgrade --user ipykernel ipywidgets matplotlib >/dev/null 2>&1
 
 # Install Python kernel for Jupyter
 echo "$_prefix Setting up Python kernel for Jupyter..."
 python3 -m ipykernel install --user --name python3 --display-name "Python 3" >/dev/null 2>&1 || true
+
+# Verify installation
+echo "$_prefix Verifying Jupyter installation..."
+if python3 -c "import jupyter" >/dev/null 2>&1; then
+    echo "$_prefix ✓ Jupyter available"
+else
+    echo "$_prefix ✗ Jupyter not available after installation"
+fi
+
+if python3 -c "import nbconvert" >/dev/null 2>&1; then
+    echo "$_prefix ✓ nbconvert available"
+else
+    echo "$_prefix ✗ nbconvert not available after installation"
+fi
 
 echo "$_prefix Jupyter/nbconvert setup complete"
 
