@@ -26,11 +26,11 @@ get_system_info() {
 get_commit_sha() {
     local sha
     sha=$(curl -s \
-        -H "Accept: application/vnd.github.VERSION.sha" \
+        -H "Accept: application/vnd.github.v3.sha" \
         "https://api.github.com/repos/$GITHUB_REPO/commits/main" 2>/dev/null | head -c 7)
     
     # Return the short SHA or a fallback
-    if [ -n "$sha" ] && [ "$sha" != "Not Found" ]; then
+    if [ -n "$sha" ] && [ "$sha" != "Not Found" ] && [ "$sha" != "{\"messa" ]; then
         echo "$sha"
     else
         echo "unknown"
