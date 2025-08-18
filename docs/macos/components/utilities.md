@@ -46,7 +46,6 @@ piwik_log 'python_installation' python_install_command
 - **Event Value**: 1 for success, 0 for failure
 - **Event Category**: Based on environment variables
 - **System Info**: OS, architecture, commit SHA
-- **Error Messages**: Full error output when commands fail
 
 **Example Usage in Components:**
 

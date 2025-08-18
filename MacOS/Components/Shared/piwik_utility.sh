@@ -69,45 +69,25 @@ piwik_log() {
     # Determine result and value based on exit status
     local result="success"
     local event_value="1"
-    local error_message=""
     
     if [ $exit_code -ne 0 ]; then
         result="failure"
         event_value="0"
-        error_message="$output"
     fi
     
     # Send request and capture HTTP status code
-    if [ -n "$error_message" ]; then
-        # Include error message in dimension4
-        HTTP_CODE=$(curl -s -w "%{http_code}" -G "$PIWIK_URL" \
-            --max-time 10 \
-            --connect-timeout 5 \
-            --data-urlencode "idsite=$SITE_ID" \
-            --data-urlencode "rec=1" \
-            --data-urlencode "e_c=$event_category" \
-            --data-urlencode "e_a=Event" \
-            --data-urlencode "e_n=$event_name" \
-            --data-urlencode "e_v=$event_value" \
-            --data-urlencode "dimension1=$OS" \
-            --data-urlencode "dimension2=$ARCH" \
-            --data-urlencode "dimension3=$commit_sha" \
-            --data-urlencode "dimension4=$error_message" 2>/dev/null)
-    else
-        # No error message
-        HTTP_CODE=$(curl -s -w "%{http_code}" -G "$PIWIK_URL" \
-            --max-time 10 \
-            --connect-timeout 5 \
-            --data-urlencode "idsite=$SITE_ID" \
-            --data-urlencode "rec=1" \
-            --data-urlencode "e_c=$event_category" \
-            --data-urlencode "e_a=Event" \
-            --data-urlencode "e_n=$event_name" \
-            --data-urlencode "e_v=$event_value" \
-            --data-urlencode "dimension1=$OS" \
-            --data-urlencode "dimension2=$ARCH" \
-            --data-urlencode "dimension3=$commit_sha" 2>/dev/null)
-    fi
+    HTTP_CODE=$(curl -s -w "%{http_code}" -G "$PIWIK_URL" \
+        --max-time 10 \
+        --connect-timeout 5 \
+        --data-urlencode "idsite=$SITE_ID" \
+        --data-urlencode "rec=1" \
+        --data-urlencode "e_c=$event_category" \
+        --data-urlencode "e_a=Event" \
+        --data-urlencode "e_n=$event_name" \
+        --data-urlencode "e_v=$event_value" \
+        --data-urlencode "dimension1=$OS" \
+        --data-urlencode "dimension2=$ARCH" \
+        --data-urlencode "dimension3=$commit_sha" 2>/dev/null)
     
     # Return the original command's exit code
     return $exit_code
