@@ -21,16 +21,6 @@ jobs:
     runs-on: macos-latest
     
     steps:
-      - name: Clean System
-        run: |
-          # Remove existing installations
-          if command -v brew > /dev/null; then
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
-          fi
-          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
-          rm -rf "/Applications/Visual Studio Code.app" || true
-          rm -rf ~/.vscode* || true
-
       - name: Run First Year Orchestrator
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
