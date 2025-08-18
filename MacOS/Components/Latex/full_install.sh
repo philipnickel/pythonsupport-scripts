@@ -3,7 +3,7 @@
 # @name: LaTeX Full Installation
 # @description: Installs complete MacTeX distribution for comprehensive PDF export from Jupyter Notebooks
 # @category: LaTeX
-# @usage: bash full_install.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/full_install.sh)"
 # @requirements: macOS system, conda environment (recommended), ~4GB disk space
 # @notes: Downloads full MacTeX (~4GB), includes Jupyter/nbconvert setup, tests PDF export functionality
 # @/doc

@@ -3,7 +3,7 @@
 # @name: Conda Uninstaller
 # @description: Completely removes conda/miniconda installations from macOS
 # @category: Python
-# @usage: bash uninstall_conda.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/uninstall_conda.sh)"
 # @requirements: macOS system, existing conda installation
 # @notes: Removes both Anaconda and Miniconda installations, cleans configuration files and PATH modifications
 # @/doc

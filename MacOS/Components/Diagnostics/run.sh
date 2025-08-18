@@ -3,7 +3,7 @@
 # @name: System Diagnostics
 # @description: Comprehensive system diagnostics for Python development environment on macOS
 # @category: Diagnostics
-# @usage: bash run.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"
 # @requirements: macOS system
 # @notes: Checks macOS version, architecture, Homebrew, Python installations, conda environments, and VSCode setup
 # @/doc

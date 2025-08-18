@@ -3,7 +3,7 @@
 # @name: Python First Year Setup
 # @description: Sets up Python environment with conda for DTU first year students
 # @category: Python
-# @usage: bash first_year_setup.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
 # @requirements: macOS system, Homebrew
 # @notes: Installs miniconda, creates base environment with Python 3.11, installs essential packages
 # @/doc

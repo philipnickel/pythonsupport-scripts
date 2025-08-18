@@ -3,7 +3,7 @@
 # @name: Homebrew Installation
 # @description: Installs Homebrew package manager on macOS with error handling and user guidance
 # @category: Package Manager
-# @usage: bash install.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Homebrew/install.sh)"
 # @requirements: macOS system with internet connection
 # @notes: Uses master utility system for consistent error handling and logging
 # @/doc

@@ -3,7 +3,7 @@
 # @name: First Year Students Setup
 # @description: Complete installation orchestrator for DTU first year students - installs Homebrew, Python, VSCode, and LaTeX
 # @category: Orchestrator
-# @usage: bash first_year_students.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/first_year_students.sh)"
 # @requirements: macOS system with admin privileges, internet connection
 # @notes: Uses master utility system for consistent error handling, logging, and analytics tracking
 # @/doc

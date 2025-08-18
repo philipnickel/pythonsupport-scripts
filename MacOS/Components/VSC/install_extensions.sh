@@ -3,7 +3,7 @@
 # @name: VSCode Extensions Installation
 # @description: Installs essential VSCode extensions for Python development
 # @category: IDE
-# @usage: bash install_extensions.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install_extensions.sh)"
 # @requirements: VSCode installed on system
 # @notes: Installs Python extension pack and other development tools
 # @/doc

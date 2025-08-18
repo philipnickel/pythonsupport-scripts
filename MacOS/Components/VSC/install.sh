@@ -3,7 +3,7 @@
 # @name: VSCode Installation
 # @description: Installs Visual Studio Code on macOS with Python extension setup
 # @category: IDE
-# @usage: bash install.sh
+# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
 # @requirements: macOS system, Homebrew (for cask installation)
 # @notes: Uses master utility system for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
 # @/doc
