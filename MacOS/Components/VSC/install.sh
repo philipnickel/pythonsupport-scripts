@@ -9,7 +9,7 @@
 # @/doc
 
 # Load master utilities
-source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-macos-components}/MacOS/Components/Shared/master_utils.sh")
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
 
 log_info "Installing Visual Studio Code"
 
@@ -19,7 +19,14 @@ ensure_homebrew
 # check if vs code is installed
 log_info "Installing Visual Studio Code if not already installed..."
 # if output is empty, then install vs code
-vspath=$(/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/VSC/multipleVersions.sh)")
+# Check if VSCode is already installed
+if command -v code > /dev/null 2>&1; then
+    vspath=$(which code)
+elif [ -d "/Applications/Visual Studio Code.app" ]; then
+    vspath="/Applications/Visual Studio Code.app"
+else
+    vspath=""
+fi
 check_exit_code "Failed to check VSCode installation status"
 
 if [ -n "$vspath" ]  ; then
