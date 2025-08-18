@@ -14,11 +14,19 @@
 # Standard prefix for all Python Support scripts
 _prefix="PYS:"
 
+# Set defaults only if environment variables are not already set
+if [ -z "$REMOTE_PS" ]; then
+    REMOTE_PS="dtudk/pythonsupport-scripts"
+fi
+if [ -z "$BRANCH_PS" ]; then
+    BRANCH_PS="main"
+fi
+
 # Function to safely source a utility script
 load_utility() {
     local util_name="$1"
     local util_script
-    if util_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/${util_name}.sh" 2>/dev/null) && [ -n "$util_script" ]; then
+    if util_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/${util_name}.sh" 2>/dev/null) && [ -n "$util_script" ]; then
         eval "$util_script"
         echo "$_prefix ✓ Loaded $util_name utilities"
     else
@@ -28,7 +36,7 @@ load_utility() {
 
 # Load all utilities at once
 load_all_utilities() {
-    echo "$_prefix Loading Python Support utilities..."
+    echo "$_prefix Loading Python Support utilities from ${REMOTE_PS}/${BRANCH_PS}..."
     
     # Load utilities in dependency order
     load_utility "error_handling"
