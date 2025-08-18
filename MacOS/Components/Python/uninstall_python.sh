@@ -8,9 +8,7 @@
 # @notes: Removes Python from multiple locations including Library, Applications, and system paths. Requires sudo access.
 # @/doc
 
-# Copyright 2023
-# Python Installation Support
-# The Technical University of Denmark
+
 
 _prefix="PYS:"
 

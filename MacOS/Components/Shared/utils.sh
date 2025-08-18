@@ -9,7 +9,6 @@
 # @/doc
 
 # Shared utility functions for Python Support Scripts
-# Copyright 2023 - The Technical University of Denmark
 
 # Error function 
 # Print error message, contact information and exits script

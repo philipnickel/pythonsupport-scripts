@@ -8,9 +8,7 @@
 # @notes: Removes both Anaconda and Miniconda installations, cleans configuration files and PATH modifications
 # @/doc
 
-# Copyright 2023
-# Python Installation Support
-# The Technical University of Denmark
+
 
 _prefix="PYS:"
 
