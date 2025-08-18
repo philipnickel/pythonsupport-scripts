@@ -33,7 +33,7 @@ class DocTester:
             python_executable = sys.executable
             
         cmd = [
-            python_executable, 'tools/serve_docs.py',
+            python_executable, 'docs/tools/serve_docs.py',
             '--port', str(port),
             '--docs-dir', docs_dir,
             '--regenerate'
@@ -154,7 +154,7 @@ class DocTester:
             python_executable = sys.executable
             
         result = subprocess.run([
-            python_executable, 'tools/extract_docs.py',
+            python_executable, 'docs/tools/extract_docs.py',
             '--input', 'MacOS/Components',
             '--output', 'docs/generated',
             '--verbose'
@@ -222,7 +222,7 @@ def main():
     print("\n🎉 All tests passed!")
     print("\n📋 To manually test the documentation:")
     print("  1. conda activate pythonsupport")
-    print("  2. python3 tools/serve_docs.py --regenerate --watch")
+    print("  2. python3 docs/tools/serve_docs.py --regenerate --watch")
     print("  3. Open http://localhost:8000 in your browser")
     
     return 0

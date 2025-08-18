@@ -34,7 +34,7 @@ jobs:
           
       - name: Generate documentation from scripts
         run: |
-          python3 tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
+          python3 docs/tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
           
       - name: Build documentation
         run: |
