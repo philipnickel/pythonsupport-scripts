@@ -13,14 +13,28 @@ fi
 export REMOTE_PS
 export BRANCH_PS
 
-# Define piwik_log as a pass-through function for now
-# TODO: Re-enable Piwik analytics once basic functionality is working
-piwik_log() {
-    "$@"
-    return $?
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
+
+# Source the Piwik utility for analytics tracking
+source_piwik_utility() {
+    # Try to source the piwik utility - if it fails, define a fallback
+    local piwik_script
+    if piwik_script=$(curl -fsSL "$url_ps/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
+        eval "$piwik_script"
+        echo "$_prefix Piwik analytics initialized"
+    else
+        echo "$_prefix Piwik utility not available, using fallback"
+        # Fallback: define piwik_log as a pass-through function
+        piwik_log() {
+            shift  # Remove the event name (first argument)
+            "$@"   # Execute the actual command
+            return $?
+        }
+    fi
 }
 
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
+# Initialize Piwik utility
+source_piwik_utility
 
 echo "$_prefix URL used for fetching scripts $url_ps"
 
