@@ -25,16 +25,36 @@ get_system_info() {
 # Get latest commit SHA from GitHub
 get_commit_sha() {
     local sha
-    sha=$(curl -s \
-        -H "Accept: application/vnd.github.v3.sha" \
-        "https://api.github.com/repos/$GITHUB_REPO/commits/main" 2>/dev/null | head -c 7)
+    local response
     
-    # Return the short SHA or a fallback
-    if [ -n "$sha" ] && [ "$sha" != "Not Found" ] && [ "$sha" != "{\"messa" ]; then
-        echo "$sha"
-    else
-        echo "unknown"
+    # Try to get the SHA from GitHub API
+    response=$(curl -s --connect-timeout 5 --max-time 10 \
+        -H "Accept: application/vnd.github.v3.sha" \
+        "https://api.github.com/repos/$GITHUB_REPO/commits/main" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$response" ]; then
+        sha=$(echo "$response" | head -c 7)
+        
+        # Check if we got a valid SHA (7 hex characters)
+        if echo "$sha" | grep -qE '^[a-f0-9]{7}$'; then
+            echo "$sha"
+            return 0
+        fi
     fi
+    
+    # Fallback: try without custom header (gets JSON, extract sha field)
+    response=$(curl -s --connect-timeout 5 --max-time 10 \
+        "https://api.github.com/repos/$GITHUB_REPO/commits/main" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$response" ]; then
+        sha=$(echo "$response" | sed -n 's/.*"sha": *"\([a-f0-9]*\)".*/\1/p' | head -c 7)
+        if echo "$sha" | grep -qE '^[a-f0-9]{7}$'; then
+            echo "$sha"
+            return 0
+        fi
+    fi
+    
+    echo "unknown"
 }
 
 
