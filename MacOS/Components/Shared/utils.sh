@@ -36,7 +36,7 @@ set_default_env() {
         REMOTE_PS="dtudk/pythonsupport-scripts"
     fi
     if [ -z "$BRANCH_PS" ]; then
-        BRANCH_PS="main"
+        BRANCH_PS="macos-components"
     fi
     
     export REMOTE_PS

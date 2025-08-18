@@ -16,7 +16,7 @@ if [ -z "$REMOTE_PS" ]; then
     REMOTE_PS="dtudk/pythonsupport-scripts"
 fi
 if [ -z "$BRANCH_PS" ]; then
-    BRANCH_PS="main"
+    BRANCH_PS="macos-components"
 fi
 
 BASE_UTIL_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Shared"
