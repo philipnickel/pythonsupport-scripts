@@ -2,6 +2,17 @@
 
 _prefix="PYS:"
 
+# checks for environmental variables for remote and branch
+if [ -z "$REMOTE_PS" ]; then
+  REMOTE_PS="dtudk/pythonsupport-scripts"
+fi
+if [ -z "$BRANCH_PS" ]; then
+  BRANCH_PS="main"
+fi
+
+export REMOTE_PS
+export BRANCH_PS
+
 # Source Piwik utility for analytics tracking
 if [ -n "$REMOTE_PS" ] && [ -n "$BRANCH_PS" ]; then
     # Import from repository
@@ -14,17 +25,6 @@ else
         return $?
     }
 fi
-
-# checks for environmental variables for remote and branch
-if [ -z "$REMOTE_PS" ]; then
-  REMOTE_PS="dtudk/pythonsupport-scripts"
-fi
-if [ -z "$BRANCH_PS" ]; then
-  BRANCH_PS="main"
-fi
-
-export REMOTE_PS
-export BRANCH_PS
 
 url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
 
