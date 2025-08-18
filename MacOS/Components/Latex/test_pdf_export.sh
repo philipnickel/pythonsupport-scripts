@@ -10,10 +10,22 @@ OUTPUT_PDF="test_output.pdf"
 
 echo "$_prefix Downloading test notebook..."
 if [ -n "$REMOTE_PS" ] && [ -n "$BRANCH_PS" ]; then
-    curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_notebook.ipynb" -o "$TEST_NOTEBOOK"
+    notebook_url="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_notebook.ipynb"
+    echo "$_prefix Downloading from: $notebook_url"
+    if ! curl -fsSL "$notebook_url" -o "$TEST_NOTEBOOK"; then
+        echo "$_prefix Error: Failed to download test notebook from $notebook_url"
+        exit 1
+    fi
 else
-    curl -fsSL "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/test_notebook.ipynb" -o "$TEST_NOTEBOOK"
+    notebook_url="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/test_notebook.ipynb"
+    echo "$_prefix Downloading from: $notebook_url"
+    if ! curl -fsSL "$notebook_url" -o "$TEST_NOTEBOOK"; then
+        echo "$_prefix Error: Failed to download test notebook from $notebook_url"
+        exit 1
+    fi
 fi
+
+echo "$_prefix Test notebook downloaded successfully"
 
 # Check if test notebook exists
 if [ ! -f "$TEST_NOTEBOOK" ]; then
@@ -23,8 +35,8 @@ fi
 
 echo "$_prefix Found test notebook: $TEST_NOTEBOOK"
 
-# Update PATH to include TeX binaries
-export PATH="/usr/local/texlive/2024basic/bin/universal-darwin:/usr/local/texlive/2023basic/bin/universal-darwin:$PATH"
+# Update PATH to include TeX binaries (both BasicTeX and MacTeX locations)
+export PATH="/usr/local/texlive/2024/bin/universal-darwin:/usr/local/texlive/2023/bin/universal-darwin:/usr/local/texlive/2024basic/bin/universal-darwin:/usr/local/texlive/2023basic/bin/universal-darwin:$PATH"
 
 # Check if required tools are available
 echo "$_prefix Checking required tools..."

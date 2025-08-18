@@ -45,100 +45,21 @@ else
     echo "$_prefix Pandoc is already installed, skipping that step"
 fi
 
-# Install BasicTeX if not present
+# Install MacTeX (full LaTeX distribution) if not present
 if ! command -v tlmgr &> /dev/null; then
-    echo "$_prefix Installing BasicTeX..."
-    curl -LJO https://mirrors.dotsrc.org/ctan/systems/mac/mactex/BasicTeX.pkg > /dev/null
-    sudo installer -pkg BasicTeX.pkg -target / > /dev/null
-    rm BasicTeX.pkg
-    echo "$_prefix BasicTeX installation complete"
+    echo "$_prefix Installing MacTeX (full LaTeX distribution)..."
+    echo "$_prefix This is a large download (~4GB) and may take a while..."
+    curl -LJO https://mirrors.dotsrc.org/ctan/systems/mac/mactex/MacTeX.pkg > /dev/null
+    sudo installer -pkg MacTeX.pkg -target / > /dev/null
+    rm MacTeX.pkg
+    echo "$_prefix MacTeX installation complete"
 else
     echo "$_prefix TeX is already installed, skipping that step"
 fi
 
 hash -r 
 
-# Update TeX package manager
-echo "$_prefix Updating TeX package manager..."
-sudo tlmgr update --self > /dev/null
-(
-cd /usr/local/texlive/2024basic/ || cd /usr/local/texlive/2023basic/
-sudo chmod 777 tlpkg
-)
-
-echo "$_prefix Installing comprehensive TeX packages..."
-
-# Comprehensive list of packages for full LaTeX functionality
-packages=(
-    amsmath
-    amsfonts
-    texliveonfly
-    adjustbox
-    tcolorbox
-    collectbox
-    ucs
-    environ
-    trimspaces
-    titling
-    enumitem
-    rsfs
-    pdfcol
-    soul
-    txfonts
-    xcolor
-    listings
-    fancyhdr
-    geometry
-    hyperref
-    graphicx
-    booktabs
-    longtable
-    array
-    multirow
-    wrapfig
-    float
-    parskip
-    setspace
-    caption
-    subcaption
-    tikz
-    pgfplots
-    beamer
-)
-
-# Maximum number of attempts to install each package
-max_attempts=3
-
-# Function to install a TeX package with retries
-install_package_with_retries() {
-    local package=$1
-    local attempt=1
-
-    while [ $attempt -le $max_attempts ]; do
-        echo "$_prefix Attempting to install $package (Attempt $attempt of $max_attempts)..."
-        sudo tlmgr install $package > /dev/null
-
-        if [ $? -eq 0 ]; then
-            echo "$_prefix $package installed successfully."
-            return 0
-        else
-            echo "$_prefix Failed to install $package. Retrying..."
-            ((attempt++))
-        fi
-    done
-
-    echo "$_prefix Failed to install $package after $max_attempts attempts."
-    return 1
-}
-
-# Install all packages
-for package in "${packages[@]}"; do
-    install_package_with_retries $package
-done
-
-echo "$_prefix Updating all TeX packages - this may take a while..."
-sudo tlmgr update --all > /dev/null
-echo "$_prefix Finished updating TeX packages"
+echo "$_prefix MacTeX includes all packages, no additional packages needed"
 
 echo "$_prefix Installing/updating nbconvert..."
 python3 -m pip install --force-reinstall nbconvert > /dev/null
