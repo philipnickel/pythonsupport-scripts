@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Pre-installation checks and setup
+echo "Preparing DTU Python Support installation..."
+
+# Log to installer log
+exec > /tmp/dtu-python-support-install.log 2>&1
+
+echo "$(date): DTU Python Support pre-installation started"
+echo "System: $(uname -a)"
+echo "User: $(whoami)"
+
+# Check system requirements
+if [[ $(uname) != "Darwin" ]]; then
+    echo "ERROR: This installer is only compatible with macOS"
+    exit 1
+fi
+
+# Check for admin privileges
+if [[ $EUID -eq 0 ]]; then
+    echo "Running as root - OK"
+else
+    echo "Running as user $(whoami) - installer will handle privilege escalation"
+fi
+
+echo "Pre-installation checks completed successfully"
+exit 0
