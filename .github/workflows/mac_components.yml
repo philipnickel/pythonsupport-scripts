@@ -20,13 +20,11 @@ on:
 env:
   PYTHON_VERSION_PS: "3.11"
 
-# Temporarily disabled for PKG installer testing
-# Remove the 'if: false' conditions below to re-enable this workflow
+# Re-enabled after PKG installer testing completed successfully
 
 jobs:
   test-homebrew:
     name: Test Homebrew Component
-    if: false  # Temporarily disabled for PKG installer testing
     runs-on: macos-latest
     
     steps:
@@ -52,7 +50,6 @@ jobs:
 
   test-python:
     name: Test Python Component
-    if: false  # Temporarily disabled for PKG installer testing
     runs-on: macos-latest
     
     steps:
@@ -87,7 +84,6 @@ jobs:
 
   test-vscode:
     name: Test VSCode Component
-    if: false  # Temporarily disabled for PKG installer testing
     runs-on: macos-latest
     
     steps:
@@ -129,7 +125,6 @@ jobs:
 
   test-vscode-clean-uninstall:
     name: Test VSCode Clean Uninstall
-    if: false  # Temporarily disabled for PKG installer testing
     runs-on: macos-latest
     
     steps:
@@ -282,7 +277,6 @@ jobs:
 
   test-python-uninstall:
     name: Test Python Uninstall
-    if: false  # Temporarily disabled for PKG installer testing Scripts
     runs-on: macos-latest
     
     steps:
@@ -395,7 +389,6 @@ jobs:
 
   test-diagnostics:
     name: Test Diagnostics
-    if: false  # Temporarily disabled for PKG installer testing Component
     runs-on: macos-latest
     needs: [test-homebrew, test-python, test-vscode]
     
