@@ -79,18 +79,30 @@ jobs:
 
       - name: Verify python (${{ env.PYTHON_VERSION_PS }})
         run: |
+          # Prefer conda's Python from the base environment installed by PKG
           export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-          which python3
+          which conda
+          BASE_DIR=$(conda info --base)
+          echo "Conda base: $BASE_DIR"
+          PY="$BASE_DIR/bin/python3"
+          if [[ ! -x "$PY" ]]; then
+            echo "Conda python not found at $PY"
+            exit 1
+          fi
           EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          INSTALLED_VERSION=$($PY --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
-          echo "Correct Python version $INSTALLED_VERSION is installed."
+          echo "Correct Python version $INSTALLED_VERSION is installed (conda base)."
 
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          $PY -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       - name: Run final diagnostics (HTML report)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/MacOS/Components/Diagnostics/generate_report.sh)"
+          echo "Running diagnostics from $REMOTE_PS@$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Diagnostics/generate_report.sh)"
