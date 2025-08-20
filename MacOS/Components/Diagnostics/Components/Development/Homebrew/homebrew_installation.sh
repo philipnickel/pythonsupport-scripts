@@ -11,7 +11,7 @@ echo "==========================="
 # Check if Homebrew is installed
 if command -v brew >/dev/null 2>&1; then
     brew_path=$(which brew)
-    echo "✓ Homebrew is installed"
+    echo "PASS Homebrew is installed"
     echo "  Location: $brew_path"
     
     # Get Homebrew version
@@ -38,15 +38,15 @@ if command -v brew >/dev/null 2>&1; then
     fi
     
     echo ""
-    echo "✅ Homebrew installation check complete - PASSED"
+    echo "PASSED Homebrew installation check complete - PASSED"
     echo ""
     echo "Note: Run 'brew doctor' manually for detailed health check"
 else
-    echo "✗ Homebrew is not installed"
+    echo "FAIL Homebrew is not installed"
     echo ""
     echo "Installation command:"
     echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
     echo ""
-    echo "❌ Homebrew not found - INSTALLATION NEEDED"
+    echo "FAIL Homebrew not found - INSTALLATION NEEDED"
     exit 1
 fi

@@ -10,7 +10,7 @@ echo "============================="
 
 # Check if code command is available
 if ! command -v code >/dev/null 2>&1; then
-    echo "❌ VS Code 'code' command not available"
+    echo "FAIL VS Code 'code' command not available"
     echo "Cannot check extensions without VS Code CLI access"
     exit 1
 fi
@@ -34,7 +34,7 @@ echo "Checking Python development extensions..."
 echo ""
 
 if ! installed_extensions=$(code --list-extensions 2>/dev/null); then
-    echo "❌ Unable to retrieve extension list"
+    echo "FAIL Unable to retrieve extension list"
     exit 1
 fi
 
@@ -45,9 +45,9 @@ echo "Required Extensions:"
 echo "-------------------"
 for ext in "${required_extensions[@]}"; do
     if echo "$installed_extensions" | grep -q "^$ext$"; then
-        echo "  ✓ $ext"
+        echo "  PASS $ext"
     else
-        echo "  ✗ $ext - MISSING"
+        echo "  FAIL $ext - MISSING"
         missing_required=$((missing_required + 1))
     fi
 done
@@ -57,9 +57,9 @@ echo "Recommended Extensions:"
 echo "----------------------"
 for ext in "${recommended_extensions[@]}"; do
     if echo "$installed_extensions" | grep -q "^$ext$"; then
-        echo "  ✓ $ext"
+        echo "  PASS $ext"
     else
-        echo "  ✗ $ext - RECOMMENDED"
+        echo "  FAIL $ext - RECOMMENDED"
         missing_recommended=$((missing_recommended + 1))
     fi
 done
@@ -72,7 +72,7 @@ echo "Recommended extensions missing: $missing_recommended/${#recommended_extens
 
 echo ""
 if [ $missing_required -eq 0 ]; then
-    echo "✅ All required Python extensions are installed"
+    echo "PASSED All required Python extensions are installed"
     if [ $missing_recommended -gt 0 ]; then
         echo "ℹ Consider installing recommended extensions for better development experience"
     fi

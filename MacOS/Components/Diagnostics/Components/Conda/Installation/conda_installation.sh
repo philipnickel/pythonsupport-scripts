@@ -12,7 +12,7 @@ echo "========================"
 conda_path=$(which conda 2>/dev/null)
 
 if [ -z "$conda_path" ]; then
-    echo "✗ Conda is not installed"
+    echo "FAIL Conda is not installed"
     echo ""
     echo "Conda installation not found in PATH"
     echo ""
@@ -21,7 +21,7 @@ if [ -z "$conda_path" ]; then
     echo "• Install Anaconda: https://www.anaconda.com/products/individual"
     exit 1
 else
-    echo "✓ Conda is installed"
+    echo "PASS Conda is installed"
     echo "  Location: $conda_path"
     
     # Get conda version
@@ -39,19 +39,19 @@ else
     echo "Functionality Test:"
     echo "------------------"
     if conda info > /dev/null 2>&1; then
-        echo "✓ conda info command works"
+        echo "PASS conda info command works"
     else
-        echo "✗ conda info command failed"
+        echo "FAIL conda info command failed"
         exit 1
     fi
     
     if conda list > /dev/null 2>&1; then
-        echo "✓ conda list command works"
+        echo "PASS conda list command works"
     else
-        echo "✗ conda list command failed"
+        echo "FAIL conda list command failed"
         exit 1
     fi
     
     echo ""
-    echo "✅ Conda installation check complete - PASSED"
+    echo "PASSED Conda installation check complete - PASSED"
 fi

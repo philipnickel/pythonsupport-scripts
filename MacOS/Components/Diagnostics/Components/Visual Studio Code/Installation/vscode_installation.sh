@@ -13,7 +13,7 @@ vscode_found=0
 # Check if code command is available
 if command -v code >/dev/null 2>&1; then
     code_path=$(which code)
-    echo "✓ 'code' command is available"
+    echo "PASS 'code' command is available"
     echo "  Location: $code_path"
     
     # Get VS Code version
@@ -26,7 +26,7 @@ if command -v code >/dev/null 2>&1; then
     
     vscode_found=1
 else
-    echo "✗ 'code' command not found in PATH"
+    echo "FAIL 'code' command not found in PATH"
 fi
 
 echo ""
@@ -35,7 +35,7 @@ echo ""
 echo "Application Check:"
 echo "-----------------"
 if [ -d "/Applications/Visual Studio Code.app" ]; then
-    echo "✓ VS Code found in /Applications/"
+    echo "PASS VS Code found in /Applications/"
     vscode_found=1
     
     if [ ! -x "$(command -v code)" ]; then
@@ -43,21 +43,21 @@ if [ -d "/Applications/Visual Studio Code.app" ]; then
         echo "  To fix: Open VS Code → View → Command Palette → 'Shell Command: Install code command'"
     fi
 else
-    echo "✗ VS Code not found in /Applications/"
+    echo "FAIL VS Code not found in /Applications/"
 fi
 
 # Check for VS Code Insiders
 if [ -d "/Applications/Visual Studio Code - Insiders.app" ]; then
-    echo "✓ VS Code Insiders found in /Applications/"
+    echo "PASS VS Code Insiders found in /Applications/"
     vscode_found=1
 fi
 
 echo ""
 
 if [ $vscode_found -eq 1 ]; then
-    echo "✅ VS Code installation check complete - PASSED"
+    echo "PASSED VS Code installation check complete - PASSED"
 else
-    echo "❌ VS Code not found"
+    echo "FAIL VS Code not found"
     echo ""
     echo "Installation options:"
     echo "• Download from: https://code.visualstudio.com/"

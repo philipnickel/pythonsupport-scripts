@@ -4,6 +4,14 @@
 
 This repository contains automated installation scripts for Python development environments and associated tools for macOS and Windows.
 
+## Quick Diagnostics
+
+Run comprehensive Python environment diagnostics:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash
+```
+
 # Autoinstalling python 
 ## MacOS
 Open a terminal (command + space, search for terminal) and run the following command:
