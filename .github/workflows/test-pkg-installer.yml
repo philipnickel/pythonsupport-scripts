@@ -109,8 +109,19 @@ jobs:
           echo "=== Installing PKG ==="
           echo "Installing: $PKG_FILE"
           
+          # Get absolute path for the PKG file
+          PKG_ABSOLUTE_PATH="$(pwd)/$PKG_FILE"
+          echo "Absolute path: $PKG_ABSOLUTE_PATH"
+          
+          # Verify PKG file exists
+          if [[ ! -f "$PKG_ABSOLUTE_PATH" ]]; then
+            echo "❌ PKG file not found at: $PKG_ABSOLUTE_PATH"
+            ls -la "$(dirname "$PKG_ABSOLUTE_PATH")"
+            exit 1
+          fi
+          
           # Install with verbose logging
-          sudo installer -verbose -pkg "$PKG_FILE" -target / 2>&1 | tee installation.log
+          sudo installer -verbose -pkg "$PKG_ABSOLUTE_PATH" -target / 2>&1 | tee installation.log
           
           echo ""
           echo "=== Installation Log Summary ==="
