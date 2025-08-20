@@ -8,7 +8,7 @@ Each component is run by 'curling' the bash script from the github repo and then
 
 | Component | Auto-Generated Docs | Manual Docs | Purpose | Dependencies |
 |-----------|--------------------|--------------|---------|--------------| 
-| **Diagnostics** | [Script Details](../../generated/components.md#diagnostics) | [Overview](diagnostics.md) | System compatibility checks | None |
+| **Diagnostics** | [Script Details](../../generated/diagnostics.md) | [Overview](diagnostics.md) | System compatibility checks | None |
 | **Homebrew** | [Script Details](../../generated/components.md#package-manager) | [Overview](homebrew.md) | Package manager installation | None |
 | **Python** | [Script Details](../../generated/components.md#python) | [Overview](python.md) | Miniconda installation and setup | Homebrew |
 | **VSCode** | [Script Details](../../generated/components.md#ide) | [Overview](vscode.md) | Visual Studio Code and extensions | Homebrew |

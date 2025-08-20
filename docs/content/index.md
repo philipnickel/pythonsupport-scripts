@@ -35,7 +35,7 @@ Windows support is coming soon. Check back for updates.
 All script documentation is automatically generated from the source code to ensure it stays current.
 
 **MacOS Components:**
-- **[Diagnostics →](generated/diagnostics.md)** - System compatibility checks
+- **[Diagnostics →](macos/components/diagnostics.md)** - System compatibility checks and HTML report
 - **[Homebrew →](generated/homebrew.md)** - Package manager installation
 - **[Python →](generated/python.md)** - Python environment setup  
 - **[VSCode →](generated/vsc.md)** - Code editor and extensions
