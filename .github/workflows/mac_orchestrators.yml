@@ -21,7 +21,7 @@ env:
 jobs:
   test-first-year-orchestrator:
     name: Test First Year Orchestrator
-    if: false  # Temporarily disabled for PKG installer testing
+    if: true  # Re-enabled to test orchestrator vs PKG installer
     runs-on: macos-latest
     
     steps:
