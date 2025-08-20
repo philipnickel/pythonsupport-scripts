@@ -439,38 +439,30 @@ test_gdpr_compliance() {
     echo -e "${PURPLE}🔒 Testing GDPR Compliance${NC}"
     echo "----------------------------------------"
     
-    # Test default state (should be enabled)
+    # Clean up any existing choice file
+    rm -f "/tmp/piwik_analytics_choice"
+    
+    # Test default state (no choice made yet)
     echo "Testing default analytics state..."
-    if check_analytics_status; then
-        test_passed "Default analytics state (enabled)"
+    if is_analytics_disabled; then
+        test_failed "Default analytics state (should be enabled by default)"
     else
-        test_failed "Default analytics state"
+        test_passed "Default analytics state (enabled by default)"
     fi
     
-    # Test environment variable opt-out
-    echo "Testing environment variable opt-out..."
-    export PIWIK_OPT_OUT=true
-    if ! check_analytics_status; then
-        test_passed "Environment variable opt-out"
+    # Test opt-out functionality
+    echo "Testing opt-out functionality..."
+    echo "opt-out" > "/tmp/piwik_analytics_choice"
+    if is_analytics_disabled; then
+        test_passed "Opt-out functionality"
     else
-        test_failed "Environment variable opt-out"
-    fi
-    unset PIWIK_OPT_OUT
-    
-    # Test file-based opt-out
-    echo "Testing file-based opt-out..."
-    local opt_out_file="$HOME/.piwik_opt_out"
-    echo "opt-out" > "$opt_out_file"
-    if ! check_analytics_status; then
-        test_passed "File-based opt-out"
-    else
-        test_failed "File-based opt-out"
+        test_failed "Opt-out functionality"
     fi
     
-    # Test opt-in (remove opt-out file)
-    echo "Testing opt-in..."
-    rm "$opt_out_file"
-    if check_analytics_status; then
+    # Test opt-in functionality
+    echo "Testing opt-in functionality..."
+    echo "opt-in" > "/tmp/piwik_analytics_choice"
+    if ! is_analytics_disabled; then
         test_passed "Opt-in functionality"
     else
         test_failed "Opt-in functionality"
@@ -478,13 +470,24 @@ test_gdpr_compliance() {
     
     # Test that commands still work when analytics are disabled
     echo "Testing command execution when analytics disabled..."
-    export PIWIK_OPT_OUT=true
+    echo "opt-out" > "/tmp/piwik_analytics_choice"
     if piwik_log "test_disabled" echo "Command works when analytics disabled"; then
         test_passed "Command execution when analytics disabled"
     else
         test_failed "Command execution when analytics disabled"
     fi
-    unset PIWIK_OPT_OUT
+    
+    # Test reset functionality
+    echo "Testing reset functionality..."
+    piwik_reset_choice
+    if [ ! -f "/tmp/piwik_analytics_choice" ]; then
+        test_passed "Reset functionality"
+    else
+        test_failed "Reset functionality"
+    fi
+    
+    # Clean up
+    rm -f "/tmp/piwik_analytics_choice"
     
     echo ""
 }

@@ -227,17 +227,28 @@ fi
 echo "  - Architecture: $OS_ARCH"
 echo "  - Commit SHA: $(get_commit_sha)"
 echo ""
-echo -e "${BLUE}GDPR Compliance Information:${NC}"
-check_analytics_status
+echo -e "${BLUE}Analytics Choice Information:${NC}"
+local opt_out_file="/tmp/piwik_analytics_choice"
+if [ -f "$opt_out_file" ]; then
+    local choice=$(cat "$opt_out_file" 2>/dev/null)
+    if [ "$choice" = "opt-out" ]; then
+        echo "❌ Analytics disabled (user choice)"
+    else
+        echo "✅ Analytics enabled (user choice)"
+    fi
+else
+    echo "⏳ No choice made yet (will prompt on first use)"
+fi
 echo ""
 echo "To opt out of analytics:"
-echo "  export PIWIK_OPT_OUT=true"
-echo "  echo 'opt-out' > ~/.piwik_opt_out"
+echo "  echo 'opt-out' > /tmp/piwik_analytics_choice"
 echo "  piwik_opt_out"
 echo ""
 echo "To opt back in:"
-echo "  unset PIWIK_OPT_OUT"
-echo "  rm ~/.piwik_opt_out"
+echo "  echo 'opt-in' > /tmp/piwik_analytics_choice"
 echo "  piwik_opt_in"
+echo ""
+echo "To reset choice (will prompt again):"
+echo "  piwik_reset_choice"
 echo ""
 echo -e "${BLUE}You can view these events in your Piwik PRO dashboard.${NC}"

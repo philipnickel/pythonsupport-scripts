@@ -196,10 +196,11 @@ Include: Version details and initial success rate
 
 ### 4. GDPR Compliance
 
-**Opt-Out Mechanisms:**
-- **Environment Variables**: `PIWIK_OPT_OUT=true`, `ANALYTICS_DISABLED=true`, `DO_NOT_TRACK=true`
-- **File-Based Opt-Out**: `~/.piwik_opt_out`, `~/.analytics_opt_out`, `~/.do_not_track`
-- **Consent-Based Tracking**: Set `PIWIK_REQUIRE_CONSENT=true` for explicit consent requirement
+**Simple Opt-Out System:**
+- **Temporary File**: `/tmp/piwik_analytics_choice` stores user choice
+- **Apple Native Dialog**: Uses `osascript` to show native macOS popup
+- **Automatic Prompting**: Shows dialog on first use if no choice made
+- **Fallback**: Command-line prompt if GUI not available
 
 **Privacy Notice:**
 - Anonymous usage analytics only
@@ -208,10 +209,11 @@ Include: Version details and initial success rate
 - Users can opt out at any time
 
 **Compliance Features:**
-- Automatic opt-out detection
-- Commands still work when analytics disabled
-- Clear privacy notice and consent mechanism
-- Multiple opt-out methods for accessibility
+- Native macOS dialog for user choice
+- Simple file-based choice storage
+- Commands work regardless of analytics status
+- Clear privacy notice in dialog
+- Easy opt-in/opt-out/reset functions
 
 ### 5. Data Structure
 
