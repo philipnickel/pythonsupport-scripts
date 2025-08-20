@@ -7,7 +7,7 @@
       "command": "bash",
       "args": [
         "-c", 
-        "python3 tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose && cd docs && mkdocs serve --dev-addr 127.0.0.1:8000"
+        "python3 docs/tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose && cd docs && mkdocs serve --dev-addr 127.0.0.1:8000"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

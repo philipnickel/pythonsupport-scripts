@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<installer-script minSpecVersion="2">
+    <title>DTU Python Installer (Local)</title>
+    <welcome file="Introduction.rtf" mime-type="text/rtf"/>
+    <readme file="Read Me.rtf" mime-type="text/rtf"/>
+    <license file="License.rtf" mime-type="text/rtf"/>
+    <conclusion file="Summary.rtf" mime-type="text/rtf"/>
+    <options customize="never" rootVolumeOnly="true"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="10.14"/>
+        </allowed-os-versions>
+    </volume-check>
+    <choices-outline>
+        <line choice="dtu-python"/>
+    </choices-outline>
+    <choice id="dtu-python" title="DTU Python Environment" description="Complete Python development environment for DTU students on macOS" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="dk.dtu.pythonsupport.dtupythoninstaller"/>
+    </choice>
+    <pkg-ref id="dk.dtu.pythonsupport.dtupythoninstaller" version="1.0.28" installKBytes="0" updateKBytes="0">#DtuPythonInstaller_LOCAL-1.0.28.pkg</pkg-ref>
+    <pkg-ref id="dk.dtu.pythonsupport.dtupythoninstaller">
+        <bundle-version/>
+    </pkg-ref>
+</installer-script>

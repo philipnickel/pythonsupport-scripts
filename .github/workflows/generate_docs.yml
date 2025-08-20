@@ -2,16 +2,16 @@ name: Generate Documentation
 
 on:
   push:
-    branches: [ "main", "macos-components" ]
+    branches: [ "main" ]
     paths:
       - 'MacOS/Components/**/*.sh'
-      - 'tools/extract_docs.py'
+      - 'docs/tools/extract_docs.py'
       - '.github/workflows/generate_docs.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'MacOS/Components/**/*.sh'
-      - 'tools/extract_docs.py'
+      - 'docs/tools/extract_docs.py'
       - '.github/workflows/generate_docs.yml'
   workflow_dispatch:
 
@@ -19,6 +19,9 @@ jobs:
   generate-docs:
     name: Generate Documentation from Script Docstrings
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
       - name: Checkout code
@@ -29,10 +32,15 @@ jobs:
         with:
           python-version: '3.11'
           
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r docs/tools/requirements-docs.txt
+          
       - name: Generate documentation
         run: |
           echo "Generating documentation from script docstrings..."
-          python3 tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
+          python3 docs/tools/extract_docs.py --input MacOS/Components --output docs/content/generated --verbose
           
       - name: Check if documentation changed
         id: verify-changed-files
@@ -51,7 +59,7 @@ jobs:
         if: steps.verify-changed-files.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         with:
           name: generated-documentation
-          path: docs/generated/
+          path: docs/content/generated/
           retention-days: 30
           
       - name: Display documentation preview
@@ -81,7 +89,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add docs/content/generated/
-          git commit -m "docs: Auto-update documentation from script docstrings
-
-Generated from latest script changes" || exit 0
+          git commit -m "docs: Auto-update documentation from script docstrings" -m "Generated from latest script changes" || exit 0
           git push
