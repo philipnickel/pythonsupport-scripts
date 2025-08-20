@@ -6,9 +6,12 @@ set -e
 # Uses local scripts included in the package (no internet required during installation)
 
 LOG_FILE="PLACEHOLDER_LOG_FILE"
-exec >> "$LOG_FILE" 2>&1
+# Stream output both to console (for installer UI/CLI) and to log file
+# Create/clear log file, then tee all subsequent output
+: > "$LOG_FILE"
+exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "$(date): DTU Python installation started"
+echo "$(date): === DTU Python installation started ==="
 
 # Determine user
 USER_NAME=$(stat -f%Su /dev/console)
@@ -26,6 +29,7 @@ if [[ ! -d "$COMPONENTS_DIR" ]]; then
 fi
 
 echo "$(date): Using local component scripts from $COMPONENTS_DIR"
+echo "$(date): Preparing to install components..."
 
 # Run a component installer script as the console user
 install_component() {
@@ -33,7 +37,7 @@ install_component() {
     local name="$2"
     local script_path="$COMPONENTS_DIR/$component/install.sh"
     
-    echo "$(date): Installing $name..."
+    echo "$(date): ==> Installing $name..."
     
     if [[ ! -f "$script_path" ]]; then
         echo "$(date): WARNING: Script not found: $script_path"
@@ -43,10 +47,10 @@ install_component() {
     
     # Ensure user environment and PATH (Homebrew) are available when running as console user
     if sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
-        echo "$(date): $name installed successfully"
+        echo "$(date): ✅ $name installed successfully"
         return 0
     else
-        echo "$(date): $name installation failed (exit code: $?)"
+        echo "$(date): ❌ $name installation failed (exit code: $?)"
         return 1
     fi
 }
@@ -59,7 +63,7 @@ install_component "VSC" "Visual Studio Code" || echo "$(date): VS Code component
 # Run Python environment setup if it exists
 SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
-    echo "$(date): Running Python environment setup..."
+    echo "$(date): ==> Running Python environment setup..."
     sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
 else
     echo "$(date): Python setup script not found, skipping"
@@ -68,7 +72,7 @@ fi
 # Run diagnostics if available
 DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
 if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
-    echo "$(date): Running diagnostics..."
+    echo "$(date): ==> Running diagnostics..."
     sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
 else
     echo "$(date): Diagnostics script not found, skipping"
@@ -111,7 +115,7 @@ Next steps:
 For support: PLACEHOLDER_SUPPORT_EMAIL
 EOF
 
-echo "$(date): Installation completed"
+echo "$(date): === Installation completed ==="
 echo "Summary created at: $SUMMARY_FILE"
 
 # Show notification
