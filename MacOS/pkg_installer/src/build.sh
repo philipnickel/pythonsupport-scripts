@@ -91,32 +91,17 @@ sed -e "s/PLACEHOLDER_VERSION/$VERSION/g" \
     -e "s/PLACEHOLDER_PKG_NAME/$PKG_NAME/g" \
     "$SOURCE_DIR/Distribution.xml" > "$BUILD_DIR/Distribution"
 
-# Create payload directory and copy Component scripts
+# Create payload directory (minimal - no components bundled)
 PAYLOAD_DIR="$BUILD_DIR/payload"
 mkdir -p "$PAYLOAD_DIR"
-
-# Always include MacOS/Components directory in the package
-COMPONENTS_SOURCE="$SCRIPT_DIR/../../Components"
-COMPONENTS_DEST="$PAYLOAD_DIR/dtu_components"
-
-if [[ -d "$COMPONENTS_SOURCE" ]]; then
-    echo "Copying Components directory into package..."
-    # Copy the entire Components directory
-    cp -r "$COMPONENTS_SOURCE" "$COMPONENTS_DEST"
-    # Remove any .DS_Store files
-    find "$COMPONENTS_DEST" -name ".DS_Store" -delete 2>/dev/null || true
-    # Count the size
-    COMPONENTS_SIZE=$(du -sh "$COMPONENTS_DEST" | cut -f1)
-    echo "  Included components (${COMPONENTS_SIZE}): $(ls -1 "$COMPONENTS_DEST" | tr '\n' ' ')"
-else
-    echo "ERROR: Components directory not found at $COMPONENTS_SOURCE"
-    exit 1
-fi
 
 # Copy any additional payload files if they exist
 if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)" ]]; then
     echo "Copying additional payload files..."
     cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
+else
+    # Create minimal placeholder to avoid empty payload
+    echo "# DTU Python Installer - scripts download components from GitHub" > "$PAYLOAD_DIR/README.txt"
 fi
 
 # Create component package
