@@ -54,12 +54,20 @@ jobs:
 
       - name: Verify VS Code
         run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
+          echo "PATH: $PATH"
+          APP_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+          if command -v code >/dev/null 2>&1; then
+            code --version
+            exit $?
+          elif [[ -x "$APP_CLI" ]]; then
+            "$APP_CLI" --version
+            exit $?
+          else
+            echo "VS Code CLI not found. Listing /Applications:"
+            ls -la "/Applications" | sed -n '1,50p'
             echo "VS Code not installed correctly"
+            exit 127
           fi
-          exit $retval
 
       - name: Verify conda
         run: |
