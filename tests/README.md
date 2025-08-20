@@ -106,7 +106,14 @@ Automatic error categorization based on error patterns:
 - `_version_error` - Version compatibility errors
 - `_unknown_error` - Other errors
 
-### 4. Utility Functions
+### 4. Enhanced System Information
+Detailed operating system and version detection:
+- **Operating System**: macOS, Linux, Windows detection
+- **OS Version**: Version number (e.g., 15.0, 14.0)
+- **OS Codename**: macOS codenames (Sequoia, Sonoma, Ventura, etc.)
+- **Architecture**: x86_64, arm64, etc.
+
+### 5. Utility Functions
 Additional utility functions for debugging and monitoring:
 ```bash
 # Get environment information

@@ -72,11 +72,120 @@ get_system_info() {
     OS=$(uname -s)
     ARCH=$(uname -m)
     
-    # Get macOS version if available
-    if command -v sw_vers > /dev/null; then
-        OS_VERSION=$(sw_vers -productVersion)
-        OS="${OS}${OS_VERSION}"
+    # Enhanced OS and version detection
+    if [ "$OS" = "Darwin" ]; then
+        # macOS detection
+        OS_NAME="macOS"
+        
+        # Get macOS version and codename
+        if command -v sw_vers > /dev/null; then
+            OS_VERSION=$(sw_vers -productVersion)
+            
+            # Map macOS versions to codenames
+            case "$OS_VERSION" in
+                "15."*)
+                    OS_CODENAME="Sequoia"
+                    ;;
+                "14."*)
+                    OS_CODENAME="Sonoma"
+                    ;;
+                "13."*)
+                    OS_CODENAME="Ventura"
+                    ;;
+                "12."*)
+                    OS_CODENAME="Monterey"
+                    ;;
+                "11."*)
+                    OS_CODENAME="Big Sur"
+                    ;;
+                "10.15"*)
+                    OS_CODENAME="Catalina"
+                    ;;
+                "10.14"*)
+                    OS_CODENAME="Mojave"
+                    ;;
+                "10.13"*)
+                    OS_CODENAME="High Sierra"
+                    ;;
+                "10.12"*)
+                    OS_CODENAME="Sierra"
+                    ;;
+                "10.11"*)
+                    OS_CODENAME="El Capitan"
+                    ;;
+                "10.10"*)
+                    OS_CODENAME="Yosemite"
+                    ;;
+                "10.9"*)
+                    OS_CODENAME="Mavericks"
+                    ;;
+                "10.8"*)
+                    OS_CODENAME="Mountain Lion"
+                    ;;
+                "10.7"*)
+                    OS_CODENAME="Lion"
+                    ;;
+                "10.6"*)
+                    OS_CODENAME="Snow Leopard"
+                    ;;
+                *)
+                    OS_CODENAME="Unknown"
+                    ;;
+            esac
+            
+            # Combine OS info
+            OS="${OS_NAME}${OS_VERSION} (${OS_CODENAME})"
+        else
+            OS="${OS_NAME} (Unknown Version)"
+        fi
+        
+    elif [ "$OS" = "Linux" ]; then
+        # Linux detection
+        OS_NAME="Linux"
+        
+        # Try to get Linux distribution info
+        if [ -f /etc/os-release ]; then
+            source /etc/os-release
+            OS_VERSION="$VERSION"
+            OS_CODENAME="$VERSION_CODENAME"
+            if [ -n "$OS_CODENAME" ]; then
+                OS="${OS_NAME} ${NAME} ${VERSION_ID} (${OS_CODENAME})"
+            else
+                OS="${OS_NAME} ${NAME} ${VERSION_ID}"
+            fi
+        elif [ -f /etc/lsb-release ]; then
+            source /etc/lsb-release
+            OS_VERSION="$DISTRIB_RELEASE"
+            OS_CODENAME="$DISTRIB_CODENAME"
+            OS="${OS_NAME} ${DISTRIB_DESCRIPTION} (${OS_CODENAME})"
+        else
+            OS="${OS_NAME} (Unknown Distribution)"
+        fi
+        
+    elif [[ "$OS" == *"NT"* ]] || [[ "$OS" == *"Windows"* ]]; then
+        # Windows detection (if running in WSL or similar)
+        OS_NAME="Windows"
+        
+        # Try to get Windows version
+        if command -v wmic > /dev/null 2>&1; then
+            OS_VERSION=$(wmic os get Caption /value 2>/dev/null | grep "Caption=" | cut -d'=' -f2)
+            OS="${OS_NAME} ${OS_VERSION}"
+        else
+            OS="${OS_NAME} (Unknown Version)"
+        fi
+        
+    else
+        # Other Unix-like systems
+        OS_NAME="$OS"
+        OS_VERSION="Unknown"
+        OS="${OS_NAME} (Unknown Version)"
     fi
+    
+    # Store individual components for potential use
+    export OS_NAME
+    export OS_VERSION
+    export OS_CODENAME
+    export OS_ARCH="$ARCH"
 }
 
 # Get latest commit SHA from GitHub
@@ -255,7 +364,17 @@ piwik_get_environment_info() {
     echo "=== Piwik Environment Information ==="
     echo "Detected Environment: $(detect_environment)"
     echo "Piwik Category: $(get_environment_category)"
-    echo "System Info: $(get_system_info)"
+    
+    # Get detailed system information
+    get_system_info
+    echo "Operating System: $OS_NAME"
+    echo "OS Version: $OS_VERSION"
+    if [ -n "$OS_CODENAME" ]; then
+        echo "OS Codename: $OS_CODENAME"
+    fi
+    echo "Architecture: $OS_ARCH"
+    echo "Full OS String: $OS"
+    
     echo "Commit SHA: $(get_commit_sha)"
     echo "Environment Variables:"
     echo "  GITHUB_CI: ${GITHUB_CI:-not set}"

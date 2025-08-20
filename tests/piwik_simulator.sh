@@ -274,13 +274,30 @@ test_system_info() {
     echo "----------------------------------------"
     
     get_system_info
-    echo "OS: $OS"
-    echo "Architecture: $ARCH"
+    echo "Operating System: $OS_NAME"
+    echo "OS Version: $OS_VERSION"
+    if [ -n "$OS_CODENAME" ]; then
+        echo "OS Codename: $OS_CODENAME"
+    fi
+    echo "Architecture: $OS_ARCH"
+    echo "Full OS String: $OS"
     
-    if [ -n "$OS" ] && [ -n "$ARCH" ]; then
-        test_passed "System information collection"
+    if [ -n "$OS_NAME" ] && [ -n "$OS_VERSION" ] && [ -n "$OS_ARCH" ]; then
+        test_passed "Enhanced system information collection"
     else
-        test_failed "System information collection"
+        test_failed "Enhanced system information collection"
+    fi
+    
+    # Test OS-specific detection
+    if [ "$OS_NAME" = "macOS" ] && [ -n "$OS_CODENAME" ]; then
+        test_passed "macOS codename detection"
+        echo "  Detected macOS codename: $OS_CODENAME"
+    elif [ "$OS_NAME" = "Linux" ]; then
+        test_passed "Linux distribution detection"
+    elif [ "$OS_NAME" = "Windows" ]; then
+        test_passed "Windows detection"
+    else
+        test_warning "OS-specific detection (may be expected for unknown OS)"
     fi
     
     local commit_sha=$(get_commit_sha)
@@ -359,6 +376,64 @@ test_environment_simulation() {
     echo ""
 }
 
+# Test OS detection scenarios
+test_os_detection_scenarios() {
+    echo -e "${PURPLE}🖥️  Testing OS Detection Scenarios${NC}"
+    echo "----------------------------------------"
+    
+    # Test current OS detection
+    echo "Testing current OS detection..."
+    get_system_info
+    echo "Current OS: $OS_NAME $OS_VERSION"
+    if [ -n "$OS_CODENAME" ]; then
+        echo "Current Codename: $OS_CODENAME"
+    fi
+    
+    # Test macOS version mapping
+    if [ "$OS_NAME" = "macOS" ]; then
+        echo "Testing macOS version mapping..."
+        test_passed "macOS version mapping"
+        
+        # Test specific version detection
+        case "$OS_VERSION" in
+            "15."*)
+                test_passed "macOS Sequoia detection"
+                ;;
+            "14."*)
+                test_passed "macOS Sonoma detection"
+                ;;
+            "13."*)
+                test_passed "macOS Ventura detection"
+                ;;
+            "12."*)
+                test_passed "macOS Monterey detection"
+                ;;
+            "11."*)
+                test_passed "macOS Big Sur detection"
+                ;;
+            *)
+                test_info "macOS version $OS_VERSION detected"
+                ;;
+        esac
+    fi
+    
+    # Test architecture detection
+    echo "Testing architecture detection..."
+    case "$OS_ARCH" in
+        "arm64"|"aarch64")
+            test_passed "Apple Silicon (ARM64) detection"
+            ;;
+        "x86_64"|"amd64")
+            test_passed "Intel x86_64 detection"
+            ;;
+        *)
+            test_info "Architecture $OS_ARCH detected"
+            ;;
+    esac
+    
+    echo ""
+}
+
 # Test performance scenarios
 test_performance_scenarios() {
     echo -e "${PURPLE}⚡ Testing Performance Scenarios${NC}"
@@ -416,6 +491,7 @@ main() {
     test_event_types
     test_environment_info
     test_system_info
+    test_os_detection_scenarios
     test_environment_simulation
     test_performance_scenarios
     

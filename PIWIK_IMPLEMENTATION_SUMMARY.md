@@ -93,7 +93,7 @@ piwik_log "event" command  # Category: Installer_STAGING
 - **Action**: "Event" (static)
 - **Name**: Event name + error suffix (if applicable)
 - **Value**: Duration (success) or 0 (failure)
-- **Dimension 1**: OS + Version (e.g., "Darwin15.5")
+- **Dimension 1**: OS + Version + Codename (e.g., "macOS15.0 (Sequoia)")
 - **Dimension 2**: Architecture (x86_64, arm64)
 - **Dimension 3**: Git commit SHA (7 characters)
 
@@ -103,6 +103,15 @@ python_install_3.11          # Success: Python installation
 python_install_3.11_network_error  # Failure: Network error during Python install
 homebrew_install             # Success: Homebrew installation
 vscode_extensions_install    # Success: VS Code extensions
+```
+
+### Example System Information
+```
+OS: macOS15.0 (Sequoia)      # macOS with version and codename
+OS: Linux Ubuntu 22.04 (jammy)  # Linux with distribution and codename
+OS: Windows 11 Pro           # Windows with version
+Architecture: arm64          # Apple Silicon
+Architecture: x86_64         # Intel/AMD
 ```
 
 ## 🚀 Integration Steps

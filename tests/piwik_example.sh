@@ -218,8 +218,13 @@ echo ""
 echo -e "${YELLOW}Note: All events have been sent to Piwik with the following information:${NC}"
 echo "  - Environment: $(detect_environment)"
 echo "  - Category: $(get_environment_category)"
-echo "  - System: $(uname -s)$(sw_vers -productVersion 2>/dev/null || echo '')"
-echo "  - Architecture: $(uname -m)"
+get_system_info
+echo "  - Operating System: $OS_NAME"
+echo "  - OS Version: $OS_VERSION"
+if [ -n "$OS_CODENAME" ]; then
+    echo "  - OS Codename: $OS_CODENAME"
+fi
+echo "  - Architecture: $OS_ARCH"
 echo "  - Commit SHA: $(get_commit_sha)"
 echo ""
 echo -e "${BLUE}You can view these events in your Piwik PRO dashboard.${NC}"
