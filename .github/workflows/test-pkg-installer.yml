@@ -223,8 +223,6 @@ jobs:
           echo "✅ Conda verification passed"
 
       - name: Verify Python 3.11 (mac_orchestrators compatibility)
-        env:
-          PYTHON_VERSION_PS: "3.11"
         run: |
           echo "=== Verifying Python Version ==="
           
@@ -298,17 +296,7 @@ jobs:
           if command -v python3 >/dev/null 2>&1; then
             echo ""
             echo "Testing Python scientific computing..."
-            python3 -c "
-import numpy as np
-import matplotlib
-import pandas as pd
-import scipy
-print('✅ NumPy version:', np.__version__)
-print('✅ Matplotlib version:', matplotlib.__version__)
-print('✅ Pandas version:', pd.__version__)
-print('✅ SciPy version:', scipy.__version__)
-print('✅ Scientific computing stack verified')
-" 2>/dev/null || echo "⚠️ Some scientific packages may need additional setup"
+            python3 -c "import numpy as np; import matplotlib; import pandas as pd; import scipy; print('✅ NumPy version:', np.__version__); print('✅ Matplotlib version:', matplotlib.__version__); print('✅ Pandas version:', pd.__version__); print('✅ SciPy version:', scipy.__version__); print('✅ Scientific computing stack verified')" 2>/dev/null || echo "⚠️ Some scientific packages may need additional setup"
           fi
 
       - name: Run Diagnostics
