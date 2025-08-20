@@ -57,8 +57,8 @@ else
     echo "$(date): DEBUG: Successfully downloaded Python install script"
     echo "$(date): DEBUG: About to execute Python install as user: $USER_NAME"
     
-    # Execute with explicit error handling
-    if sudo -u "$USER_NAME" /bin/bash -c "$python_script"; then
+    # Execute with proper environment variables passed to subprocess
+    if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $python_script"; then
         _python_ret=0
         echo "$(date): DEBUG: Python installation completed successfully"
         show_progress_log "✅ Python installation completed" "INFO"
@@ -81,7 +81,8 @@ if [ $_python_ret -eq 0 ]; then
     else
         echo "$(date): DEBUG: Successfully downloaded VSCode install script"
         
-        if sudo -u "$USER_NAME" /bin/bash -c "$vscode_script"; then
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $vscode_script"; then
             _vsc_ret=0
             echo "$(date): DEBUG: VSCode installation completed successfully"
             show_progress_log "✅ VSCode installation completed" "INFO"
