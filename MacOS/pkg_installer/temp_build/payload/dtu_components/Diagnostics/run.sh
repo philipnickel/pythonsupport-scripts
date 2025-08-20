@@ -162,13 +162,3 @@ fi
 echo ""
 echo "========================================="
 echo "$_prefix Diagnostics complete"
-echo ""
-
-# Generate comprehensive HTML report if generate_report.sh exists
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "$SCRIPT_DIR/generate_report.sh" ]]; then
-    echo "$_prefix Generating detailed HTML report..."
-    bash "$SCRIPT_DIR/generate_report.sh"
-else
-    echo "$_prefix For detailed reporting, use the generate_report.sh script"
-fi

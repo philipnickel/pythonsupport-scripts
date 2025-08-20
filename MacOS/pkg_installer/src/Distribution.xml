@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<installer-script minSpecVersion="2">
+    <title>PLACEHOLDER_PKG_TITLE</title>
+    <welcome file="Introduction.rtf" mime-type="text/rtf"/>
+    <readme file="Read Me.rtf" mime-type="text/rtf"/>
+    <license file="License.rtf" mime-type="text/rtf"/>
+    <conclusion file="Summary.rtf" mime-type="text/rtf"/>
+    <options customize="never" rootVolumeOnly="true"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="10.14"/>
+        </allowed-os-versions>
+    </volume-check>
+    <choices-outline>
+        <line choice="dtu-python"/>
+    </choices-outline>
+    <choice id="dtu-python" title="DTU Python Environment" description="PLACEHOLDER_PKG_DESCRIPTION" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="PLACEHOLDER_PKG_ID"/>
+    </choice>
+    <pkg-ref id="PLACEHOLDER_PKG_ID" version="PLACEHOLDER_VERSION" installKBytes="0" updateKBytes="0">#PLACEHOLDER_PKG_NAME-PLACEHOLDER_VERSION.pkg</pkg-ref>
+    <pkg-ref id="PLACEHOLDER_PKG_ID">
+        <bundle-version/>
+    </pkg-ref>
+</installer-script>
