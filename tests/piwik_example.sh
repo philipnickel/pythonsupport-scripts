@@ -53,12 +53,12 @@ esac
 
 # Source the Piwik utility
 if [ ! -f "$UTILITY_SCRIPT" ]; then
-    echo -e "${YELLOW}❌ Piwik utility not found. Creating fallback function.${NC}"
+    echo -e "${YELLOW}Piwik utility not found. Creating fallback function.${NC}"
     # Fallback piwik_log function
     piwik_log() {
         local event_name="$1"
         shift
-        echo -e "${GREEN}📊 Piwik Event: $event_name${NC}"
+        echo -e "${GREEN}Piwik Event: $event_name${NC}"
         "$@"
     }
     piwik_log_enhanced() {
@@ -66,7 +66,7 @@ if [ ! -f "$UTILITY_SCRIPT" ]; then
     }
 else
     source "$UTILITY_SCRIPT"
-    echo -e "${GREEN}✅ Piwik utility loaded${NC}"
+    echo -e "${GREEN}Piwik utility loaded${NC}"
 fi
 
 echo ""
@@ -213,7 +213,7 @@ echo "Installation completed!"
 EOF
 
 echo ""
-echo -e "${GREEN}✅ Example completed!${NC}"
+echo -e "${GREEN}Example completed!${NC}"
 echo ""
 echo -e "${YELLOW}Note: All events have been sent to Piwik with the following information:${NC}"
 echo "  - Environment: $(detect_environment)"
@@ -232,12 +232,12 @@ local opt_out_file="/tmp/piwik_analytics_choice"
 if [ -f "$opt_out_file" ]; then
     local choice=$(cat "$opt_out_file" 2>/dev/null)
     if [ "$choice" = "opt-out" ]; then
-        echo "❌ Analytics disabled (user choice)"
+        echo "Analytics disabled (user choice)"
     else
-        echo "✅ Analytics enabled (user choice)"
+        echo "Analytics enabled (user choice)"
     fi
 else
-    echo "⏳ No choice made yet (will prompt on first use)"
+    echo "No choice made yet (will prompt on first use)"
 fi
 echo ""
 echo "To opt out of analytics:"

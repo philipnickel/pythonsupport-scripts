@@ -41,21 +41,21 @@ TESTS_FAILED=0
 
 # Test helper functions
 test_passed() {
-    echo -e "${GREEN}✅ PASS: $1${NC}"
+    echo -e "${GREEN}PASS: $1${NC}"
     ((TESTS_PASSED++))
 }
 
 test_failed() {
-    echo -e "${RED}❌ FAIL: $1${NC}"
+    echo -e "${RED}FAIL: $1${NC}"
     ((TESTS_FAILED++))
 }
 
 test_info() {
-    echo -e "${BLUE}ℹ️  INFO: $1${NC}"
+    echo -e "${BLUE}INFO: $1${NC}"
 }
 
 test_warning() {
-    echo -e "${YELLOW}⚠️  WARN: $1${NC}"
+    echo -e "${YELLOW}WARN: $1${NC}"
 }
 
 # Print header
@@ -73,7 +73,7 @@ print_header() {
 
 # Test environment detection
 test_environment_detection() {
-    echo -e "${PURPLE}🧪 Testing Environment Detection${NC}"
+    echo -e "${PURPLE}Testing Environment Detection${NC}"
     echo "----------------------------------------"
     
     # Test different environment variables
@@ -140,7 +140,7 @@ test_environment_detection() {
 
 # Test connection
 test_connection() {
-    echo -e "${PURPLE}🌐 Testing Piwik Connection${NC}"
+    echo -e "${PURPLE}Testing Piwik Connection${NC}"
     echo "----------------------------------------"
     
     if piwik_test_connection; then
@@ -154,7 +154,7 @@ test_connection() {
 
 # Test basic functionality
 test_basic_functionality() {
-    echo -e "${PURPLE}🔧 Testing Basic Functionality${NC}"
+    echo -e "${PURPLE}Testing Basic Functionality${NC}"
     echo "----------------------------------------"
     
     # Test successful command
@@ -178,7 +178,7 @@ test_basic_functionality() {
 
 # Test enhanced functionality
 test_enhanced_functionality() {
-    echo -e "${PURPLE}⚡ Testing Enhanced Functionality${NC}"
+    echo -e "${PURPLE}Testing Enhanced Functionality${NC}"
     echo "----------------------------------------"
     
     # Test timing
@@ -199,7 +199,7 @@ test_enhanced_functionality() {
 
 # Test error categorization
 test_error_categorization() {
-    echo -e "${PURPLE}🚨 Testing Error Categorization${NC}"
+    echo -e "${PURPLE}Testing Error Categorization${NC}"
     echo "----------------------------------------"
     
     # Test permission error
@@ -227,7 +227,7 @@ test_error_categorization() {
 
 # Test different event types
 test_event_types() {
-    echo -e "${PURPLE}📊 Testing Different Event Types${NC}"
+    echo -e "${PURPLE}Testing Different Event Types${NC}"
     echo "----------------------------------------"
     
     # Simulate Python installation events
@@ -260,7 +260,7 @@ test_event_types() {
 
 # Test environment info
 test_environment_info() {
-    echo -e "${PURPLE}ℹ️  Testing Environment Information${NC}"
+    echo -e "${PURPLE}Testing Environment Information${NC}"
     echo "----------------------------------------"
     
     piwik_get_environment_info
@@ -270,7 +270,7 @@ test_environment_info() {
 
 # Test system info collection
 test_system_info() {
-    echo -e "${PURPLE}💻 Testing System Information Collection${NC}"
+    echo -e "${PURPLE}Testing System Information Collection${NC}"
     echo "----------------------------------------"
     
     get_system_info
@@ -314,7 +314,7 @@ test_system_info() {
 
 # Test different environments
 test_environment_simulation() {
-    echo -e "${PURPLE}🌍 Testing Environment Simulation${NC}"
+    echo -e "${PURPLE}Testing Environment Simulation${NC}"
     echo "----------------------------------------"
     
     local environments=("PROD" "DEV" "CI" "STAGING")
@@ -378,7 +378,7 @@ test_environment_simulation() {
 
 # Test OS detection scenarios
 test_os_detection_scenarios() {
-    echo -e "${PURPLE}🖥️  Testing OS Detection Scenarios${NC}"
+    echo -e "${PURPLE}Testing OS Detection Scenarios${NC}"
     echo "----------------------------------------"
     
     # Test current OS detection
@@ -436,7 +436,7 @@ test_os_detection_scenarios() {
 
 # Test GDPR compliance
 test_gdpr_compliance() {
-    echo -e "${PURPLE}🔒 Testing GDPR Compliance${NC}"
+    echo -e "${PURPLE}Testing GDPR Compliance${NC}"
     echo "----------------------------------------"
     
     # Clean up any existing choice file
@@ -494,7 +494,7 @@ test_gdpr_compliance() {
 
 # Test performance scenarios
 test_performance_scenarios() {
-    echo -e "${PURPLE}⚡ Testing Performance Scenarios${NC}"
+    echo -e "${PURPLE}Testing Performance Scenarios${NC}"
     echo "----------------------------------------"
     
     # Test fast command
@@ -528,10 +528,10 @@ print_summary() {
     echo -e "${RED}Failed: $TESTS_FAILED${NC}"
     
     if [ $TESTS_FAILED -eq 0 ]; then
-        echo -e "${GREEN}🎉 All tests passed!${NC}"
+        echo -e "${GREEN}All tests passed!${NC}"
         exit 0
     else
-        echo -e "${RED}❌ Some tests failed.${NC}"
+        echo -e "${RED}Some tests failed.${NC}"
         exit 1
     fi
 }

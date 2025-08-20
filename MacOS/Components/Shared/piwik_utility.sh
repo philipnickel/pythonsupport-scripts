@@ -60,34 +60,23 @@ Data collected:
 
 No personal information is collected or stored.
 
-Do you consent to analytics collection?" buttons {"Opt Out", "Opt In"} default button "Opt In" with icon note
+Do you consent to analytics collection?" buttons {"Decline tracking", "Accept tracking"} default button "Accept tracking" with icon note
             return button returned of theResponse
         end tell
     ' 2>/dev/null)
     
     if [ $? -eq 0 ] && [ -n "$response" ]; then
-        if [ "$response" = "Opt In" ]; then
+        if [ "$response" = "Accept tracking" ]; then
             echo "opt-in" > "$opt_out_file"
-            echo "✅ Analytics enabled. Thank you for helping improve the installation process!"
+            echo "Analytics enabled. Thank you for helping improve the installation process!"
         else
             echo "opt-out" > "$opt_out_file"
-            echo "❌ Analytics disabled. No data will be collected."
+            echo "Analytics disabled. No data will be collected."
         fi
     else
-        # Fallback if osascript fails (non-GUI environment)
-        echo "Analytics choice required. Please set your preference:"
-        echo "1. Opt in: echo 'opt-in' > /tmp/piwik_analytics_choice"
-        echo "2. Opt out: echo 'opt-out' > /tmp/piwik_analytics_choice"
-        echo ""
-        echo "Do you consent to analytics collection? (y/N): "
-        read -r consent
-        if [[ "$consent" =~ ^[Yy]$ ]]; then
-            echo "opt-in" > "$opt_out_file"
-            echo "✅ Analytics enabled. Thank you!"
-        else
-            echo "opt-out" > "$opt_out_file"
-            echo "❌ Analytics disabled."
-        fi
+        # Fallback if osascript fails (non-GUI environment) - default to not tracking
+        echo "opt-out" > "$opt_out_file"
+        echo "Analytics disabled (non-GUI environment)."
     fi
 }
 
@@ -487,12 +476,12 @@ piwik_get_environment_info() {
     if [ -f "$opt_out_file" ]; then
         local choice=$(cat "$opt_out_file" 2>/dev/null)
         if [ "$choice" = "opt-out" ]; then
-            echo "❌ Analytics disabled (user choice)"
+            echo "Analytics disabled (user choice)"
         else
-            echo "✅ Analytics enabled (user choice)"
+            echo "Analytics enabled (user choice)"
         fi
     else
-        echo "⏳ No choice made yet (will prompt on first use)"
+        echo "No choice made yet (will prompt on first use)"
     fi
     
     echo "Environment Variables:"
@@ -512,7 +501,7 @@ piwik_test_connection() {
     
     # Check if analytics are disabled
     if is_analytics_disabled; then
-        echo "❌ Analytics disabled - cannot test connection"
+        echo "Analytics disabled - cannot test connection"
         return 1
     fi
     
@@ -541,15 +530,15 @@ piwik_test_connection() {
 # GDPR compliance functions
 piwik_opt_out() {
     echo "opt-out" > "/tmp/piwik_analytics_choice"
-    echo "✅ Analytics disabled. No data will be collected."
+    echo "Analytics disabled. No data will be collected."
 }
 
 piwik_opt_in() {
     echo "opt-in" > "/tmp/piwik_analytics_choice"
-    echo "✅ Analytics enabled. Thank you for helping improve the installation process!"
+    echo "Analytics enabled. Thank you for helping improve the installation process!"
 }
 
 piwik_reset_choice() {
     rm -f "/tmp/piwik_analytics_choice"
-    echo "✅ Analytics choice reset. You will be prompted again on next use."
+    echo "Analytics choice reset. You will be prompted again on next use."
 }
