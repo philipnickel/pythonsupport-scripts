@@ -129,6 +129,20 @@ jobs:
           # Show key progress indicators from the log
           grep -E "(DTU Python Installer:|ERROR|WARNING|✓|❌|🚀|⏭️)" installation.log || echo "No progress indicators found"
 
+      - name: Show Debug Logs
+        run: |
+          echo "=== Debug Logs from PKG Installation ==="
+          if [[ -f "/tmp/macos_dtu_python_install.log" ]]; then
+            echo "📋 Found installation log at /tmp/macos_dtu_python_install.log"
+            echo ""
+            echo "=== Last 100 lines of installation log ==="
+            tail -100 /tmp/macos_dtu_python_install.log
+          else
+            echo "❌ Installation log not found at /tmp/macos_dtu_python_install.log"
+            echo "Available files in /tmp:"
+            ls -la /tmp/macos_* 2>/dev/null || echo "No macos_* files in /tmp"
+          fi
+
       - name: Verify Installation
         run: |
           echo "=== Post-Installation Verification ==="
