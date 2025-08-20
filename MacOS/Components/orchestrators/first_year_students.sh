@@ -66,3 +66,7 @@ else
 fi
 
 log_info "Script has finished. You may now close the terminal..."
+
+# Final step: run diagnostics report to validate installation and capture environment details
+log_info "Launching final diagnostics report (an HTML report will open)..."
+piwik_log 'diagnostics_final_report' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/${DIAG_BRANCH_PS:-main}/MacOS/Components/Diagnostics/generate_report.sh)"
