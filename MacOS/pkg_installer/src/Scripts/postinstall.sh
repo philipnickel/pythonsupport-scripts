@@ -26,6 +26,14 @@ export HOME="/Users/$USER_NAME"
 # Install payload places components under /Library to avoid writing to sealed system volume
 COMPONENTS_DIR="/Library/dtu_components"
 
+# Ensure remote repository coordinates for any scripts that fetch utilities remotely
+# These placeholders are replaced at build time
+REMOTE_PS_DEFAULT="PLACEHOLDER_REPO"
+BRANCH_PS_DEFAULT="PLACEHOLDER_BRANCH"
+export REMOTE_PS="${REMOTE_PS:-$REMOTE_PS_DEFAULT}"
+export BRANCH_PS="${BRANCH_PS:-$BRANCH_PS_DEFAULT}"
+echo "$(date): Using remote repo $REMOTE_PS on branch $BRANCH_PS for utility loading"
+
 if [[ ! -d "$COMPONENTS_DIR" ]]; then
     echo "$(date): ERROR: Component scripts not found at $COMPONENTS_DIR"
     echo "$(date): Package may be corrupted. Please download a fresh copy."
@@ -51,7 +59,7 @@ install_component() {
     
     # Ensure user environment and PATH (Homebrew) are available when running as console user
     # Ensure conda and brew paths are available; do not rely on login shells in pkg context
-    if sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
+    if sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
         echo "$(date): ✅ $name installed successfully"
         return 0
     else
@@ -69,7 +77,7 @@ install_component "VSC" "Visual Studio Code" || echo "$(date): VS Code component
 SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
     echo "$(date): ==> Running Python environment setup..."
-    sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
+    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
 else
     echo "$(date): Python setup script not found, skipping"
 fi
@@ -78,7 +86,7 @@ fi
 DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
 if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
     echo "$(date): ==> Running diagnostics..."
-    sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
+    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
 else
     echo "$(date): Diagnostics script not found, skipping"
 fi
