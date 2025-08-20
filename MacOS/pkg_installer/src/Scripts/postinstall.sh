@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# DTU Python Installation Script (PKG Installer) - Debug Version
-# This script mimics exactly what MacOS/Components/orchestrators/first_year_students.sh does
+# DTU Python Installation Script (PKG Installer)
+# This script calls the actual first_year_students.sh orchestrator
 
 LOG_FILE="PLACEHOLDER_LOG_FILE"
 # Redirect output to both log file and stdout so installer can see progress
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "$(date): DEBUG: First year students orchestrator started (PKG installer version)"
+echo "$(date): DEBUG: PKG installer calling first_year_students.sh orchestrator"
 
-# Determine user and set environment (exactly like the orchestrator)
+# Determine user and set environment
 USER_NAME=$(stat -f%Su /dev/console)
 export USER="$USER_NAME"
 export HOME="/Users/$USER_NAME"
@@ -33,7 +33,7 @@ show_installer_header
 show_progress_log "Starting first year students installation..." "INFO"
 
 echo "$(date): DEBUG: About to test curl access to GitHub"
-curl_test_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh"
+curl_test_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh"
 echo "$(date): DEBUG: Testing URL: $curl_test_url"
 
 # Test curl access first
@@ -44,149 +44,18 @@ else
     exit 1
 fi
 
-echo "$(date): DEBUG: About to start Python installation"
+echo "$(date): DEBUG: About to call actual orchestrator script"
 
-# 1. Install Python using component (includes Homebrew as dependency) - exactly like orchestrator
-echo "▶ DTU Python Installer: Step 1/4 - Installing Python via Miniconda (5-10 minutes)..."
-show_progress_log "Installing Python..." "INFO"
-echo "$(date): DEBUG: About to execute Python install as user: $USER_NAME"
-echo "▶ DTU Python Installer: Installing Homebrew and Miniconda, please wait..."
-
-# Execute exactly like orchestrator using curl method
-if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS='3.11' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"; then
-    _python_ret=0
-    echo "$(date): DEBUG: Python installation completed successfully"
-    echo "✅ DTU Python Installer: Python installation completed successfully"
-    show_progress_log "✅ Python installation completed" "INFO"
+# Call the actual first_year_students.sh orchestrator
+show_progress_log "Calling first_year_students.sh orchestrator..." "INFO"
+if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh)"; then
+    orchestrator_ret=0
+    echo "$(date): DEBUG: Orchestrator completed successfully"
+    show_progress_log "🎉 First year students orchestrator completed successfully!" "INFO"
 else
-    _python_ret=$?
-    echo "$(date): DEBUG: Python installation failed with exit code: $_python_ret"
-    echo "❌ DTU Python Installer: Python installation failed"
-    show_progress_log "❌ Python installation failed" "ERROR"
-fi
-
-# 2. Install VSCode using component - exactly like orchestrator
-echo "▶ DTU Python Installer: Step 2/4 - Installing Visual Studio Code (1-2 minutes)..."
-show_progress_log "Installing VSCode..." "INFO"
-if [ $_python_ret -eq 0 ]; then
-    echo "$(date): DEBUG: About to execute VSCode install as user: $USER_NAME"
-    echo "▶ DTU Python Installer: Downloading and installing Visual Studio Code..."
-    
-    # Execute exactly like orchestrator using curl method
-    if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"; then
-        _vsc_ret=0
-        echo "$(date): DEBUG: VSCode installation completed successfully"
-        echo "✅ DTU Python Installer: Visual Studio Code installation completed successfully"
-        show_progress_log "✅ VSCode installation completed" "INFO"
-    else
-        _vsc_ret=$?
-        echo "$(date): DEBUG: VSCode installation failed with exit code: $_vsc_ret"
-        echo "❌ DTU Python Installer: Visual Studio Code installation failed"
-        show_progress_log "❌ VSCode installation failed" "ERROR"
-    fi
-else
-    echo "$(date): DEBUG: Skipping VSCode installation due to Python failure"
-    echo "⏭️ DTU Python Installer: Skipping Visual Studio Code (Python installation failed)"
-    _vsc_ret=1
-fi
-
-# 3. Run first year Python setup (install specific version and packages) - exactly like orchestrator
-echo "▶ DTU Python Installer: Step 3/4 - Installing Python 3.11 and packages (3-5 minutes)..."
-if [ $_python_ret -eq 0 ]; then
-    show_progress_log "Running first year Python environment setup..." "INFO"
-    echo "$(date): DEBUG: About to execute first year setup as user: $USER_NAME"
-    echo "▶ DTU Python Installer: Installing Python 3.11 and packages (dtumathtools, pandas, etc.)..."
-    
-    # Execute exactly like orchestrator using curl method
-    if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS='3.11' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"; then
-        _first_year_ret=0
-        echo "$(date): DEBUG: First year Python setup completed successfully"
-        echo "✅ DTU Python Installer: Python 3.11 and packages installed successfully"
-        show_progress_log "✅ First year Python setup completed" "INFO"
-        
-        # Ensure conda is properly initialized for the user's shell sessions
-        echo "$(date): DEBUG: Ensuring conda initialization for user shell"
-        sudo -u "$USER_NAME" bash -c "
-            # Force conda initialization for all shells
-            if command -v conda >/dev/null 2>&1; then
-                conda init bash 2>/dev/null || true
-                conda init zsh 2>/dev/null || true
-                # Source the updated profile to ensure conda is in PATH
-                [ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
-                [ -f ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
-                [ -f ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
-                [ -f ~/.zprofile ] && source ~/.zprofile 2>/dev/null || true
-            fi
-        "
-    else
-        _first_year_ret=$?
-        echo "$(date): DEBUG: First year Python setup failed with exit code: $_first_year_ret"
-        echo "❌ DTU Python Installer: Python 3.11 setup failed"
-        show_progress_log "❌ First year Python setup failed" "ERROR"
-    fi
-else
-    _first_year_ret=0  # Skip if Python installation failed
-    echo "$(date): DEBUG: Skipping first year setup due to Python failure"
-    echo "⏭️ DTU Python Installer: Skipping Python 3.11 setup (Python installation failed)"
-    show_progress_log "Skipping first year setup (Python installation failed)" "WARN"
-fi
-
-# 4. Install VSCode extensions - exactly like orchestrator
-echo "▶ DTU Python Installer: Step 4/4 - Installing VSCode Python extensions (1-2 minutes)..."
-if [ $_vsc_ret -eq 0 ]; then
-    show_progress_log "Installing VSCode extensions for Python development..." "INFO"
-    echo "$(date): DEBUG: About to execute extensions install as user: $USER_NAME"
-    echo "▶ DTU Python Installer: Installing Python extension and development tools..."
-    
-    # Execute exactly like orchestrator using curl method
-    if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install_extensions.sh)"; then
-        _extensions_ret=0
-        echo "$(date): DEBUG: VSCode extensions installation completed successfully"
-        echo "✅ DTU Python Installer: VSCode Python extensions installed successfully"
-        show_progress_log "✅ VSCode extensions installation completed" "INFO"
-    else
-        _extensions_ret=$?
-        echo "$(date): DEBUG: VSCode extensions installation failed with exit code: $_extensions_ret"
-        echo "⚠️ DTU Python Installer: VSCode extensions installation failed (optional)"
-        show_progress_log "⚠️ VSCode extensions installation failed" "WARN"
-    fi
-else
-    _extensions_ret=0  # Skip if VSCode installation failed
-    echo "$(date): DEBUG: Skipping VSCode extensions due to VSCode failure"
-    echo "⏭️ DTU Python Installer: Skipping VSCode extensions (VSCode installation failed)"
-    show_progress_log "Skipping VSCode extensions (VSCode installation failed)" "WARN"
-fi
-
-echo "$(date): DEBUG: Installation results - Python: $_python_ret, VSCode: $_vsc_ret, FirstYear: $_first_year_ret, Extensions: $_extensions_ret"
-
-# Check results and provide appropriate feedback (EXACTLY same logic as orchestrator)
-if [ $_python_ret -ne 0 ]; then
-    show_progress_log "❌ Python installation failed" "ERROR"
-    echo "$(date): ERROR: Python installation failed"
-elif [ $_vsc_ret -ne 0 ]; then
-    show_progress_log "❌ VSCode installation failed" "ERROR"
-    echo "$(date): ERROR: VSCode installation failed"
-elif [ $_first_year_ret -ne 0 ]; then
-    show_progress_log "❌ First year Python setup failed" "ERROR"
-    echo "$(date): ERROR: First year Python setup failed"
-elif [ $_extensions_ret -ne 0 ]; then
-    show_progress_log "⚠️ VSCode extensions installation failed, but core installation succeeded" "WARN"
-    show_progress_log "You can install extensions manually later" "INFO"
-    echo "$(date): WARNING: VSCode extensions installation failed, but core installation succeeded"
-else
-    show_progress_log "🎉 All installations completed successfully!" "INFO"
-    echo "$(date): SUCCESS: All installations completed successfully!"
-    echo "🎉 DTU Python Installer: Installation completed successfully!"
-    echo "▶ DTU Python Installer: You can now use Python 3.11, dtumathtools, pandas, and Visual Studio Code"
-fi
-
-# Track overall success/failure (same as orchestrator)
-if [ $_python_ret -eq 0 ] && [ $_vsc_ret -eq 0 ] && [ $_first_year_ret -eq 0 ] && [ $_extensions_ret -eq 0 ]; then
-    show_progress_log "All components installed successfully" "INFO"
-    echo "$(date): All components installed successfully"
-else
-    show_progress_log "Some components failed to install" "WARN" 
-    echo "$(date): Some components failed to install"
+    orchestrator_ret=$?
+    echo "$(date): DEBUG: Orchestrator failed with exit code: $orchestrator_ret"
+    show_progress_log "❌ First year students orchestrator failed" "ERROR"
 fi
 
 # Create summary
@@ -199,10 +68,7 @@ Date: $(date)
 User: $USER_NAME
 
 Installation Results:
-- Python (via Miniconda): $([ $_python_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
-- VSCode installation: $([ $_vsc_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
-- First year Python setup (3.11 + packages): $([ $_first_year_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
-- VSCode extensions: $([ $_extensions_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+- First Year Students Orchestrator: $([ $orchestrator_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
 
 Next steps:
 1. Open Terminal and type 'python3' to test Python
@@ -212,7 +78,7 @@ Next steps:
 For support: PLACEHOLDER_SUPPORT_EMAIL
 EOF
 
-show_progress_log "Debug script has finished. Summary created at: $SUMMARY_FILE" "INFO"
-echo "$(date): DEBUG: Script finished successfully"
+show_progress_log "PKG installer script has finished. Summary created at: $SUMMARY_FILE" "INFO"
+echo "$(date): DEBUG: PKG installer script finished"
 
-exit 0
+exit $orchestrator_ret
