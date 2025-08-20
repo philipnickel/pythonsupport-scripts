@@ -45,6 +45,12 @@ echo "$(date): Orchestrating full installation via first_year_students.sh"
 
 # Prefer local orchestrator; fall back to remote URL
 ORCH_LOCAL="$COMPONENTS_DIR/orchestrators/first_year_students.sh"
+# On CI runners, install cask apps into user Applications to avoid permission issues
+if [[ -n "${GITHUB_ACTIONS:-}" || "${PIS_ENV}" == "CI" ]]; then
+    export HOMEBREW_CASK_OPTS="--appdir=$HOME/Applications"
+    mkdir -p "$HOME/Applications" || true
+    echo "$(date): Using HOMEBREW_CASK_OPTS=$HOMEBREW_CASK_OPTS"
+fi
 if [[ -f "$ORCH_LOCAL" ]]; then
     echo "$(date): ==> Running local orchestrator..."
     sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PIS_ENV="CI" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$ORCH_LOCAL" || echo "$(date): Orchestrator completed with warnings"
