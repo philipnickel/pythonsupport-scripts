@@ -43,11 +43,31 @@ clear -x
 log_info "Setting up Visual Studio Code environment..."
 eval "$(brew shellenv)"
 
-# Test if code is installed correctly
-if code --version > /dev/null; then
+# Ensure 'code' CLI is available on PATH
+VSC_APP_PATH="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+if ! command -v code >/dev/null 2>&1; then
+    if [ -x "$VSC_APP_PATH" ]; then
+        log_info "Adding VS Code CLI to PATH via symlink"
+        # Attempt to link into common bin locations
+        for BIN_DIR in /opt/homebrew/bin /usr/local/bin; do
+            if [ -d "$BIN_DIR" ] && [ -w "$BIN_DIR" ]; then
+                ln -sf "$VSC_APP_PATH" "$BIN_DIR/code" || true
+                if "$BIN_DIR/code" --version >/dev/null 2>&1; then
+                    log_success "VS Code CLI linked at $BIN_DIR/code"
+                    break
+                fi
+            fi
+        done
+    else
+        log_warning "VS Code app CLI not found at expected path: $VSC_APP_PATH"
+    fi
+fi
+
+# Test if code is installed correctly (with fallback to app path)
+if code --version >/dev/null 2>&1 || "$VSC_APP_PATH" --version >/dev/null 2>&1; then
     log_success "Visual Studio Code installed successfully"
 else
-    log_error "Visual Studio Code installation failed"
+    log_error "Visual Studio Code installation failed (CLI not found)"
     exit_message
 fi
 
