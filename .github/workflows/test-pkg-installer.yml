@@ -251,21 +251,8 @@ jobs:
 
       - name: Verify Python 3.11 (mac_orchestrators compatibility)
         run: |
-          echo "=== Verifying Python Version ==="
-          
-          # Always ensure conda environment is loaded to get the correct Python version
-          for conda_path in "/usr/local/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-            if [ -f "$conda_path" ]; then
-              echo "Activating conda from: $conda_path"
-              eval "$($conda_path shell.bash hook)"
-              conda activate base  # Ensure base environment is active
-              break
-            fi
-          done
-          
           which python3
-          echo "Python path: $(which python3)"
-          
+
           # Verify the installed Python version - MUST match exactly like mac_orchestrators
           EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
@@ -274,33 +261,11 @@ jobs:
             exit 1
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
-          echo "✅ Python version verification passed"
 
       - name: Verify Python Packages (mac_orchestrators compatibility)
         run: |
-          echo "=== Verifying Python Packages ==="
-          
-          # Always ensure conda environment is loaded for package testing
-          for conda_path in "/usr/local/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-            if [ -f "$conda_path" ]; then
-              echo "Activating conda from: $conda_path"
-              eval "$($conda_path shell.bash hook)"
-              conda activate base  # Ensure base environment is active
-              break
-            fi
-          done
-          
           # Verify Python package imports - exact same test as mac_orchestrators
-          echo "Testing package imports..."
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✅ All packages imported successfully')" || { 
-            echo "❌ Failed to import required Python packages"
-            echo "Attempting individual package verification..."
-            for pkg in dtumathtools pandas scipy statsmodels uncertainties; do
-              python3 -c "import $pkg; print('✅ $pkg: OK')" || echo "❌ $pkg: FAILED"
-            done
-            exit 1
-          }
-          echo "✅ Python packages verification passed"
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       - name: Test Additional Functionality
         run: |
@@ -353,15 +318,7 @@ jobs:
           echo "macOS Version: $(sw_vers -productVersion)"
           echo ""
           
-          # Final status check - ensuring conda environment is loaded for final verification
-          for conda_path in "/usr/local/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-            if [ -f "$conda_path" ]; then
-              echo "Activating conda from: $conda_path"
-              eval "$($conda_path shell.bash hook)"
-              conda activate base  # Ensure base environment is active
-              break
-            fi
-          done
+          # Final status check - using same approach as mac_orchestrators
           
           HOMEBREW_OK=$(command -v brew >/dev/null 2>&1 && echo "✓" || echo "❌")
           CONDA_OK=$(command -v conda >/dev/null 2>&1 && echo "✓" || echo "❌")  
