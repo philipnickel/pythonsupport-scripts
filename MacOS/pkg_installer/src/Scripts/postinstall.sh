@@ -14,7 +14,11 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "$(date): === DTU Python installation started ==="
 
 # Determine user
-USER_NAME=$(stat -f%Su /dev/console)
+USER_NAME=$(stat -f%Su /dev/console || true)
+# In CI there may be no console session; prefer non-root effective user
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  USER_NAME="${SUDO_USER:-$(whoami)}"
+fi
 export USER="$USER_NAME"
 export HOME="/Users/$USER_NAME"
 
@@ -46,7 +50,8 @@ install_component() {
     fi
     
     # Ensure user environment and PATH (Homebrew) are available when running as console user
-    if sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
+    # Ensure conda and brew paths are available; do not rely on login shells in pkg context
+    if sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
         echo "$(date): ✅ $name installed successfully"
         return 0
     else
@@ -64,7 +69,7 @@ install_component "VSC" "Visual Studio Code" || echo "$(date): VS Code component
 SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
     echo "$(date): ==> Running Python environment setup..."
-    sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
+    sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
 else
     echo "$(date): Python setup script not found, skipping"
 fi
@@ -73,7 +78,7 @@ fi
 DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
 if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
     echo "$(date): ==> Running diagnostics..."
-    sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
+    sudo -u "$USER_NAME" env PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
 else
     echo "$(date): Diagnostics script not found, skipping"
 fi
