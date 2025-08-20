@@ -96,9 +96,10 @@ jobs:
           # Show build artifacts
           ls -la builds/
           
-          # Get PKG info
-          PKG_FILE=$(ls builds/DtuPythonInstaller_*.pkg | head -1)
+          # Get the most recently created PKG file
+          PKG_FILE=$(ls -t builds/DtuPythonInstaller_*.pkg | head -1)
           echo "PKG_FILE=$PKG_FILE" >> $GITHUB_ENV
+          echo "📦 Using PKG file: $PKG_FILE"
           
           echo "=== Package Information ==="
           installer -pkginfo -pkg "$PKG_FILE"
