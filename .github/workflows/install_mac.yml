@@ -23,6 +23,8 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    env:
+      PIS_ENV: CI
     strategy:
       fail-fast: false
       matrix:
