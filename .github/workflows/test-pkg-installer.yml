@@ -351,9 +351,19 @@ jobs:
           VSCODE_CLI_OK=$(command -v code >/dev/null 2>&1 && echo "✓" || echo "❌")
           VSCODE_APP_OK=$([ -d "/Applications/Visual Studio Code.app" ] && echo "✓" || echo "❌")
           
-          # Test Python version and packages like mac_orchestrators
+          # Test Python version and packages like mac_orchestrators (with conda environment)
           PYTHON_VERSION_OK="❌"
           PYTHON_PACKAGES_OK="❌"
+          
+          # Initialize conda environment like verification steps
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
           
           if command -v python3 >/dev/null 2>&1; then
             EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
