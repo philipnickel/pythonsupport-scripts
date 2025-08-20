@@ -48,7 +48,7 @@ echo "$(date): DEBUG: About to call actual orchestrator script"
 
 # Call the actual first_year_students.sh orchestrator
 show_progress_log "Calling first_year_students.sh orchestrator..." "INFO"
-if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PIS_ENV="CI" GITHUB_CI="true" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh)"; then
+if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PIS_ENV="CI" GITHUB_CI="true" CI="true" GITHUB_ACTIONS="true" RUNNER_OS="macOS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh)"; then
     orchestrator_ret=0
     echo "$(date): DEBUG: Orchestrator completed successfully"
     show_progress_log "🎉 First year students orchestrator completed successfully!" "INFO"
