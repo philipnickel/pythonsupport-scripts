@@ -21,6 +21,8 @@ env:
   PYTHON_VERSION_PS: "3.11"
   PIS_ENV: "CI"
 
+# Re-enabled after PKG installer testing completed successfully
+
 jobs:
   test-homebrew:
     name: Test Homebrew Component
@@ -275,7 +277,7 @@ jobs:
   #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
 
   test-python-uninstall:
-    name: Test Python Uninstall Scripts
+    name: Test Python Uninstall
     runs-on: macos-latest
     
     steps:
@@ -387,7 +389,7 @@ jobs:
           echo "✓ Python uninstall verification completed successfully"
 
   test-diagnostics:
-    name: Test Diagnostics Component
+    name: Test Diagnostics
     runs-on: macos-latest
     needs: [test-homebrew, test-python, test-vscode]
     

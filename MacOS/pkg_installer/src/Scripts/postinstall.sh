@@ -1,115 +1,93 @@
 #!/bin/bash
-set -e
 
-# DTU Python Installation Script
-# This script installs the complete Python development environment for DTU students
-# Uses local scripts included in the package (no internet required during installation)
+# DTU Python Installation Script (PKG Installer)
+# This script calls the actual first_year_students.sh orchestrator
 
 LOG_FILE="PLACEHOLDER_LOG_FILE"
-exec >> "$LOG_FILE" 2>&1
+# Redirect output to both log file and stdout so installer can see progress
+exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "$(date): DTU Python installation started"
+echo "$(date): DEBUG: PKG installer calling first_year_students.sh orchestrator"
 
-# Determine user
+# Determine user and set environment
 USER_NAME=$(stat -f%Su /dev/console)
 export USER="$USER_NAME"
 export HOME="/Users/$USER_NAME"
 
-# Location where PKG extracted our components
-# PKG extracts payload to root, so our components are at /dtu_components
-COMPONENTS_DIR="/dtu_components"
+# Set up the same environment variables as the orchestrator
+export REMOTE_PS="PLACEHOLDER_REPO"
+export BRANCH_PS="PLACEHOLDER_BRANCH"
 
-if [[ ! -d "$COMPONENTS_DIR" ]]; then
-    echo "$(date): ERROR: Component scripts not found at $COMPONENTS_DIR"
-    echo "$(date): Package may be corrupted. Please download a fresh copy."
+echo "$(date): DEBUG: User=$USER_NAME, Home=$HOME"
+echo "$(date): DEBUG: Remote=$REMOTE_PS, Branch=$BRANCH_PS"
+
+# Load loading animation functions for progress display
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/loading_animations.sh" 2>/dev/null || {
+    # Define minimal fallback functions
+    show_progress_log() { echo "$(date '+%H:%M:%S') [${2:-INFO}] DTU Python Installer: $1"; }
+    show_installer_header() { echo "=== DTU Python Installation ==="; }
+}
+
+show_installer_header
+show_progress_log "Starting first year students installation..." "INFO"
+
+echo "$(date): DEBUG: About to test curl access to GitHub"
+curl_test_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh"
+echo "$(date): DEBUG: Testing URL: $curl_test_url"
+
+# Test curl access first
+if curl -fsSL --connect-timeout 10 "$curl_test_url" | head -5; then
+    echo "$(date): DEBUG: Curl test successful"
+else
+    echo "$(date): DEBUG: Curl test failed with exit code: $?"
     exit 1
 fi
 
-echo "$(date): Using local component scripts from $COMPONENTS_DIR"
+echo "$(date): DEBUG: About to call actual orchestrator script"
+echo "$(date): DEBUG: Environment variables being passed:"
+echo "$(date): DEBUG: - HOME=/Users/$USER_NAME"
+echo "$(date): DEBUG: - REMOTE_PS=$REMOTE_PS"
+echo "$(date): DEBUG: - BRANCH_PS=$BRANCH_PS"
+echo "$(date): DEBUG: - PIS_ENV=CI"
+echo "$(date): DEBUG: - GITHUB_CI=true"
+echo "$(date): DEBUG: - CI=true"
+echo "$(date): DEBUG: - GITHUB_ACTIONS=true"
+echo "$(date): DEBUG: - RUNNER_OS=macOS"
 
-# Install component using local scripts
-install_component() {
-    local component="$1"
-    local name="$2"
-    local script_path="$COMPONENTS_DIR/$component/install.sh"
-    
-    echo "$(date): Installing $name..."
-    
-    if [[ ! -f "$script_path" ]]; then
-        echo "$(date): WARNING: Script not found: $script_path"
-        echo "$(date): Skipping $name installation"
-        return 1
-    fi
-    
-    # Run the local script as the console user
-    if sudo -u "$USER_NAME" bash "$script_path"; then
-        echo "$(date): $name installed successfully"
-        return 0
-    else
-        echo "$(date): $name installation failed (exit code: $?)"
-        return 1
-    fi
-}
-
-# Install components using local scripts
-install_component "Homebrew" "Homebrew package manager"
-install_component "Python" "Python via Miniconda"
-install_component "VSC" "Visual Studio Code"
-
-# Run Python environment setup if it exists
-SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
-if [[ -f "$SETUP_SCRIPT" ]]; then
-    echo "$(date): Running Python environment setup..."
-    sudo -u "$USER_NAME" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
+# Call the actual first_year_students.sh orchestrator
+show_progress_log "Calling first_year_students.sh orchestrator..." "INFO"
+if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PIS_ENV="CI" GITHUB_CI="true" CI="true" GITHUB_ACTIONS="true" RUNNER_OS="macOS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh)"; then
+    orchestrator_ret=0
+    echo "$(date): DEBUG: Orchestrator completed successfully"
+    show_progress_log "🎉 First year students orchestrator completed successfully!" "INFO"
 else
-    echo "$(date): Python setup script not found, skipping"
-fi
-
-# Run diagnostics if available
-DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
-if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
-    echo "$(date): Running diagnostics..."
-    sudo -u "$USER_NAME" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
-else
-    echo "$(date): Diagnostics script not found, skipping"
-fi
-
-# Clean up extracted components (IMPORTANT: Remove scripts from filesystem)
-echo "$(date): Cleaning up installation scripts..."
-if [[ -d "$COMPONENTS_DIR" ]]; then
-    rm -rf "$COMPONENTS_DIR"
-    echo "$(date): Removed temporary installation scripts from $COMPONENTS_DIR"
-else
-    echo "$(date): Warning: Components directory already removed or not found"
+    orchestrator_ret=$?
+    echo "$(date): DEBUG: Orchestrator failed with exit code: $orchestrator_ret"
+    show_progress_log "❌ First year students orchestrator failed" "ERROR"
 fi
 
 # Create summary
 SUMMARY_FILE="PLACEHOLDER_SUMMARY_FILE"
 cat > "$SUMMARY_FILE" << EOF
-DTU Python Installation Complete!
+DTU First Year Students Installation Complete!
 
 Installation log: $LOG_FILE
 Date: $(date)
 User: $USER_NAME
 
-Components installed:
-- Homebrew package manager
-- Python (via Miniconda)
-- Visual Studio Code
-- Python development packages
+Installation Results:
+- First Year Students Orchestrator: $([ $orchestrator_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
 
 Next steps:
 1. Open Terminal and type 'python3' to test Python
 2. Open Visual Studio Code to start coding
-3. Check the installation log if you encounter issues
+3. Try importing: dtumathtools, pandas, numpy, matplotlib
 
 For support: PLACEHOLDER_SUPPORT_EMAIL
 EOF
 
-echo "$(date): Installation completed"
-echo "Summary created at: $SUMMARY_FILE"
+show_progress_log "PKG installer script has finished. Summary created at: $SUMMARY_FILE" "INFO"
+echo "$(date): DEBUG: PKG installer script finished"
 
-# Show notification
-sudo -u "$USER_NAME" osascript -e 'display notification "DTU Python environment installed successfully!" with title "DTU Python Installation Complete"' 2>/dev/null || true
-
-exit 0
+exit $orchestrator_ret

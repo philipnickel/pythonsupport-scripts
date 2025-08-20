@@ -1,27 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# macOS DTU Python PKG Builder - Configurable Build Script
-# Uses configuration files for environment-specific builds
+# DTU Python PKG Builder - Simplified Build Script
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Load configuration
 source "$SCRIPT_DIR/metadata/config.sh"
 
-# Check for environment override
-ENVIRONMENT="${BUILD_ENV:-production}"
-ENV_CONFIG="$SCRIPT_DIR/metadata/environments/${ENVIRONMENT}.sh"
-
-if [[ -f "$ENV_CONFIG" ]]; then
-    echo "Loading $ENVIRONMENT environment configuration..."
-    source "$ENV_CONFIG"
-else
-    echo "Warning: Environment '$ENVIRONMENT' not found, using default production config"
-fi
-
 echo "=== $PKG_TITLE Build System ==="
-echo "Environment: $ENVIRONMENT"
 echo
 
 # Get and increment version (always increment)
@@ -87,6 +74,12 @@ sed -e "s|PLACEHOLDER_LOG_FILE|$LOG_FILE|g" \
     -e "s|PLACEHOLDER_SUPPORT_EMAIL|$SUPPORT_EMAIL|g" \
     "$SOURCE_DIR/Scripts/postinstall.sh" > "$SCRIPTS_DIR/postinstall"
 
+# Copy loading animations helper script
+if [[ -f "$SOURCE_DIR/Scripts/loading_animations.sh" ]]; then
+    echo "Copying loading animations helper..."
+    cp "$SOURCE_DIR/Scripts/loading_animations.sh" "$SCRIPTS_DIR/"
+fi
+
 chmod +x "$SCRIPTS_DIR/"*
 
 # Process Distribution.xml with all configuration values
@@ -96,36 +89,21 @@ sed -e "s/PLACEHOLDER_VERSION/$VERSION/g" \
     -e "s/PLACEHOLDER_PKG_DESCRIPTION/$PKG_DESCRIPTION/g" \
     -e "s/PLACEHOLDER_PKG_ID/$PKG_ID/g" \
     -e "s/PLACEHOLDER_PKG_NAME/$PKG_NAME/g" \
-    -e "s/PLACEHOLDER_MIN_MACOS_VERSION/$MIN_MACOS_VERSION/g" \
     "$SOURCE_DIR/Distribution.xml" > "$BUILD_DIR/Distribution"
 
-# Create payload directory and copy Component scripts
+# Create payload directory (minimal - no components bundled)
 PAYLOAD_DIR="$BUILD_DIR/payload"
 mkdir -p "$PAYLOAD_DIR"
-
-# Always include MacOS/Components directory in the package
-COMPONENTS_SOURCE="$SCRIPT_DIR/../../Components"
-COMPONENTS_DEST="$PAYLOAD_DIR/dtu_components"
-
-if [[ -d "$COMPONENTS_SOURCE" ]]; then
-    echo "Copying Components directory into package..."
-    # Copy the entire Components directory
-    cp -r "$COMPONENTS_SOURCE" "$COMPONENTS_DEST"
-    # Remove any .DS_Store files
-    find "$COMPONENTS_DEST" -name ".DS_Store" -delete 2>/dev/null || true
-    # Count the size
-    COMPONENTS_SIZE=$(du -sh "$COMPONENTS_DEST" | cut -f1)
-    echo "  Included components (${COMPONENTS_SIZE}): $(ls -1 "$COMPONENTS_DEST" | tr '\n' ' ')"
-else
-    echo "ERROR: Components directory not found at $COMPONENTS_SOURCE"
-    exit 1
-fi
 
 # Copy any additional payload files if they exist
 if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)" ]]; then
     echo "Copying additional payload files..."
     cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
 fi
+
+# For script-only packages, we don't need any payload files
+# The PKG will only run the preinstall/postinstall scripts
+echo "Creating script-only PKG (no payload files)"
 
 # Create component package
 echo "Building component package..."
@@ -146,11 +124,14 @@ productbuild \
     --package-path "$BUILD_DIR" \
     "$FINAL_PKG"
 
+# Cleanup temp_build directory
+echo "Cleaning up temporary build files..."
+rm -rf "$BUILD_DIR"
+
 echo
 echo "✅ Build completed successfully!"
 echo "📦 Installer: $FINAL_PKG"
 echo "📋 Version: $VERSION"
-echo "🏷️  Environment: $ENVIRONMENT"
 echo "📁 Size: $(du -h "$FINAL_PKG" | cut -f1)"
 echo
 echo "To install: sudo installer -pkg '$FINAL_PKG' -target /"

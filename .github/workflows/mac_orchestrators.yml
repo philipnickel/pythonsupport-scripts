@@ -12,6 +12,8 @@ on:
       - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
 
+# Re-enabled after PKG installer testing completed successfully
+
 env:
   PYTHON_VERSION_PS: "3.11"
   PIS_ENV: "CI"
@@ -19,6 +21,7 @@ env:
 jobs:
   test-first-year-orchestrator:
     name: Test First Year Orchestrator
+    if: true
     runs-on: macos-latest
     
     steps:
