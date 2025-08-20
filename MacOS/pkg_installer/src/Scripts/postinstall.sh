@@ -103,6 +103,21 @@ if [ $_python_ret -eq 0 ]; then
         echo "$(date): DEBUG: First year Python setup completed successfully"
         echo "✅ DTU Python Installer: Python 3.11 and packages installed successfully"
         show_progress_log "✅ First year Python setup completed" "INFO"
+        
+        # Ensure conda is properly initialized for the user's shell sessions
+        echo "$(date): DEBUG: Ensuring conda initialization for user shell"
+        sudo -u "$USER_NAME" bash -c "
+            # Force conda initialization for all shells
+            if command -v conda >/dev/null 2>&1; then
+                conda init bash 2>/dev/null || true
+                conda init zsh 2>/dev/null || true
+                # Source the updated profile to ensure conda is in PATH
+                [ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+                [ -f ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+                [ -f ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
+                [ -f ~/.zprofile ] && source ~/.zprofile 2>/dev/null || true
+            fi
+        "
     else
         _first_year_ret=$?
         echo "$(date): DEBUG: First year Python setup failed with exit code: $_first_year_ret"
