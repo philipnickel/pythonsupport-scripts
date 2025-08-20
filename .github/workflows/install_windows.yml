@@ -4,15 +4,14 @@ defaults:
   run:
     shell: pwsh -Login {0}
 
+# Disabled - only using mac_orchestrators.yml and test-pkg-installer.yml
 on:
-  pull_request:
-    branches: ["main"]
-    paths:
-      - 'Windows/**'
-      - '.github/workflows/install_windows.yml'
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
+    inputs:
+      force_run:
+        description: 'Force run this disabled workflow'
+        required: true
+        default: 'false'
 
 jobs:
   test:

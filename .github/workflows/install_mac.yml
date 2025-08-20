@@ -4,12 +4,12 @@ defaults:
   run:
     shell: bash -l {0}
 
-# Legacy workflow - Use mac_components.yml for regular testing
+# Legacy workflow disabled - only using mac_orchestrators.yml and test-pkg-installer.yml
 on:
   workflow_dispatch:
     inputs:
       force_run:
-        description: 'Force run this legacy workflow (use mac_components.yml instead)'
+        description: 'Force run this legacy workflow (disabled)'
         required: true
         default: 'false'
 

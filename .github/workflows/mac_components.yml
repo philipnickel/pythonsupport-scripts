@@ -4,18 +4,14 @@ defaults:
   run:
     shell: bash -l {0}
 
+# Disabled - only using mac_orchestrators.yml and test-pkg-installer.yml
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
   workflow_dispatch:
-  schedule:
-    - cron: "0 2 * * 0"  # Run every Sunday at 2 AM UTC
+    inputs:
+      force_run:
+        description: 'Force run this disabled workflow'
+        required: true
+        default: 'false'
 
 env:
   PYTHON_VERSION_PS: "3.11"
