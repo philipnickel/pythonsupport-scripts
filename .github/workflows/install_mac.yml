@@ -1,4 +1,4 @@
-name: Mac tests
+name: Mac tests (disabled)
 
 defaults:
   run:
@@ -13,12 +13,8 @@ defaults:
 #     - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
 
 on:
+  # Disabled for now; manual runs only
   workflow_dispatch:
-    inputs:
-      force_run:
-        description: 'Force run this legacy workflow (use mac_components.yml instead)'
-        required: true
-        default: 'false'
 
 jobs:
   test:

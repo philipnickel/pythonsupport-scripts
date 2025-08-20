@@ -1,11 +1,7 @@
-name: Deploy Documentation
+name: Deploy Documentation (disabled)
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'docs/**'
-      - 'MacOS/Components/**/*.sh'
+  # Disabled for now; manual runs only
   workflow_dispatch:
 
 permissions:

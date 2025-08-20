@@ -1,0 +1,83 @@
+name: MacOS PKG Installer Tests
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/pkg_installer/**'
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_pkg_installer.yml'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: "CI"
+
+jobs:
+  build-and-test-pkg:
+    name: Build and Test macOS PKG Installer
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build PKG (CI environment)
+        working-directory: MacOS/pkg_installer/src
+        env:
+          BUILD_ENV: github_ci
+        run: |
+          bash build.sh
+
+      - name: Locate built PKG
+        id: find_pkg
+        run: |
+          PKG_PATH=$(ls -1 MacOS/pkg_installer/builds/*.pkg | tail -n 1)
+          echo "pkg_path=$PKG_PATH" >> $GITHUB_OUTPUT
+          echo "Found package: $PKG_PATH"
+
+      - name: Install PKG
+        run: |
+          sudo installer -pkg "${{ steps.find_pkg.outputs.pkg_path }}" -target /
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+          fi
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          conda --version
+          conda info --base
+
+      - name: Verify python (${{ env.PYTHON_VERSION_PS }})
+        run: |
+          which python3
+          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+      - name: Run final diagnostics (HTML report)
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/MacOS/Components/Diagnostics/generate_report.sh)"

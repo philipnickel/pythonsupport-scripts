@@ -1,21 +1,12 @@
-name: Mac Components Tests
+name: Mac Components Tests (disabled)
 
 defaults:
   run:
     shell: bash -l {0}
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
+  # Disabled for now; manual runs only
   workflow_dispatch:
-  schedule:
-    - cron: "0 2 * * 0"  # Run every Sunday at 2 AM UTC
 
 env:
   PYTHON_VERSION_PS: "3.11"

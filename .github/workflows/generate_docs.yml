@@ -1,18 +1,7 @@
-name: Generate Documentation
+name: Generate Documentation (disabled)
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**/*.sh'
-      - 'docs/tools/extract_docs.py'
-      - '.github/workflows/generate_docs.yml'
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**/*.sh'
-      - 'docs/tools/extract_docs.py'
-      - '.github/workflows/generate_docs.yml'
+  # Disabled for now; manual runs only
   workflow_dispatch:
 
 jobs:
