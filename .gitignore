@@ -59,6 +59,7 @@ venv.bak/
 
 # Browser automation
 .playwright/
+.playwright-mcp/
 
 # Logs
 *.log
