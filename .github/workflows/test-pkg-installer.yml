@@ -253,17 +253,18 @@ jobs:
         run: |
           echo "=== Verifying Python Version ==="
           
-          # Ensure conda environment is loaded
-          if ! command -v python3 >/dev/null 2>&1; then
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                eval "$($conda_path shell.bash hook)"
-                break
-              fi
-            done
-          fi
+          # Always ensure conda environment is loaded to get the correct Python version
+          for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
+            if [ -f "$conda_path" ]; then
+              echo "Activating conda from: $conda_path"
+              eval "$($conda_path shell.bash hook)"
+              conda activate base  # Ensure base environment is active
+              break
+            fi
+          done
           
           which python3
+          echo "Python path: $(which python3)"
           
           # Verify the installed Python version - MUST match exactly like mac_orchestrators
           EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
@@ -279,15 +280,15 @@ jobs:
         run: |
           echo "=== Verifying Python Packages ==="
           
-          # Ensure conda environment is loaded for package testing
-          if ! command -v python3 >/dev/null 2>&1; then
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                eval "$($conda_path shell.bash hook)"
-                break
-              fi
-            done
-          fi
+          # Always ensure conda environment is loaded for package testing
+          for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
+            if [ -f "$conda_path" ]; then
+              echo "Activating conda from: $conda_path"
+              eval "$($conda_path shell.bash hook)"
+              conda activate base  # Ensure base environment is active
+              break
+            fi
+          done
           
           # Verify Python package imports - exact same test as mac_orchestrators
           echo "Testing package imports..."
@@ -353,14 +354,14 @@ jobs:
           echo ""
           
           # Final status check - ensuring conda environment is loaded for final verification
-          if ! command -v conda >/dev/null 2>&1; then
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                eval "$($conda_path shell.bash hook)"
-                break
-              fi
-            done
-          fi
+          for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
+            if [ -f "$conda_path" ]; then
+              echo "Activating conda from: $conda_path"
+              eval "$($conda_path shell.bash hook)"
+              conda activate base  # Ensure base environment is active
+              break
+            fi
+          done
           
           HOMEBREW_OK=$(command -v brew >/dev/null 2>&1 && echo "✓" || echo "❌")
           CONDA_OK=$(command -v conda >/dev/null 2>&1 && echo "✓" || echo "❌")  
