@@ -52,19 +52,39 @@ jobs:
           sudo installer -pkg "${{ steps.find_pkg.outputs.pkg_path }}" -target /
         timeout-minutes: 20
 
+      - name: Show PKG postinstall log and app locations
+        run: |
+          echo "Runner temp: $RUNNER_TEMP"
+          for LOG in "$RUNNER_TEMP/macos_dtu_python_install_ci.log" \
+                     "/tmp/macos_dtu_python_install_ci.log"; do
+            if [[ -f "$LOG" ]]; then
+              echo "=== Showing $LOG ==="
+              tail -n +1 "$LOG" | sed -n '1,400p'
+              break
+            fi
+          done
+          echo "=== /Applications ==="; ls -la "/Applications" | sed -n '1,120p'
+          echo "=== $HOME/Applications ==="; ls -la "$HOME/Applications" 2>/dev/null | sed -n '1,120p' || true
+
       - name: Verify VS Code
         run: |
           echo "PATH: $PATH"
           APP_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+          APP_CLI_USER="$HOME/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
           if command -v code >/dev/null 2>&1; then
             code --version
             exit $?
           elif [[ -x "$APP_CLI" ]]; then
             "$APP_CLI" --version
             exit $?
+          elif [[ -x "$APP_CLI_USER" ]]; then
+            "$APP_CLI_USER" --version
+            exit $?
           else
             echo "VS Code CLI not found. Listing /Applications:"
             ls -la "/Applications" | sed -n '1,50p'
+            echo "Listing $HOME/Applications:"
+            ls -la "$HOME/Applications" 2>/dev/null | sed -n '1,50p' || true
             echo "VS Code not installed correctly"
             exit 127
           fi
