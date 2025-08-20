@@ -16,4 +16,4 @@ echo "Hostname: $(hostname 2>/dev/null || echo 'Unknown')"
 echo "Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')"
 
 echo ""
-echo "✅ System information retrieved - PASSED"
+echo " System information retrieved - PASSED"

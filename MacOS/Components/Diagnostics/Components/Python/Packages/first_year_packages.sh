@@ -18,7 +18,7 @@ if ! command -v python3 > /dev/null 2>&1; then
         python_cmd="python"
         echo "ℹ Using 'python' command (python3 not found)"
     else
-        echo "❌ No Python installation found"
+        echo "FAIL No Python installation found"
         exit 1
     fi
 fi
@@ -35,10 +35,10 @@ for pkg in "${python_packages[@]}"; do
     if $python_cmd -c "import $pkg" > /dev/null 2>&1; then
         # Try to get version
         version=$($python_cmd -c "import $pkg; print(getattr($pkg, '__version__', 'unknown'))" 2>/dev/null || echo "unknown")
-        echo "  ✓ $pkg ($version)"
+        echo "  PASS $pkg ($version)"
         installed_packages=$((installed_packages + 1))
     else
-        echo "  ✗ $pkg - MISSING"
+        echo "  FAIL $pkg - MISSING"
         missing_packages=$((missing_packages + 1))
     fi
 done
@@ -50,7 +50,7 @@ echo "Installed: $installed_packages/${#python_packages[@]}"
 echo "Missing: $missing_packages/${#python_packages[@]}"
 
 if [ $missing_packages -eq 0 ]; then
-    echo "✅ All required packages are installed"
+    echo "PASSED All required packages are installed"
     exit 0
 else
     echo ""
