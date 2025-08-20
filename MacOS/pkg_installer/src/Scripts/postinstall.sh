@@ -60,8 +60,8 @@ else
     echo "$(date): DEBUG: About to execute Python install as user: $USER_NAME"
     echo "▶ DTU Python Installer: Installing Homebrew and Miniconda, please wait..."
     
-    # Execute with proper environment variables and timeout
-    if timeout 600 sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $python_script"; then
+    # Execute with proper environment variables passed to subprocess
+    if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $python_script"; then
         _python_ret=0
         echo "$(date): DEBUG: Python installation completed successfully"
         echo "✅ DTU Python Installer: Python installation completed successfully"
@@ -88,8 +88,8 @@ if [ $_python_ret -eq 0 ]; then
         echo "$(date): DEBUG: Successfully downloaded VSCode install script"
         echo "▶ DTU Python Installer: Downloading and installing Visual Studio Code..."
         
-        # Execute with proper environment variables and timeout  
-        if timeout 300 sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $vscode_script"; then
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $vscode_script"; then
             _vsc_ret=0
             echo "$(date): DEBUG: VSCode installation completed successfully"
             echo "✅ DTU Python Installer: Visual Studio Code installation completed successfully"
@@ -121,8 +121,8 @@ if [ $_python_ret -eq 0 ]; then
         echo "$(date): DEBUG: Successfully downloaded first year setup script"
         echo "▶ DTU Python Installer: Installing Python 3.11 and packages (dtumathtools, pandas, etc.)..."
         
-        # Execute with proper environment variables and timeout
-        if timeout 300 sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $first_year_script"; then
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $first_year_script"; then
             _first_year_ret=0
             echo "$(date): DEBUG: First year Python setup completed successfully"
             echo "✅ DTU Python Installer: Python 3.11 and packages installed successfully"
@@ -155,8 +155,8 @@ if [ $_vsc_ret -eq 0 ]; then
         echo "$(date): DEBUG: Successfully downloaded extensions script"
         echo "▶ DTU Python Installer: Installing Python extension and development tools..."
         
-        # Execute with proper environment variables and timeout
-        if timeout 180 sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $extensions_script"; then
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $extensions_script"; then
             _extensions_ret=0
             echo "$(date): DEBUG: VSCode extensions installation completed successfully"
             echo "✅ DTU Python Installer: VSCode Python extensions installed successfully"
