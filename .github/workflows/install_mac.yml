@@ -4,14 +4,7 @@ defaults:
   run:
     shell: bash -l {0}
 
-# DISABLED - Use mac_components.yml instead
-# on:
-#   pull_request:
-#     branches: [ "main" ]
-#   workflow_dispatch:
-#   schedule:
-#     - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
-
+# Legacy workflow - Use mac_components.yml for regular testing
 on:
   workflow_dispatch:
     inputs:

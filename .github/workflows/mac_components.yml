@@ -195,86 +195,85 @@ jobs:
           
           echo "✓ VS Code clean uninstall verification completed successfully"
 
-  # Temporarily disabled LaTeX tests
-  # test-latex-minimal:
-  #   name: Test LaTeX Minimal Installation
-  #   runs-on: macos-latest
-  #   
-  #   steps:
-  #     - name: Clean existing conda installations
-  #       run: |
-  #         if command -v conda > /dev/null; then
-  #           conda init --reverse --all || true
-  #         fi
-  #         rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+  test-latex-minimal:
+    name: Test LaTeX Minimal Installation
+    runs-on: macos-latest
+    
+    steps:
+      - name: Clean existing conda installations
+        run: |
+          if command -v conda > /dev/null; then
+            conda init --reverse --all || true
+          fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
 
-  #     - name: Install Python Component (dependency for LaTeX)
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         echo "Installing Python dependency from: $REMOTE_PS/$BRANCH_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
+      - name: Install Python Component (dependency for LaTeX)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Installing Python dependency from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
 
-  #     - name: Install LaTeX Minimal Component
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         echo "Testing LaTeX Minimal from: $REMOTE_PS/$BRANCH_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/minimal_install.sh)"
+      - name: Install LaTeX Minimal Component
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing LaTeX Minimal from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/minimal_install.sh)"
 
-  #     - name: Test PDF Export from Jupyter Notebook
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         # Source conda environment
-  #         source ~/.bashrc || true
-  #         eval "$(conda shell.bash hook)" || true
-  #         
-  #         echo "Testing PDF export functionality with minimal LaTeX installation..."
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
+      - name: Test PDF Export from Jupyter Notebook
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          # Source conda environment
+          source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
+          
+          echo "Testing PDF export functionality with minimal LaTeX installation..."
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
 
-  # test-latex-full:
-  #   name: Test LaTeX Full Installation
-  #   runs-on: macos-latest
-  #   
-  #   steps:
-  #     - name: Clean existing conda installations
-  #       run: |
-  #         if command -v conda > /dev/null; then
-  #           conda init --reverse --all || true
-  #         fi
-  #         rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
+  test-latex-full:
+    name: Test LaTeX Full Installation
+    runs-on: macos-latest
+    
+    steps:
+      - name: Clean existing conda installations
+        run: |
+          if command -v conda > /dev/null; then
+            conda init --reverse --all || true
+          fi
+          rm -rf ~/miniconda* ~/anaconda* ~/.conda ~/.condarc || true
 
-  #     - name: Install Python Component (dependency for LaTeX)
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         echo "Installing Python dependency from: $REMOTE_PS/$BRANCH_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
+      - name: Install Python Component (dependency for LaTeX)
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Installing Python dependency from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Python/install.sh)"
 
-  #     - name: Install LaTeX Full Component
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         echo "Testing LaTeX Full from: $REMOTE_PS/$BRANCH_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/full_install.sh)"
+      - name: Install LaTeX Full Component
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          echo "Testing LaTeX Full from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/full_install.sh)"
 
-  #     - name: Test PDF Export from Jupyter Notebook
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #       run: |
-  #         # Source conda environment
-  #         source ~/.bashrc || true
-  #         eval "$(conda shell.bash hook)" || true
-  #         
-  #         echo "Testing PDF export functionality with full LaTeX installation..."
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
+      - name: Test PDF Export from Jupyter Notebook
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          # Source conda environment
+          source ~/.bashrc || true
+          eval "$(conda shell.bash hook)" || true
+          
+          echo "Testing PDF export functionality with full LaTeX installation..."
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/Latex/test_pdf_export.sh)"
 
   test-python-uninstall:
     name: Test Python Uninstall
