@@ -1,20 +1,178 @@
 #!/bin/bash
 # @doc
 # @name: Piwik Analytics Utility
-# @description: Analytics tracking utility for monitoring installation script usage and success rates
+# @description: Enhanced analytics tracking utility for monitoring installation script usage and success rates with GDPR compliance
 # @category: Utilities
 # @usage: source piwik_utility.sh; piwik_log "event_name" command args
 # @requirements: curl, internet connection
-# @notes: Tracks installation events to Piwik PRO for usage analytics and error monitoring
+# @notes: Tracks installation events to Piwik PRO for usage analytics and error monitoring with enhanced features and GDPR opt-out support
 # @/doc
 
-# Piwik PRO Analytics Utility Script
-# A utility for tracking installation events
+# Enhanced Piwik PRO Analytics Utility Script
+# A utility for tracking installation events with timing, error categorization, environment detection, and GDPR compliance
 
 # === CONFIGURATION ===
 PIWIK_URL="https://pythonsupport.piwik.pro/ppms.php"
 SITE_ID="0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 GITHUB_REPO="dtudk/pythonsupport-page"
+
+# === GDPR COMPLIANCE ===
+
+# Check if analytics tracking is disabled
+is_analytics_disabled() {
+    # In CI mode, always enable analytics
+    if [ "$PIS_ENV" = "CI" ]; then
+        return 1  # Analytics enabled in CI
+    fi
+    
+    # Check for opt-out file
+    local opt_out_file="/tmp/piwik_analytics_choice"
+    
+    if [ -f "$opt_out_file" ]; then
+        local choice=$(cat "$opt_out_file" 2>/dev/null)
+        if [ "$choice" = "opt-out" ]; then
+            return 0  # Analytics disabled
+        elif [ "$choice" = "opt-in" ]; then
+            return 1  # Analytics enabled
+        fi
+    fi
+    
+    return 1  # Default to enabled if no choice made
+}
+
+# Show Apple native popup dialog for analytics choice
+show_analytics_choice_dialog() {
+    local opt_out_file="/tmp/piwik_analytics_choice"
+    
+    # Check if choice already exists
+    if [ -f "$opt_out_file" ]; then
+        return 0  # Choice already made
+    fi
+    
+    # Show Apple native dialog
+    local response
+    response=$(osascript -e '
+        tell application "System Events"
+            activate
+            set theResponse to display dialog "This installation script collects anonymous usage analytics to help improve the installation process and identify potential issues.
+
+Data collected:
+• Installation success/failure events
+• Operating system and version information  
+• System architecture (Intel/Apple Silicon)
+• Installation duration (for performance monitoring)
+• Git commit SHA (for version tracking)
+
+No personal information is collected or stored.
+
+Do you consent to analytics collection?" buttons {"Decline tracking", "Accept tracking"} default button "Accept tracking" with icon note
+            return button returned of theResponse
+        end tell
+    ' 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "$response" ]; then
+        if [ "$response" = "Accept tracking" ]; then
+            echo "opt-in" > "$opt_out_file"
+            echo "Analytics enabled. Thank you for helping improve the installation process!"
+        else
+            echo "opt-out" > "$opt_out_file"
+            echo "Analytics disabled. No data will be collected."
+        fi
+    else
+        # Fallback if osascript fails (non-GUI environment) - default to not tracking
+        echo "opt-out" > "$opt_out_file"
+        echo "Analytics disabled (non-GUI environment)."
+    fi
+}
+
+# Check and request analytics choice if needed
+check_analytics_choice() {
+    # In CI mode, skip dialog and enable analytics
+    if [ "$PIS_ENV" = "CI" ]; then
+        return 0  # Skip dialog in CI
+    fi
+    
+    local opt_out_file="/tmp/piwik_analytics_choice"
+    
+    if [ ! -f "$opt_out_file" ]; then
+        show_analytics_choice_dialog
+    fi
+}
+
+# === ENVIRONMENT DETECTION ===
+
+# Detect environment automatically
+detect_environment() {
+    # Use PIS_ENV if set
+    if [ -n "$PIS_ENV" ]; then
+        case "$PIS_ENV" in
+            "CI")
+                echo "CI"
+                return 0
+                ;;
+            "local-dev")
+                echo "DEV"
+                return 0
+                ;;
+            "staging")
+                echo "STAGING"
+                return 0
+                ;;
+            "production")
+                echo "PROD"
+                return 0
+                ;;
+            *)
+                echo "PROD"  # Default to production for unknown values
+                return 0
+                ;;
+        esac
+    fi
+    
+    # Fallback to old environment detection for backward compatibility
+    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+        echo "CI"
+        return 0
+    fi
+    
+    # Check for testing/development environment
+    if [ "$TESTING_MODE" = "true" ] || [ "$DEV_MODE" = "true" ] || [ "$DEBUG" = "true" ]; then
+        echo "DEV"
+        return 0
+    fi
+    
+    # Check for staging environment
+    if [ "$STAGING" = "true" ] || [ "$STAGE" = "true" ]; then
+        echo "STAGING"
+        return 0
+    fi
+    
+    # Default to production
+    echo "PROD"
+    return 0
+}
+
+# Get environment category for Piwik
+get_environment_category() {
+    local env=$(detect_environment)
+    case "$env" in
+        "CI")
+            echo "Installer_CI"
+            ;;
+        "DEV")
+            echo "Installer_DEV"
+            ;;
+        "STAGING")
+            echo "Installer_STAGING"
+            ;;
+        "PROD")
+            echo "Installer_PROD"
+            ;;
+        *)
+            echo "Installer_UNKNOWN"
+            ;;
+    esac
+}
 
 # === HELPER FUNCTIONS ===
 
@@ -23,11 +181,120 @@ get_system_info() {
     OS=$(uname -s)
     ARCH=$(uname -m)
     
-    # Get macOS version if available
-    if command -v sw_vers > /dev/null; then
-        OS_VERSION=$(sw_vers -productVersion)
-        OS="${OS}${OS_VERSION}"
+    # Enhanced OS and version detection
+    if [ "$OS" = "Darwin" ]; then
+        # macOS detection
+        OS_NAME="macOS"
+        
+        # Get macOS version and codename
+        if command -v sw_vers > /dev/null; then
+            OS_VERSION=$(sw_vers -productVersion)
+            
+            # Map macOS versions to codenames
+            case "$OS_VERSION" in
+                "15."*)
+                    OS_CODENAME="Sequoia"
+                    ;;
+                "14."*)
+                    OS_CODENAME="Sonoma"
+                    ;;
+                "13."*)
+                    OS_CODENAME="Ventura"
+                    ;;
+                "12."*)
+                    OS_CODENAME="Monterey"
+                    ;;
+                "11."*)
+                    OS_CODENAME="Big Sur"
+                    ;;
+                "10.15"*)
+                    OS_CODENAME="Catalina"
+                    ;;
+                "10.14"*)
+                    OS_CODENAME="Mojave"
+                    ;;
+                "10.13"*)
+                    OS_CODENAME="High Sierra"
+                    ;;
+                "10.12"*)
+                    OS_CODENAME="Sierra"
+                    ;;
+                "10.11"*)
+                    OS_CODENAME="El Capitan"
+                    ;;
+                "10.10"*)
+                    OS_CODENAME="Yosemite"
+                    ;;
+                "10.9"*)
+                    OS_CODENAME="Mavericks"
+                    ;;
+                "10.8"*)
+                    OS_CODENAME="Mountain Lion"
+                    ;;
+                "10.7"*)
+                    OS_CODENAME="Lion"
+                    ;;
+                "10.6"*)
+                    OS_CODENAME="Snow Leopard"
+                    ;;
+                *)
+                    OS_CODENAME="Unknown"
+                    ;;
+            esac
+            
+            # Combine OS info
+            OS="${OS_NAME}${OS_VERSION} (${OS_CODENAME})"
+        else
+            OS="${OS_NAME} (Unknown Version)"
+        fi
+        
+    elif [ "$OS" = "Linux" ]; then
+        # Linux detection
+        OS_NAME="Linux"
+        
+        # Try to get Linux distribution info
+        if [ -f /etc/os-release ]; then
+            source /etc/os-release
+            OS_VERSION="$VERSION"
+            OS_CODENAME="$VERSION_CODENAME"
+            if [ -n "$OS_CODENAME" ]; then
+                OS="${OS_NAME} ${NAME} ${VERSION_ID} (${OS_CODENAME})"
+            else
+                OS="${OS_NAME} ${NAME} ${VERSION_ID}"
+            fi
+        elif [ -f /etc/lsb-release ]; then
+            source /etc/lsb-release
+            OS_VERSION="$DISTRIB_RELEASE"
+            OS_CODENAME="$DISTRIB_CODENAME"
+            OS="${OS_NAME} ${DISTRIB_DESCRIPTION} (${OS_CODENAME})"
+        else
+            OS="${OS_NAME} (Unknown Distribution)"
+        fi
+        
+    elif [[ "$OS" == *"NT"* ]] || [[ "$OS" == *"Windows"* ]]; then
+        # Windows detection (if running in WSL or similar)
+        OS_NAME="Windows"
+        
+        # Try to get Windows version
+        if command -v wmic > /dev/null 2>&1; then
+            OS_VERSION=$(wmic os get Caption /value 2>/dev/null | grep "Caption=" | cut -d'=' -f2)
+            OS="${OS_NAME} ${OS_VERSION}"
+        else
+            OS="${OS_NAME} (Unknown Version)"
+        fi
+        
+    else
+        # Other Unix-like systems
+        OS_NAME="$OS"
+        OS_VERSION="Unknown"
+        OS="${OS_NAME} (Unknown Version)"
     fi
+    
+    # Store individual components for potential use
+    export OS_NAME
+    export OS_VERSION
+    export OS_CODENAME
+    export OS_ARCH="$ARCH"
 }
 
 # Get latest commit SHA from GitHub
@@ -65,12 +332,111 @@ get_commit_sha() {
     echo "unknown"
 }
 
+# Categorize error types
+categorize_error() {
+    local output="$1"
+    local exit_code="$2"
+    
+    if [ "$exit_code" -eq 0 ]; then
+        echo ""
+        return 0
+    fi
+    
+    # Check for common error patterns
+    if echo "$output" | grep -iq "permission denied\|not permitted\|access denied"; then
+        echo "_permission_error"
+    elif echo "$output" | grep -iq "network\|download\|curl\|wget\|connection\|timeout"; then
+        echo "_network_error"
+    elif echo "$output" | grep -iq "space\|disk\|storage\|no space"; then
+        echo "_disk_error"
+    elif echo "$output" | grep -iq "not found\|command not found\|no such file"; then
+        echo "_missing_dependency"
+    elif echo "$output" | grep -iq "already exists\|already installed"; then
+        echo "_already_exists"
+    elif echo "$output" | grep -iq "version\|incompatible\|requires"; then
+        echo "_version_error"
+    else
+        echo "_unknown_error"
+    fi
+}
 
+# === ENHANCED TRACKING FUNCTIONS ===
 
-# Main tracking function - runs command and tracks result automatically
+# Enhanced logging function with timing and error categorization
+piwik_log_enhanced() {
+    # Check analytics choice if needed
+    check_analytics_choice
+    
+    local event_name="$1"
+    local start_time=$(date +%s)
+    shift
+    
+    # Check if analytics are disabled
+    if is_analytics_disabled; then
+        # Run command without tracking
+        "$@"
+        return $?
+    fi
+    
+    # Run command and capture output
+    local output
+    output=$("$@" 2>&1)
+    local exit_code=$?
+    local duration=$(($(date +%s) - start_time))
+    
+    # Display output
+    echo "$output"
+    
+    # Enhance event name for failures
+    local error_suffix=$(categorize_error "$output" "$exit_code")
+    if [ -n "$error_suffix" ]; then
+        event_name="${event_name}${error_suffix}"
+    fi
+    
+    get_system_info
+    local commit_sha=$(get_commit_sha)
+    local event_category=$(get_environment_category)
+    
+    # Set result and use duration as event value for successes
+    local result="success"
+    local event_value="$duration"
+    
+    if [ $exit_code -ne 0 ]; then
+        result="failure"
+        event_value="0"
+    fi
+    
+    # Send to Piwik with enhanced info
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -G "$PIWIK_URL" \
+        --max-time 10 \
+        --connect-timeout 5 \
+        --data-urlencode "idsite=$SITE_ID" \
+        --data-urlencode "rec=1" \
+        --data-urlencode "e_c=$event_category" \
+        --data-urlencode "e_a=Event" \
+        --data-urlencode "e_n=$event_name" \
+        --data-urlencode "e_v=$event_value" \
+        --data-urlencode "dimension1=$OS" \
+        --data-urlencode "dimension2=$ARCH" \
+        --data-urlencode "dimension3=$commit_sha" 2>/dev/null)
+    
+    return $exit_code
+}
+
+# Original piwik_log function (backwards compatibility)
 piwik_log() {
+    # Check analytics choice if needed
+    check_analytics_choice
+    
     local event_name="$1"
     shift  # Remove first argument, leaving the command
+    
+    # Check if analytics are disabled
+    if is_analytics_disabled; then
+        # Run command without tracking
+        "$@"
+        return $?
+    fi
     
     # Run the command and capture both stdout and stderr
     local output
@@ -85,14 +451,8 @@ piwik_log() {
     # Get the latest commit SHA
     local commit_sha=$(get_commit_sha)
     
-    # Set event category based on environment variables
-    local event_category="Installer"
-    
-    if [ "$TESTING_MODE" = "true" ]; then
-        event_category="Installer_TEST"
-    elif [ "$GITHUB_CI" = "true" ]; then
-        event_category="Installer_CI"
-    fi
+    # Get environment category
+    local event_category=$(get_environment_category)
     
     # Determine result and value based on exit status
     local result="success"
@@ -119,4 +479,107 @@ piwik_log() {
     
     # Return the original command's exit code
     return $exit_code
+}
+
+# Convenience wrapper - uses enhanced version if available
+piwik_log_timed() {
+    piwik_log_enhanced "$@"
+}
+
+# === UTILITY FUNCTIONS ===
+
+# Get current environment info
+piwik_get_environment_info() {
+    echo "=== Piwik Environment Information ==="
+    echo "Detected Environment: $(detect_environment)"
+    echo "Piwik Category: $(get_environment_category)"
+    
+    # Get detailed system information
+    get_system_info
+    echo "Operating System: $OS_NAME"
+    echo "OS Version: $OS_VERSION"
+    if [ -n "$OS_CODENAME" ]; then
+        echo "OS Codename: $OS_CODENAME"
+    fi
+    echo "Architecture: $OS_ARCH"
+    echo "Full OS String: $OS"
+    
+    echo "Commit SHA: $(get_commit_sha)"
+    
+    # Show analytics choice status
+    echo "Analytics Choice:"
+    if [ "$PIS_ENV" = "CI" ]; then
+        echo "Analytics enabled (CI mode - automatic)"
+    else
+        local opt_out_file="/tmp/piwik_analytics_choice"
+        if [ -f "$opt_out_file" ]; then
+            local choice=$(cat "$opt_out_file" 2>/dev/null)
+            if [ "$choice" = "opt-out" ]; then
+                echo "Analytics disabled (user choice)"
+            else
+                echo "Analytics enabled (user choice)"
+            fi
+        else
+            echo "No choice made yet (will prompt on first use)"
+        fi
+    fi
+    
+    echo "Environment Variables:"
+    echo "  PIS_ENV: ${PIS_ENV:-not set}"
+    echo "  GITHUB_CI: ${GITHUB_CI:-not set}"
+    echo "  CI: ${CI:-not set}"
+    echo "  TESTING_MODE: ${TESTING_MODE:-not set}"
+    echo "  DEV_MODE: ${DEV_MODE:-not set}"
+    echo "  STAGING: ${STAGING:-not set}"
+    echo "  DEBUG: ${DEBUG:-not set}"
+    echo "================================"
+}
+
+# Test Piwik connection
+piwik_test_connection() {
+    # Check analytics choice if needed
+    check_analytics_choice
+    
+    # Check if analytics are disabled
+    if is_analytics_disabled; then
+        echo "Analytics disabled - cannot test connection"
+        return 1
+    fi
+    
+    echo "Testing Piwik connection..."
+    local test_response
+    test_response=$(curl -s -w "%{http_code}" -o /dev/null -G "$PIWIK_URL" \
+        --max-time 10 \
+        --connect-timeout 5 \
+        --data-urlencode "idsite=$SITE_ID" \
+        --data-urlencode "rec=1" \
+        --data-urlencode "e_c=Installer_TEST" \
+        --data-urlencode "e_a=Event" \
+        --data-urlencode "e_n=connection_test" \
+        --data-urlencode "e_v=1" 2>/dev/null)
+    
+    # Piwik PRO returns 202 for successful tracking requests
+    if [ "$test_response" = "200" ] || [ "$test_response" = "202" ]; then
+        echo "✅ Piwik connection successful (HTTP $test_response)"
+        return 0
+    else
+        echo "❌ Piwik connection failed (HTTP $test_response)"
+        return 1
+    fi
+}
+
+# GDPR compliance functions
+piwik_opt_out() {
+    echo "opt-out" > "/tmp/piwik_analytics_choice"
+    echo "Analytics disabled. No data will be collected."
+}
+
+piwik_opt_in() {
+    echo "opt-in" > "/tmp/piwik_analytics_choice"
+    echo "Analytics enabled. Thank you for helping improve the installation process!"
+}
+
+piwik_reset_choice() {
+    rm -f "/tmp/piwik_analytics_choice"
+    echo "Analytics choice reset. You will be prompted again on next use."
 }

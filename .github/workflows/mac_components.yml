@@ -19,6 +19,7 @@ on:
 
 env:
   PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: "CI"
 
 jobs:
   test-homebrew:
