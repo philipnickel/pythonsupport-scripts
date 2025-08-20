@@ -62,59 +62,59 @@ extract_metadata() {
 
 # Function to auto-discover diagnostic components
 discover_components() {
-    local components_dir="$(dirname "$0")/Components"
+    echo -e "${BLUE}Loading diagnostic components from repository...${NC}" >&2
     
-    echo -e "${BLUE}Discovering diagnostic components...${NC}" >&2
+    # Define all diagnostic components that will be curled from repository
+    # Format: "Category:Subcategory:script_name:Display Name:repo_path"
+    local -a component_definitions=(
+        "Python:Installation:python_installation_check:Python Installation Check:Components/Python/Installation/python_installation_check.sh"
+        "Python:Environment:python_environment:Python Environment Configuration:Components/Python/Environment/python_environment.sh"
+        "Python:Packages:first_year_packages:First Year Required Packages:Components/Python/Packages/first_year_packages.sh"
+        "Conda:Installation:conda_installation:Conda Installation Check:Components/Conda/Installation/conda_installation.sh"
+        "Conda:Environments:conda_environments:Conda Environments Check:Components/Conda/Environments/conda_environments.sh"
+        "Development:Homebrew:homebrew_installation:Homebrew Installation Check:Components/Development/Homebrew/homebrew_installation.sh"
+        "Development:LaTeX:latex_installation:LaTeX Installation Check:Components/Development/LaTeX/latex_installation.sh"
+        "System:Information:system_info:System Information:Components/System/Information/system_info.sh"
+        "System:Compatibility:python_compatibility:Python Development Compatibility:Components/System/Compatibility/python_compatibility.sh"
+        "System:Test:timeout_test:Timeout Test Script:Components/System/Test/timeout_test.sh"
+        "VSCode:Installation:vscode_installation:VS Code Installation Check:Components/VSCode/Installation/vscode_installation.sh"
+        "VSCode:Extensions:python_extensions:Python Development Extensions:Components/VSCode/Extensions/python_extensions.sh"
+    )
     
-    # Create temporary file to store categories
-    local temp_categories="$TEMP_DIR/categories"
-    > "$temp_categories"
-    
-    # Find all diagnostic scripts organized by directory
-    while IFS= read -r -d '' script_path; do
-        if [[ -f "$script_path" && "$script_path" == *.sh ]]; then
-            # Extract category and subcategory from directory structure
-            local rel_path=$(python3 -c "import os.path; print(os.path.relpath('$script_path', '$components_dir'))" 2>/dev/null || basename "$script_path")
-            local dir_path=$(dirname "$rel_path")
-            local script_name=$(basename "$script_path")
-            
-            # Skip if not in a subdirectory
-            if [[ "$dir_path" == "." ]]; then
-                continue
-            fi
-            
-            # Parse category/subcategory structure (e.g., "Python/Installation" -> "Python > Installation")
-            local category_display=$(echo "$dir_path" | sed 's|/| > |g')
-            
-            # Extract name from metadata or use filename
-            local display_name=$(extract_metadata "$script_path" "name")
-            if [[ -z "$display_name" ]]; then
-                display_name=$(basename "$script_name" .sh | tr '_' ' ' | sed 's/\b\w/\U&/g')
-            fi
-            
-            # Extract category and subcategory for grouping
-            local main_category=$(echo "$dir_path" | cut -d'/' -f1)
-            local subcategory=$(echo "$dir_path" | cut -d'/' -f2-)
-            
-            echo "  Found: $category_display/$script_name → $display_name" >&2
-            echo "$main_category:$subcategory:$script_name:$display_name:$script_path" >> "$temp_categories"
-        fi
-    done < <(find "$components_dir" -name "*.sh" -type f -print0 2>/dev/null)
-    
-    # Output discovered components in array format for later use
+    # Output component definitions for sourcing
     echo "DISCOVERED_CATEGORIES=("
-    while IFS=':' read -r main_category subcategory script_name display_name script_path; do
-        echo "  \"$main_category:$subcategory:$script_name:$display_name:$script_path\""
-    done < "$temp_categories" | sort
+    for component in "${component_definitions[@]}"; do
+        echo "  \"$component\""
+    done
     echo ")"
+    
+    # Count components
+    local count=${#component_definitions[@]}
+    echo "  Loaded $count diagnostic components from repository" >&2
+    echo "" >&2
 }
 
 # Load configuration file
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="$SCRIPT_DIR/report_config.sh"
-if [[ -f "$CONFIG_FILE" ]]; then
-    echo "Loading configuration from: $CONFIG_FILE"
-    source "$CONFIG_FILE"
+# Handle both local execution and remote execution via curl
+if [[ "${BASH_SOURCE[0]}" == "/dev/stdin" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]]; then
+    # Running remotely via curl, download config file
+    echo "Loading configuration from repository..."
+    REPO_CONFIG_URL="https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/report_config.sh"
+    CONFIG_FILE="$TEMP_DIR/report_config.sh"
+    if curl -s "$REPO_CONFIG_URL" -o "$CONFIG_FILE" && [[ -s "$CONFIG_FILE" ]]; then
+        source "$CONFIG_FILE"
+        echo "Configuration loaded from repository"
+    else
+        echo "Warning: Could not load configuration from repository, using defaults"
+    fi
+else
+    # Running locally
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    CONFIG_FILE="$SCRIPT_DIR/report_config.sh"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        echo "Loading configuration from: $CONFIG_FILE"
+        source "$CONFIG_FILE"
+    fi
 fi
 
 # Configuration (use config file values if available, otherwise fallbacks)
@@ -166,15 +166,19 @@ run_diagnostic() {
     
     echo -n "Running $main_category > $subcategory → $display_name... "
     
-    if [[ ! -f "$script_path" ]]; then
-        echo -e "${RED}✗ Script not found${NC}"
-        echo "ERROR: Script not found: $script_path" > "$log_file"
+    # Download script from repository
+    local repo_url="https://raw.githubusercontent.com/${REPO_OWNER:-philipnickel}/${REPO_NAME:-pythonsupport-scripts}/${REPO_BRANCH:-macos-components}/MacOS/Components/Diagnostics/$script_path"
+    local temp_script="$TEMP_DIR/${script_name}.sh"
+    
+    if ! curl -s "$repo_url" -o "$temp_script" || [[ ! -s "$temp_script" ]]; then
+        echo -e "${RED}✗ Script download failed${NC}"
+        echo "ERROR: Failed to download script from: $repo_url" > "$log_file"
         echo "2" > "$status_file"
         return 2
     fi
     
     # Extract timeout from script metadata or use default
-    local timeout=$(extract_metadata "$script_path" "timeout" || echo "$DEFAULT_TIMEOUT")
+    local timeout=$(extract_metadata "$temp_script" "timeout" || echo "$DEFAULT_TIMEOUT")
     
     # Run diagnostic with timeout and capture output
     # Use gtimeout if available (macOS with coreutils), otherwise timeout, otherwise no timeout
@@ -187,7 +191,7 @@ run_diagnostic() {
     fi
     
     if [[ -n "$timeout_cmd" ]]; then
-        if $timeout_cmd "$timeout" bash "$script_path" > "$log_file" 2>&1; then
+        if $timeout_cmd "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
             echo -e "${GREEN}✓ Passed${NC}"
         else
@@ -202,7 +206,7 @@ run_diagnostic() {
         fi
     else
         # Use bash-based timeout as fallback
-        if bash_timeout "$timeout" bash "$script_path" > "$log_file" 2>&1; then
+        if bash_timeout "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
             echo -e "${GREEN}✓ Passed${NC}"
         else
@@ -241,21 +245,29 @@ run_diagnostic_parallel() {
     local start_time=$(date +%s)
     
     # Load configuration for background process
-    local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local CONFIG_FILE="$SCRIPT_DIR/report_config.sh"
-    if [[ -f "$CONFIG_FILE" ]]; then
-        source "$CONFIG_FILE"
+    # Check if config was already loaded from repository (passed via environment)
+    if [[ -z "$DEFAULT_GLOBAL_TIMEOUT" ]]; then
+        # Try to load local config if available
+        local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        local CONFIG_FILE="$SCRIPT_DIR/report_config.sh"
+        if [[ -f "$CONFIG_FILE" ]]; then
+            source "$CONFIG_FILE"
+        fi
     fi
     
     {
-        if [[ ! -f "$script_path" ]]; then
-            echo "ERROR: Script not found: $script_path" > "$log_file"
+        # Download script from repository
+        local repo_url="https://raw.githubusercontent.com/${REPO_OWNER:-philipnickel}/${REPO_NAME:-pythonsupport-scripts}/${REPO_BRANCH:-macos-components}/MacOS/Components/Diagnostics/$script_path"
+        local temp_script="$TEMP_DIR/${script_name}.sh"
+        
+        if ! curl -s "$repo_url" -o "$temp_script" || [[ ! -s "$temp_script" ]]; then
+            echo "ERROR: Failed to download script from: $repo_url" > "$log_file"
             echo "2" > "$status_file"
             exit 2
         fi
         
         # Extract timeout from script metadata or use default
-        local timeout=$(extract_metadata "$script_path" "timeout" || echo "$DEFAULT_TIMEOUT")
+        local timeout=$(extract_metadata "$temp_script" "timeout" || echo "$DEFAULT_TIMEOUT")
         
         # Determine timeout command
         if command -v gtimeout >/dev/null 2>&1; then
@@ -268,29 +280,25 @@ run_diagnostic_parallel() {
         
         # Run diagnostic with timeout and capture output
         if [[ -n "$timeout_cmd" ]]; then
-            if $timeout_cmd "$timeout" bash "$script_path" > "$log_file" 2>&1; then
+            if $timeout_cmd "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
                 echo "0" > "$status_file"
             else
                 exit_code=$?
                 if [[ $exit_code -eq 124 ]]; then
                     echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                     echo "" >> "$log_file"
-                    echo "To run this check manually without timeout:" >> "$log_file"
-                    echo "bash \"$script_path\"" >> "$log_file"
                 fi
                 echo "$exit_code" > "$status_file"
             fi
         else
             # Use bash-based timeout as fallback
-            if bash_timeout "$timeout" bash "$script_path" > "$log_file" 2>&1; then
+            if bash_timeout "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
                 echo "0" > "$status_file"
             else
                 exit_code=$?
                 if [[ $exit_code -eq 124 ]]; then
                     echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                     echo "" >> "$log_file"
-                    echo "To run this check manually without timeout:" >> "$log_file"
-                    echo "bash \"$script_path\"" >> "$log_file"
                 fi
                 echo "$exit_code" > "$status_file"
             fi
