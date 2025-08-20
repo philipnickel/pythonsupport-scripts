@@ -1,46 +1,47 @@
 # Diagnostics Component
 
-📖 **This content has been moved to auto-generated documentation: [System Diagnostics](../../generated/components.md#system-diagnostics)**
+Modern diagnostic system for macOS that collects environment data and produces an interactive HTML report.
 
-The auto-generated docs include:
-- Comprehensive system analysis and compatibility checks
-- macOS version, architecture, and environment verification  
-- Usage examples and requirements extracted directly from scripts
+## Quick Start
 
----
-
-## Scripts
-
-### `run.sh`
-
-Main diagnostics script that performs all system checks.
-
-**Checks Performed:**
-
-- macOS version compatibility
-- Available disk space
-- Existing Python installations (ordinary python, miniconda, conda etc.)
-- Homebrew installation status
-
-**Output:**
-
-- Detailed system report
-- Compatibility warnings
-- Outputs to a temporary file in home directory
-
----
-
-## Usage
-
-Run before any installation to identify potential issues:
+Run the diagnostics with a single command:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash
 ```
 
----
+This downloads all diagnostic components, runs checks in parallel, generates a styled HTML report, opens it in your browser, and prints a summary.
 
-## Integration
+## What it checks
 
-- Used within the GUI to check system compatibility before installation and to check if the installation was successful.
-- Output file integrated into GUI mail-to functionality 
+- Python: installation, configuration, and required packages
+- Conda: installation and environments
+- Development tools: Homebrew and LaTeX
+- VS Code: installation and Python extensions
+- System: hardware/software info and Python development compatibility
+
+## Run options
+
+- Save output without opening a browser (use non-HTML extension):
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- "/tmp/DTU_Diagnostics_$(date +%s).txt"
+```
+
+- Override repository coordinates at runtime (for testing branches):
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | REPO_BRANCH=macos-components bash
+```
+
+Notes:
+- By default, components are fetched from the `main` branch and automatically fall back to `macos-components` if needed.
+- You can override `REPO_OWNER`, `REPO_NAME`, and `REPO_BRANCH` as environment variables.
+
+## Output
+
+- HTML report with expandable logs, summary counters, and a “Download Report” button
+- Terminal summary with pass/fail/timeout counts
+- Email template generator for support
+
+## Auto-generated docs
+
+Technical details are included in the auto-generated docs: [Diagnostics (generated)](../../generated/diagnostics.md)
