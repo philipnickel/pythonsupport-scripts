@@ -41,54 +41,16 @@ if [[ ! -d "$COMPONENTS_DIR" ]]; then
 fi
 
 echo "$(date): Using local component scripts from $COMPONENTS_DIR"
-echo "$(date): Preparing to install components..."
+echo "$(date): Orchestrating full installation via first_year_students.sh"
 
-# Run a component installer script as the console user
-install_component() {
-    local component="$1"
-    local name="$2"
-    local script_path="$COMPONENTS_DIR/$component/install.sh"
-    
-    echo "$(date): ==> Installing $name..."
-    
-    if [[ ! -f "$script_path" ]]; then
-        echo "$(date): WARNING: Script not found: $script_path"
-        echo "$(date): Skipping $name installation"
-        return 1
-    fi
-    
-    # Ensure user environment and PATH (Homebrew) are available when running as console user
-    # Ensure conda and brew paths are available; do not rely on login shells in pkg context
-    if sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
-        echo "$(date): ✅ $name installed successfully"
-        return 0
-    else
-        echo "$(date): ❌ $name installation failed (exit code: $?)"
-        return 1
-    fi
-}
-
-# Install components using local scripts (do not abort installer on a single failure)
-install_component "Homebrew" "Homebrew package manager" || echo "$(date): Homebrew component reported failure"
-install_component "Python" "Python via Miniconda" || echo "$(date): Python component reported failure"
-install_component "VSC" "Visual Studio Code" || echo "$(date): VS Code component reported failure"
-
-# Run Python environment setup if it exists
-SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
-if [[ -f "$SETUP_SCRIPT" ]]; then
-    echo "$(date): ==> Running Python environment setup..."
-    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
+# Prefer local orchestrator; fall back to remote URL
+ORCH_LOCAL="$COMPONENTS_DIR/orchestrators/first_year_students.sh"
+if [[ -f "$ORCH_LOCAL" ]]; then
+    echo "$(date): ==> Running local orchestrator..."
+    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PIS_ENV="CI" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$ORCH_LOCAL" || echo "$(date): Orchestrator completed with warnings"
 else
-    echo "$(date): Python setup script not found, skipping"
-fi
-
-# Run diagnostics if available
-DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
-if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
-    echo "$(date): ==> Running diagnostics..."
-    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
-else
-    echo "$(date): Diagnostics script not found, skipping"
+    echo "$(date): Local orchestrator not found; running remote orchestrator..."
+    sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PIS_ENV="CI" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)" || echo "$(date): Orchestrator completed with warnings"
 fi
 
 # Clean up extracted components (IMPORTANT: Remove scripts from filesystem)
