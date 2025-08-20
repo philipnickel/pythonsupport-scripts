@@ -7,7 +7,7 @@ Comprehensive diagnostic system for DTU Python development environment setup.
 Run the diagnostic report with a single command:
 
 ```bash
-curl -s https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/generate_report.sh | bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash
 ```
 
 This will:
@@ -16,6 +16,27 @@ This will:
 - Generate an interactive HTML report with detailed logs
 - Open the report in your default browser
 - Show a summary of results in the terminal (passed/failed/timeout counts)
+
+### Run options (one-liners)
+
+- Default (opens report on Desktop):
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash
+```
+
+- Save to a specific path and avoid opening a browser (use non-HTML extension):
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- "/tmp/DTU_Diagnostics_$(date +%s).txt"
+```
+
+- Override repository coordinates at runtime (e.g., test another branch):
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | REPO_BRANCH=macos-components bash
+```
+
+Notes:
+- By default, the script fetches components from the `main` branch. If a file is missing there, it automatically falls back to `macos-components`.
+- You can override `REPO_OWNER`, `REPO_NAME`, and `REPO_BRANCH` via environment variables as shown above.
 
 ## What it checks
 
