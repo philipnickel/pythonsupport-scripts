@@ -97,33 +97,113 @@ else
     _vsc_ret=1
 fi
 
-# Skip the other steps for now to focus on the core issue
-_first_year_ret=0
-_extensions_ret=0
-
-echo "$(date): DEBUG: Installation results - Python: $_python_ret, VSCode: $_vsc_ret"
-
-# Simplified result checking - don't exit with failure to see what happens
-if [ $_python_ret -eq 0 ] && [ $_vsc_ret -eq 0 ]; then
-    show_progress_log "🎉 Basic installations completed successfully!" "INFO"
-    echo "$(date): SUCCESS: Basic installations completed successfully!"
+# 3. Run first year Python setup (install specific version and packages)
+if [ $_python_ret -eq 0 ]; then
+    show_progress_log "Running first year Python environment setup..." "INFO"
+    first_year_script=$(curl -fsSL --connect-timeout 30 "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh")
+    first_year_curl_ret=$?
+    
+    if [ $first_year_curl_ret -ne 0 ]; then
+        echo "$(date): DEBUG: Failed to download first year setup script, exit code: $first_year_curl_ret"
+        _first_year_ret=1
+    else
+        echo "$(date): DEBUG: Successfully downloaded first year setup script"
+        
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; export PYTHON_VERSION_PS='3.11'; $first_year_script"; then
+            _first_year_ret=0
+            echo "$(date): DEBUG: First year Python setup completed successfully"
+            show_progress_log "✅ First year Python setup completed" "INFO"
+        else
+            _first_year_ret=$?
+            echo "$(date): DEBUG: First year Python setup failed with exit code: $_first_year_ret"
+            show_progress_log "❌ First year Python setup failed" "ERROR"
+        fi
+    fi
 else
-    show_progress_log "⚠️ Some installations failed, but continuing" "WARN"
-    echo "$(date): WARNING: Some installations failed"
+    _first_year_ret=0  # Skip if Python installation failed
+    echo "$(date): DEBUG: Skipping first year setup due to Python failure"
+    show_progress_log "Skipping first year setup (Python installation failed)" "WARN"
+fi
+
+# 4. Install VSCode extensions
+if [ $_vsc_ret -eq 0 ]; then
+    show_progress_log "Installing VSCode extensions for Python development..." "INFO"
+    extensions_script=$(curl -fsSL --connect-timeout 30 "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install_extensions.sh")
+    extensions_curl_ret=$?
+    
+    if [ $extensions_curl_ret -ne 0 ]; then
+        echo "$(date): DEBUG: Failed to download extensions script, exit code: $extensions_curl_ret"
+        _extensions_ret=1
+    else
+        echo "$(date): DEBUG: Successfully downloaded extensions script"
+        
+        # Execute with proper environment variables passed to subprocess
+        if sudo -u "$USER_NAME" bash -c "export REMOTE_PS='$REMOTE_PS'; export BRANCH_PS='$BRANCH_PS'; $extensions_script"; then
+            _extensions_ret=0
+            echo "$(date): DEBUG: VSCode extensions installation completed successfully"
+            show_progress_log "✅ VSCode extensions installation completed" "INFO"
+        else
+            _extensions_ret=$?
+            echo "$(date): DEBUG: VSCode extensions installation failed with exit code: $_extensions_ret"
+            show_progress_log "⚠️ VSCode extensions installation failed" "WARN"
+        fi
+    fi
+else
+    _extensions_ret=0  # Skip if VSCode installation failed
+    echo "$(date): DEBUG: Skipping VSCode extensions due to VSCode failure"
+    show_progress_log "Skipping VSCode extensions (VSCode installation failed)" "WARN"
+fi
+
+echo "$(date): DEBUG: Installation results - Python: $_python_ret, VSCode: $_vsc_ret, FirstYear: $_first_year_ret, Extensions: $_extensions_ret"
+
+# Check results and provide appropriate feedback (EXACTLY same logic as orchestrator)
+if [ $_python_ret -ne 0 ]; then
+    show_progress_log "❌ Python installation failed" "ERROR"
+    echo "$(date): ERROR: Python installation failed"
+elif [ $_vsc_ret -ne 0 ]; then
+    show_progress_log "❌ VSCode installation failed" "ERROR"
+    echo "$(date): ERROR: VSCode installation failed"
+elif [ $_first_year_ret -ne 0 ]; then
+    show_progress_log "❌ First year Python setup failed" "ERROR"
+    echo "$(date): ERROR: First year Python setup failed"
+elif [ $_extensions_ret -ne 0 ]; then
+    show_progress_log "⚠️ VSCode extensions installation failed, but core installation succeeded" "WARN"
+    show_progress_log "You can install extensions manually later" "INFO"
+    echo "$(date): WARNING: VSCode extensions installation failed, but core installation succeeded"
+else
+    show_progress_log "🎉 All installations completed successfully!" "INFO"
+    echo "$(date): SUCCESS: All installations completed successfully!"
+fi
+
+# Track overall success/failure (same as orchestrator)
+if [ $_python_ret -eq 0 ] && [ $_vsc_ret -eq 0 ] && [ $_first_year_ret -eq 0 ] && [ $_extensions_ret -eq 0 ]; then
+    show_progress_log "All components installed successfully" "INFO"
+    echo "$(date): All components installed successfully"
+else
+    show_progress_log "Some components failed to install" "WARN" 
+    echo "$(date): Some components failed to install"
 fi
 
 # Create summary
 SUMMARY_FILE="PLACEHOLDER_SUMMARY_FILE"
 cat > "$SUMMARY_FILE" << EOF
-DTU First Year Students Installation Debug Complete!
+DTU First Year Students Installation Complete!
 
 Installation log: $LOG_FILE
 Date: $(date)
 User: $USER_NAME
 
-Debug Results:
-- Python installation: $([ $_python_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+Installation Results:
+- Python (via Miniconda): $([ $_python_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
 - VSCode installation: $([ $_vsc_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+- First year Python setup (3.11 + packages): $([ $_first_year_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+- VSCode extensions: $([ $_extensions_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+
+Next steps:
+1. Open Terminal and type 'python3' to test Python
+2. Open Visual Studio Code to start coding
+3. Try importing: dtumathtools, pandas, numpy, matplotlib
 
 For support: PLACEHOLDER_SUPPORT_EMAIL
 EOF
