@@ -367,16 +367,16 @@ piwik_log_enhanced() {
     # Check analytics choice if needed
     check_analytics_choice
     
+    local event_name="$1"
+    local start_time=$(date +%s)
+    shift
+    
     # Check if analytics are disabled
     if is_analytics_disabled; then
         # Run command without tracking
         "$@"
         return $?
     fi
-    
-    local event_name="$1"
-    local start_time=$(date +%s)
-    shift
     
     # Run command and capture output
     local output
@@ -428,15 +428,15 @@ piwik_log() {
     # Check analytics choice if needed
     check_analytics_choice
     
+    local event_name="$1"
+    shift  # Remove first argument, leaving the command
+    
     # Check if analytics are disabled
     if is_analytics_disabled; then
         # Run command without tracking
         "$@"
         return $?
     fi
-    
-    local event_name="$1"
-    shift  # Remove first argument, leaving the command
     
     # Run the command and capture both stdout and stderr
     local output
