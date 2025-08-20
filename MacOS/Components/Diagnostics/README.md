@@ -11,10 +11,11 @@ curl -s https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/mac
 ```
 
 This will:
-- Auto-discover and run all diagnostic tests
-- Generate an interactive HTML report
+- Download and run all diagnostic components from the repository
+- Execute 12 diagnostic tests covering Python, Conda, VS Code, and system compatibility
+- Generate an interactive HTML report with detailed logs
 - Open the report in your default browser
-- Show a summary of results in the terminal
+- Show a summary of results in the terminal (passed/failed/timeout counts)
 
 ## What it checks
 
@@ -24,13 +25,14 @@ This will:
 - **VS Code**: Installation and Python development extensions
 - **System Compatibility**: macOS version and development tools
 
-## Configuration
+## How it works
 
-The diagnostic system uses `report_config.sh` for global settings:
-- Default timeout values
-- Repository settings for manual commands
-- Parallel execution settings
-- Display preferences
+The diagnostic system features:
+- **Remote execution**: Downloads all diagnostic scripts from GitHub repository
+- **Modular architecture**: 12 focused diagnostic components organized by category  
+- **Parallel execution**: Runs up to 5 diagnostics concurrently for speed
+- **Timeout handling**: 20-second default timeout per diagnostic with proper status reporting
+- **Configuration**: Uses `report_config.sh` for global settings (timeout, repository branch, parallel settings)
 
 ## Manual Installation
 

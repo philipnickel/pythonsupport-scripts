@@ -7,29 +7,30 @@ Done by implementing a new approach for MacOS where the installation script is d
 
 Everything we focus on will be within MacOS/ folder. 
 
-## Phase 1: Diagnostics Component ✅ (90% Complete)
+## Phase 1: Diagnostics Component ✅ COMPLETE
 Description: Finish the diagnostics component. Should be possible for a student to run a 'oneliner' to check if their python environment is setup correctly. Will generate a report that can be used to troubleshoot and be easy to share. 
 
 ### Current Status:
 **Completed:**
-- ✅ Sophisticated HTML report generator with DTU branding
-- ✅ Auto-discovery system for diagnostic components by directory structure
-- ✅ Categories: Development (13 checks), Environment (2 checks), System (2 checks)
-- ✅ Oneliner available: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/run.sh)"`
-- ✅ Report structure follows diagnostics/components folder hierarchy
-- ✅ Extensible system - just add scripts to Components/{Category}/ folders
-
-**Still Needed:**
+- ✅ Sophisticated HTML report generator with DTU branding and interactive features
+- ✅ Remote execution system - downloads all diagnostic scripts from GitHub repository
+- ✅ Modular architecture: 12 focused diagnostic components organized by category/subcategory
+- ✅ Categories: Python (Installation, Environment, Packages), Conda (Installation, Environments), Development (Homebrew, LaTeX), System (Information, Compatibility), VSCode (Installation, Extensions)
+- ✅ Working oneliner: `curl -s https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/generate_report.sh | bash`
+- ✅ Parallel execution with configurable timeout handling (20s default)
+- ✅ Repository-based configuration system with report_config.sh
+- ✅ Comprehensive error handling and cleanup mechanisms
+- ✅ Professional report with pass/fail/timeout counts and detailed logs
 
 ### Tasks:
 - [x] **Oneliner Command**: Create a oneliner terminal command to run diagnostics
 - [x] **Extensible System**: Design system to easily add/disable checks by adding files to components folder
 - [x] **Cleanup Mechanism**: Implement cleanup mechanism (report can be saved to file)
-- [] **Check Organization**: Organize checks in meaningful categories with subcategories. Split some of current checks into subcategories. 
-- [] **Report Structure**: Structure report according to diagnostics/components folder structure
-- [ ] **Fast Execution**: Implement parallel execution for diagnostic checks with timeouts
-- [ ] **Error Handling**: Enhance error handling to ensure report always generates even with failures
-- [ ] **Enhanced Oneliner**: Create branch-aware oneliner for testing (using REMOTE_PS and BRANCH_PS) 
+- [x] **Check Organization**: Organize checks in meaningful categories with subcategories
+- [x] **Report Structure**: Structure report according to diagnostics/components folder structure
+- [x] **Fast Execution**: Implement parallel execution for diagnostic checks with timeouts
+- [x] **Error Handling**: Enhance error handling to ensure report always generates even with failures
+- [x] **Enhanced Oneliner**: Create fully functional curl-based oneliner that works remotely 
 
 ## Phase 2: PKG Installer ✅ (60% Complete)
 Description: Finish the pkg installer that installs the python environment and additional tools.
@@ -97,10 +98,11 @@ Description: Write proper documentation for everything macos-related
 ## Additional Improvements Identified
 
 ### High Priority:
-- [ ] **Parallel Diagnostics**: Implement parallel execution in generate_report.sh using background jobs
-- [ ] **Timeout Management**: Add configurable timeouts to all diagnostic checks
-- [ ] **Enhanced Error Recovery**: Improve error handling in diagnostic components
-- [ ] **Performance Metrics**: Add execution time tracking for each diagnostic
+- [x] **Parallel Diagnostics**: Implement parallel execution in generate_report.sh using background jobs
+- [x] **Timeout Management**: Add configurable timeouts to all diagnostic checks
+- [x] **Enhanced Error Recovery**: Improve error handling in diagnostic components
+- [x] **Performance Metrics**: Add execution time tracking for each diagnostic
+- [x] **Remote Component System**: Enable curl-based downloading of diagnostic scripts from repository
 
 ### Medium Priority:
 - [ ] **Report Comparison**: Add ability to compare diagnostic reports between runs
