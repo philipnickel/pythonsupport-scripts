@@ -46,6 +46,12 @@ echo "Temporary directory: $TEMP_DIR"
 echo "Report will be saved to: $REPORT_FILE"
 echo ""
 
+# Default repository coordinates (can be overridden via env/config)
+REPO_OWNER=${REPO_OWNER:-philipnickel}
+REPO_NAME=${REPO_NAME:-pythonsupport-scripts}
+# Prefer main by default; fall back handled by helper when fetching
+REPO_BRANCH=${REPO_BRANCH:-main}
+
 # ====================================================================
 # SECTION 2: UTILITY FUNCTIONS
 # ====================================================================
@@ -58,6 +64,28 @@ extract_metadata() {
     if [[ -f "$script_path" ]]; then
         grep "^# @$field:" "$script_path" 2>/dev/null | head -1 | cut -d':' -f2- | sed 's/^ *//'
     fi
+}
+
+# Download a file from the repository, trying fallback branches if needed
+# Usage: download_repo_file "MacOS/Components/Diagnostics/<path>" "/dest/file"
+download_repo_file() {
+    local repo_path="$1"
+    local dest_path="$2"
+
+    # Branch preference order: configured branch -> main -> macos-components (deduplicated)
+    local -a branches=()
+    [[ -n "$REPO_BRANCH" ]] && branches+=("$REPO_BRANCH")
+    [[ "$REPO_BRANCH" != "main" ]] && branches+=("main")
+    [[ "$REPO_BRANCH" != "macos-components" && "main" != "macos-components" ]] && branches+=("macos-components")
+
+    for br in "${branches[@]}"; do
+        local url="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${br}/${repo_path}"
+        if curl -sfL "$url" -o "$dest_path" && [[ -s "$dest_path" ]]; then
+            echo "$br" > "/dev/null" # keep for potential future debugging
+            return 0
+        fi
+    done
+    return 1
 }
 
 # Function to auto-discover diagnostic components
@@ -97,15 +125,14 @@ discover_components() {
 # Load configuration file
 # Handle both local execution and remote execution via curl
 if [[ "${BASH_SOURCE[0]}" == "/dev/stdin" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]]; then
-    # Running remotely via curl, download config file
+    # Running remotely via curl, download config file using branch fallbacks
     echo "Loading configuration from repository..."
-    REPO_CONFIG_URL="https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/report_config.sh"
     CONFIG_FILE="$TEMP_DIR/report_config.sh"
-    if curl -s "$REPO_CONFIG_URL" -o "$CONFIG_FILE" && [[ -s "$CONFIG_FILE" ]]; then
+    if download_repo_file "MacOS/Components/Diagnostics/report_config.sh" "$CONFIG_FILE"; then
         source "$CONFIG_FILE"
         echo "Configuration loaded from repository"
     else
-        echo "Warning: Could not load configuration from repository, using defaults"
+        echo "Warning: Could not load configuration from repository (branches tried: $REPO_BRANCH, main, macos-components). Using defaults."
     fi
 else
     # Running locally
@@ -166,19 +193,19 @@ run_diagnostic() {
     
     echo -n "Running $main_category > $subcategory → $display_name... "
     
-    # Download script from repository
-    local repo_url="https://raw.githubusercontent.com/${REPO_OWNER:-philipnickel}/${REPO_NAME:-pythonsupport-scripts}/${REPO_BRANCH:-macos-components}/MacOS/Components/Diagnostics/$script_path"
+    # Download script from repository with branch fallbacks
     local temp_script="$TEMP_DIR/${script_name}.sh"
-    
-    if ! curl -s "$repo_url" -o "$temp_script" || [[ ! -s "$temp_script" ]]; then
+    if ! download_repo_file "MacOS/Components/Diagnostics/$script_path" "$temp_script"; then
         echo -e "${RED}✗ Script download failed${NC}"
-        echo "ERROR: Failed to download script from: $repo_url" > "$log_file"
+        echo "ERROR: Failed to download script from any known branch for path: MacOS/Components/Diagnostics/$script_path" > "$log_file"
         echo "2" > "$status_file"
         return 2
     fi
     
-    # Extract timeout from script metadata or use default
-    local timeout=$(extract_metadata "$temp_script" "timeout" || echo "$DEFAULT_TIMEOUT")
+    # Extract timeout from script metadata or use default (handles empty metadata)
+    local timeout
+    timeout=$(extract_metadata "$temp_script" "timeout")
+    timeout=${timeout:-$DEFAULT_TIMEOUT}
     
     # Run diagnostic with timeout and capture output
     # Use gtimeout if available (macOS with coreutils), otherwise timeout, otherwise no timeout
@@ -257,17 +284,17 @@ run_diagnostic_parallel() {
     
     {
         # Download script from repository
-        local repo_url="https://raw.githubusercontent.com/${REPO_OWNER:-philipnickel}/${REPO_NAME:-pythonsupport-scripts}/${REPO_BRANCH:-macos-components}/MacOS/Components/Diagnostics/$script_path"
         local temp_script="$TEMP_DIR/${script_name}.sh"
-        
-        if ! curl -s "$repo_url" -o "$temp_script" || [[ ! -s "$temp_script" ]]; then
-            echo "ERROR: Failed to download script from: $repo_url" > "$log_file"
+        if ! download_repo_file "MacOS/Components/Diagnostics/$script_path" "$temp_script"; then
+            echo "ERROR: Failed to download script from any known branch for path: MacOS/Components/Diagnostics/$script_path" > "$log_file"
             echo "2" > "$status_file"
             exit 2
         fi
         
-        # Extract timeout from script metadata or use default
-        local timeout=$(extract_metadata "$temp_script" "timeout" || echo "$DEFAULT_TIMEOUT")
+        # Extract timeout from script metadata or use default (handles empty metadata)
+        local timeout
+        timeout=$(extract_metadata "$temp_script" "timeout")
+        timeout=${timeout:-$DEFAULT_TIMEOUT}
         
         # Determine timeout command
         if command -v gtimeout >/dev/null 2>&1; then
