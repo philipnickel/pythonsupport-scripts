@@ -59,6 +59,16 @@ else
     sudo -u "$USER_NAME" env REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" PIS_ENV="CI" PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)" || echo "$(date): Orchestrator completed with warnings"
 fi
 
+# Ensure login shells find conda (source .bashrc from .bash_profile) and pin Python version
+PROFILE="/Users/$USER_NAME/.bash_profile"
+if ! grep -q 'source ~/.bashrc' "$PROFILE" 2>/dev/null; then
+    echo "$(date): Updating $PROFILE to source ~/.bashrc"
+    echo 'source ~/.bashrc' >> "$PROFILE"
+fi
+
+echo "$(date): Ensuring conda base has Python ${PYTHON_VERSION_PS:-3.11}"
+sudo -u "$USER_NAME" bash -lc 'source ~/.bashrc 2>/dev/null || true; conda install --strict-channel-priority python='"${PYTHON_VERSION_PS:-3.11}"' -y || true'
+
 # Clean up extracted components (IMPORTANT: Remove scripts from filesystem)
 echo "$(date): Cleaning up installation scripts..."
 # Keep components for post-install verification/logging in CI environments
