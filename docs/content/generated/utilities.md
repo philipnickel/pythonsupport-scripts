@@ -84,7 +84,7 @@ source master_utils.sh
 
 ## Piwik Analytics Utility
 
-**Description:** Analytics tracking utility for monitoring installation script usage and success rates
+**Description:** Enhanced analytics tracking utility for monitoring installation script usage and success rates with GDPR compliance
 
 **Usage:**
 ```bash
@@ -93,7 +93,7 @@ source piwik_utility.sh; piwik_log "event_name" command args
 
 **Requirements:** curl, internet connection
 
-**Notes:** Tracks installation events to Piwik PRO for usage analytics and error monitoring
+**Notes:** Tracks installation events to Piwik PRO for usage analytics and error monitoring with enhanced features and GDPR opt-out support
 
 **Installation:**
 ```bash
