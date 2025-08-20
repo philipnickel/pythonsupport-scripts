@@ -252,6 +252,18 @@ jobs:
 
       - name: Verify Python 3.11 (mac_orchestrators compatibility)
         run: |
+          # Initialize conda environment like the orchestrator does
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          # Source conda initialization if available
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base
+              break
+            fi
+          done
+          
           which python3
 
           # Verify the installed Python version - MUST match exactly like mac_orchestrators
@@ -265,6 +277,18 @@ jobs:
 
       - name: Verify Python Packages (mac_orchestrators compatibility)
         run: |
+          # Initialize conda environment like the orchestrator does
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          # Source conda initialization if available
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base
+              break
+            fi
+          done
+          
           # Verify Python package imports - exact same test as mac_orchestrators
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
