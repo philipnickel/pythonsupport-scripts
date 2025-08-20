@@ -129,14 +129,15 @@ if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)
     cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
 fi
 
-# Create component package
-echo "Building component package..."
+# Create component package (intermediate for final product)
+echo "Building component package (intermediate)..."
+COMPONENT_PKG="$BUILD_DIR/${PKG_NAME}-${VERSION}.pkg"
 pkgbuild \
     --root "$PAYLOAD_DIR" \
     --scripts "$SCRIPTS_DIR" \
     --identifier "$PKG_ID" \
     --version "$VERSION" \
-    "$BUILD_DIR/${PKG_NAME}-${VERSION}.pkg"
+    "$COMPONENT_PKG"
 
 # Create final installer
 FINAL_PKG="$BUILDS_DIR/${PKG_NAME}_${VERSION}.pkg"
@@ -147,6 +148,11 @@ productbuild \
     --resources "$RESOURCES_DIR" \
     --package-path "$BUILD_DIR" \
     "$FINAL_PKG"
+
+# Remove intermediate component package so only a single final PKG remains
+if [[ -f "$COMPONENT_PKG" ]]; then
+    rm -f "$COMPONENT_PKG"
+fi
 
 echo
 echo "✅ Build completed successfully!"
