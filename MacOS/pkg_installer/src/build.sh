@@ -99,10 +99,11 @@ mkdir -p "$PAYLOAD_DIR"
 if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)" ]]; then
     echo "Copying additional payload files..."
     cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
-else
-    # Create minimal placeholder to avoid empty payload
-    echo "# DTU Python Installer - scripts download components from GitHub" > "$PAYLOAD_DIR/README.txt"
 fi
+
+# For script-only packages, we don't need any payload files
+# The PKG will only run the preinstall/postinstall scripts
+echo "Creating script-only PKG (no payload files)"
 
 # Create component package
 echo "Building component package..."
