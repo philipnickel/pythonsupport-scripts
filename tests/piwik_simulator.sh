@@ -452,13 +452,13 @@ test_gdpr_compliance() {
     
     # Test CI mode behavior
     echo "Testing CI mode behavior..."
-    export GITHUB_CI=true
+    export PIS_ENV=CI
     if is_analytics_disabled; then
         test_failed "CI mode should enable analytics"
     else
         test_passed "CI mode enables analytics automatically"
     fi
-    unset GITHUB_CI
+    unset PIS_ENV
     
     # Test opt-out functionality
     echo "Testing opt-out functionality..."

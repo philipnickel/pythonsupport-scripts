@@ -21,7 +21,7 @@ GITHUB_REPO="dtudk/pythonsupport-page"
 # Check if analytics tracking is disabled
 is_analytics_disabled() {
     # In CI mode, always enable analytics
-    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+    if [ "$PIS_ENV" = "CI" ]; then
         return 1  # Analytics enabled in CI
     fi
     
@@ -88,7 +88,7 @@ Do you consent to analytics collection?" buttons {"Decline tracking", "Accept tr
 # Check and request analytics choice if needed
 check_analytics_choice() {
     # In CI mode, skip dialog and enable analytics
-    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+    if [ "$PIS_ENV" = "CI" ]; then
         return 0  # Skip dialog in CI
     fi
     
@@ -103,7 +103,29 @@ check_analytics_choice() {
 
 # Detect environment automatically
 detect_environment() {
-    # Check for CI environment first
+    # Use PIS_ENV if set
+    if [ -n "$PIS_ENV" ]; then
+        case "$PIS_ENV" in
+            "CI")
+                echo "CI"
+                return 0
+                ;;
+            "local-dev")
+                echo "DEV"
+                return 0
+                ;;
+            "production")
+                echo "PROD"
+                return 0
+                ;;
+            *)
+                echo "PROD"  # Default to production for unknown values
+                return 0
+                ;;
+        esac
+    fi
+    
+    # Fallback to old environment detection for backward compatibility
     if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
         echo "CI"
         return 0
@@ -482,7 +504,7 @@ piwik_get_environment_info() {
     
     # Show analytics choice status
     echo "Analytics Choice:"
-    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+    if [ "$PIS_ENV" = "CI" ]; then
         echo "Analytics enabled (CI mode - automatic)"
     else
         local opt_out_file="/tmp/piwik_analytics_choice"
@@ -499,6 +521,7 @@ piwik_get_environment_info() {
     fi
     
     echo "Environment Variables:"
+    echo "  PIS_ENV: ${PIS_ENV:-not set}"
     echo "  GITHUB_CI: ${GITHUB_CI:-not set}"
     echo "  CI: ${CI:-not set}"
     echo "  TESTING_MODE: ${TESTING_MODE:-not set}"

@@ -200,7 +200,8 @@ Include: Version details and initial success rate
 - **Temporary File**: `/tmp/piwik_analytics_choice` stores user choice
 - **Apple Native Dialog**: Uses `osascript` to show native macOS popup
 - **Automatic Prompting**: Shows dialog on first use if no choice made
-- **Fallback**: Command-line prompt if GUI not available
+- **Fallback**: No tracking if GUI not available
+- **CI Mode**: Automatic tracking when `PIS_ENV=CI` (no dialog)
 
 **Privacy Notice:**
 - Anonymous usage analytics only

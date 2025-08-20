@@ -26,28 +26,24 @@ ENVIRONMENT=${1:-"DEV"}
 # Set environment variables based on argument
 case "$ENVIRONMENT" in
     "CI")
-        export GITHUB_CI=true
-        export CI=true
+        export PIS_ENV=CI
         echo -e "${BLUE}Running in CI environment${NC}"
         ;;
     "DEV")
-        export TESTING_MODE=true
-        export DEV_MODE=true
+        export PIS_ENV=local-dev
         echo -e "${BLUE}Running in DEV environment${NC}"
         ;;
     "STAGING")
-        export STAGING=true
-        export STAGE=true
+        export PIS_ENV=local-dev
         echo -e "${BLUE}Running in STAGING environment${NC}"
         ;;
     "PROD")
-        unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
+        export PIS_ENV=production
         echo -e "${BLUE}Running in PROD environment${NC}"
         ;;
     *)
         echo -e "${YELLOW}Invalid environment: $ENVIRONMENT. Using DEV.${NC}"
-        export TESTING_MODE=true
-        export DEV_MODE=true
+        export PIS_ENV=local-dev
         ;;
 esac
 
@@ -228,7 +224,7 @@ echo "  - Architecture: $OS_ARCH"
 echo "  - Commit SHA: $(get_commit_sha)"
 echo ""
 echo -e "${BLUE}Analytics Choice Information:${NC}"
-if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+if [ "$PIS_ENV" = "CI" ]; then
     echo "Analytics enabled (CI mode - automatic)"
 else
     local opt_out_file="/tmp/piwik_analytics_choice"
