@@ -51,10 +51,10 @@ install_component() {
     fi
 }
 
-# Install components using local scripts
-install_component "Homebrew" "Homebrew package manager"
-install_component "Python" "Python via Miniconda"
-install_component "VSC" "Visual Studio Code"
+# Install components using local scripts (do not abort installer on a single failure)
+install_component "Homebrew" "Homebrew package manager" || echo "$(date): Homebrew component reported failure"
+install_component "Python" "Python via Miniconda" || echo "$(date): Python component reported failure"
+install_component "VSC" "Visual Studio Code" || echo "$(date): VS Code component reported failure"
 
 # Run Python environment setup if it exists
 SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
@@ -76,11 +76,16 @@ fi
 
 # Clean up extracted components (IMPORTANT: Remove scripts from filesystem)
 echo "$(date): Cleaning up installation scripts..."
-if [[ -d "$COMPONENTS_DIR" ]]; then
-    rm -rf "$COMPONENTS_DIR"
-    echo "$(date): Removed temporary installation scripts from $COMPONENTS_DIR"
+# Keep components for post-install verification/logging in CI environments
+if [[ -z "${GITHUB_ACTIONS:-}" ]]; then
+    if [[ -d "$COMPONENTS_DIR" ]]; then
+        rm -rf "$COMPONENTS_DIR"
+        echo "$(date): Removed temporary installation scripts from $COMPONENTS_DIR"
+    else
+        echo "$(date): Warning: Components directory already removed or not found"
+    fi
 else
-    echo "$(date): Warning: Components directory already removed or not found"
+    echo "$(date): Detected CI environment; keeping $COMPONENTS_DIR for inspection"
 fi
 
 # Create summary

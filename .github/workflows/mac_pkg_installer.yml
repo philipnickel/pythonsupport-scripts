@@ -23,6 +23,12 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Show environment
+        run: |
+          sw_vers
+          uname -a
+          echo "Runner temp: $RUNNER_TEMP"
+          echo "Runner tools: $RUNNER_TOOL_CACHE"
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -42,7 +48,9 @@ jobs:
 
       - name: Install PKG
         run: |
+          set -x
           sudo installer -pkg "${{ steps.find_pkg.outputs.pkg_path }}" -target /
+        timeout-minutes: 20
 
       - name: Verify VS Code
         run: |
@@ -55,6 +63,10 @@ jobs:
 
       - name: Verify conda
         run: |
+          echo "PATH before verification: $PATH"
+          which conda || true
+          # add common Homebrew paths to PATH if needed
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -67,6 +79,7 @@ jobs:
 
       - name: Verify python (${{ env.PYTHON_VERSION_PS }})
         run: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
           which python3
           EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
