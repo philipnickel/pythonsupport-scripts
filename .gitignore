@@ -57,6 +57,9 @@ venv.bak/
 *.swo
 *~
 
+# Browser automation
+.playwright/
+
 # Logs
 *.log
 logs/
