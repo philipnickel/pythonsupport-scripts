@@ -450,6 +450,16 @@ test_gdpr_compliance() {
         test_passed "Default analytics state (enabled by default)"
     fi
     
+    # Test CI mode behavior
+    echo "Testing CI mode behavior..."
+    export GITHUB_CI=true
+    if is_analytics_disabled; then
+        test_failed "CI mode should enable analytics"
+    else
+        test_passed "CI mode enables analytics automatically"
+    fi
+    unset GITHUB_CI
+    
     # Test opt-out functionality
     echo "Testing opt-out functionality..."
     echo "opt-out" > "/tmp/piwik_analytics_choice"

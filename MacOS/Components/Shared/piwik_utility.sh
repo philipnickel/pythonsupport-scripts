@@ -20,6 +20,11 @@ GITHUB_REPO="dtudk/pythonsupport-page"
 
 # Check if analytics tracking is disabled
 is_analytics_disabled() {
+    # In CI mode, always enable analytics
+    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+        return 1  # Analytics enabled in CI
+    fi
+    
     # Check for opt-out file
     local opt_out_file="/tmp/piwik_analytics_choice"
     
@@ -82,6 +87,11 @@ Do you consent to analytics collection?" buttons {"Decline tracking", "Accept tr
 
 # Check and request analytics choice if needed
 check_analytics_choice() {
+    # In CI mode, skip dialog and enable analytics
+    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+        return 0  # Skip dialog in CI
+    fi
+    
     local opt_out_file="/tmp/piwik_analytics_choice"
     
     if [ ! -f "$opt_out_file" ]; then
@@ -472,16 +482,20 @@ piwik_get_environment_info() {
     
     # Show analytics choice status
     echo "Analytics Choice:"
-    local opt_out_file="/tmp/piwik_analytics_choice"
-    if [ -f "$opt_out_file" ]; then
-        local choice=$(cat "$opt_out_file" 2>/dev/null)
-        if [ "$choice" = "opt-out" ]; then
-            echo "Analytics disabled (user choice)"
-        else
-            echo "Analytics enabled (user choice)"
-        fi
+    if [ "$GITHUB_CI" = "true" ] || [ "$CI" = "true" ] || [ "$TRAVIS" = "true" ] || [ "$CIRCLECI" = "true" ]; then
+        echo "Analytics enabled (CI mode - automatic)"
     else
-        echo "No choice made yet (will prompt on first use)"
+        local opt_out_file="/tmp/piwik_analytics_choice"
+        if [ -f "$opt_out_file" ]; then
+            local choice=$(cat "$opt_out_file" 2>/dev/null)
+            if [ "$choice" = "opt-out" ]; then
+                echo "Analytics disabled (user choice)"
+            else
+                echo "Analytics enabled (user choice)"
+            fi
+        else
+            echo "No choice made yet (will prompt on first use)"
+        fi
     fi
     
     echo "Environment Variables:"
