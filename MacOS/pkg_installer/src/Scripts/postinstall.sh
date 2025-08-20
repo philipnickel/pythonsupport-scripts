@@ -27,7 +27,7 @@ fi
 
 echo "$(date): Using local component scripts from $COMPONENTS_DIR"
 
-# Install component using local scripts
+# Run a component installer script as the console user
 install_component() {
     local component="$1"
     local name="$2"
@@ -41,8 +41,8 @@ install_component() {
         return 1
     fi
     
-    # Run the local script as the console user
-    if sudo -u "$USER_NAME" bash "$script_path"; then
+    # Ensure user environment and PATH (Homebrew) are available when running as console user
+    if sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$script_path"; then
         echo "$(date): $name installed successfully"
         return 0
     else
@@ -60,7 +60,7 @@ install_component "VSC" "Visual Studio Code"
 SETUP_SCRIPT="$COMPONENTS_DIR/Python/first_year_setup.sh"
 if [[ -f "$SETUP_SCRIPT" ]]; then
     echo "$(date): Running Python environment setup..."
-    sudo -u "$USER_NAME" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
+    sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$SETUP_SCRIPT" || echo "$(date): Setup completed with warnings"
 else
     echo "$(date): Python setup script not found, skipping"
 fi
@@ -69,7 +69,7 @@ fi
 DIAGNOSTICS_SCRIPT="$COMPONENTS_DIR/Diagnostics/run.sh"
 if [[ -f "$DIAGNOSTICS_SCRIPT" ]]; then
     echo "$(date): Running diagnostics..."
-    sudo -u "$USER_NAME" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
+    sudo -u "$USER_NAME" env PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" bash "$DIAGNOSTICS_SCRIPT" || echo "$(date): Diagnostics completed with warnings"
 else
     echo "$(date): Diagnostics script not found, skipping"
 fi

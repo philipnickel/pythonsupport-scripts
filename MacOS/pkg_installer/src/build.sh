@@ -110,9 +110,9 @@ COMPONENTS_DEST="$PAYLOAD_DIR/Library/dtu_components"
 
 if [[ -d "$COMPONENTS_SOURCE" ]]; then
     echo "Copying Components directory into package under /Library..."
-    # Ensure destination exists and copy the entire Components directory
-    mkdir -p "$(dirname "$COMPONENTS_DEST")"
-    cp -r "$COMPONENTS_SOURCE" "$COMPONENTS_DEST"
+    # Ensure destination exists and copy the entire Components directory contents
+    mkdir -p "$COMPONENTS_DEST"
+    cp -R "$COMPONENTS_SOURCE"/. "$COMPONENTS_DEST"/
     # Remove any .DS_Store files
     find "$COMPONENTS_DEST" -name ".DS_Store" -delete 2>/dev/null || true
     # Count the size
