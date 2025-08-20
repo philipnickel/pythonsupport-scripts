@@ -4,19 +4,12 @@ defaults:
   run:
     shell: pwsh -Login {0}
 
-# DISABLED - Currently focusing on macOS components
-# on:
-#   pull_request:
-#     branches: ["main"]
-#   workflow_dispatch:
-#   schedule:
-#     - cron: "0 0 * * 0"  # Run every Sunday at midnight UTC
-
+# Disabled - only using mac_orchestrators.yml and test-pkg-installer.yml
 on:
   workflow_dispatch:
     inputs:
       force_run:
-        description: 'Force run this legacy workflow (currently disabled)'
+        description: 'Force run this disabled workflow'
         required: true
         default: 'false'
 
