@@ -114,6 +114,10 @@ detect_environment() {
                 echo "DEV"
                 return 0
                 ;;
+            "staging")
+                echo "STAGING"
+                return 0
+                ;;
             "production")
                 echo "PROD"
                 return 0

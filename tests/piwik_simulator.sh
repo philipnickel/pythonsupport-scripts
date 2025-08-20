@@ -85,21 +85,19 @@ test_environment_detection() {
         # Set environment variables
         case "$env" in
             "CI")
-                export GITHUB_CI=true
-                export CI=true
-                unset TESTING_MODE DEV_MODE STAGING
+                export PIS_ENV=CI
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "DEV")
-                export TESTING_MODE=true
-                export DEV_MODE=true
-                unset GITHUB_CI CI STAGING
+                export PIS_ENV=local-dev
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "STAGING")
-                export STAGING=true
-                export STAGE=true
-                unset GITHUB_CI CI TESTING_MODE DEV_MODE
+                export PIS_ENV=staging
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "PROD")
+                export PIS_ENV=production
                 unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
         esac
@@ -325,21 +323,19 @@ test_environment_simulation() {
         # Set environment
         case "$env" in
             "CI")
-                export GITHUB_CI=true
-                export CI=true
-                unset TESTING_MODE DEV_MODE STAGING
+                export PIS_ENV=CI
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "DEV")
-                export TESTING_MODE=true
-                export DEV_MODE=true
-                unset GITHUB_CI CI STAGING
+                export PIS_ENV=local-dev
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "STAGING")
-                export STAGING=true
-                export STAGE=true
-                unset GITHUB_CI CI TESTING_MODE DEV_MODE
+                export PIS_ENV=staging
+                unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
             "PROD")
+                export PIS_ENV=production
                 unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
                 ;;
         esac
@@ -356,19 +352,16 @@ test_environment_simulation() {
     # Reset to original environment
     case "$ENVIRONMENT" in
         "CI")
-            export GITHUB_CI=true
-            export CI=true
+            export PIS_ENV=CI
             ;;
         "DEV")
-            export TESTING_MODE=true
-            export DEV_MODE=true
+            export PIS_ENV=local-dev
             ;;
         "STAGING")
-            export STAGING=true
-            export STAGE=true
+            export PIS_ENV=staging
             ;;
         "PROD")
-            unset GITHUB_CI CI TESTING_MODE DEV_MODE STAGING STAGE
+            export PIS_ENV=production
             ;;
     esac
     
