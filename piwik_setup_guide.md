@@ -194,7 +194,26 @@ Action: Email to development team
 Include: Version details and initial success rate
 ```
 
-### 4. Data Structure
+### 4. GDPR Compliance
+
+**Opt-Out Mechanisms:**
+- **Environment Variables**: `PIWIK_OPT_OUT=true`, `ANALYTICS_DISABLED=true`, `DO_NOT_TRACK=true`
+- **File-Based Opt-Out**: `~/.piwik_opt_out`, `~/.analytics_opt_out`, `~/.do_not_track`
+- **Consent-Based Tracking**: Set `PIWIK_REQUIRE_CONSENT=true` for explicit consent requirement
+
+**Privacy Notice:**
+- Anonymous usage analytics only
+- No personal information collected
+- Data used for installation process improvement
+- Users can opt out at any time
+
+**Compliance Features:**
+- Automatic opt-out detection
+- Commands still work when analytics disabled
+- Clear privacy notice and consent mechanism
+- Multiple opt-out methods for accessibility
+
+### 5. Data Structure
 
 **Event Data Being Sent:**
 - **Category**: Environment-based (Installer_PROD/DEV/CI/STAGING)
@@ -213,7 +232,7 @@ homebrew_install             # Success: Homebrew installation
 vscode_extensions_install    # Success: VS Code extensions
 ```
 
-### 5. Quick Setup Checklist
+### 6. Quick Setup Checklist
 
 **In Piwik PRO Interface:**
 - [ ] Create the 4 dashboards listed above
@@ -229,7 +248,7 @@ vscode_extensions_install    # Success: VS Code extensions
 - [ ] Schedule weekly review of dashboard data
 - [ ] Plan monthly analysis of trends and compatibility
 
-### 6. Expected Analytics Insights
+### 7. Expected Analytics Insights
 
 **System Compatibility:**
 - Track macOS version adoption (Sequoia, Sonoma, Ventura, etc.)

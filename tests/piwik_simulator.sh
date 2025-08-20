@@ -434,6 +434,61 @@ test_os_detection_scenarios() {
     echo ""
 }
 
+# Test GDPR compliance
+test_gdpr_compliance() {
+    echo -e "${PURPLE}🔒 Testing GDPR Compliance${NC}"
+    echo "----------------------------------------"
+    
+    # Test default state (should be enabled)
+    echo "Testing default analytics state..."
+    if check_analytics_status; then
+        test_passed "Default analytics state (enabled)"
+    else
+        test_failed "Default analytics state"
+    fi
+    
+    # Test environment variable opt-out
+    echo "Testing environment variable opt-out..."
+    export PIWIK_OPT_OUT=true
+    if ! check_analytics_status; then
+        test_passed "Environment variable opt-out"
+    else
+        test_failed "Environment variable opt-out"
+    fi
+    unset PIWIK_OPT_OUT
+    
+    # Test file-based opt-out
+    echo "Testing file-based opt-out..."
+    local opt_out_file="$HOME/.piwik_opt_out"
+    echo "opt-out" > "$opt_out_file"
+    if ! check_analytics_status; then
+        test_passed "File-based opt-out"
+    else
+        test_failed "File-based opt-out"
+    fi
+    
+    # Test opt-in (remove opt-out file)
+    echo "Testing opt-in..."
+    rm "$opt_out_file"
+    if check_analytics_status; then
+        test_passed "Opt-in functionality"
+    else
+        test_failed "Opt-in functionality"
+    fi
+    
+    # Test that commands still work when analytics are disabled
+    echo "Testing command execution when analytics disabled..."
+    export PIWIK_OPT_OUT=true
+    if piwik_log "test_disabled" echo "Command works when analytics disabled"; then
+        test_passed "Command execution when analytics disabled"
+    else
+        test_failed "Command execution when analytics disabled"
+    fi
+    unset PIWIK_OPT_OUT
+    
+    echo ""
+}
+
 # Test performance scenarios
 test_performance_scenarios() {
     echo -e "${PURPLE}⚡ Testing Performance Scenarios${NC}"
@@ -493,6 +548,7 @@ main() {
     test_system_info
     test_os_detection_scenarios
     test_environment_simulation
+    test_gdpr_compliance
     test_performance_scenarios
     
     print_summary

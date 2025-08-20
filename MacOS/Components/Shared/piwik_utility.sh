@@ -1,20 +1,126 @@
 #!/bin/bash
 # @doc
 # @name: Piwik Analytics Utility
-# @description: Enhanced analytics tracking utility for monitoring installation script usage and success rates
+# @description: Enhanced analytics tracking utility for monitoring installation script usage and success rates with GDPR compliance
 # @category: Utilities
 # @usage: source piwik_utility.sh; piwik_log "event_name" command args
 # @requirements: curl, internet connection
-# @notes: Tracks installation events to Piwik PRO for usage analytics and error monitoring with enhanced features
+# @notes: Tracks installation events to Piwik PRO for usage analytics and error monitoring with enhanced features and GDPR opt-out support
 # @/doc
 
 # Enhanced Piwik PRO Analytics Utility Script
-# A utility for tracking installation events with timing, error categorization, and environment detection
+# A utility for tracking installation events with timing, error categorization, environment detection, and GDPR compliance
 
 # === CONFIGURATION ===
 PIWIK_URL="https://pythonsupport.piwik.pro/ppms.php"
 SITE_ID="0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 GITHUB_REPO="dtudk/pythonsupport-page"
+
+# === GDPR COMPLIANCE ===
+
+# Check if analytics tracking is disabled
+is_analytics_disabled() {
+    # Check environment variables for opt-out
+    if [ "$PIWIK_OPT_OUT" = "true" ] || [ "$ANALYTICS_DISABLED" = "true" ] || [ "$DO_NOT_TRACK" = "true" ]; then
+        return 0  # Analytics disabled
+    fi
+    
+    # Check for opt-out file
+    local opt_out_files=(
+        "$HOME/.piwik_opt_out"
+        "$HOME/.analytics_opt_out"
+        "$HOME/.do_not_track"
+        "/tmp/piwik_opt_out"
+        "/tmp/analytics_opt_out"
+    )
+    
+    for opt_out_file in "${opt_out_files[@]}"; do
+        if [ -f "$opt_out_file" ]; then
+            return 0  # Analytics disabled
+        fi
+    done
+    
+    # Check for consent file (if consent-based tracking is enabled)
+    if [ "$PIWIK_REQUIRE_CONSENT" = "true" ]; then
+        local consent_file="$HOME/.piwik_consent"
+        if [ ! -f "$consent_file" ]; then
+            return 0  # Analytics disabled - no consent given
+        fi
+    fi
+    
+    return 1  # Analytics enabled
+}
+
+# Display GDPR notice and request consent
+show_gdpr_notice() {
+    echo ""
+    echo "=== Analytics and Privacy Notice ==="
+    echo "This installation script collects anonymous usage analytics to help improve"
+    echo "the installation process and identify potential issues."
+    echo ""
+    echo "Data collected:"
+    echo "- Installation success/failure events"
+    echo "- Operating system and version information"
+    echo "- System architecture (Intel/Apple Silicon)"
+    echo "- Installation duration (for performance monitoring)"
+    echo "- Git commit SHA (for version tracking)"
+    echo ""
+    echo "No personal information is collected or stored."
+    echo "Data is sent to Piwik PRO analytics platform."
+    echo ""
+    echo "You can opt out at any time by:"
+    echo "1. Setting environment variable: export PIWIK_OPT_OUT=true"
+    echo "2. Creating file: touch ~/.piwik_opt_out"
+    echo "3. Running: echo 'opt-out' > ~/.piwik_opt_out"
+    echo ""
+    
+    if [ "$PIWIK_REQUIRE_CONSENT" = "true" ]; then
+        echo "Do you consent to analytics collection? (y/N): "
+        read -r consent
+        if [[ "$consent" =~ ^[Yy]$ ]]; then
+            echo "y" > "$HOME/.piwik_consent"
+            echo "✅ Analytics consent given. Thank you!"
+        else
+            echo "❌ Analytics disabled. No data will be collected."
+            echo "opt-out" > "$HOME/.piwik_opt_out"
+        fi
+    else
+        echo "Analytics are enabled by default. Use the opt-out methods above to disable."
+    fi
+    echo ""
+}
+
+# Create opt-out file
+create_opt_out() {
+    local opt_out_file="$HOME/.piwik_opt_out"
+    echo "opt-out" > "$opt_out_file"
+    echo "✅ Analytics opt-out file created: $opt_out_file"
+    echo "Analytics tracking is now disabled."
+}
+
+# Remove opt-out file (re-enable analytics)
+remove_opt_out() {
+    local opt_out_file="$HOME/.piwik_opt_out"
+    if [ -f "$opt_out_file" ]; then
+        rm "$opt_out_file"
+        echo "✅ Analytics opt-out file removed: $opt_out_file"
+        echo "Analytics tracking is now enabled."
+    else
+        echo "ℹ️  No opt-out file found. Analytics are already enabled."
+    fi
+}
+
+# Check analytics status
+check_analytics_status() {
+    if is_analytics_disabled; then
+        echo "❌ Analytics tracking is DISABLED"
+        echo "Reason: Opt-out detected"
+        return 1
+    else
+        echo "✅ Analytics tracking is ENABLED"
+        return 0
+    fi
+}
 
 # === ENVIRONMENT DETECTION ===
 
@@ -255,6 +361,13 @@ categorize_error() {
 
 # Enhanced logging function with timing and error categorization
 piwik_log_enhanced() {
+    # Check GDPR compliance first
+    if is_analytics_disabled; then
+        # Run command without tracking
+        "$@"
+        return $?
+    fi
+    
     local event_name="$1"
     local start_time=$(date +%s)
     shift
@@ -306,6 +419,13 @@ piwik_log_enhanced() {
 
 # Original piwik_log function (backwards compatibility)
 piwik_log() {
+    # Check GDPR compliance first
+    if is_analytics_disabled; then
+        # Run command without tracking
+        "$@"
+        return $?
+    fi
+    
     local event_name="$1"
     shift  # Remove first argument, leaving the command
     
@@ -376,6 +496,11 @@ piwik_get_environment_info() {
     echo "Full OS String: $OS"
     
     echo "Commit SHA: $(get_commit_sha)"
+    
+    # Show GDPR compliance status
+    echo "GDPR Compliance:"
+    check_analytics_status
+    
     echo "Environment Variables:"
     echo "  GITHUB_CI: ${GITHUB_CI:-not set}"
     echo "  CI: ${CI:-not set}"
@@ -383,11 +508,20 @@ piwik_get_environment_info() {
     echo "  DEV_MODE: ${DEV_MODE:-not set}"
     echo "  STAGING: ${STAGING:-not set}"
     echo "  DEBUG: ${DEBUG:-not set}"
+    echo "  PIWIK_OPT_OUT: ${PIWIK_OPT_OUT:-not set}"
+    echo "  ANALYTICS_DISABLED: ${ANALYTICS_DISABLED:-not set}"
+    echo "  DO_NOT_TRACK: ${DO_NOT_TRACK:-not set}"
     echo "================================"
 }
 
 # Test Piwik connection
 piwik_test_connection() {
+    # Check GDPR compliance first
+    if is_analytics_disabled; then
+        echo "❌ Analytics disabled - cannot test connection"
+        return 1
+    fi
+    
     echo "Testing Piwik connection..."
     local test_response
     test_response=$(curl -s -w "%{http_code}" -o /dev/null -G "$PIWIK_URL" \
@@ -408,4 +542,17 @@ piwik_test_connection() {
         echo "❌ Piwik connection failed (HTTP $test_response)"
         return 1
     fi
+}
+
+# GDPR compliance functions
+piwik_opt_out() {
+    create_opt_out
+}
+
+piwik_opt_in() {
+    remove_opt_out
+}
+
+piwik_show_notice() {
+    show_gdpr_notice
 }
