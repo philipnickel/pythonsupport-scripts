@@ -45,6 +45,15 @@ else
 fi
 
 echo "$(date): DEBUG: About to call actual orchestrator script"
+echo "$(date): DEBUG: Environment variables being passed:"
+echo "$(date): DEBUG: - HOME=/Users/$USER_NAME"
+echo "$(date): DEBUG: - REMOTE_PS=$REMOTE_PS"
+echo "$(date): DEBUG: - BRANCH_PS=$BRANCH_PS"
+echo "$(date): DEBUG: - PIS_ENV=CI"
+echo "$(date): DEBUG: - GITHUB_CI=true"
+echo "$(date): DEBUG: - CI=true"
+echo "$(date): DEBUG: - GITHUB_ACTIONS=true"
+echo "$(date): DEBUG: - RUNNER_OS=macOS"
 
 # Call the actual first_year_students.sh orchestrator
 show_progress_log "Calling first_year_students.sh orchestrator..." "INFO"
