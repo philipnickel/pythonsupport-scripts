@@ -8,12 +8,12 @@ Documentation for Homebrew installation scripts.
 
 **Usage:**
 ```bash
-bash install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Homebrew/install.sh)"
 ```
 
 **Requirements:** macOS system with internet connection
 
-**Notes:** Uses shared utilities for consistent error handling and logging
+**Notes:** Uses master utility system for consistent error handling and logging
 
 **Installation:**
 ```bash

@@ -8,7 +8,7 @@ Documentation for Latex installation scripts.
 
 **Usage:**
 ```bash
-bash full_install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/full_install.sh)"
 ```
 
 **Requirements:** macOS system, conda environment (recommended), ~4GB disk space
@@ -36,26 +36,6 @@ bash full_install.sh
 **Installation:**
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/minimal_install.sh)"
-```
-
----
-
-## LaTeX PDF Export Test
-
-**Description:** Tests PDF export functionality from Jupyter notebooks using LaTeX
-
-**Usage:**
-```bash
-bash test_pdf_export.sh
-```
-
-**Requirements:** LaTeX installation, Python with nbconvert, Jupyter
-
-**Notes:** Downloads test notebook and verifies PDF export pipeline works correctly
-
-**Installation:**
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/test_pdf_export.sh)"
 ```
 
 ---

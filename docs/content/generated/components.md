@@ -4,7 +4,6 @@ Auto-generated documentation from script docstrings.
 
 ## Table of Contents
 
-- [Diagnostics](#diagnostics)
 - [IDE](#ide)
 - [LaTeX](#latex)
 - [Orchestrator](#orchestrator)
@@ -12,24 +11,6 @@ Auto-generated documentation from script docstrings.
 - [Python](#python)
 - [Utilities](#utilities)
 - [VSCode](#vscode)
-
-## Diagnostics
-
-### System Diagnostics
-
-Comprehensive system diagnostics for Python development environment on macOS
-
-**File:** `Diagnostics/run.sh`
-
-**Usage:**
-```bash
-bash run.sh
-```
-
-**Notes:** Checks macOS version, architecture, Homebrew, Python installations, conda environments, and VSCode setup
-
-
----
 
 ## IDE
 
@@ -41,10 +22,10 @@ Installs Visual Studio Code on macOS with Python extension setup
 
 **Usage:**
 ```bash
-bash install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
 ```
 
-**Notes:** Uses shared utilities for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
+**Notes:** Uses master utility system for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
 
 
 ---
@@ -57,7 +38,7 @@ Installs essential VSCode extensions for Python development
 
 **Usage:**
 ```bash
-bash install_extensions.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install_extensions.sh)"
 ```
 
 **Notes:** Installs Python extension pack and other development tools
@@ -75,7 +56,7 @@ Installs complete MacTeX distribution for comprehensive PDF export from Jupyter 
 
 **Usage:**
 ```bash
-bash full_install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Latex/full_install.sh)"
 ```
 
 **Notes:** Downloads full MacTeX (~4GB), includes Jupyter/nbconvert setup, tests PDF export functionality
@@ -108,22 +89,6 @@ Installs BasicTeX with essential packages for PDF export from Jupyter notebooks
 
 ---
 
-### LaTeX PDF Export Test
-
-Tests PDF export functionality from Jupyter notebooks using LaTeX
-
-**File:** `Latex/test_pdf_export.sh`
-
-**Usage:**
-```bash
-bash test_pdf_export.sh
-```
-
-**Notes:** Downloads test notebook and verifies PDF export pipeline works correctly
-
-
----
-
 ## Orchestrator
 
 ### First Year Students Setup
@@ -134,10 +99,10 @@ Complete installation orchestrator for DTU first year students - installs Homebr
 
 **Usage:**
 ```bash
-bash first_year_students.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/first_year_students.sh)"
 ```
 
-**Notes:** Uses shared utilities for consistent error handling, logging, and analytics tracking
+**Notes:** Uses master utility system for consistent error handling, logging, and analytics tracking
 
 
 ---
@@ -152,10 +117,10 @@ Installs Homebrew package manager on macOS with error handling and user guidance
 
 **Usage:**
 ```bash
-bash install.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Homebrew/install.sh)"
 ```
 
-**Notes:** Uses shared utilities for consistent error handling and logging
+**Notes:** Uses master utility system for consistent error handling and logging
 
 
 ---
@@ -170,7 +135,7 @@ Sets up Python environment with conda for DTU first year students
 
 **Usage:**
 ```bash
-bash first_year_setup.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
 ```
 
 **Notes:** Installs miniconda, creates base environment with Python 3.11, installs essential packages
@@ -193,10 +158,10 @@ Installs Python via Miniconda with essential packages for data science and acade
 
 **Example:**
 ```bash
-PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/.../Python/install.sh)"
+PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
 ```
 
-**Notes:** Uses shared utilities for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+**Notes:** Uses master utility system for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
 
 *Version: 2024-08-18 | Author: Python Support Team*
 
@@ -211,7 +176,7 @@ Completely removes conda/miniconda installations from macOS
 
 **Usage:**
 ```bash
-bash uninstall_conda.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/uninstall_conda.sh)"
 ```
 
 **Notes:** Removes both Anaconda and Miniconda installations, cleans configuration files and PATH modifications
@@ -227,7 +192,7 @@ Removes Python installations and related files from macOS system
 
 **Usage:**
 ```bash
-bash uninstall_python.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/uninstall_python.sh)"
 ```
 
 **Notes:** Removes Python from multiple locations including Library, Applications, and system paths. Requires sudo access.
@@ -285,34 +250,18 @@ source error_handling.sh
 
 ---
 
-### Utility Loader
+### Master Utility Loader
 
-Master loader that sources all Python Support utility modules
+Loads all Python Support utilities including Piwik analytics
 
-**File:** `Shared/load_utils.sh`
-
-**Usage:**
-```bash
-source load_utils.sh
-```
-
-**Notes:** Automatically loads error_handling, environment, dependencies, and remote_utils modules
-
-
----
-
-### Piwik Installation Simulator
-
-Testing utility that simulates installation events for Piwik analytics validation
-
-**File:** `Shared/piwik_installation_simulator.sh`
+**File:** `Shared/master_utils.sh`
 
 **Usage:**
 ```bash
-bash piwik_installation_simulator.sh
+source master_utils.sh
 ```
 
-**Notes:** Used for testing and validating Piwik analytics tracking without running actual installations
+**Notes:** Sources all utility modules in a single operation
 
 
 ---
@@ -385,7 +334,7 @@ Completely removes Visual Studio Code and all user data according to official do
 ./clean_uninstall.sh
 ```
 
-**Notes:** Removes VS Code application, user settings folder (~/.vscode), and application support data (~/Library/Application Support/Code). Also handles Homebrew-installed VS Code. This follows the official VS Code uninstall documentation exactly.
+**Notes:** Uses master utility system for consistent error handling and logging. Removes VS Code application, user settings folder (~/.vscode), and application support data (~/Library/Application Support/Code). Also handles Homebrew-installed VS Code. This follows the official VS Code uninstall documentation exactly.
 
 *Version: 2024-08-18 | Author: Python Support Team*
 

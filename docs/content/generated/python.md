@@ -8,7 +8,7 @@ Documentation for Python installation scripts.
 
 **Usage:**
 ```bash
-bash first_year_setup.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
 ```
 
 **Requirements:** macOS system, Homebrew
@@ -31,7 +31,7 @@ bash first_year_setup.sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
 ```
 
-**Notes:** Uses shared utilities for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+**Notes:** Uses master utility system for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
 
 **Installation:**
 ```bash
@@ -46,7 +46,7 @@ bash first_year_setup.sh
 
 **Usage:**
 ```bash
-bash uninstall_conda.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/uninstall_conda.sh)"
 ```
 
 **Requirements:** macOS system, existing conda installation
@@ -66,7 +66,7 @@ bash uninstall_conda.sh
 
 **Usage:**
 ```bash
-bash uninstall_python.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/uninstall_python.sh)"
 ```
 
 **Requirements:** macOS system with admin privileges

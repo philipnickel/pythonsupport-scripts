@@ -62,42 +62,22 @@ source error_handling.sh
 
 ---
 
-## Utility Loader
+## Master Utility Loader
 
-**Description:** Master loader that sources all Python Support utility modules
+**Description:** Loads all Python Support utilities including Piwik analytics
 
 **Usage:**
 ```bash
-source load_utils.sh
+source master_utils.sh
 ```
 
 **Requirements:** bash shell environment, internet connection
 
-**Notes:** Automatically loads error_handling, environment, dependencies, and remote_utils modules
+**Notes:** Sources all utility modules in a single operation
 
 **Installation:**
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Shared/load_utils.sh)"
-```
-
----
-
-## Piwik Installation Simulator
-
-**Description:** Testing utility that simulates installation events for Piwik analytics validation
-
-**Usage:**
-```bash
-bash piwik_installation_simulator.sh
-```
-
-**Requirements:** piwik_utility.sh, curl, internet connection
-
-**Notes:** Used for testing and validating Piwik analytics tracking without running actual installations
-
-**Installation:**
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Shared/piwik_installation_simulator.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Shared/master_utils.sh)"
 ```
 
 ---
