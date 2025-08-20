@@ -105,6 +105,7 @@ jobs:
           installer -pkginfo -pkg "$PKG_FILE"
 
       - name: Install PKG
+        working-directory: MacOS/pkg_installer
         run: |
           echo "=== Installing PKG ==="
           echo "Installing: $PKG_FILE"
