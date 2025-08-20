@@ -16,8 +16,8 @@ export USER="$USER_NAME"
 export HOME="/Users/$USER_NAME"
 
 # Location where PKG extracted our components
-# PKG extracts payload to root, so our components are at /dtu_components
-COMPONENTS_DIR="/dtu_components"
+# Install payload places components under /Library to avoid writing to sealed system volume
+COMPONENTS_DIR="/Library/dtu_components"
 
 if [[ ! -d "$COMPONENTS_DIR" ]]; then
     echo "$(date): ERROR: Component scripts not found at $COMPONENTS_DIR"

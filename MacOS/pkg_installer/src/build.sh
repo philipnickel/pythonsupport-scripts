@@ -105,11 +105,13 @@ mkdir -p "$PAYLOAD_DIR"
 
 # Always include MacOS/Components directory in the package
 COMPONENTS_SOURCE="$SCRIPT_DIR/../../Components"
-COMPONENTS_DEST="$PAYLOAD_DIR/dtu_components"
+# Install under /Library to comply with macOS sealed system volume rules
+COMPONENTS_DEST="$PAYLOAD_DIR/Library/dtu_components"
 
 if [[ -d "$COMPONENTS_SOURCE" ]]; then
-    echo "Copying Components directory into package..."
-    # Copy the entire Components directory
+    echo "Copying Components directory into package under /Library..."
+    # Ensure destination exists and copy the entire Components directory
+    mkdir -p "$(dirname "$COMPONENTS_DEST")"
     cp -r "$COMPONENTS_SOURCE" "$COMPONENTS_DEST"
     # Remove any .DS_Store files
     find "$COMPONENTS_DEST" -name ".DS_Store" -delete 2>/dev/null || true
