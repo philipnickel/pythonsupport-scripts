@@ -101,12 +101,9 @@ discover_components() {
         "Conda:Installation:conda_installation:Conda Installation Check:Components/Conda/Installation/conda_installation.sh"
         "Conda:Environments:conda_environments:Conda Environments Check:Components/Conda/Environments/conda_environments.sh"
         "Development:Homebrew:homebrew_installation:Homebrew Installation Check:Components/Development/Homebrew/homebrew_installation.sh"
-        "Development:LaTeX:latex_installation:LaTeX Installation Check:Components/Development/LaTeX/latex_installation.sh"
-        "System:Information:system_info:System Information:Components/System/Information/system_info.sh"
-        "System:Compatibility:python_compatibility:Python Development Compatibility:Components/System/Compatibility/python_compatibility.sh"
-        "System:Test:timeout_test:Timeout Test Script:Components/System/Test/timeout_test.sh"
-        "VSCode:Installation:vscode_installation:VS Code Installation Check:Components/VSCode/Installation/vscode_installation.sh"
-        "VSCode:Extensions:python_extensions:Python Development Extensions:Components/VSCode/Extensions/python_extensions.sh"
+        "System Information:Information:system_info:System Information:Components/System Information/Information/system_info.sh"
+        "Visual Studio Code:Installation:vscode_installation:VS Code Installation Check:Components/Visual Studio Code/Installation/vscode_installation.sh"
+        "Visual Studio Code:Extensions:python_extensions:Python Development Extensions:Components/Visual Studio Code/Extensions/python_extensions.sh"
     )
     
     # Output component definitions for sourcing
