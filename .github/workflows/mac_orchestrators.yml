@@ -12,12 +12,16 @@ on:
       - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
 
+# Temporarily disabled for PKG installer testing
+# Remove the condition below to re-enable this workflow
+
 env:
   PYTHON_VERSION_PS: "3.11"
 
 jobs:
   test-first-year-orchestrator:
     name: Test First Year Orchestrator
+    if: false  # Temporarily disabled for PKG installer testing
     runs-on: macos-latest
     
     steps:

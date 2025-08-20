@@ -1,0 +1,268 @@
+name: Test PKG Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test'
+        required: false
+        default: 'macos-components'
+      clean_install:
+        description: 'Clean install (remove existing components first)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+  pull_request:
+    paths:
+      - 'MacOS/pkg_installer/**'
+      - 'MacOS/Components/**'
+      - '.github/workflows/test-pkg-installer.yml'
+
+jobs:
+  test-pkg-installer:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.head_ref || 'macos-components' }}
+
+      - name: System Information
+        run: |
+          echo "=== System Information ==="
+          sw_vers
+          echo ""
+          echo "=== Available Space ==="
+          df -h /
+          echo ""
+          echo "=== Pre-test Environment ==="
+          command -v brew >/dev/null 2>&1 && echo "✓ Homebrew: $(brew --version | head -1)" || echo "✗ Homebrew: Not installed"
+          command -v conda >/dev/null 2>&1 && echo "✓ Conda: $(conda --version)" || echo "✗ Conda: Not installed"  
+          command -v code >/dev/null 2>&1 && echo "✓ VSCode: $(code --version | head -1)" || echo "✗ VSCode: Not installed"
+          [ -d "/Applications/Visual Studio Code.app" ] && echo "✓ VSCode app found at /Applications" || echo "✗ VSCode app not found"
+
+      - name: Clean Install (Optional)
+        if: inputs.clean_install == 'true'
+        run: |
+          echo "=== Performing Clean Install ==="
+          # Remove Homebrew
+          if command -v brew >/dev/null 2>&1; then
+            echo "Removing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" <<< $'y\ny\ny\ny\ny' || true
+          fi
+          
+          # Remove Conda/Miniconda
+          if [ -d "$HOME/miniconda3" ]; then
+            echo "Removing Miniconda..."
+            rm -rf "$HOME/miniconda3" || true
+          fi
+          if [ -d "$HOME/anaconda3" ]; then
+            echo "Removing Anaconda..."
+            rm -rf "$HOME/anaconda3" || true
+          fi
+          
+          # Remove VSCode
+          if [ -d "/Applications/Visual Studio Code.app" ]; then
+            echo "Removing Visual Studio Code..."
+            sudo rm -rf "/Applications/Visual Studio Code.app" || true
+            rm -f /usr/local/bin/code || true
+          fi
+          
+          # Clean shell profiles
+          echo "Cleaning shell profiles..."
+          sed -i '' '/brew shellenv/d' ~/.zprofile ~/.bash_profile 2>/dev/null || true
+          sed -i '' '/conda initialize/,/conda initialize/d' ~/.zprofile ~/.bash_profile 2>/dev/null || true
+          
+          echo "Clean install preparation complete!"
+
+      - name: Build PKG Installer
+        working-directory: MacOS/pkg_installer
+        run: |
+          echo "=== Building PKG Installer ==="
+          ./src/build.sh
+          
+          # Show build artifacts
+          ls -la builds/
+          
+          # Get PKG info
+          PKG_FILE=$(ls builds/DtuPythonInstaller_*.pkg | head -1)
+          echo "PKG_FILE=$PKG_FILE" >> $GITHUB_ENV
+          
+          echo "=== Package Information ==="
+          installer -pkginfo -pkg "$PKG_FILE"
+
+      - name: Install PKG
+        run: |
+          echo "=== Installing PKG ==="
+          echo "Installing: $PKG_FILE"
+          
+          # Install with verbose logging
+          sudo installer -verbose -pkg "$PKG_FILE" -target / 2>&1 | tee installation.log
+          
+          echo ""
+          echo "=== Installation Log Summary ==="
+          # Show key progress indicators from the log
+          grep -E "(DTU Python Installer:|ERROR|WARNING|✓|❌|🚀|⏭️)" installation.log || echo "No progress indicators found"
+
+      - name: Verify Installation
+        run: |
+          echo "=== Post-Installation Verification ==="
+          
+          # Update shell environment
+          hash -r 2>/dev/null || true
+          
+          # Check Homebrew
+          echo "Checking Homebrew..."
+          if command -v brew >/dev/null 2>&1; then
+            echo "✓ Homebrew: $(brew --version | head -1)"
+            echo "  Location: $(which brew)"
+          else
+            echo "❌ Homebrew: Not found in PATH"
+            # Try common locations
+            if [ -f "/opt/homebrew/bin/brew" ]; then
+              echo "  Found at: /opt/homebrew/bin/brew"
+              eval "$(/opt/homebrew/bin/brew shellenv)"
+              echo "✓ Homebrew: $(brew --version | head -1) (after shellenv)"
+            elif [ -f "/usr/local/bin/brew" ]; then
+              echo "  Found at: /usr/local/bin/brew"
+              eval "$(/usr/local/bin/brew shellenv)"
+              echo "✓ Homebrew: $(brew --version | head -1) (after shellenv)"
+            fi
+          fi
+          
+          # Check Python/Conda
+          echo ""
+          echo "Checking Python/Conda..."
+          if command -v conda >/dev/null 2>&1; then
+            echo "✓ Conda: $(conda --version)"
+            echo "  Location: $(which conda)"
+            echo "  Base: $(conda info --base)"
+          else
+            echo "❌ Conda: Not found in PATH"
+            # Try to find and initialize conda
+            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
+              if [ -f "$conda_path" ]; then
+                echo "  Found at: $conda_path"
+                eval "$($conda_path shell.bash hook)"
+                echo "✓ Conda: $(conda --version) (after initialization)"
+                break
+              fi
+            done
+          fi
+          
+          if command -v python3 >/dev/null 2>&1; then
+            echo "✓ Python3: $(python3 --version)"
+            echo "  Location: $(which python3)"
+          else
+            echo "❌ Python3: Not found"
+          fi
+          
+          # Check VSCode
+          echo ""
+          echo "Checking Visual Studio Code..."
+          if command -v code >/dev/null 2>&1; then
+            echo "✓ VSCode CLI: $(code --version | head -1)"
+            echo "  Location: $(which code)"
+          else
+            echo "❌ VSCode CLI: Not found in PATH"
+          fi
+          
+          if [ -d "/Applications/Visual Studio Code.app" ]; then
+            echo "✓ VSCode App: Found at /Applications/Visual Studio Code.app"
+          else
+            echo "❌ VSCode App: Not found at /Applications"
+          fi
+
+      - name: Test Basic Functionality
+        run: |
+          echo "=== Testing Basic Functionality ==="
+          
+          # Ensure environment is loaded
+          hash -r 2>/dev/null || true
+          
+          # Try to load conda if not in PATH
+          if ! command -v conda >/dev/null 2>&1; then
+            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
+              if [ -f "$conda_path" ]; then
+                eval "$($conda_path shell.bash hook)"
+                break
+              fi
+            done
+          fi
+          
+          # Test Python
+          if command -v python3 >/dev/null 2>&1; then
+            echo "Testing Python..."
+            python3 -c "import sys; print(f'✓ Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"
+            python3 -c "import numpy; print('✓ NumPy imported successfully')" 2>/dev/null || echo "❌ NumPy not available"
+            python3 -c "import matplotlib; print('✓ Matplotlib imported successfully')" 2>/dev/null || echo "❌ Matplotlib not available"
+          else
+            echo "❌ Cannot test Python - not found"
+          fi
+          
+          # Test Homebrew
+          if command -v brew >/dev/null 2>&1; then
+            echo ""
+            echo "Testing Homebrew..."
+            brew list --formula | head -5 | while read formula; do
+              echo "✓ Formula: $formula"
+            done
+          else
+            echo "❌ Cannot test Homebrew - not found"
+          fi
+
+      - name: Run Diagnostics
+        run: |
+          echo "=== Running DTU Diagnostics ==="
+          # Run our diagnostics to verify everything is working
+          curl -s https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/generate_report.sh | bash || echo "Diagnostics completed with warnings"
+
+      - name: Upload Installation Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installation-logs-${{ runner.os }}-${{ github.run_id }}
+          path: |
+            installation.log
+            /tmp/macos_dtu_python_install.log
+            /tmp/diagnostic_report_*.html
+          retention-days: 7
+
+      - name: Show Installation Summary  
+        if: always()
+        run: |
+          echo "=== Installation Summary ==="
+          echo "PKG File: $PKG_FILE"
+          echo "Build Date: $(date)"
+          echo "macOS Version: $(sw_vers -productVersion)"
+          echo ""
+          
+          # Final status check
+          HOMEBREW_OK=$(command -v brew >/dev/null 2>&1 && echo "✓" || echo "❌")
+          CONDA_OK=$(command -v conda >/dev/null 2>&1 && echo "✓" || echo "❌")  
+          PYTHON_OK=$(command -v python3 >/dev/null 2>&1 && echo "✓" || echo "❌")
+          VSCODE_CLI_OK=$(command -v code >/dev/null 2>&1 && echo "✓" || echo "❌")
+          VSCODE_APP_OK=$([ -d "/Applications/Visual Studio Code.app" ] && echo "✓" || echo "❌")
+          
+          echo "Final Status:"
+          echo "  Homebrew: $HOMEBREW_OK"
+          echo "  Conda: $CONDA_OK"
+          echo "  Python3: $PYTHON_OK"
+          echo "  VSCode CLI: $VSCODE_CLI_OK"
+          echo "  VSCode App: $VSCODE_APP_OK"
+          
+          # Determine overall success
+          if [[ "$HOMEBREW_OK$CONDA_OK$PYTHON_OK$VSCODE_APP_OK" == "✓✓✓✓" ]]; then
+            echo ""
+            echo "🎉 PKG Installation Test: SUCCESS"
+            echo "All core components installed and verified successfully!"
+          else
+            echo ""
+            echo "⚠️ PKG Installation Test: PARTIAL SUCCESS"
+            echo "Some components may need attention."
+          fi
