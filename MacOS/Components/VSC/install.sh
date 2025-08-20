@@ -11,6 +11,11 @@
 # Load master utilities
 eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
 
+if [[ "${PIS_ENV:-}" == "CI" && "${SKIP_VSC_INSTALL:-}" == "1" ]]; then
+  log_info "Skipping VS Code installation (CI mode)"
+  exit 0
+fi
+
 log_info "Installing Visual Studio Code"
 
 # Check for homebrew and install if needed

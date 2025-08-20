@@ -20,7 +20,7 @@ _python_ret=$?
 
 # install vscode using component
 log_info "Installing VSCode..."
-piwik_log 'vscode_component_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"
+piwik_log 'vscode_component_install' SKIP_VSC_INSTALL="${SKIP_VSC_INSTALL:-}" PIS_ENV="${PIS_ENV:-}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"
 _vsc_ret=$?
 
 # run first year python setup (install specific version and packages)
