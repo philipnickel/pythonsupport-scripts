@@ -94,9 +94,9 @@ echo ""
 echo "✅ PKG installation verification complete."
 
 # Create a simple status file to verify installation
-echo "DTU_PYTHON_SUPPORT_PKG_INSTALLED=true" > "$LOCAL_INSTALL_PATH/.pkg_status"
-echo "PKG_VERSION=1.0.0-dummy" >> "$LOCAL_INSTALL_PATH/.pkg_status"
-echo "INSTALL_DATE=$(date)" >> "$LOCAL_INSTALL_PATH/.pkg_status"
+echo "DTU_PYTHON_SUPPORT_PKG_INSTALLED=true" > "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PKG_VERSION=1.0.0-dummy" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "INSTALL_DATE=\$(date)" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
 EOF
 
 chmod +x "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh"
