@@ -23,10 +23,21 @@ clear -x
 # check for homebrew
 log_info "Checking for existing Homebrew installation..."
 
+# First check if brew is in PATH
 if command -v brew > /dev/null; then
-  log_success "Already found Homebrew, no need to install Homebrew..."
+  log_success "Already found Homebrew in PATH, no need to install Homebrew..."
   exit 0
 fi
+
+# In restricted environments (like PKG installers), check common Homebrew locations
+for brew_path in "/opt/homebrew/bin/brew" "/usr/local/bin/brew"; do
+  if [ -f "$brew_path" ]; then
+    log_success "Already found Homebrew at $brew_path, no need to install Homebrew..."
+    # Make sure it's in PATH for this session
+    export PATH="$(dirname "$brew_path"):$PATH"
+    exit 0
+  fi
+done
 
 # First install homebrew 
 log_info "Installing Homebrew..."
