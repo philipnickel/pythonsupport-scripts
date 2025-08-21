@@ -307,11 +307,7 @@ jobs:
             ls -la /opt/homebrew/Caskroom/miniconda/*/etc/profile.d/conda.sh 2>/dev/null || echo "  - Homebrew ARM miniconda: not found"
             ls -la /usr/local/Caskroom/miniconda/*/etc/profile.d/conda.sh 2>/dev/null || echo "  - Homebrew Intel miniconda: not found"
             ls -la "$HOME/miniconda3/etc/profile.d/conda.sh" 2>/dev/null || echo "  - User miniconda: not found"
-            if [ "${PIS_ENV:-}" = "CI" ]; then
-              echo "⚠️  Skipping conda requirement in CI environment"
-            else
-              exit 1
-            fi
+            exit 1
           fi
           
           # Check Python installation
@@ -441,17 +437,7 @@ jobs:
             exit 0
           fi
 
-          # In CI environments, consider it a limited-success if core pieces are present,
-          # but Conda or essential Python packages are missing due to permission/network limits
-          if [ "${PIS_ENV:-}" = "CI" ] \
-             && [ "$PKG_INSTALLED$INSTALLER_SCRIPT$HOMEBREW_COMPONENT$PYTHON_COMPONENT$PYTHON_PACKAGES_COMPONENT" = "✓✓✓✓✓" ] \
-             && [ "$HOMEBREW_INSTALLED$PYTHON_INSTALLED" = "✓✓" ] \
-             && { [ "$CONDA_INSTALLED" = "❌" ] || [ "$PACKAGES_INSTALLED" = "❌" ]; }; then
-            echo ""
-            echo "⚠️  Python PKG Installation Test: LIMITED SUCCESS (CI)"
-            echo "Core components installed; Conda/packages check skipped in CI."
-            exit 0
-          fi
+          
           
           # Determine overall success for Python PKG
           if [[ "$PKG_INSTALLED$INSTALLER_SCRIPT$HOMEBREW_COMPONENT$PYTHON_COMPONENT$PYTHON_PACKAGES_COMPONENT$HOMEBREW_INSTALLED$PYTHON_INSTALLED$CONDA_INSTALLED$PACKAGES_INSTALLED" == "✓✓✓✓✓✓✓✓✓" ]]; then
