@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+    xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Id="DtuPythonInstallation"
+           Name="DTU Python Installation"
+           Version="1.0.0"
+           Manufacturer="DTU Python Installation Support">
+
+  <MediaTemplate EmbedCab="yes" />
+
+    <ui:WixUI Id="WixUI_InstallDir" />
+    <!-- Point to a local RTF that contains your privacy information -->
+    <WixVariable Id="PrivacyRtf" Value="privacy.rtf" />
+
+    <!-- Install location -->
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLFOLDER" Name="DTU Python Installer" />
+    </StandardDirectory>
+
+    <!-- Files to install -->
+    <ComponentGroup Id="MainComponents">
+      <Component Guid="bb557ca9-97e9-4ba8-8c9d-a70dfbcf1069">
+        <!-- Your PowerShell script that will be executed -->
+        <File Id="InstallPs1" Source="install.ps1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="MainFeature" Title="DTU Python Installation" Level="1">
+      <ComponentGroupRef Id="MainComponents" />
+    </Feature>
+
+    <!-- Quietly run PowerShell AFTER files are installed -->
+    <!-- Set the command line for WixQuietExec (deferred CA reads CustomActionData) -->
+    <SetProperty
+      Id="RunPython"
+      Value="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;[#InstallPs1]&quot;"
+      Before="RunPython"
+      Sequence="execute" />
+
+    <CustomAction
+      Id="RunPython"
+      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)"
+      DllEntry="WixQuietExec"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check" />
+
+    <InstallExecuteSequence>
+      <!-- Only on first-time install, and after files exist -->
+        <Custom Action="RunPython" After="InstallFiles" Condition="NOT Installed" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>
