@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{PROFILE_NAME}} - DTU Python Diagnostics Report</title>
+    <style>
+        {{CSS_CONTENT}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
+                 alt="DTU Logo" class="dtu-logo" onerror="this.style.display='none'">
+            <h1>{{PROFILE_NAME}} - DTU Python Diagnostics Report</h1>
+            <div class="timestamp">Generated on: <span id="timestamp">{{TIMESTAMP}}</span></div>
+        </header>
+            
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-number passed" id="passed-count">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number failed" id="failed-count">0</div>
+                    <div class="summary-label">Failed</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number timeout" id="timeout-count">0</div>
+                    <div class="summary-label">Timeout</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number total" id="total-count">0</div>
+                    <div class="summary-label">Total Checks</div>
+                </div>
+            </div>
+            
+            <div class="download-section">
+                <button class="download-button" onclick="downloadReport()" id="download-btn">
+                    Download Report
+                </button>
+                <button class="download-button" onclick="emailSupport()" id="email-btn">
+                    Email Support
+                </button>
+            </div>
+            
+            <div class="notice">
+                <div class="notice-title">{{PROFILE_NAME}} Diagnostics Overview</div>
+                {{PROFILE_DESCRIPTION}} Click any test to view detailed logs.
+            </div>
+            
+            <div class="diagnostics" id="diagnostics-container">
+                <!-- Diagnostic items will be inserted here -->
+                {{SUMMARY_HTML}}
+            </div>
+            
+        <footer>
+            <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
+                 alt="DTU Logo" class="footer-logo" onerror="this.style.display='none'">
+            <p><strong>DTU Python Support</strong></p>
+            <p>Technical University of Denmark | Danmarks Tekniske Universitet</p>
+            <p>Auto-discovered diagnostic components with clean Summary/Details view</p>
+        </footer>
+    </div>
+    
+    <script>
+        {{JS_CONTENT}}
+    </script>
+</body>
+</html>
