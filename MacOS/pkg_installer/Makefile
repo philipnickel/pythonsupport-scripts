@@ -158,98 +158,29 @@ create-payload: check-components ## Copy component scripts to payload directory
 	@chmod +x $(BUNDLED_COMPONENTS_DIR)/curl
 	
 
-create-offline-postinstall: ## Create modified postinstall script for offline installation
-	@echo "Creating offline-capable postinstall script..."
+copy-scripts: ## Copy the sophisticated postinstall and preinstall scripts
+	@echo "Using sophisticated postinstall script with environment detection..."
 	@mkdir -p $(BUILD_DIR)/Scripts
+	@mkdir -p $(BUILD_DIR)/metadata
+	
+	@# Copy the sophisticated postinstall script directly
+	@cp $(SRC_DIR)/Scripts/postinstall.sh $(BUILD_DIR)/Scripts/postinstall
+	
+	@# Copy preinstall script with placeholder substitution
 	@sed -e "s|PLACEHOLDER_LOG_FILE|/tmp/macos_dtu_python_install.log|g" \
 	     -e "s|PLACEHOLDER_REPO|bundled|g" \
 	     -e "s|PLACEHOLDER_BRANCH|local|g" \
-	     -e "s|PLACEHOLDER_SUMMARY_FILE|/tmp/macos_dtu_python_summary.txt|g" \
-	     -e "s|PLACEHOLDER_SUPPORT_EMAIL|python-support@dtu.dk|g" \
-		$(SRC_DIR)/Scripts/postinstall.sh > $(BUILD_DIR)/Scripts/postinstall_template
+		$(SRC_DIR)/Scripts/preinstall.sh > $(BUILD_DIR)/Scripts/preinstall
 	
-	@# Replace the curl-based orchestrator call with local execution
-	@echo "#!/bin/bash" > $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# DTU Python Installation Script (PKG Installer - Offline Mode)" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# This script uses bundled components instead of downloading from GitHub" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'LOG_FILE="/tmp/macos_dtu_python_install.log"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'exec > >(tee -a "$$LOG_FILE") 2>&1' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'echo "$$(date): DEBUG: PKG installer using bundled components (offline mode)"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# Determine user and set environment" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'USER_NAME=$$(stat -f%Su /dev/console)' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'export USER="$$USER_NAME"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'export HOME="/Users/$$USER_NAME"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# Load offline configuration" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'source /usr/local/share/dtu-python-installer/components/offline_config.sh' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'echo "$$(date): DEBUG: User=$$USER_NAME, Home=$$HOME"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'echo "$$(date): DEBUG: Using bundled components in offline mode"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# Load loading animation functions" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'SCRIPT_DIR="$$(dirname "$$0")"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'source "$$SCRIPT_DIR/loading_animations.sh" 2>/dev/null || {' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    show_progress_log() { echo "$$(date '\''+%H:%M:%S'\'') [$${2:-INFO}] DTU Python Installer: $$1"; }' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    show_installer_header() { echo "=== DTU Python Installation ==="; }' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '}' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "show_installer_header" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'show_progress_log "Starting first year students installation (offline mode)..." "INFO"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# Execute original orchestrator script with curl wrapper" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'show_progress_log "Executing original first_year_students.sh orchestrator with offline components..." "INFO"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'if sudo -u "$$USER_NAME" env HOME="/Users/$$USER_NAME" PATH="/usr/local/share/dtu-python-installer/components:$$PATH" DTU_PYTHON_OFFLINE_MODE="true" DTU_COMPONENTS_PATH="/usr/local/share/dtu-python-installer/components" PIS_ENV="CI" GITHUB_CI="true" CI="true" GITHUB_ACTIONS="true" RUNNER_OS="macOS" /bin/bash "/usr/local/share/dtu-python-installer/components/orchestrators/first_year_students.sh"; then' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "    orchestrator_ret=0" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    echo "$$(date): DEBUG: Orchestrator completed successfully"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    show_progress_log "🎉 First year students orchestrator completed successfully!" "INFO"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "else" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    orchestrator_ret=$$?' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    echo "$$(date): DEBUG: Orchestrator failed with exit code: $$orchestrator_ret"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '    show_progress_log "❌ First year students orchestrator failed" "ERROR"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "fi" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "# Create summary" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'SUMMARY_FILE="/tmp/macos_dtu_python_summary.txt"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'cat > "$$SUMMARY_FILE" << EOF' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "DTU First Year Students Installation Complete!" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "Installation log: $$LOG_FILE" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "Date: $$(date)" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "User: $$USER_NAME" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "Mode: Offline (bundled components)" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "Installation Results:" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo '- First Year Students Orchestrator: $$([[ $$orchestrator_ret -eq 0 ]] && echo "SUCCESS" || echo "FAILED")' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "Next steps:" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "1. Open Terminal and type 'python3' to test Python" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "2. Open Visual Studio Code to start coding" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "3. Try importing: dtumathtools, pandas, numpy, matplotlib" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "For support: python-support@dtu.dk" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "EOF" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'show_progress_log "PKG installer script has finished. Summary created at: $$SUMMARY_FILE" "INFO"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'echo "$$(date): DEBUG: PKG installer script finished"' >> $(BUILD_DIR)/Scripts/postinstall
-	@echo "" >> $(BUILD_DIR)/Scripts/postinstall
-	@echo 'exit $$orchestrator_ret' >> $(BUILD_DIR)/Scripts/postinstall
-	
-	@# Copy other scripts
-	@cp $(SRC_DIR)/Scripts/preinstall.sh $(BUILD_DIR)/Scripts/preinstall_template
-	@sed -e "s|PLACEHOLDER_LOG_FILE|/tmp/macos_dtu_python_install.log|g" \
-	     -e "s|PLACEHOLDER_REPO|bundled|g" \
-	     -e "s|PLACEHOLDER_BRANCH|local|g" \
-		$(BUILD_DIR)/Scripts/preinstall_template > $(BUILD_DIR)/Scripts/preinstall
-	@rm $(BUILD_DIR)/Scripts/preinstall_template $(BUILD_DIR)/Scripts/postinstall_template
-	
+	@# Copy loading animations script
 	@cp $(SRC_DIR)/Scripts/loading_animations.sh $(BUILD_DIR)/Scripts/ 2>/dev/null || true
+	
+	@# Copy metadata config for postinstall script
+	@cp $(SRC_DIR)/metadata/config.sh $(BUILD_DIR)/metadata/
+	
 	@chmod +x $(BUILD_DIR)/Scripts/*
 
-pkg: increment-version create-payload create-offline-postinstall ## Build the self-contained PKG installer
+pkg: increment-version create-payload copy-scripts ## Build the self-contained PKG installer
 	@echo "=== DTU Python PKG Builder (Self-contained) ==="
 	@NEW_VERSION=$$(cat $(VERSION_FILE)) && \
 	echo "Building version: $$NEW_VERSION" && \
