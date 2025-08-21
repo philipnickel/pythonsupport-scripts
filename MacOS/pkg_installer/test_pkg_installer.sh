@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Test Configuration
-PKG_PATH="/Users/philipnickel/Documents/GitHub/pythonsupport-scripts/MacOS/pkg_installer/builds/DtuPythonInstaller_1.0.57.pkg"
+PKG_PATH="/Users/philipnickel/Documents/GitHub/pythonsupport-scripts/MacOS/pkg_installer/builds/DtuPythonInstaller_1.0.59.pkg"
 TEST_LOG="/tmp/pkg_installer_test_$(date +%Y%m%d_%H%M%S).log"
 TEST_RESULTS="/tmp/pkg_installer_test_results_$(date +%Y%m%d_%H%M%S).txt"
 PYTHON_VERSION_EXPECTED="3.11"

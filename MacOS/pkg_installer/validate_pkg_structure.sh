@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Configuration
-PKG_PATH="/Users/philipnickel/Documents/GitHub/pythonsupport-scripts/MacOS/pkg_installer/builds/DtuPythonInstaller_1.0.57.pkg"
+PKG_PATH="/Users/philipnickel/Documents/GitHub/pythonsupport-scripts/MacOS/pkg_installer/builds/DtuPythonInstaller_1.0.59.pkg"
 VALIDATION_LOG="/tmp/pkg_validation_$(date +%Y%m%d_%H%M%S).log"
 
 # Colors for output
@@ -63,15 +63,15 @@ validate_pkg_structure() {
     fi
     
     start_check "PKG metadata and structure"
-    if pkgutil --pkg-info-plist "$PKG_PATH" >/dev/null 2>&1; then
-        log_success "PKG has valid metadata structure"
+    if xar -tf "$PKG_PATH" >/dev/null 2>&1; then
+        log_success "PKG has valid XAR archive structure"
         
-        # Extract and display package info
-        local pkg_id=$(pkgutil --pkg-info-plist "$PKG_PATH" | grep -A1 'pkg-id' | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/')
-        local pkg_version=$(pkgutil --pkg-info-plist "$PKG_PATH" | grep -A1 'pkg-version' | tail -1 | sed 's/.*<string>\(.*\)<\/string>.*/\1/')
-        
-        log_info "Package ID: $pkg_id"
-        log_info "Package Version: $pkg_version"
+        # List package contents
+        local contents=$(xar -tf "$PKG_PATH" | head -10)
+        log_info "Package contents preview:"
+        echo "$contents" | while read line; do
+            log_info "  $line"
+        done
     else
         log_failure "PKG metadata is invalid or corrupted"
     fi
@@ -96,7 +96,7 @@ analyze_pkg_contents() {
     mkdir -p "$temp_dir"
     
     start_check "PKG content extraction"
-    if pkgutil --expand "$PKG_PATH" "$temp_dir" 2>/dev/null; then
+    if xar -xf "$PKG_PATH" -C "$temp_dir" 2>/dev/null; then
         log_success "PKG contents extracted for analysis"
     else
         log_failure "Failed to extract PKG contents"
@@ -106,25 +106,29 @@ analyze_pkg_contents() {
     
     # Analyze payload structure
     start_check "Payload structure"
-    local payload_dir="$temp_dir"/*.pkg
-    if [ -d "$payload_dir" ]; then
+    local payload_dir=$(find "$temp_dir" -name "*.pkg" -type d | head -1)
+    if [ -n "$payload_dir" ] && [ -d "$payload_dir" ]; then
         log_success "Package payload found"
         
-        # Check for Scripts directory
-        if [ -d "$payload_dir/Scripts" ]; then
-            log_success "Scripts directory found in package"
+        # Check for Scripts archive
+        if [ -f "$payload_dir/Scripts" ]; then
+            log_success "Scripts archive found in package"
             
-            # Check for required scripts
+            # Extract and check scripts contents
+            local scripts_contents=$(gunzip -c "$payload_dir/Scripts" | tar -tf - 2>/dev/null)
+            local scripts_found=0
             local scripts=("preinstall" "postinstall")
             for script in "${scripts[@]}"; do
-                if [ -f "$payload_dir/Scripts/$script" ]; then
+                if echo "$scripts_contents" | grep -q "\./$script$"; then
                     log_success "Required script found: $script"
+                    ((scripts_found++))
                 else
                     log_warning "Script not found: $script"
                 fi
             done
+            log_info "Found $scripts_found of ${#scripts[@]} required scripts"
         else
-            log_failure "Scripts directory not found in package"
+            log_failure "Scripts archive not found in package"
         fi
         
         # Extract and analyze Payload
@@ -198,45 +202,52 @@ validate_script_contents() {
     mkdir -p "$temp_dir"
     
     # Extract PKG for script analysis
-    if pkgutil --expand "$PKG_PATH" "$temp_dir" 2>/dev/null; then
+    if xar -xf "$PKG_PATH" -C "$temp_dir" 2>/dev/null; then
         local pkg_dir=$(find "$temp_dir" -name "*.pkg" -type d)
         
-        if [ -f "$pkg_dir/Scripts/postinstall" ]; then
-            start_check "postinstall script syntax"
-            if bash -n "$pkg_dir/Scripts/postinstall"; then
-                log_success "postinstall script has valid syntax"
-            else
-                log_failure "postinstall script has syntax errors"
+        if [ -f "$pkg_dir/Scripts" ]; then
+            # Extract scripts archive to analyze
+            local scripts_dir="$temp_dir/extracted_scripts"
+            mkdir -p "$scripts_dir"
+            (cd "$scripts_dir" && gunzip -c "$pkg_dir/Scripts" | tar -xf - 2>/dev/null)
+            
+            if [ -f "$scripts_dir/postinstall" ]; then
+                start_check "postinstall script syntax"
+                if bash -n "$scripts_dir/postinstall"; then
+                    log_success "postinstall script has valid syntax"
+                else
+                    log_failure "postinstall script has syntax errors"
+                fi
+                
+                start_check "postinstall script environment detection"
+                if grep -q "detect_environment" "$scripts_dir/postinstall"; then
+                    log_success "Environment detection function found"
+                else
+                    log_failure "Environment detection function not found"
+                fi
+                
+                start_check "postinstall script PKG mode support"
+                if grep -q "DTU_PYTHON_PKG_MODE" "$scripts_dir/postinstall"; then
+                    log_success "PKG mode variable handling found"
+                else
+                    log_failure "PKG mode variable handling not found"
+                fi
+                
+                start_check "postinstall script curl wrapper"
+                if grep -q "setup_pkg_environment" "$scripts_dir/postinstall"; then
+                    log_success "PKG environment setup function found"
+                else
+                    log_failure "PKG environment setup function not found"
+                fi
             fi
             
-            start_check "postinstall script environment detection"
-            if grep -q "detect_environment" "$pkg_dir/Scripts/postinstall"; then
-                log_success "Environment detection function found"
-            else
-                log_failure "Environment detection function not found"
-            fi
-            
-            start_check "postinstall script PKG mode support"
-            if grep -q "DTU_PYTHON_PKG_MODE" "$pkg_dir/Scripts/postinstall"; then
-                log_success "PKG mode variable handling found"
-            else
-                log_failure "PKG mode variable handling not found"
-            fi
-            
-            start_check "postinstall script curl wrapper"
-            if grep -q "setup_pkg_environment" "$pkg_dir/Scripts/postinstall"; then
-                log_success "PKG environment setup function found"
-            else
-                log_failure "PKG environment setup function not found"
-            fi
-        fi
-        
-        if [ -f "$pkg_dir/Scripts/preinstall" ]; then
-            start_check "preinstall script syntax"
-            if bash -n "$pkg_dir/Scripts/preinstall"; then
-                log_success "preinstall script has valid syntax"
-            else
-                log_failure "preinstall script has syntax errors" 
+            if [ -f "$scripts_dir/preinstall" ]; then
+                start_check "preinstall script syntax"
+                if bash -n "$scripts_dir/preinstall"; then
+                    log_success "preinstall script has valid syntax"
+                else
+                    log_failure "preinstall script has syntax errors" 
+                fi
             fi
         fi
     fi

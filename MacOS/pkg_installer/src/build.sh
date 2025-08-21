@@ -91,19 +91,30 @@ sed -e "s/PLACEHOLDER_VERSION/$VERSION/g" \
     -e "s/PLACEHOLDER_PKG_NAME/$PKG_NAME/g" \
     "$SOURCE_DIR/Distribution.xml" > "$BUILD_DIR/Distribution"
 
-# Create payload directory (minimal - no components bundled)
+# Create payload directory with bundled components
 PAYLOAD_DIR="$BUILD_DIR/payload"
-mkdir -p "$PAYLOAD_DIR"
+COMPONENTS_INSTALL_DIR="$PAYLOAD_DIR/usr/local/share/dtu-python-installer"
+mkdir -p "$COMPONENTS_INSTALL_DIR"
+
+# Bundle components for offline installation
+if [[ -d "$SOURCE_DIR/payload/Components" ]]; then
+    echo "Bundling components for offline installation..."
+    cp -r "$SOURCE_DIR/payload/Components" "$COMPONENTS_INSTALL_DIR/components"
+    echo "Bundled $(find "$COMPONENTS_INSTALL_DIR/components" -name "*.sh" | wc -l) component scripts"
+else
+    echo "WARNING: No components found at $SOURCE_DIR/payload/Components"
+    echo "Creating empty components directory as fallback..."
+    mkdir -p "$COMPONENTS_INSTALL_DIR/components"
+fi
 
 # Copy any additional payload files if they exist
 if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)" ]]; then
     echo "Copying additional payload files..."
-    cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
+    # Skip Components as they're already handled above
+    find "$SOURCE_DIR/payload" -mindepth 1 -maxdepth 1 ! -name "Components" -exec cp -r {} "$PAYLOAD_DIR/" \;
 fi
 
-# For script-only packages, we don't need any payload files
-# The PKG will only run the preinstall/postinstall scripts
-echo "Creating script-only PKG (no payload files)"
+echo "Creating PKG with bundled components at /usr/local/share/dtu-python-installer/"
 
 # Create component package
 echo "Building component package..."

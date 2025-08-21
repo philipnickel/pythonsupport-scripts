@@ -176,27 +176,58 @@ cleanup_pkg_environment() {
 
 # Main installation function
 main() {
-    # Determine user and set environment with fallback for CI
+    # Determine console user and set environment with proper fallback
     local user_name
-    if [ -n "${USER:-}" ]; then
-        user_name="$USER"
-    elif [ -c "/dev/console" ]; then
-        user_name=$(stat -f%Su /dev/console 2>/dev/null || echo "root")
+    local user_home
+    
+    # Primary method: get console user (works in most scenarios including CI)
+    if [ -c "/dev/console" ]; then
+        user_name=$(stat -f%Su /dev/console 2>/dev/null)
+    fi
+    
+    # Fallback methods if console detection fails
+    if [ -z "$user_name" ] || [ "$user_name" = "root" ]; then
+        if [ -n "${SUDO_USER:-}" ]; then
+            user_name="$SUDO_USER"
+        elif [ -n "${USER:-}" ] && [ "$USER" != "root" ]; then
+            user_name="$USER"
+        else
+            # Last resort: look for active users
+            user_name=$(who | awk '{print $1}' | head -n1 | grep -v '^root$' || echo "runner")
+        fi
+    fi
+    
+    # Validate user name and set home directory
+    if [ -z "$user_name" ] || [ "$user_name" = "root" ]; then
+        # CI environment fallback - use 'runner' as typical CI username
+        user_name="runner"
+        user_home="/Users/runner"
+        log_warning "Unable to detect console user, using fallback: $user_name"
     else
-        # CI environment fallback
-        user_name="${SUDO_USER:-root}"
+        user_home="/Users/$user_name"
+    fi
+    
+    # Ensure home directory exists for CI environments
+    if [ ! -d "$user_home" ]; then
+        log_warning "Home directory $user_home does not exist, attempting to create it"
+        mkdir -p "$user_home" 2>/dev/null || {
+            log_warning "Could not create $user_home, using /tmp as HOME"
+            user_home="/tmp"
+        }
     fi
     
     export USER="$user_name"
-    export HOME="/Users/$user_name"
+    export HOME="$user_home"
     
     # Set environment variables for installation
     export PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}"
     export PIS_ENV="${PIS_ENV:-CI}"
     
     log_info "Starting DTU Python installation for user: $user_name"
+    log_info "User home directory: $user_home"
     log_info "Python version: $PYTHON_VERSION_PS"
     log_info "Installation environment: $PIS_ENV"
+    log_info "Running as UID: $(id -u), effective user: $user_name"
     
     show_installer_header
     
@@ -206,13 +237,15 @@ main() {
     setup_pkg_environment
     
     # Additional debugging information
-    log_info "Environment variables:"
+    log_info "Environment variables for installation:"
     log_info "  DTU_PYTHON_PKG_MODE: $DTU_PYTHON_PKG_MODE"
     log_info "  DTU_COMPONENTS_PATH: ${DTU_COMPONENTS_PATH:-unset}"
     log_info "  HOME: $HOME"
     log_info "  USER: $USER"
     log_info "  PIS_ENV: $PIS_ENV"
     log_info "  GITHUB_CI: ${GITHUB_CI:-unset}"
+    log_info "  Current working directory: $(pwd)"
+    log_info "  User can write to home: $([ -w "$user_home" ] && echo "YES" || echo "NO")"
     
     # Pre-installation validation
     if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
@@ -245,7 +278,11 @@ main() {
         export NONINTERACTIVE="1"
         
         # Execute orchestrator as the user with all necessary environment variables
-        sudo -u "$user_name" env HOME="/Users/$user_name" \
+        # Use -H flag to set HOME properly and -s to use user's shell
+        sudo -H -u "$user_name" \
+            env HOME="$user_home" \
+            USER="$user_name" \
+            LOGNAME="$user_name" \
             DTU_PYTHON_PKG_MODE="$DTU_PYTHON_PKG_MODE" \
             DTU_COMPONENTS_PATH="$DTU_COMPONENTS_PATH" \
             PYTHON_VERSION_PS="$PYTHON_VERSION_PS" \
@@ -257,18 +294,24 @@ main() {
             NONINTERACTIVE="$NONINTERACTIVE" \
             DEBIAN_FRONTEND="$DEBIAN_FRONTEND" \
             DTU_TEMP_DIR="$DTU_TEMP_DIR" \
-            PATH="$PATH" \
-            /bin/bash "$orchestrator_cmd"
+            PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+            /bin/bash -l "$orchestrator_cmd"
         orchestrator_ret=$?
     else
         # Traditional mode - use curl to download and execute
         log_info "Traditional mode: Using remote first_year_students.sh orchestrator"
-        sudo -u "$user_name" env HOME="/Users/$user_name" \
+        sudo -H -u "$user_name" \
+            env HOME="$user_home" \
+            USER="$user_name" \
+            LOGNAME="$user_name" \
             PYTHON_VERSION_PS="$PYTHON_VERSION_PS" \
             PIS_ENV="$PIS_ENV" \
             REMOTE_PS="${REPO:-dtudk/pythonsupport-scripts}" \
             BRANCH_PS="${BRANCH:-main}" \
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REPO:-dtudk/pythonsupport-scripts}/${BRANCH:-main}/MacOS/Components/orchestrators/first_year_students.sh)"
+            CI="true" \
+            NONINTERACTIVE="1" \
+            PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+            /bin/bash -l -c "$(curl -fsSL https://raw.githubusercontent.com/${REPO:-dtudk/pythonsupport-scripts}/${BRANCH:-main}/MacOS/Components/orchestrators/first_year_students.sh)"
         orchestrator_ret=$?
     fi
     
