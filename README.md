@@ -6,10 +6,27 @@ This repository contains automated installation scripts for Python development e
 
 ## Quick Diagnostics
 
-Run comprehensive Python environment diagnostics:
+The diagnostics system now supports targeted testing profiles for different needs:
 
+### First Year Environment (Essential Tests Only)
+Perfect for DTU first year students - tests only the core requirements:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- --profile first_year
+```
+
+### Comprehensive Environment (All Tests)
+Complete diagnostic suite for advanced users and troubleshooting:
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- --profile comprehensive
+```
+
+### Local Usage
+If you have the repository cloned locally:
+```bash
+cd MacOS/Components/Diagnostics
+./generate_report.sh --profile first_year        # Essential tests only
+./generate_report.sh --profile comprehensive     # All tests (default)
+./generate_report.sh --help                      # View available profiles
 ```
 
 # Autoinstalling python 
