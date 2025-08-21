@@ -102,6 +102,91 @@ echo "Temporary directory: $TEMP_DIR"
 echo "Report will be saved to: $REPORT_FILE"
 echo ""
 
+# Enhanced System Information Section
+echo -e "${BLUE}═══════════════════════════════════════"
+echo "SYSTEM INFORMATION"
+echo "═══════════════════════════════════════${NC}"
+
+# macOS Version Information
+echo -e "${GREEN}macOS Information:${NC}"
+echo "  Product Name: $(sw_vers -productName 2>/dev/null || echo 'Unknown')"
+echo "  Version: $(sw_vers -productVersion 2>/dev/null || echo 'Unknown')"
+echo "  Build: $(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')"
+echo ""
+
+# Hardware Information
+echo -e "${GREEN}Hardware Information:${NC}"
+echo "  Architecture: $(uname -m 2>/dev/null || echo 'Unknown')"
+echo "  Hostname: $(hostname 2>/dev/null || echo 'Unknown')"
+echo "  Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')"
+if command -v system_profiler >/dev/null 2>&1; then
+    # Get CPU info (with timeout to prevent hanging)
+    cpu_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Processor Name" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    memory_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Memory" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    echo "  Processor: $cpu_info"
+    echo "  Memory: $memory_info"
+fi
+echo ""
+
+# User Environment
+echo -e "${GREEN}User Environment:${NC}"
+echo "  Username: $(whoami 2>/dev/null || echo 'Unknown')"
+echo "  Home Directory: $HOME"
+echo "  Current Shell: $SHELL"
+echo "  PATH Entries: $(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories"
+echo ""
+
+# Development Tools Check
+echo -e "${GREEN}Development Tools Overview:${NC}"
+# Check for common development tools with version info
+for tool in python python3 pip pip3 conda brew code git; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        tool_path=$(which "$tool" 2>/dev/null)
+        case "$tool" in
+            python|python3)
+                version=$($tool --version 2>/dev/null | head -1)
+                ;;
+            pip|pip3)
+                version=$($tool --version 2>/dev/null | head -1 | awk '{print $2}')
+                version="version $version"
+                ;;
+            conda)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $(echo "$version" | awk '{print $2}')"
+                ;;
+            brew)
+                version="version $($tool --version 2>/dev/null | head -1 | awk '{print $2}')"
+                ;;
+            code)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $version"
+                ;;
+            git)
+                version=$($tool --version 2>/dev/null | awk '{print $3}')
+                version="version $version"
+                ;;
+        esac
+        echo "  ✓ $tool: $version ($tool_path)"
+    else
+        echo "  ✗ $tool: Not found"
+    fi
+done
+echo ""
+
+# Environment Variables of Interest
+echo -e "${GREEN}Python Environment Variables:${NC}"
+for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
+    if [[ -n "${!var}" ]]; then
+        echo "  $var: ${!var}"
+    else
+        echo "  $var: (not set)"
+    fi
+done
+echo ""
+
+echo -e "${BLUE}═══════════════════════════════════════${NC}"
+echo ""
+
 # Default repository coordinates (can be overridden via env/config)
 REPO_OWNER=${REPO_OWNER:-philipnickel}
 REPO_NAME=${REPO_NAME:-pythonsupport-scripts}
@@ -303,7 +388,10 @@ run_diagnostic() {
     local exit_code=0
     local start_time=$(date +%s)
     
-    echo -n "Running $main_category > $subcategory → $display_name... "
+    echo -e "\n${BLUE}Running:${NC} $main_category > $subcategory → $display_name"
+    echo "  Script: $script_path"
+    echo "  Timeout: ${timeout:-$DEFAULT_TIMEOUT}s"
+    echo -n "  Status: "
     
     # Download script from repository with branch fallbacks
     local temp_script="$TEMP_DIR/${script_name}.sh"
@@ -332,30 +420,30 @@ run_diagnostic() {
     if [[ -n "$timeout_cmd" ]]; then
         if $timeout_cmd "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
-            echo -e "${GREEN}✓ Passed${NC}"
+            echo -e "${GREEN}✓ PASSED${NC}"
         else
             exit_code=$?
             if [[ $exit_code -eq 124 ]]; then
-                echo -e "${YELLOW}⚠ Timeout (${timeout}s)${NC}"
+                echo -e "${YELLOW}⚠ TIMEOUT after ${timeout}s${NC}"
                 echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                 echo "" >> "$log_file"
             else
-                echo -e "${RED}✗ Failed (exit code: $exit_code)${NC}"
+                echo -e "${RED}✗ FAILED with exit code $exit_code${NC}"
             fi
         fi
     else
         # Use bash-based timeout as fallback
         if bash_timeout "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
-            echo -e "${GREEN}✓ Passed${NC}"
+            echo -e "${GREEN}✓ PASSED${NC}"
         else
             exit_code=$?
             if [[ $exit_code -eq 124 ]]; then
-                echo -e "${YELLOW}⚠ Timeout (${timeout}s)${NC}"
+                echo -e "${YELLOW}⚠ TIMEOUT after ${timeout}s${NC}"
                 echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                 echo "" >> "$log_file"
             else
-                echo -e "${RED}✗ Failed (exit code: $exit_code)${NC}"
+                echo -e "${RED}✗ FAILED with exit code $exit_code${NC}"
             fi
         fi
     fi
@@ -363,6 +451,7 @@ run_diagnostic() {
     # Calculate execution time
     local end_time=$(date +%s)
     local exec_time=$((end_time - start_time))
+    echo "  Execution time: ${exec_time}s"
     echo "EXEC_TIME:${exec_time}" >> "$log_file"
     
     # Save status for parallel processing
@@ -1154,23 +1243,13 @@ cat > "$REPORT_FILE" << 'HTML_TEMPLATE'
             // Generate summary for email
             const summaryData = generateEmailSummary();
             
-            // Create email content
+            // Create email content with verbose system report
             const subject = 'DTU Python Support - Diagnostic Report';
             const body = `Hello DTU Python Support Team,
 
 I've run the diagnostic report and would like assistance with my Python development environment setup.
 
-SYSTEM SUMMARY:
-${summaryData.summary}
-
-FAILED DIAGNOSTICS:
-${summaryData.failures}
-
-SYSTEM INFO:
-- Report generated: ${new Date().toLocaleString()}
-- Browser: ${navigator.userAgent}
-
-Please note: I can provide the detailed diagnostic report file if needed. Use the "Download Report" button to save the complete report.
+${summaryData.verboseReport}
 
 Please let me know how to resolve any issues found.
 
@@ -1179,7 +1258,9 @@ Best regards,
 [Your Student ID / Email]
 
 ---
-This email was generated automatically by the DTU Python Diagnostics Report.`;
+This email was generated automatically by the DTU Python Diagnostics Report.
+Report generated: ${new Date().toLocaleString()}
+Browser: ${navigator.userAgent}`;
 
             // Create mailto link
             const mailtoLink = `mailto:pythonsupport@dtu.dk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -1212,15 +1293,28 @@ This email was generated automatically by the DTU Python Diagnostics Report.`;
         function generateEmailSummary() {
             let passed = 0, failed = 0, timeout = 0;
             const failures = [];
+            const detailedResults = [];
+            let systemInfo = '';
+            
+            // Get system information if available
+            if (diagnosticData._system_info && diagnosticData._system_info.systemInfo) {
+                systemInfo = diagnosticData._system_info.systemInfo;
+            }
             
             for (const [key, data] of Object.entries(diagnosticData)) {
+                // Skip system info entry
+                if (key === '_system_info') continue;
+                
                 if (data.status === 'PASS') {
                     passed++;
+                    detailedResults.push(`✓ PASSED - ${data.name} (${data.category})`);
                 } else if (data.status === 'TIMEOUT') {
                     timeout++;
+                    detailedResults.push(`⚠ TIMEOUT - ${data.name} (${data.category})`);
                     failures.push(`- ${data.name} (${data.category}) - TIMEOUT`);
-                } else {
+                } else if (data.status === 'FAIL') {
                     failed++;
+                    detailedResults.push(`✗ FAILED - ${data.name} (${data.category})`);
                     failures.push(`- ${data.name} (${data.category}) - FAILED`);
                 }
             }
@@ -1230,9 +1324,12 @@ Passed: ${passed}
 Failed: ${failed}
 Timeout: ${timeout}`;
             
+            const verboseReport = systemInfo + '\n=== DIAGNOSTIC RESULTS ===\n' + detailedResults.join('\n');
+            
             return {
                 summary,
-                failures: failures.length > 0 ? '\n' + failures.join('\n') : ''
+                failures: failures.length > 0 ? '\n' + failures.join('\n') : '',
+                verboseReport: verboseReport
             };
         }
         
@@ -1319,6 +1416,79 @@ TOTAL_TIMEOUT=0
 JSON_DATA=""
 current_category=""
 
+# Capture system information for email summary
+SYSTEM_INFO_TEXT=""
+SYSTEM_INFO_TEXT+="DTU Python Diagnostics System Report\n"
+SYSTEM_INFO_TEXT+="Generated: $(date '+%Y-%m-%d %H:%M:%S')\n"
+SYSTEM_INFO_TEXT+="Profile: $PROFILE_NAME\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="=== SYSTEM INFORMATION ===\n"
+SYSTEM_INFO_TEXT+="macOS Information:\n"
+SYSTEM_INFO_TEXT+="  Product Name: $(sw_vers -productName 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Version: $(sw_vers -productVersion 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Build: $(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Hardware Information:\n"
+SYSTEM_INFO_TEXT+="  Architecture: $(uname -m 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Hostname: $(hostname 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')\n"
+if command -v system_profiler >/dev/null 2>&1; then
+    cpu_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Processor Name" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    memory_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Memory" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    SYSTEM_INFO_TEXT+="  Processor: $cpu_info\n"
+    SYSTEM_INFO_TEXT+="  Memory: $memory_info\n"
+fi
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="User Environment:\n"
+SYSTEM_INFO_TEXT+="  Username: $(whoami 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Home Directory: $HOME\n"
+SYSTEM_INFO_TEXT+="  Current Shell: $SHELL\n"
+SYSTEM_INFO_TEXT+="  PATH Entries: $(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Development Tools Overview:\n"
+for tool in python python3 pip pip3 conda brew code git; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        tool_path=$(which "$tool" 2>/dev/null)
+        case "$tool" in
+            python|python3)
+                version=$($tool --version 2>/dev/null | head -1)
+                ;;
+            pip|pip3)
+                version=$($tool --version 2>/dev/null | head -1 | awk '{print $2}')
+                version="version $version"
+                ;;
+            conda)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $(echo "$version" | awk '{print $2}')"
+                ;;
+            brew)
+                version="version $($tool --version 2>/dev/null | head -1 | awk '{print $2}')"
+                ;;
+            code)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $version"
+                ;;
+            git)
+                version=$($tool --version 2>/dev/null | awk '{print $3}')
+                version="version $version"
+                ;;
+        esac
+        SYSTEM_INFO_TEXT+="  ✓ $tool: $version ($tool_path)\n"
+    else
+        SYSTEM_INFO_TEXT+="  ✗ $tool: Not found\n"
+    fi
+done
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Python Environment Variables:\n"
+for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
+    if [[ -n "${!var}" ]]; then
+        SYSTEM_INFO_TEXT+="  $var: ${!var}\n"
+    else
+        SYSTEM_INFO_TEXT+="  $var: (not set)\n"
+    fi
+done
+SYSTEM_INFO_TEXT+="\n"
+
 # Run all discovered diagnostic components
 echo "Running diagnostic checks..."
 if [[ "$PARALLEL_ENABLED" == "true" ]]; then
@@ -1384,20 +1554,20 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
             exit_code=$(cat "$status_file")
             if [[ "$exit_code" == "0" ]]; then
                 STATUS="PASS"
-                echo -e "  $display_name: ${GREEN}✓ Passed${NC}"
+                echo -e "  ${GREEN}✓ PASSED${NC} - $display_name"
                 ((TOTAL_PASS++))
             elif [[ "$exit_code" == "124" ]]; then
                 STATUS="TIMEOUT"
-                echo -e "  $display_name: ${YELLOW}⚠ Timeout${NC}"
+                echo -e "  ${YELLOW}⚠ TIMEOUT${NC} - $display_name"
                 ((TOTAL_TIMEOUT++))
             else
                 STATUS="FAIL"
-                echo -e "  $display_name: ${RED}✗ Failed${NC}"
+                echo -e "  ${RED}✗ FAILED (exit code: $exit_code)${NC} - $display_name"
                 ((TOTAL_FAIL++))
             fi
         else
             STATUS="FAIL"
-            echo -e "  $display_name: ${RED}✗ Error${NC}"
+            echo -e "  ${RED}✗ ERROR (no status file)${NC} - $display_name"
             ((TOTAL_FAIL++))
         fi
         
@@ -1408,6 +1578,7 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
             # Extract execution time if available
             exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
             if [[ -n "$exec_time" ]]; then
+                echo "    Script path: $script_path"
                 echo "    Execution time: ${exec_time}s"
             fi
             LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
@@ -1481,12 +1652,31 @@ else
     done
 fi
 
-# Wrap JSON_DATA in proper JavaScript object literal format
+# Wrap JSON_DATA in proper JavaScript object literal format, including system information
+SYSTEM_INFO_ESCAPED=$(echo "$SYSTEM_INFO_TEXT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+
 if [[ -n "$JSON_DATA" ]]; then
-    JSON_DATA="{$JSON_DATA
-        }"
+    JSON_DATA="{$JSON_DATA,
+        '_system_info': {
+            category: 'System',
+            subcategory: 'Information',
+            name: 'System Information',
+            status: 'INFO',
+            log: '$(echo "$SYSTEM_INFO_ESCAPED" | base64 2>/dev/null | tr -d '\n' || echo "")',
+            systemInfo: '$SYSTEM_INFO_ESCAPED'
+        }
+    }"
 else
-    JSON_DATA="{}"
+    JSON_DATA="{
+        '_system_info': {
+            category: 'System',
+            subcategory: 'Information', 
+            name: 'System Information',
+            status: 'INFO',
+            log: '$(echo "$SYSTEM_INFO_ESCAPED" | base64 2>/dev/null | tr -d '\n' || echo "")',
+            systemInfo: '$SYSTEM_INFO_ESCAPED'
+        }
+    }"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

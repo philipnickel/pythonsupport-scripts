@@ -137,23 +137,13 @@ function emailSupport() {
     // Generate summary for email
     const summaryData = generateEmailSummary();
     
-    // Create email content
+    // Create email content with verbose system report
     const subject = 'DTU Python Support - Diagnostic Report';
     const body = `Hello DTU Python Support Team,
 
 I've run the diagnostic report and would like assistance with my Python development environment setup.
 
-SYSTEM SUMMARY:
-${summaryData.summary}
-
-FAILED DIAGNOSTICS:
-${summaryData.failures}
-
-SYSTEM INFO:
-- Report generated: ${new Date().toLocaleString()}
-- Browser: ${navigator.userAgent}
-
-Please note: I can provide the detailed diagnostic report file if needed. Use the "Download Report" button to save the complete report.
+${summaryData.verboseReport}
 
 Please let me know how to resolve any issues found.
 
@@ -162,7 +152,9 @@ Best regards,
 [Your Student ID / Email]
 
 ---
-This email was generated automatically by the DTU Python Diagnostics Report.`;
+This email was generated automatically by the DTU Python Diagnostics Report.
+Report generated: ${new Date().toLocaleString()}
+Browser: ${navigator.userAgent}`;
 
     // Create mailto link
     const mailtoLink = `mailto:pythonsupport@dtu.dk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -195,15 +187,28 @@ function downloadReport() {
 function generateEmailSummary() {
     let passed = 0, failed = 0, timeout = 0;
     const failures = [];
+    const detailedResults = [];
+    let systemInfo = '';
+    
+    // Get system information if available
+    if (diagnosticData._system_info && diagnosticData._system_info.systemInfo) {
+        systemInfo = diagnosticData._system_info.systemInfo;
+    }
     
     for (const [key, data] of Object.entries(diagnosticData)) {
+        // Skip system info entry
+        if (key === '_system_info') continue;
+        
         if (data.status === 'PASS') {
             passed++;
+            detailedResults.push(`✓ PASSED - ${data.name} (${data.category})`);
         } else if (data.status === 'TIMEOUT') {
             timeout++;
+            detailedResults.push(`⚠ TIMEOUT - ${data.name} (${data.category})`);
             failures.push(`- ${data.name} (${data.category}) - TIMEOUT`);
-        } else {
+        } else if (data.status === 'FAIL') {
             failed++;
+            detailedResults.push(`✗ FAILED - ${data.name} (${data.category})`);
             failures.push(`- ${data.name} (${data.category}) - FAILED`);
         }
     }
@@ -213,9 +218,12 @@ Passed: ${passed}
 Failed: ${failed}
 Timeout: ${timeout}`;
     
+    const verboseReport = systemInfo + '\n=== DIAGNOSTIC RESULTS ===\n' + detailedResults.join('\n');
+    
     return {
         summary,
-        failures: failures.length > 0 ? '\n' + failures.join('\n') : ''
+        failures: failures.length > 0 ? '\n' + failures.join('\n') : '',
+        verboseReport: verboseReport
     };
 }
 
