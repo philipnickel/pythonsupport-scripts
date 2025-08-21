@@ -6,11 +6,20 @@
 # Strict error handling
 set -euo pipefail
 
-# Get script directory for relative paths
-SCRIPT_DIR="$(dirname "$0")"
+# Get script directory for relative paths and ensure it's absolute
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Source local config file for environment variables
-source "$SCRIPT_DIR/../metadata/config.sh"
+if [ -f "$SCRIPT_DIR/../metadata/config.sh" ]; then
+    source "$SCRIPT_DIR/../metadata/config.sh"
+else
+    # Fallback configuration if config.sh is not found
+    export REPO="philipnickel/pythonsupport-scripts"
+    export BRANCH="main"
+    export LOG_FILE="/tmp/macos_dtu_python_install.log"
+    export SUMMARY_FILE="/tmp/macos_dtu_python_summary.txt"
+    export SUPPORT_EMAIL="python-support@dtu.dk"
+fi
 
 # Load local progress utilities
 source "$SCRIPT_DIR/loading_animations.sh" 2>/dev/null || {
@@ -21,29 +30,43 @@ source "$SCRIPT_DIR/loading_animations.sh" 2>/dev/null || {
     show_installation_summary() { show_progress_log "Installation Summary: $1"; }
 }
 
-# Setup logging - redirect to both log file and stdout
+# Setup logging - ensure log file directory exists and redirect to both log file and stdout
+mkdir -p "$(dirname "$LOG_FILE")"
+touch "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-# Environment Detection - Check if running from PKG installation
-detect_environment() {
-    local bundled_components_path="/usr/local/share/dtu-python-installer/components"
-    local bundled_orchestrator="$bundled_components_path/orchestrators/first_year_students.sh"
-    
-    if [ -d "$bundled_components_path" ] && [ -f "$bundled_orchestrator" ]; then
-        export DTU_PYTHON_PKG_MODE="true"
-        export DTU_COMPONENTS_PATH="$bundled_components_path"
-        log_info "Environment detected: PKG mode (using bundled components)"
-        return 0
-    else
-        export DTU_PYTHON_PKG_MODE="false"
-        unset DTU_COMPONENTS_PATH
-        log_info "Environment detected: Traditional mode (using remote curl)"
-        return 1
-    fi
-}
 
 # Local utility functions (offline versions of shared utilities)
 _prefix="PYS:"
+
+# Environment Detection - Check if running from PKG installation
+detect_environment() {
+    # Multiple possible paths for bundled components
+    local possible_paths=(
+        "/usr/local/share/dtu-python-installer/components"
+        "$SCRIPT_DIR/../payload/Components"
+        "/Library/Application Support/DTU Python Installer/Components"
+        "$SCRIPT_DIR/../Components"
+    )
+    
+    for bundled_components_path in "${possible_paths[@]}"; do
+        local bundled_orchestrator="$bundled_components_path/orchestrators/first_year_students.sh"
+        
+        if [ -d "$bundled_components_path" ] && [ -f "$bundled_orchestrator" ]; then
+            export DTU_PYTHON_PKG_MODE="true"
+            export DTU_COMPONENTS_PATH="$bundled_components_path"
+            echo "$_prefix Environment detected: PKG mode (using bundled components at: $bundled_components_path)"
+            return 0
+        else
+            echo "$_prefix Checked path: $bundled_components_path (not found or incomplete)"
+        fi
+    done
+    
+    export DTU_PYTHON_PKG_MODE="false"
+    unset DTU_COMPONENTS_PATH
+    echo "$_prefix Environment detected: Traditional mode (using remote curl)"
+    return 1
+}
 
 log_info() {
     echo "$_prefix $1"
@@ -112,13 +135,17 @@ if [ -n "$URL" ]; then
         COMPONENT_PATH="${BASH_REMATCH[1]}"
         LOCAL_FILE="$DTU_COMPONENTS_PATH/$COMPONENT_PATH"
         
+        echo "[CURL WRAPPER] Attempting to load local component: $LOCAL_FILE" >&2
+        
         if [ -f "$LOCAL_FILE" ]; then
+            echo "[CURL WRAPPER] Found local component: $LOCAL_FILE" >&2
             cat "$LOCAL_FILE"
             exit 0
         else
-            echo "ERROR: Local component file not found: $LOCAL_FILE" >&2
-            echo "Available components:" >&2
+            echo "[CURL WRAPPER] ERROR: Local component file not found: $LOCAL_FILE" >&2
+            echo "[CURL WRAPPER] Available components:" >&2
             find "$DTU_COMPONENTS_PATH" -name "*.sh" 2>/dev/null | head -10 >&2 || true
+            echo "[CURL WRAPPER] Components path: $DTU_COMPONENTS_PATH" >&2
             exit 1
         fi
     fi
@@ -131,7 +158,11 @@ EOF
         chmod +x "$temp_dir/curl"
         export PATH="$temp_dir:$PATH"
         log_info "PKG mode: Created curl wrapper for local component loading"
-        log_info "PKG mode: Available components: $(find "$DTU_COMPONENTS_PATH" -name "*.sh" | wc -l) files"
+        log_info "PKG mode: Components path: $DTU_COMPONENTS_PATH"
+        log_info "PKG mode: Available components: $(find "$DTU_COMPONENTS_PATH" -name "*.sh" 2>/dev/null | wc -l) files"
+        log_info "PKG mode: PATH updated to: $PATH"
+        # Export variables for the curl wrapper
+        export DTU_COMPONENTS_PATH
     fi
 }
 
@@ -145,23 +176,53 @@ cleanup_pkg_environment() {
 
 # Main installation function
 main() {
-    # Determine user and set environment
-    local user_name=$(stat -f%Su /dev/console)
+    # Determine user and set environment with fallback for CI
+    local user_name
+    if [ -n "${USER:-}" ]; then
+        user_name="$USER"
+    elif [ -c "/dev/console" ]; then
+        user_name=$(stat -f%Su /dev/console 2>/dev/null || echo "root")
+    else
+        # CI environment fallback
+        user_name="${SUDO_USER:-root}"
+    fi
+    
     export USER="$user_name"
     export HOME="/Users/$user_name"
     
     # Set environment variables for installation
-    export PYTHON_VERSION_PS="3.11"
-    export PIS_ENV="CI"
+    export PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}"
+    export PIS_ENV="${PIS_ENV:-CI}"
     
     log_info "Starting DTU Python installation for user: $user_name"
     log_info "Python version: $PYTHON_VERSION_PS"
+    log_info "Installation environment: $PIS_ENV"
     
     show_installer_header
     
     # Detect and setup environment
+    log_info "Detecting installation environment..."
     detect_environment
     setup_pkg_environment
+    
+    # Additional debugging information
+    log_info "Environment variables:"
+    log_info "  DTU_PYTHON_PKG_MODE: $DTU_PYTHON_PKG_MODE"
+    log_info "  DTU_COMPONENTS_PATH: ${DTU_COMPONENTS_PATH:-unset}"
+    log_info "  HOME: $HOME"
+    log_info "  USER: $USER"
+    log_info "  PIS_ENV: $PIS_ENV"
+    log_info "  GITHUB_CI: ${GITHUB_CI:-unset}"
+    
+    # Pre-installation validation
+    if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
+        if [ ! -f "$DTU_COMPONENTS_PATH/orchestrators/first_year_students.sh" ]; then
+            log_error "Critical error: Required orchestrator not found in PKG bundle"
+            log_error "Expected: $DTU_COMPONENTS_PATH/orchestrators/first_year_students.sh"
+            log_error "This indicates a PKG build problem. Installation cannot proceed."
+            exit 1
+        fi
+    fi
     
     # Call the existing first_year_students.sh orchestrator
     log_info "Executing first year students orchestrator..."
@@ -178,8 +239,12 @@ main() {
         export REMOTE_PS="${REPO:-dtudk/pythonsupport-scripts}"
         export BRANCH_PS="${BRANCH:-main}"
         export GITHUB_CI="true"
+        # Ensure non-interactive mode for CI environments
+        export DEBIAN_FRONTEND="noninteractive"
+        export CI="true"
+        export NONINTERACTIVE="1"
         
-        # Execute orchestrator as the user
+        # Execute orchestrator as the user with all necessary environment variables
         sudo -u "$user_name" env HOME="/Users/$user_name" \
             DTU_PYTHON_PKG_MODE="$DTU_PYTHON_PKG_MODE" \
             DTU_COMPONENTS_PATH="$DTU_COMPONENTS_PATH" \
@@ -188,6 +253,10 @@ main() {
             REMOTE_PS="$REMOTE_PS" \
             BRANCH_PS="$BRANCH_PS" \
             GITHUB_CI="$GITHUB_CI" \
+            CI="$CI" \
+            NONINTERACTIVE="$NONINTERACTIVE" \
+            DEBIAN_FRONTEND="$DEBIAN_FRONTEND" \
+            DTU_TEMP_DIR="$DTU_TEMP_DIR" \
             PATH="$PATH" \
             /bin/bash "$orchestrator_cmd"
         orchestrator_ret=$?
@@ -225,6 +294,11 @@ main() {
             log_error "PKG mode error: Check that all required components are bundled"
             log_info "PKG mode debug: Components path: $DTU_COMPONENTS_PATH"
             log_info "PKG mode debug: Available scripts: $(find "$DTU_COMPONENTS_PATH" -name "*.sh" 2>/dev/null | wc -l)"
+            log_info "PKG mode debug: Orchestrator file: $([ -f "$DTU_COMPONENTS_PATH/orchestrators/first_year_students.sh" ] && echo "EXISTS" || echo "MISSING")"
+            log_info "PKG mode debug: Components directory listing:"
+            find "$DTU_COMPONENTS_PATH" -type f -name "*.sh" 2>/dev/null | head -10 | while read -r file; do
+                log_info "  - $file"
+            done || true
         fi
     fi
     
