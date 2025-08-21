@@ -97,8 +97,8 @@ jobs:
           echo "Available PKG files:"
           ls -la builds_for_testing/
           
-          # Get the PKG file to test (currently the Homebrew PKG)
-          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.0.1-homebrew.pkg"
+          # Get the PKG file to test (currently the Homebrew productbuild PKG)
+          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.1.0-homebrew-productbuild.pkg"
           
           if [[ ! -f "$PKG_FILE" ]]; then
             echo "❌ PKG file not found: $PKG_FILE"

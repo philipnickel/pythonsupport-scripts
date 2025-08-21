@@ -5,8 +5,8 @@
 # Package metadata
 PKG_NAME="DTU Python First Year Students"
 PKG_IDENTIFIER="dk.dtu.pythonsupport.firstyear"
-PKG_VERSION="1.0.1"
-PKG_DESCRIPTION="Phase 2: Homebrew component installer for DTU Python development environment"
+PKG_VERSION="1.1.0"
+PKG_DESCRIPTION="Phase 2: Professional installer with Homebrew component for DTU Python development environment"
 
 # Build configuration
 BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
