@@ -32,9 +32,8 @@ env:
 
 jobs:
   test-pkg-installer:
-    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
-    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
-    if: false
+    # PKG installer testing workflow - runs alongside mac_orchestrators.yml
+    if: true
     runs-on: macos-latest
     
     steps:
