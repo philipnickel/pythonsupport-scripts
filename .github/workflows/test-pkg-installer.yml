@@ -40,6 +40,13 @@ jobs:
         with:
           ref: ${{ inputs.branch || github.head_ref || 'macos-components' }}
 
+      - name: Build PKG from source
+        run: |
+          echo "=== Building PKG from source ==="
+          bash MacOS/pkg_installer/src/build.sh
+          # Expose built PKG for later steps (relative to MacOS/pkg_installer working dir)
+          echo "PKG_FILE=builds/DTU-Python-FirstYear-v1.2.0.pkg" >> $GITHUB_ENV
+
       - name: System Information
         run: |
           echo "=== System Information ==="
@@ -97,8 +104,10 @@ jobs:
           echo "Available PKG files:"
           ls -la builds_for_testing/
           
-          # Get the PKG file to test (currently the Phase 3 Python PKG)
-          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.2.0.pkg"
+          # Select the PKG file to test:
+          # - Prefer the freshly built PKG (if build step succeeded)
+          # - Otherwise fall back to the prebuilt testing artifact
+          PKG_FILE="${PKG_FILE:-builds_for_testing/DTU-Python-FirstYear-v1.2.0.pkg}"
           
           if [[ ! -f "$PKG_FILE" ]]; then
             echo "❌ PKG file not found: $PKG_FILE"
