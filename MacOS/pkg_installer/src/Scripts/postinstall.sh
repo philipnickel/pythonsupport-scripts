@@ -279,6 +279,13 @@ main() {
         
         # Execute orchestrator as the user with all necessary environment variables
         # Use -H flag to set HOME properly and -s to use user's shell
+        # Force ARM64 architecture for Homebrew compatibility in CI
+        local arch_prefix=""
+        if [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${CI:-}" ]; then
+            arch_prefix="arch -arm64"
+            log_info "CI environment detected: Using ARM64 architecture"
+        fi
+        
         sudo -H -u "$user_name" \
             env HOME="$user_home" \
             USER="$user_name" \
@@ -295,7 +302,7 @@ main() {
             DEBIAN_FRONTEND="$DEBIAN_FRONTEND" \
             DTU_TEMP_DIR="$DTU_TEMP_DIR" \
             PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-            /bin/bash -l "$orchestrator_cmd"
+            $arch_prefix /bin/bash -l "$orchestrator_cmd"
         orchestrator_ret=$?
     else
         # Traditional mode - use curl to download and execute
