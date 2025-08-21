@@ -10,30 +10,46 @@
 
 # Function to check and install Homebrew if needed
 ensure_homebrew() {
-    if ! command -v brew >/dev/null 2>&1; then
-        log_info "Homebrew is not installed. Installing Homebrew..."
-        local url_ps=$(get_base_url)
-        log_info "Installing from $url_ps/Components/Homebrew/install.sh"
-        /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
-
-        # The above will install everything in a subshell.
-        # So just to be sure we have it on the path
-        [ -e ~/.bash_profile ] && source ~/.bash_profile
-        [ -e ~/.zshrc ] && source ~/.zshrc
-
-        # update binary locations 
-        hash -r
-        
-        # Verify installation
-        if ! command -v brew >/dev/null 2>&1; then
-            log_error "Homebrew installation failed"
-            exit_message
-        fi
-        
-        log_success "Homebrew installed successfully"
-    else
+    # First check if brew is in PATH
+    if command -v brew >/dev/null 2>&1; then
         log_info "Homebrew is already installed"
+        return 0
     fi
+    
+    # In restricted environments (like PKG installers), check common Homebrew locations
+    for brew_path in "/opt/homebrew/bin/brew" "/usr/local/bin/brew"; do
+        if [ -f "$brew_path" ]; then
+            log_info "Found existing Homebrew at $brew_path"
+            # Make sure it's in PATH for this session
+            export PATH="$(dirname "$brew_path"):$PATH"
+            # update binary locations 
+            hash -r
+            log_success "Homebrew found and added to PATH"
+            return 0
+        fi
+    done
+    
+    # If not found, install Homebrew
+    log_info "Homebrew is not installed. Installing Homebrew..."
+    local url_ps=$(get_base_url)
+    log_info "Installing from $url_ps/Components/Homebrew/install.sh"
+    /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
+
+    # The above will install everything in a subshell.
+    # So just to be sure we have it on the path
+    [ -e ~/.bash_profile ] && source ~/.bash_profile
+    [ -e ~/.zshrc ] && source ~/.zshrc
+
+    # update binary locations 
+    hash -r
+    
+    # Verify installation
+    if ! command -v brew >/dev/null 2>&1; then
+        log_error "Homebrew installation failed"
+        exit_message
+    fi
+    
+    log_success "Homebrew installed successfully"
 }
 
 # Function to setup conda environment
