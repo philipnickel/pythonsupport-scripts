@@ -34,10 +34,31 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/b
 if conda --version > /dev/null 2>&1; then
   log_success "Miniconda or anaconda is already installed"
 else
-  log_info "Miniconda or anaconda not found, installing Miniconda"
+  log_info "Miniconda or anaconda not found, installing Miniconda via Homebrew cask"
   export HOMEBREW_NO_AUTO_UPDATE=1
-  brew install --cask miniconda
-  check_exit_code "Failed to install Miniconda"
+  if brew install --cask miniconda; then
+    log_success "Installed Miniconda cask"
+  else
+    log_error "Homebrew cask 'miniconda' failed; trying 'miniforge' as fallback"
+    if brew install --cask miniforge; then
+      log_success "Installed Miniforge cask"
+    else
+      log_error "Homebrew cask 'miniforge' failed; falling back to official Miniconda installer"
+      tmp_installer="$(mktemp -t miniconda-installer).sh"
+      arch=$(uname -m)
+      if [ "$arch" = "arm64" ]; then
+        url="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
+      else
+        url="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+      fi
+      curl -fsSL "$url" -o "$tmp_installer"
+      check_exit_code "Failed to download Miniconda installer"
+      bash "$tmp_installer" -b -p "$HOME/miniconda3"
+      check_exit_code "Failed to run Miniconda installer"
+      rm -f "$tmp_installer"
+      log_success "Installed Miniconda via official installer"
+    fi
+  fi
 fi
 clear -x
 
@@ -64,8 +85,11 @@ if ! command -v conda >/dev/null 2>&1; then
   for conda_sh in \
     "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
     "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+    "/opt/homebrew/Caskroom/miniforge/base/etc/profile.d/conda.sh" \
+    "/usr/local/Caskroom/miniforge/base/etc/profile.d/conda.sh" \
     "$HOME/miniconda3/etc/profile.d/conda.sh" \
-    "/opt/miniconda3/etc/profile.d/conda.sh"; do
+    "/opt/miniconda3/etc/profile.d/conda.sh" \
+    "$HOME/miniforge3/etc/profile.d/conda.sh"; do
     if [ -f "$conda_sh" ]; then
       # shellcheck disable=SC1090
       . "$conda_sh" && break
