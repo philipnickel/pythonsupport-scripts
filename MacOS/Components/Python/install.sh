@@ -27,6 +27,7 @@ if conda --version > /dev/null; then
   log_success "Miniconda or anaconda is already installed"
 else
   log_info "Miniconda or anaconda not found, installing Miniconda"
+  export HOMEBREW_NO_AUTO_UPDATE=1
   brew install --cask miniconda
   check_exit_code "Failed to install Miniconda"
 fi

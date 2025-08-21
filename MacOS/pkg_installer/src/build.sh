@@ -1,137 +1,148 @@
 #!/bin/bash
-set -euo pipefail
+# DTU Python Installer PKG Build Script
+# Copies components from single source of truth and localizes URLs
 
-# DTU Python PKG Builder - Simplified Build Script
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+set -e
 
 # Load configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/metadata/config.sh"
 
-echo "=== $PKG_TITLE Build System ==="
-echo
-
-# Get and increment version (always increment)
-if [[ -f "$VERSION_FILE" ]]; then
-    CURRENT_VERSION=$(cat "$VERSION_FILE")
-    IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-    PATCH=$((PATCH + 1))
-    VERSION="$MAJOR.$MINOR.$PATCH"
-else
-    VERSION="1.0.0"
-fi
-echo "$VERSION" > "$VERSION_FILE"
-
-echo "Building $PKG_NAME version $VERSION..."
-
-# Set up directories
-BUILD_DIR="$SCRIPT_DIR/../temp_build"
-BUILDS_DIR="$SCRIPT_DIR/../builds"
-SOURCE_DIR="$SCRIPT_DIR"
-RESOURCES_DIR="$BUILD_DIR/Resources"
-SCRIPTS_DIR="$BUILD_DIR/Scripts"
+echo "=== DTU Python Installer PKG Build ==="
+echo "Build root: $BUILD_ROOT"
+echo "Components source: $COMPONENTS_SOURCE"
+echo "Package version: $PKG_VERSION"
+echo ""
 
 # Clean and create build directories
-rm -rf "$BUILD_DIR"
-mkdir -p "$RESOURCES_DIR" "$SCRIPTS_DIR" "$BUILDS_DIR"
+echo "Setting up build directories..."
+rm -rf "$TEMP_BUILD_DIR"
+mkdir -p "$TEMP_BUILD_DIR"
+mkdir -p "$BUILDS_DIR"
+mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH"
+mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH/Components"
+mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH/Components/Diagnostics"
 
-# Copy RTF resources (update version placeholders)
-echo "Copying installer text resources..."
-cp "$SOURCE_DIR/resources/installerText/Introduction.rtf" "$RESOURCES_DIR/"
-cp "$SOURCE_DIR/resources/installerText/Read Me.rtf" "$RESOURCES_DIR/"
-cp "$SOURCE_DIR/resources/installerText/License.rtf" "$RESOURCES_DIR/"
+# Function to localize script URLs to use local files
+localize_script() {
+    local input_file="$1"
+    local output_file="$2"
+    
+    echo "  Localizing: $(basename "$input_file")"
+    
+    # Create output directory if needed
+    mkdir -p "$(dirname "$output_file")"
+    
+    # Copy and modify the script to use local paths
+    # Handle various URL patterns used in the scripts
+    sed \
+        -e "s|https://raw\.githubusercontent\.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/|$LOCAL_INSTALL_PATH/Components/|g" \
+        -e "s|https://raw\.githubusercontent\.com/\${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${DIAG_BRANCH_PS:-main}/MacOS/Components/Diagnostics/|$LOCAL_INSTALL_PATH/Components/Diagnostics/|g" \
+        -e "s|https://raw\.githubusercontent\.com/dtudk/pythonsupport-scripts/main/MacOS/Components/|$LOCAL_INSTALL_PATH/Components/|g" \
+        -e "s|https://raw\.githubusercontent\.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/|$LOCAL_INSTALL_PATH/Components/Diagnostics/|g" \
+        -e "s|\$(curl -fsSL \"https://raw\.githubusercontent\.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/|\"$LOCAL_INSTALL_PATH/Components/|g" \
+        -e "s|\$(curl -fsSL https://raw\.githubusercontent\.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/|$LOCAL_INSTALL_PATH/Components/|g" \
+        -e "s|\$(curl -fsSL https://raw\.githubusercontent\.com/\${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${DIAG_BRANCH_PS:-main}/MacOS/Components/Diagnostics/|$LOCAL_INSTALL_PATH/Components/Diagnostics/|g" \
+        -e "s|/bin/bash -c \"\$(curl -fsSL https://raw\.githubusercontent\.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/|/bin/bash $LOCAL_INSTALL_PATH/Components/|g" \
+        -e "s|/bin/bash -c \"\$(curl -fsSL https://raw\.githubusercontent\.com/\${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${DIAG_BRANCH_PS:-main}/MacOS/Components/Diagnostics/|/bin/bash $LOCAL_INSTALL_PATH/Components/Diagnostics/|g" \
+        -e 's|")"|"|g' \
+        "$input_file" > "$output_file"
+    
+    # Make executable
+    chmod +x "$output_file"
+}
 
-# Process Summary.rtf with version and configuration
-sed -e "s/PLACEHOLDER_VERSION/$VERSION/g" \
-    -e "s/PLACEHOLDER_SUPPORT_EMAIL/$SUPPORT_EMAIL/g" \
-    -e "s/PLACEHOLDER_COPYRIGHT/$COPYRIGHT_TEXT/g" \
-    "$SOURCE_DIR/resources/installerText/Summary.rtf" > "$RESOURCES_DIR/Summary.rtf"
+# Copy and localize main components
+echo "Copying and localizing main components..."
+for component in "${COMPONENTS[@]}"; do
+    source_file="$COMPONENTS_SOURCE/$component"
+    dest_file="$PKG_ROOT$LOCAL_INSTALL_PATH/Components/$component"
+    
+    if [[ -f "$source_file" ]]; then
+        localize_script "$source_file" "$dest_file"
+    else
+        echo "  WARNING: Component not found: $source_file"
+    fi
+done
 
-# Copy images if enabled
-if [[ "$INCLUDE_IMAGES" == "true" && -d "$SOURCE_DIR/resources/images" ]]; then
-    echo "Copying image resources..."
-    cp -r "$SOURCE_DIR/resources/images"/* "$RESOURCES_DIR/" 2>/dev/null || true
-fi
+# Copy and localize diagnostics components
+echo "Copying and localizing diagnostics components..."
+for diag_component in "${DIAGNOSTICS_COMPONENTS[@]}"; do
+    source_file="$COMPONENTS_SOURCE/Diagnostics/$diag_component"
+    dest_file="$PKG_ROOT$LOCAL_INSTALL_PATH/Components/Diagnostics/$diag_component"
+    
+    if [[ -f "$source_file" ]]; then
+        localize_script "$source_file" "$dest_file"
+    else
+        echo "  WARNING: Diagnostics component not found: $source_file"
+    fi
+done
 
-# Copy browser summary if enabled
-if [[ "$INCLUDE_BROWSER_SUMMARY" == "true" && -f "$SOURCE_DIR/resources/browserSummary/browserSummary.html" ]]; then
-    echo "Copying browser summary..."
-    cp "$SOURCE_DIR/resources/browserSummary/browserSummary.html" "$RESOURCES_DIR/"
-fi
+# Create the main installer script for dummy PKG
+echo "Creating dummy installer script..."
+cat > "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh" << 'EOF'
+#!/bin/bash
+# DTU Python Support - Minimal Dummy PKG
+# Phase 1: Basic PKG installation test
 
-# Copy and process installation scripts
-echo "Processing installation scripts..."
-# Update scripts with configuration values
-sed -e "s|PLACEHOLDER_LOG_FILE|$LOG_FILE|g" \
-    -e "s|PLACEHOLDER_REPO|$REPO|g" \
-    -e "s|PLACEHOLDER_BRANCH|$BRANCH|g" \
-    "$SOURCE_DIR/Scripts/preinstall.sh" > "$SCRIPTS_DIR/preinstall"
+echo "🎉 DTU Python Support PKG installed successfully!"
+echo "📋 Installation details:"
+echo "  • Installation path: /usr/local/share/dtu-pythonsupport/"
+echo "  • Version: v1.0.0 (minimal dummy)"
+echo "  • Phase: 1 - Basic PKG functionality test"
+echo ""
+echo "✅ PKG installation verification complete."
 
-sed -e "s|PLACEHOLDER_LOG_FILE|$LOG_FILE|g" \
-    -e "s|PLACEHOLDER_REPO|$REPO|g" \
-    -e "s|PLACEHOLDER_BRANCH|$BRANCH|g" \
-    -e "s|PLACEHOLDER_SUMMARY_FILE|$SUMMARY_FILE|g" \
-    -e "s|PLACEHOLDER_SUPPORT_EMAIL|$SUPPORT_EMAIL|g" \
-    "$SOURCE_DIR/Scripts/postinstall.sh" > "$SCRIPTS_DIR/postinstall"
+# Create a simple status file to verify installation
+echo "DTU_PYTHON_SUPPORT_PKG_INSTALLED=true" > "$LOCAL_INSTALL_PATH/.pkg_status"
+echo "PKG_VERSION=1.0.0-dummy" >> "$LOCAL_INSTALL_PATH/.pkg_status"
+echo "INSTALL_DATE=$(date)" >> "$LOCAL_INSTALL_PATH/.pkg_status"
+EOF
 
-# Copy loading animations helper script
-if [[ -f "$SOURCE_DIR/Scripts/loading_animations.sh" ]]; then
-    echo "Copying loading animations helper..."
-    cp "$SOURCE_DIR/Scripts/loading_animations.sh" "$SCRIPTS_DIR/"
-fi
+chmod +x "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh"
 
-chmod +x "$SCRIPTS_DIR/"*
+# Create postinstall script for minimal PKG
+echo "Creating minimal PKG postinstall script..."
+mkdir -p "$TEMP_BUILD_DIR/Scripts"
+cat > "$TEMP_BUILD_DIR/Scripts/postinstall" << 'EOF'
+#!/bin/bash
+# Minimal PKG postinstall script - Phase 1
 
-# Process Distribution.xml with all configuration values
-echo "Processing Distribution.xml..."
-sed -e "s/PLACEHOLDER_VERSION/$VERSION/g" \
-    -e "s/PLACEHOLDER_PKG_TITLE/$PKG_TITLE/g" \
-    -e "s/PLACEHOLDER_PKG_DESCRIPTION/$PKG_DESCRIPTION/g" \
-    -e "s/PLACEHOLDER_PKG_ID/$PKG_ID/g" \
-    -e "s/PLACEHOLDER_PKG_NAME/$PKG_NAME/g" \
-    "$SOURCE_DIR/Distribution.xml" > "$BUILD_DIR/Distribution"
+echo "=== DTU Python Support PKG - Phase 1 Installation ==="
+echo "Files installed to: /usr/local/share/dtu-pythonsupport/"
+echo ""
 
-# Create payload directory (minimal - no components bundled)
-PAYLOAD_DIR="$BUILD_DIR/payload"
-mkdir -p "$PAYLOAD_DIR"
+# Run the dummy installer script
+/usr/local/share/dtu-pythonsupport/install.sh
 
-# Copy any additional payload files if they exist
-if [[ -d "$SOURCE_DIR/payload" && -n "$(ls -A "$SOURCE_DIR/payload" 2>/dev/null)" ]]; then
-    echo "Copying additional payload files..."
-    cp -r "$SOURCE_DIR/payload"/* "$PAYLOAD_DIR/"
-fi
+echo ""
+echo "=== Phase 1 PKG Installation Complete ==="
+exit 0
+EOF
 
-# For script-only packages, we don't need any payload files
-# The PKG will only run the preinstall/postinstall scripts
-echo "Creating script-only PKG (no payload files)"
+chmod +x "$TEMP_BUILD_DIR/Scripts/postinstall"
+
+# Build the PKG
+echo "Building PKG..."
+PKG_FILE="$BUILDS_DIR/DTU-Python-FirstYear-v${PKG_VERSION}.pkg"
 
 # Create component package
-echo "Building component package..."
-pkgbuild \
-    --root "$PAYLOAD_DIR" \
-    --scripts "$SCRIPTS_DIR" \
-    --identifier "$PKG_ID" \
-    --version "$VERSION" \
-    "$BUILD_DIR/${PKG_NAME}-${VERSION}.pkg"
+pkgbuild --root "$PKG_ROOT" \
+         --identifier "$PKG_IDENTIFIER" \
+         --version "$PKG_VERSION" \
+         --scripts "$TEMP_BUILD_DIR/Scripts" \
+         "$PKG_FILE"
 
-# Create final installer
-FINAL_PKG="$BUILDS_DIR/${PKG_NAME}_${VERSION}.pkg"
-echo "Creating final installer..."
-
-productbuild \
-    --distribution "$BUILD_DIR/Distribution" \
-    --resources "$RESOURCES_DIR" \
-    --package-path "$BUILD_DIR" \
-    "$FINAL_PKG"
-
-# Cleanup temp_build directory
-echo "Cleaning up temporary build files..."
-rm -rf "$BUILD_DIR"
-
-echo
-echo "✅ Build completed successfully!"
-echo "📦 Installer: $FINAL_PKG"
-echo "📋 Version: $VERSION"
-echo "📁 Size: $(du -h "$FINAL_PKG" | cut -f1)"
-echo
-echo "To install: sudo installer -pkg '$FINAL_PKG' -target /"
+if [[ $? -eq 0 ]]; then
+    echo ""
+    echo "=== BUILD SUCCESSFUL ==="
+    echo "PKG file: $PKG_FILE"
+    echo "Size: $(du -h "$PKG_FILE" | cut -f1)"
+    echo ""
+    echo "To install: sudo installer -pkg \"$PKG_FILE\" -target /"
+    echo "To test: make install"
+else
+    echo ""
+    echo "=== BUILD FAILED ==="
+    exit 1
+fi

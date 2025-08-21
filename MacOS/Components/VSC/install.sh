@@ -33,6 +33,7 @@ if [ -n "$vspath" ]  ; then
     log_success "Visual Studio Code is already installed"
 else
     log_info "Installing Visual Studio Code"
+    export HOMEBREW_NO_AUTO_UPDATE=1
     brew install --cask visual-studio-code
     check_exit_code "Failed to install Visual Studio Code"
 fi

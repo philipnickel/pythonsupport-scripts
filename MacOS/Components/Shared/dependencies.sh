@@ -58,6 +58,7 @@ install_brew_package() {
     if [ "$cask" = "true" ]; then
         if ! brew list --cask "$package" >/dev/null 2>&1; then
             log_info "Installing $package via Homebrew cask..."
+            export HOMEBREW_NO_AUTO_UPDATE=1
             brew install --cask "$package"
             check_exit_code "Failed to install $package"
             log_success "$package installed successfully"
@@ -67,6 +68,7 @@ install_brew_package() {
     else
         if ! brew list "$package" >/dev/null 2>&1; then
             log_info "Installing $package via Homebrew..."
+            export HOMEBREW_NO_AUTO_UPDATE=1
             brew install "$package"
             check_exit_code "Failed to install $package"
             log_success "$package installed successfully"

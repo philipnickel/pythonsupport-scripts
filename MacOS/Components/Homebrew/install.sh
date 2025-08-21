@@ -33,6 +33,7 @@ log_info "Installing Homebrew..."
 log_info "This will require you to type your password in the terminal."
 log_info "For security reasons you will not see what you type... It will be hidden while typing!"
 
+export HOMEBREW_NO_AUTO_UPDATE=1
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 check_exit_code "Failed to install Homebrew"
 

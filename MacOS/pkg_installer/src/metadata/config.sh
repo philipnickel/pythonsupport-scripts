@@ -1,34 +1,42 @@
 #!/bin/bash
-# DTU Python Installer - Simple Configuration
+# PKG Configuration for DTU Python Installer
+# This file defines what gets packaged and how
 
-# Package Information
-PKG_NAME="DtuPythonInstaller"
-PKG_ID="dk.dtu.pythonsupport.dtupythoninstaller"
-PKG_TITLE="DTU Python Installer"
-PKG_DESCRIPTION="Complete Python development environment for DTU students on macOS"
+# Package metadata
+PKG_NAME="DTU Python First Year Students"
+PKG_IDENTIFIER="dk.dtu.pythonsupport.firstyear"
+PKG_VERSION="1.0.0"
+PKG_DESCRIPTION="Complete Python development environment setup for DTU first year students"
 
-# Version Management
-VERSION_FILE="$SCRIPT_DIR/metadata/.version"
+# Build configuration
+BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$BUILD_ROOT/../.." && pwd)"
+COMPONENTS_SOURCE="$REPO_ROOT/MacOS/Components"
+TEMP_BUILD_DIR="$BUILD_ROOT/temp_build"
+BUILDS_DIR="$BUILD_ROOT/builds"
+PKG_ROOT="$TEMP_BUILD_DIR/pkg_root"
 
-# Repository Information
-REPO="philipnickel/pythonsupport-scripts"
-BRANCH="main"
+# Components to copy and localize (relative to MacOS/Components/)
+# These will be copied from the single source of truth in the repo
+# Starting with minimal dummy PKG - components will be added incrementally
+COMPONENTS=(
+    # Phase 1: Minimal dummy - no actual components yet
+)
 
-# Installation Paths
-LOG_FILE="/tmp/macos_dtu_python_install.log"
-SUMMARY_FILE="/tmp/macos_dtu_python_summary.txt"
+# Diagnostics components to copy and localize (relative to MacOS/Components/Diagnostics/)
+# Starting with minimal dummy PKG - diagnostics will be added later
+DIAGNOSTICS_COMPONENTS=(
+    # Phase 1: Minimal dummy - no diagnostics yet
+)
 
-# Build Settings
-INCLUDE_IMAGES=true
-INCLUDE_BROWSER_SUMMARY=true
+# Installation script configuration
+INSTALL_SCRIPT="postinstall"
+MAIN_ORCHESTRATOR="orchestrators/first_year_students.sh"
 
-# Contact Information
-SUPPORT_EMAIL="python-support@dtu.dk"
-COPYRIGHT_TEXT="© 2024 Technical University of Denmark (DTU). All rights reserved."
+# URLs to localize (replace with local file paths)
+REMOTE_REPO_PATTERN="https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/"
+DIAG_REPO_PATTERN="https://raw.githubusercontent.com/\${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${DIAG_BRANCH_PS:-main}/"
 
-# Export all variables for use in other scripts
-export PKG_NAME PKG_ID PKG_TITLE PKG_DESCRIPTION
-export VERSION_FILE REPO BRANCH
-export LOG_FILE SUMMARY_FILE
-export INCLUDE_IMAGES INCLUDE_BROWSER_SUMMARY
-export SUPPORT_EMAIL COPYRIGHT_TEXT
+# Local path prefix (where scripts will be installed)
+LOCAL_INSTALL_PATH="/usr/local/share/dtu-pythonsupport"
+LOCAL_PATH_PREFIX="file://$LOCAL_INSTALL_PATH/"
