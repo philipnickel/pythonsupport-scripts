@@ -91,12 +91,43 @@ export REMOTE_PS="local-pkg"
 export BRANCH_PS="local-pkg"
 export PYTHON_VERSION_PS="$PYTHON_VERSION"
 
+# Detect a non-root user to run Homebrew/Conda operations
+detect_target_user() {
+  local console_owner
+  console_owner=$(stat -f%Su /dev/console 2>/dev/null || true)
+  if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+    TARGET_USER="$SUDO_USER"
+  elif [ -n "$console_owner" ] && [ "$console_owner" != "root" ]; then
+    TARGET_USER="$console_owner"
+  elif id -u runner >/dev/null 2>&1; then
+    TARGET_USER="runner"
+  else
+    TARGET_USER="$(id -un)"
+  fi
+
+  # Resolve HOME for target user
+  TARGET_HOME="$(eval echo ~"$TARGET_USER" 2>/dev/null)"
+  export TARGET_USER TARGET_HOME
+  echo "Using target user: $TARGET_USER (HOME=$TARGET_HOME)"
+}
+
+# Run a command as target user when current uid is root
+run_as_user() {
+  if [ "$(id -u)" -eq 0 ] && [ "$TARGET_USER" != "root" ]; then
+    HOME="$TARGET_HOME" sudo -u "$TARGET_USER" -H bash -lc "$*"
+  else
+    bash -lc "$*"
+  fi
+}
+
+detect_target_user
+
 # Track installation status
 OVERALL_EXIT_CODE=0
 
-# Step 1: Install Homebrew
+# Step 1: Install Homebrew (as non-root)
 echo "🍺 Step 1/3: Installing Homebrew..."
-/bin/bash "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh"
+run_as_user "/bin/bash /usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh"
 HOMEBREW_EXIT_CODE=\$?
 
 if [ \$HOMEBREW_EXIT_CODE -eq 0 ]; then
@@ -106,11 +137,11 @@ else
     OVERALL_EXIT_CODE=\$HOMEBREW_EXIT_CODE
 fi
 
-# Step 2: Install Python/Miniconda (only if Homebrew succeeded)
+# Step 2: Install Python/Miniconda (only if Homebrew succeeded) as non-root
 if [ \$HOMEBREW_EXIT_CODE -eq 0 ]; then
     echo ""
     echo "🐍 Step 2/3: Installing Python/Miniconda..."
-    /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Python/install.sh"
+  run_as_user "/bin/bash /usr/local/share/dtu-pythonsupport/Components/Python/install.sh"
     PYTHON_EXIT_CODE=\$?
     
     if [ \$PYTHON_EXIT_CODE -eq 0 ]; then
@@ -124,11 +155,11 @@ else
     PYTHON_EXIT_CODE=1
 fi
 
-# Step 3: Install Python packages (only if Python succeeded)
+# Step 3: Install Python packages (only if Python succeeded) as non-root
 if [ \$PYTHON_EXIT_CODE -eq 0 ]; then
     echo ""
     echo "📚 Step 3/3: Installing Python packages for first year students..."
-    /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Python/first_year_setup.sh"
+  run_as_user "/bin/bash /usr/local/share/dtu-pythonsupport/Components/Python/first_year_setup.sh"
     PACKAGES_EXIT_CODE=\$?
     
     if [ \$PACKAGES_EXIT_CODE -eq 0 ]; then
