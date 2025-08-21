@@ -12,9 +12,11 @@ PKG_DESCRIPTION="Phase 2: Professional installer with Homebrew component for DTU
 BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REPO_ROOT="$(cd "$BUILD_ROOT/../.." && pwd)"
 COMPONENTS_SOURCE="$REPO_ROOT/MacOS/Components"
-TEMP_BUILD_DIR="$BUILD_ROOT/temp_build"
+BUILD_DIR="$BUILD_ROOT/build"
 BUILDS_DIR="$BUILD_ROOT/builds"
-PKG_ROOT="$TEMP_BUILD_DIR/pkg_root"
+RESOURCES_DIR="$BUILD_ROOT/resources"
+PKG_ROOT="$BUILD_DIR/pkg_root"
+SCRIPTS_DIR="$BUILD_DIR/scripts"
 
 # Components to copy and localize (relative to MacOS/Components/)
 # These will be copied from the single source of truth in the repo

@@ -16,7 +16,7 @@ build:
 # Clean build artifacts
 clean:
 	@echo "Cleaning build files..."
-	@rm -rf $(PKG_DIR)/temp_build/
+	@rm -rf $(PKG_DIR)/build/
 	@rm -rf $(PKG_DIR)/builds/
 	@echo "Clean complete"
 

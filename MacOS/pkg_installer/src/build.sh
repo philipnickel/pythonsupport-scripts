@@ -16,9 +16,10 @@ echo ""
 
 # Clean and create build directories
 echo "Setting up build directories..."
-rm -rf "$TEMP_BUILD_DIR"
-mkdir -p "$TEMP_BUILD_DIR"
+rm -rf "$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
 mkdir -p "$BUILDS_DIR"
+mkdir -p "$SCRIPTS_DIR"
 mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH"
 mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH/Components"
 mkdir -p "$PKG_ROOT$LOCAL_INSTALL_PATH/Components/Diagnostics"
@@ -118,8 +119,7 @@ chmod +x "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh"
 
 # Create postinstall script for Homebrew PKG
 echo "Creating Homebrew PKG postinstall script..."
-mkdir -p "$TEMP_BUILD_DIR/Scripts"
-cat > "$TEMP_BUILD_DIR/Scripts/postinstall" << 'EOF'
+cat > "$SCRIPTS_DIR/postinstall" << 'EOF'
 #!/bin/bash
 # Homebrew PKG postinstall script - Phase 2
 
@@ -139,19 +139,19 @@ echo "Homebrew component installation exit code: $INSTALL_EXIT_CODE"
 exit $INSTALL_EXIT_CODE
 EOF
 
-chmod +x "$TEMP_BUILD_DIR/Scripts/postinstall"
+chmod +x "$SCRIPTS_DIR/postinstall"
 
 # Build the PKG using productbuild
 echo "Building PKG with productbuild..."
 PKG_FILE="$BUILDS_DIR/DTU-Python-FirstYear-v${PKG_VERSION}.pkg"
-COMPONENT_PKG="$TEMP_BUILD_DIR/component.pkg"
+COMPONENT_PKG="$BUILD_DIR/component.pkg"
 
 # First create component package
 echo "Creating component package..."
 pkgbuild --root "$PKG_ROOT" \
          --identifier "$PKG_IDENTIFIER.component" \
          --version "$PKG_VERSION" \
-         --scripts "$TEMP_BUILD_DIR/Scripts" \
+         --scripts "$SCRIPTS_DIR" \
          "$COMPONENT_PKG"
 
 if [[ $? -ne 0 ]]; then
@@ -161,7 +161,7 @@ fi
 
 # Create Distribution.xml
 echo "Creating Distribution.xml..."
-cat > "$TEMP_BUILD_DIR/Distribution.xml" << EOF
+cat > "$BUILD_DIR/Distribution.xml" << EOF
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="1">
     <title>$PKG_NAME</title>
@@ -169,10 +169,10 @@ cat > "$TEMP_BUILD_DIR/Distribution.xml" << EOF
     <domains enable_localSystem="true"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true" />
     
-    <welcome file="welcome.html" mime-type="text/html" />
-    <license file="license.txt" />
-    <readme file="readme.txt" />
-    <conclusion file="conclusion.html" mime-type="text/html" />
+    <welcome file="welcome.rtf" />
+    <license file="license.rtf" />
+    <readme file="readme.rtf" />
+    <conclusion file="conclusion.rtf" />
     
     <pkg-ref id="$PKG_IDENTIFIER.component"/>
     <choices-outline>
@@ -190,132 +190,11 @@ cat > "$TEMP_BUILD_DIR/Distribution.xml" << EOF
 </installer-gui-script>
 EOF
 
-# Create resources directory and files
-mkdir -p "$TEMP_BUILD_DIR/Resources"
-
-# Create welcome.html
-cat > "$TEMP_BUILD_DIR/Resources/welcome.html" << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Welcome</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-        h1 { color: #1d4ed8; }
-        .version { color: #6b7280; font-size: 0.9em; }
-    </style>
-</head>
-<body>
-    <h1>Welcome to DTU Python Support</h1>
-    <p class="version">Phase 2: Homebrew Component Installation</p>
-    <p>This installer will set up the Python development environment for DTU first year students.</p>
-    <p><strong>What will be installed:</strong></p>
-    <ul>
-        <li>🍺 Homebrew package manager</li>
-        <li>📦 Required system utilities and dependencies</li>
-        <li>🛠️ Development environment configuration</li>
-    </ul>
-    <p><strong>Requirements:</strong></p>
-    <ul>
-        <li>macOS 10.15 or later</li>
-        <li>Internet connection for downloading components</li>
-        <li>Administrator privileges</li>
-    </ul>
-    <p>The installation may take several minutes depending on your internet connection.</p>
-</body>
-</html>
-EOF
-
-# Create license.txt
-cat > "$TEMP_BUILD_DIR/Resources/license.txt" << 'EOF'
-DTU Python Support - Software License
-
-Copyright (c) 2025 Technical University of Denmark (DTU)
-
-Permission is hereby granted to students and staff of DTU to use this software 
-for educational and research purposes.
-
-This software installs and configures various open-source tools including:
-- Homebrew (https://brew.sh) - BSD 2-Clause License
-- Python and associated packages - Various open-source licenses
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-EOF
-
-# Create readme.txt
-cat > "$TEMP_BUILD_DIR/Resources/readme.txt" << 'EOF'
-DTU Python Support - Installation Guide
-
-This package installs the Python development environment for DTU first year students.
-
-INSTALLATION PROCESS:
-1. The installer will download and install Homebrew package manager
-2. Required utilities and dependencies will be configured
-3. Environment variables will be set up for your shell
-
-AFTER INSTALLATION:
-- Open a new Terminal window to use the installed tools
-- Homebrew will be available via the 'brew' command
-- Your shell profile will be updated automatically
-
-TROUBLESHOOTING:
-- If installation fails, check your internet connection
-- Ensure you have administrator privileges
-- For support, contact DTU IT support
-
-PHASE 2 COMPONENTS:
-- Homebrew package manager
-- System utilities and error handling
-- Environment configuration scripts
-
-Future updates will add Python, VSCode, and additional development tools.
-EOF
-
-# Create conclusion.html  
-cat > "$TEMP_BUILD_DIR/Resources/conclusion.html" << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Installation Complete</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 20px; }
-        h1 { color: #059669; }
-        .success { background: #d1fae5; border-left: 4px solid #059669; padding: 15px; margin: 15px 0; }
-        .next-steps { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; }
-    </style>
-</head>
-<body>
-    <h1>🎉 Installation Successful!</h1>
-    
-    <div class="success">
-        <strong>DTU Python Support Phase 2 has been installed successfully.</strong>
-        <p>Homebrew and required utilities are now available on your system.</p>
-    </div>
-    
-    <div class="next-steps">
-        <h3>Next Steps:</h3>
-        <ol>
-            <li><strong>Open a new Terminal window</strong> to ensure environment variables are loaded</li>
-            <li><strong>Test Homebrew:</strong> Run <code>brew --version</code> to verify installation</li>
-            <li><strong>Future updates</strong> will add Python, VSCode, and additional development tools</li>
-        </ol>
-    </div>
-    
-    <p><strong>Need help?</strong> Contact DTU IT support for assistance.</p>
-    <p><em>Thank you for using DTU Python Support!</em></p>
-</body>
-</html>
-EOF
-
-# Build final PKG with productbuild
+# Build final PKG with productbuild using permanent resources
 echo "Building distribution package..."
-productbuild --distribution "$TEMP_BUILD_DIR/Distribution.xml" \
-             --package-path "$TEMP_BUILD_DIR" \
-             --resources "$TEMP_BUILD_DIR/Resources" \
+productbuild --distribution "$BUILD_DIR/Distribution.xml" \
+             --package-path "$BUILD_DIR" \
+             --resources "$RESOURCES_DIR" \
              "$PKG_FILE"
 
 if [[ $? -eq 0 ]]; then
