@@ -279,11 +279,19 @@ main() {
         
         # Execute orchestrator as the user with all necessary environment variables
         # Use -H flag to set HOME properly and -s to use user's shell
-        # Force ARM64 architecture for Homebrew compatibility in CI
-        local arch_prefix=""
+        # Force ARM64 architecture for Homebrew compatibility in CI by creating wrapper
         if [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${CI:-}" ]; then
-            arch_prefix="arch -arm64"
-            log_info "CI environment detected: Using ARM64 architecture"
+            log_info "CI environment detected: Creating ARM64 brew wrapper"
+            # Create ARM64 brew wrapper in temp directory
+            local brew_wrapper="$DTU_TEMP_DIR/brew"
+            cat > "$brew_wrapper" << 'EOF'
+#!/bin/bash
+# ARM64 brew wrapper for CI environments
+exec arch -arm64 /opt/homebrew/bin/brew "$@"
+EOF
+            chmod +x "$brew_wrapper"
+            export PATH="$DTU_TEMP_DIR:$PATH"
+            log_info "Created ARM64 brew wrapper at: $brew_wrapper"
         fi
         
         sudo -H -u "$user_name" \
@@ -301,8 +309,8 @@ main() {
             NONINTERACTIVE="$NONINTERACTIVE" \
             DEBIAN_FRONTEND="$DEBIAN_FRONTEND" \
             DTU_TEMP_DIR="$DTU_TEMP_DIR" \
-            PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-            $arch_prefix /bin/bash -l "$orchestrator_cmd"
+            PATH="$DTU_TEMP_DIR:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+            /bin/bash -l "$orchestrator_cmd"
         orchestrator_ret=$?
     else
         # Traditional mode - use curl to download and execute
