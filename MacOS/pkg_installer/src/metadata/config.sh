@@ -5,8 +5,12 @@
 # Package metadata
 PKG_NAME="DTU Python First Year Students"
 PKG_IDENTIFIER="dk.dtu.pythonsupport.firstyear"
-PKG_VERSION="1.1.0"
-PKG_DESCRIPTION="Phase 2: Professional installer with Homebrew component for DTU Python development environment"
+PKG_VERSION="1.2.0"
+PKG_DESCRIPTION="Phase 3: Python/Miniconda + Homebrew installer for DTU Python development environment"
+
+# Python configuration
+PYTHON_VERSION="3.11"
+MINICONDA_INSTALL="true"
 
 # Build configuration
 BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -20,9 +24,11 @@ SCRIPTS_DIR="$BUILD_DIR/scripts"
 
 # Components to copy and localize (relative to MacOS/Components/)
 # These will be copied from the single source of truth in the repo
-# Phase 2: Adding Homebrew component
+# Phase 3: Adding Python/Miniconda + Homebrew components
 COMPONENTS=(
     "Homebrew/install.sh"
+    "Python/install.sh"
+    "Python/first_year_setup.sh"
     "Shared/master_utils.sh"
     "Shared/dependencies.sh"
     "Shared/piwik_utility.sh"

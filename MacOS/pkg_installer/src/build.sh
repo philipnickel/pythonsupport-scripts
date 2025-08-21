@@ -73,68 +73,117 @@ for diag_component in "${DIAGNOSTICS_COMPONENTS[@]}"; do
     fi
 done
 
-# Create the main installer script for Homebrew PKG
-echo "Creating Homebrew installer script..."
-cat > "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh" << 'EOF'
+# Create the main installer script for Python + Homebrew PKG
+echo "Creating Python + Homebrew installer script..."
+cat > "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh" << EOF
 #!/bin/bash
-# DTU Python Support - Phase 2: Homebrew Component
-# This script installs Homebrew using local components
+# DTU Python Support - Phase 3: Python/Miniconda + Homebrew Components
+# This script installs the complete development environment using local components
 
-echo "=== DTU Python Support PKG - Phase 2 Installation ==="
-echo "📦 Installing Homebrew component..."
+echo "=== DTU Python Support PKG - Phase 3 Installation ==="
+echo "📦 Installing Python development environment..."
 echo "Installation path: /usr/local/share/dtu-pythonsupport/"
+echo "Python version: $PYTHON_VERSION"
 echo ""
 
 # Set environment to use local scripts
 export REMOTE_PS="local-pkg"
 export BRANCH_PS="local-pkg"
+export PYTHON_VERSION_PS="$PYTHON_VERSION"
 
-# Run Homebrew installation using local component
-echo "🍺 Installing Homebrew..."
+# Track installation status
+OVERALL_EXIT_CODE=0
+
+# Step 1: Install Homebrew
+echo "🍺 Step 1/3: Installing Homebrew..."
 /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh"
-HOMEBREW_EXIT_CODE=$?
+HOMEBREW_EXIT_CODE=\$?
 
-if [ $HOMEBREW_EXIT_CODE -eq 0 ]; then
+if [ \$HOMEBREW_EXIT_CODE -eq 0 ]; then
     echo "✅ Homebrew installation completed successfully!"
 else
-    echo "❌ Homebrew installation failed with exit code: $HOMEBREW_EXIT_CODE"
+    echo "❌ Homebrew installation failed with exit code: \$HOMEBREW_EXIT_CODE"
+    OVERALL_EXIT_CODE=\$HOMEBREW_EXIT_CODE
+fi
+
+# Step 2: Install Python/Miniconda (only if Homebrew succeeded)
+if [ \$HOMEBREW_EXIT_CODE -eq 0 ]; then
+    echo ""
+    echo "🐍 Step 2/3: Installing Python/Miniconda..."
+    /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Python/install.sh"
+    PYTHON_EXIT_CODE=\$?
+    
+    if [ \$PYTHON_EXIT_CODE -eq 0 ]; then
+        echo "✅ Python/Miniconda installation completed successfully!"
+    else
+        echo "❌ Python/Miniconda installation failed with exit code: \$PYTHON_EXIT_CODE"
+        OVERALL_EXIT_CODE=\$PYTHON_EXIT_CODE
+    fi
+else
+    echo "⏭️ Skipping Python installation due to Homebrew failure"
+    PYTHON_EXIT_CODE=1
+fi
+
+# Step 3: Install Python packages (only if Python succeeded)
+if [ \$PYTHON_EXIT_CODE -eq 0 ]; then
+    echo ""
+    echo "📚 Step 3/3: Installing Python packages for first year students..."
+    /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Python/first_year_setup.sh"
+    PACKAGES_EXIT_CODE=\$?
+    
+    if [ \$PACKAGES_EXIT_CODE -eq 0 ]; then
+        echo "✅ Python packages installation completed successfully!"
+    else
+        echo "❌ Python packages installation failed with exit code: \$PACKAGES_EXIT_CODE"
+        OVERALL_EXIT_CODE=\$PACKAGES_EXIT_CODE
+    fi
+else
+    echo "⏭️ Skipping Python packages installation due to Python failure"
+    PACKAGES_EXIT_CODE=1
 fi
 
 # Create status file to track installation
 echo "DTU_PYTHON_SUPPORT_PKG_INSTALLED=true" > "/usr/local/share/dtu-pythonsupport/.pkg_status"
-echo "PKG_VERSION=1.0.0-homebrew" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PKG_VERSION=$PKG_VERSION" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PYTHON_VERSION=$PYTHON_VERSION" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
 echo "INSTALL_DATE=\$(date)" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
 echo "HOMEBREW_COMPONENT=installed" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
-echo "HOMEBREW_EXIT_CODE=$HOMEBREW_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PYTHON_COMPONENT=installed" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PACKAGES_COMPONENT=installed" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "HOMEBREW_EXIT_CODE=\$HOMEBREW_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PYTHON_EXIT_CODE=\$PYTHON_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PACKAGES_EXIT_CODE=\$PACKAGES_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "OVERALL_EXIT_CODE=\$OVERALL_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
 
 echo ""
-echo "=== Phase 2 PKG Installation Complete ==="
-echo "Components installed: Homebrew"
-echo "Exit code: $HOMEBREW_EXIT_CODE"
+echo "=== Phase 3 PKG Installation Complete ==="
+echo "Components installed: Homebrew + Python/Miniconda + Python Packages"
+echo "Exit codes: Homebrew=\$HOMEBREW_EXIT_CODE, Python=\$PYTHON_EXIT_CODE, Packages=\$PACKAGES_EXIT_CODE"
+echo "Overall result: \$OVERALL_EXIT_CODE"
 
-exit $HOMEBREW_EXIT_CODE
+exit \$OVERALL_EXIT_CODE
 EOF
 
 chmod +x "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh"
 
-# Create postinstall script for Homebrew PKG
-echo "Creating Homebrew PKG postinstall script..."
+# Create postinstall script for Python + Homebrew PKG
+echo "Creating Python + Homebrew PKG postinstall script..."
 cat > "$SCRIPTS_DIR/postinstall" << 'EOF'
 #!/bin/bash
-# Homebrew PKG postinstall script - Phase 2
+# Python + Homebrew PKG postinstall script - Phase 3
 
-echo "=== DTU Python Support PKG - Phase 2 Installation ==="
+echo "=== DTU Python Support PKG - Phase 3 Installation ==="
 echo "Files installed to: /usr/local/share/dtu-pythonsupport/"
-echo "Components: Homebrew + dependencies"
+echo "Components: Homebrew + Python/Miniconda + Python Packages"
 echo ""
 
-# Run the Homebrew installer script
+# Run the main installer script
 /usr/local/share/dtu-pythonsupport/install.sh
 INSTALL_EXIT_CODE=$?
 
 echo ""
-echo "=== Phase 2 PKG Installation Complete ==="
-echo "Homebrew component installation exit code: $INSTALL_EXIT_CODE"
+echo "=== Phase 3 PKG Installation Complete ==="
+echo "Full development environment installation exit code: $INSTALL_EXIT_CODE"
 
 exit $INSTALL_EXIT_CODE
 EOF

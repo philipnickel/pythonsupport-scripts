@@ -97,8 +97,8 @@ jobs:
           echo "Available PKG files:"
           ls -la builds_for_testing/
           
-          # Get the PKG file to test (currently the Homebrew RTF PKG)
-          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.1.0-homebrew-rtf.pkg"
+          # Get the PKG file to test (currently the Phase 3 Python PKG)
+          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.2.0.pkg"
           
           if [[ ! -f "$PKG_FILE" ]]; then
             echo "❌ PKG file not found: $PKG_FILE"
@@ -152,9 +152,9 @@ jobs:
             ls -la /tmp/macos_* 2>/dev/null || echo "No macos_* files in /tmp"
           fi
 
-      - name: Verify Homebrew PKG Installation
+      - name: Verify Python PKG Installation
         run: |
-          echo "=== Homebrew PKG Installation Verification ==="
+          echo "=== Python PKG Installation Verification ==="
           
           # Check that PKG files were installed correctly
           echo "Checking installed files..."
@@ -182,6 +182,21 @@ jobs:
             exit 1
           fi
           
+          # Check Python component files
+          if [ -f "/usr/local/share/dtu-pythonsupport/Components/Python/install.sh" ]; then
+            echo "✓ Python component found"
+          else
+            echo "❌ Python component not found"
+            exit 1
+          fi
+          
+          if [ -f "/usr/local/share/dtu-pythonsupport/Components/Python/first_year_setup.sh" ]; then
+            echo "✓ Python first year setup found"
+          else
+            echo "❌ Python first year setup not found"
+            exit 1
+          fi
+          
           # Check shared utilities
           if [ -f "/usr/local/share/dtu-pythonsupport/Components/Shared/master_utils.sh" ]; then
             echo "✓ Shared utilities found"
@@ -191,9 +206,9 @@ jobs:
           fi
           
           echo ""
-          echo "✅ Homebrew PKG verification complete"
+          echo "✅ Python PKG verification complete"
 
-      - name: Verify Homebrew Installation (Phase 2)
+      - name: Verify Homebrew Installation (Phase 3)
         run: |
           echo "=== Verifying Homebrew Installation ==="
           
@@ -228,6 +243,52 @@ jobs:
           brew --config | head -5
           echo "✅ Homebrew verification complete"
 
+      - name: Verify Python/Conda Installation (Phase 3)
+        run: |
+          echo "=== Verifying Python/Conda Installation ==="
+          
+          # Update environment to find conda
+          hash -r 2>/dev/null || true
+          
+          # Check Conda installation
+          if command -v conda >/dev/null 2>&1; then
+            echo "✓ Conda command available in PATH"
+            echo "  Version: $(conda --version)"
+            echo "  Location: $(which conda)"
+          else
+            echo "❌ Conda not found in PATH"
+            # Try to source conda initialization
+            if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+              echo "  Found conda.sh at: $HOME/miniconda3/etc/profile.d/conda.sh"
+              source "$HOME/miniconda3/etc/profile.d/conda.sh"
+              command -v conda >/dev/null 2>&1 && echo "✓ Conda available after sourcing: $(conda --version)" || echo "❌ Conda still not available"
+            else
+              echo "❌ Conda initialization script not found"
+              exit 1
+            fi
+          fi
+          
+          # Check Python installation
+          if command -v python >/dev/null 2>&1; then
+            echo "✓ Python command available in PATH"
+            echo "  Version: $(python --version)"
+            echo "  Location: $(which python)"
+            
+            # Test essential packages
+            echo ""
+            echo "Testing essential Python packages..."
+            python -c "import numpy; print(f'✓ numpy {numpy.__version__}')" || echo "❌ numpy not available"
+            python -c "import pandas; print(f'✓ pandas {pandas.__version__}')" || echo "❌ pandas not available"
+            python -c "import matplotlib; print(f'✓ matplotlib {matplotlib.__version__}')" || echo "❌ matplotlib not available"
+            python -c "import scipy; print(f'✓ scipy {scipy.__version__}')" || echo "❌ scipy not available"
+          else
+            echo "❌ Python not found in PATH"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Python/Conda verification complete"
+
       - name: Upload Installation Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -239,19 +300,21 @@ jobs:
             /tmp/diagnostic_report_*.html
           retention-days: 7
 
-      - name: Show Homebrew PKG Installation Summary  
+      - name: Show Python PKG Installation Summary  
         if: always()
         run: |
-          echo "=== Homebrew PKG Installation Summary ==="
+          echo "=== Python PKG Installation Summary ==="
           echo "PKG File: $PKG_FILE"
           echo "Test Date: $(date)"
           echo "macOS Version: $(sw_vers -productVersion)"
           echo ""
           
-          # Status check for Homebrew PKG
+          # Status check for Python PKG
           PKG_INSTALLED=$([ -f "/usr/local/share/dtu-pythonsupport/.pkg_status" ] && echo "✓" || echo "❌")
           INSTALLER_SCRIPT=$([ -x "/usr/local/share/dtu-pythonsupport/install.sh" ] && echo "✓" || echo "❌")
           HOMEBREW_COMPONENT=$([ -f "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh" ] && echo "✓" || echo "❌")
+          PYTHON_COMPONENT=$([ -f "/usr/local/share/dtu-pythonsupport/Components/Python/install.sh" ] && echo "✓" || echo "❌")
+          PYTHON_PACKAGES_COMPONENT=$([ -f "/usr/local/share/dtu-pythonsupport/Components/Python/first_year_setup.sh" ] && echo "✓" || echo "❌")
           
           # Check if Homebrew is actually installed and working
           HOMEBREW_INSTALLED="❌"
@@ -267,23 +330,53 @@ jobs:
             done
           fi
           
-          echo "Homebrew PKG Status:"
+          # Check if Python/Conda is actually installed and working
+          PYTHON_INSTALLED="❌"
+          CONDA_INSTALLED="❌"
+          PACKAGES_INSTALLED="❌"
+          
+          if command -v python >/dev/null 2>&1; then
+            PYTHON_INSTALLED="✓"
+          fi
+          
+          if command -v conda >/dev/null 2>&1; then
+            CONDA_INSTALLED="✓"
+          elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+            source "$HOME/miniconda3/etc/profile.d/conda.sh" 2>/dev/null || true
+            command -v conda >/dev/null 2>&1 && CONDA_INSTALLED="✓"
+          fi
+          
+          # Test essential packages
+          if command -v python >/dev/null 2>&1; then
+            if python -c "import numpy, pandas, matplotlib, scipy" 2>/dev/null; then
+              PACKAGES_INSTALLED="✓"
+            fi
+          fi
+          
+          echo "Python PKG Status:"
           echo "  PKG Files Installed: $PKG_INSTALLED"
           echo "  Installer Script Executable: $INSTALLER_SCRIPT"
           echo "  Homebrew Component Present: $HOMEBREW_COMPONENT"
+          echo "  Python Component Present: $PYTHON_COMPONENT"
+          echo "  Python Packages Component Present: $PYTHON_PACKAGES_COMPONENT"
           echo "  Homebrew Actually Installed: $HOMEBREW_INSTALLED"
+          echo "  Python Actually Installed: $PYTHON_INSTALLED"
+          echo "  Conda Actually Installed: $CONDA_INSTALLED"
+          echo "  Essential Packages Installed: $PACKAGES_INSTALLED"
           
-          # Determine overall success for Homebrew PKG
-          if [[ "$PKG_INSTALLED$INSTALLER_SCRIPT$HOMEBREW_COMPONENT$HOMEBREW_INSTALLED" == "✓✓✓✓" ]]; then
+          # Determine overall success for Python PKG
+          if [[ "$PKG_INSTALLED$INSTALLER_SCRIPT$HOMEBREW_COMPONENT$PYTHON_COMPONENT$PYTHON_PACKAGES_COMPONENT$HOMEBREW_INSTALLED$PYTHON_INSTALLED$CONDA_INSTALLED$PACKAGES_INSTALLED" == "✓✓✓✓✓✓✓✓✓" ]]; then
             echo ""
-            echo "🎉 Homebrew PKG Installation Test: SUCCESS"
-            echo "Phase 2 - Homebrew component verified!"
-            echo "Ready to add Python/Miniconda component."
+            echo "🎉 Python PKG Installation Test: SUCCESS"
+            echo "Phase 3 - Complete Python development environment verified!"
+            echo "Homebrew + Python/Miniconda + Essential packages all working."
             exit 0
           else
             echo ""
-            echo "❌ Homebrew PKG Installation Test: FAILED"
-            echo "Homebrew component not working properly."
-            echo "Status: PKG=$PKG_INSTALLED Script=$INSTALLER_SCRIPT Component=$HOMEBREW_COMPONENT Homebrew=$HOMEBREW_INSTALLED"
+            echo "❌ Python PKG Installation Test: FAILED"
+            echo "Python development environment not working properly."
+            echo "Status: PKG=$PKG_INSTALLED Script=$INSTALLER_SCRIPT"
+            echo "        HB_Comp=$HOMEBREW_COMPONENT Py_Comp=$PYTHON_COMPONENT PkgComp=$PYTHON_PACKAGES_COMPONENT"
+            echo "        HB_Inst=$HOMEBREW_INSTALLED Py_Inst=$PYTHON_INSTALLED Conda=$CONDA_INSTALLED Pkgs=$PACKAGES_INSTALLED"
             exit 1
           fi
