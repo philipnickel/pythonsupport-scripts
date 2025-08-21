@@ -8,8 +8,8 @@ This repository contains automated installation scripts for Python development e
 
 The diagnostics system now supports targeted testing profiles for different needs:
 
-### First Year Environment (Essential Tests Only)
-Perfect for DTU first year students - tests only the core requirements:
+### First Year Environment (Single Comprehensive Test)
+Perfect for DTU first year students - one comprehensive test covering all essential requirements:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- --profile first_year
 ```
@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/
 If you have the repository cloned locally:
 ```bash
 cd MacOS/Components/Diagnostics
-./generate_report.sh --profile first_year        # Essential tests only
+./generate_report.sh --profile first_year        # Single comprehensive test
 ./generate_report.sh --profile comprehensive     # All tests (default)
 ./generate_report.sh --help                      # View available profiles
 ```
