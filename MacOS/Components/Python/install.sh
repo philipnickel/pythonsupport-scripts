@@ -11,8 +11,13 @@
 # @version: 2024-08-18
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load master utilities (prefer local when installed via PKG)
+if [ "${REMOTE_PS:-}" = "local-pkg" ] || [ "${BRANCH_PS:-}" = "local-pkg" ]; then
+  # shellcheck disable=SC1091
+  . "/usr/local/share/dtu-pythonsupport/Components/Shared/master_utils.sh"
+else
+  eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+fi
 
 log_info "Python (Miniconda) installation"
 log_info "Starting installation process..."
@@ -23,7 +28,10 @@ ensure_homebrew
 # Install miniconda
 # Check if miniconda is installed
 log_info "Installing Miniconda..."
-if conda --version > /dev/null; then
+# Ensure non-login shell can find brew and potential conda locations
+export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
+
+if conda --version > /dev/null 2>&1; then
   log_success "Miniconda or anaconda is already installed"
 else
   log_info "Miniconda or anaconda not found, installing Miniconda"
@@ -49,6 +57,21 @@ conda config --set anaconda_anon_usage off
 # restart terminal and continue
 # conda puts its source stuff in the bashrc file
 [ -e ~/.bashrc ] && source ~/.bashrc
+hash -r
+
+# Attempt to source conda.sh if conda not yet on PATH in non-interactive shells
+if ! command -v conda >/dev/null 2>&1; then
+  for conda_sh in \
+    "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+    "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+    "$HOME/miniconda3/etc/profile.d/conda.sh" \
+    "/opt/miniconda3/etc/profile.d/conda.sh"; do
+    if [ -f "$conda_sh" ]; then
+      # shellcheck disable=SC1090
+      . "$conda_sh" && break
+    fi
+  done
+fi
 
 log_info "Showing where it is installed:"
 conda info --base

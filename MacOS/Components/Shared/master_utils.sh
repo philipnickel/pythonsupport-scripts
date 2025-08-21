@@ -26,6 +26,21 @@ fi
 load_utility() {
     local util_name="$1"
     local util_script
+
+    # When running from a packaged installer, load utilities from local disk
+    if [ "${REMOTE_PS}" = "local-pkg" ] || [ "${BRANCH_PS}" = "local-pkg" ]; then
+        local local_path="/usr/local/share/dtu-pythonsupport/Components/Shared/${util_name}.sh"
+        if [ -f "$local_path" ]; then
+            # shellcheck disable=SC1090
+            . "$local_path"
+            echo "$_prefix ✓ Loaded $util_name utilities (local)"
+            return 0
+        fi
+        echo "$_prefix ✗ Local utility not found: $local_path"
+        return 1
+    fi
+
+    # Default: fetch utilities from remote repository
     if util_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/${util_name}.sh" 2>/dev/null) && [ -n "$util_script" ]; then
         eval "$util_script"
         echo "$_prefix ✓ Loaded $util_name utilities"

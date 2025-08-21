@@ -8,18 +8,27 @@
 # @notes: Installs miniconda, creates base environment with Python 3.11, installs essential packages
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load master utilities (prefer local when installed via PKG)
+if [ "${REMOTE_PS:-}" = "local-pkg" ] || [ "${BRANCH_PS:-}" = "local-pkg" ]; then
+  # shellcheck disable=SC1091
+  . "/usr/local/share/dtu-pythonsupport/Components/Shared/master_utils.sh"
+else
+  eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+fi
 
 log_info "First year Python setup"
 
-# Ensure conda is discoverable for non-login shells
-export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+# Ensure conda and brew are discoverable for non-login shells
+export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
 
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then
   log_info "Conda not found. Installing Python with Miniconda first..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
+  if [ "${REMOTE_PS:-}" = "local-pkg" ] || [ "${BRANCH_PS:-}" = "local-pkg" ]; then
+    /bin/bash "/usr/local/share/dtu-pythonsupport/Components/Python/install.sh"
+  else
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
+  fi
   
   # Source the shell profile to get conda in PATH
   [ -e ~/.bashrc ] && source ~/.bashrc
