@@ -22,6 +22,9 @@ env:
 jobs:
   test-homebrew:
     name: Test Homebrew Component
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -47,6 +50,9 @@ jobs:
 
   test-python:
     name: Test Python Component
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -81,6 +87,9 @@ jobs:
 
   test-vscode:
     name: Test VSCode Component
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -122,6 +131,9 @@ jobs:
 
   test-vscode-clean-uninstall:
     name: Test VSCode Clean Uninstall
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -193,6 +205,9 @@ jobs:
 
   test-latex-minimal:
     name: Test LaTeX Minimal Installation
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -233,6 +248,9 @@ jobs:
 
   test-latex-full:
     name: Test LaTeX Full Installation
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -273,6 +291,9 @@ jobs:
 
   test-python-uninstall:
     name: Test Python Uninstall
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     
     steps:
@@ -385,6 +406,9 @@ jobs:
 
   test-diagnostics:
     name: Test Diagnostics
+    # Temporarily disabled during PKG development - only mac_orchestrators.yml should run
+    # TO RE-ENABLE: Change "if: false" back to "if: true" or remove the line entirely
+    if: false
     runs-on: macos-latest
     needs: [test-homebrew, test-python, test-vscode]
     

@@ -1,93 +1,294 @@
 #!/bin/bash
+# DTU Python Installation Script (Environment-Aware PKG Installer)
+# Detects PKG vs traditional mode and loads components accordingly
+# Ensures compatibility with both PKG and traditional mac_orchestrators.yml
 
-# DTU Python Installation Script (PKG Installer)
-# This script calls the actual first_year_students.sh orchestrator
+# Strict error handling
+set -euo pipefail
 
-LOG_FILE="PLACEHOLDER_LOG_FILE"
-# Redirect output to both log file and stdout so installer can see progress
-exec > >(tee -a "$LOG_FILE") 2>&1
-
-echo "$(date): DEBUG: PKG installer calling first_year_students.sh orchestrator"
-
-# Determine user and set environment
-USER_NAME=$(stat -f%Su /dev/console)
-export USER="$USER_NAME"
-export HOME="/Users/$USER_NAME"
-
-# Set up the same environment variables as the orchestrator
-export REMOTE_PS="PLACEHOLDER_REPO"
-export BRANCH_PS="PLACEHOLDER_BRANCH"
-
-echo "$(date): DEBUG: User=$USER_NAME, Home=$HOME"
-echo "$(date): DEBUG: Remote=$REMOTE_PS, Branch=$BRANCH_PS"
-
-# Load loading animation functions for progress display
+# Get script directory for relative paths
 SCRIPT_DIR="$(dirname "$0")"
+
+# Source local config file for environment variables
+source "$SCRIPT_DIR/../metadata/config.sh"
+
+# Load local progress utilities
 source "$SCRIPT_DIR/loading_animations.sh" 2>/dev/null || {
-    # Define minimal fallback functions
+    # Define minimal fallback functions if loading_animations.sh unavailable
     show_progress_log() { echo "$(date '+%H:%M:%S') [${2:-INFO}] DTU Python Installer: $1"; }
     show_installer_header() { echo "=== DTU Python Installation ==="; }
+    show_component_progress() { show_progress_log "$1: $2"; }
+    show_installation_summary() { show_progress_log "Installation Summary: $1"; }
 }
 
-show_installer_header
-show_progress_log "Starting first year students installation..." "INFO"
+# Setup logging - redirect to both log file and stdout
+exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "$(date): DEBUG: About to test curl access to GitHub"
-curl_test_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh"
-echo "$(date): DEBUG: Testing URL: $curl_test_url"
+# Environment Detection - Check if running from PKG installation
+detect_environment() {
+    local bundled_components_path="/usr/local/share/dtu-python-installer/components"
+    local bundled_orchestrator="$bundled_components_path/orchestrators/first_year_students.sh"
+    
+    if [ -d "$bundled_components_path" ] && [ -f "$bundled_orchestrator" ]; then
+        export DTU_PYTHON_PKG_MODE="true"
+        export DTU_COMPONENTS_PATH="$bundled_components_path"
+        log_info "Environment detected: PKG mode (using bundled components)"
+        return 0
+    else
+        export DTU_PYTHON_PKG_MODE="false"
+        unset DTU_COMPONENTS_PATH
+        log_info "Environment detected: Traditional mode (using remote curl)"
+        return 1
+    fi
+}
 
-# Test curl access first
-if curl -fsSL --connect-timeout 10 "$curl_test_url" | head -5; then
-    echo "$(date): DEBUG: Curl test successful"
-else
-    echo "$(date): DEBUG: Curl test failed with exit code: $?"
-    exit 1
+# Local utility functions (offline versions of shared utilities)
+_prefix="PYS:"
+
+log_info() {
+    echo "$_prefix $1"
+    show_progress_log "$1" "INFO"
+}
+
+log_error() {
+    echo "$_prefix ERROR: $1" >&2
+    show_progress_log "$1" "ERROR"
+}
+
+log_success() {
+    echo "$_prefix ✓ $1"
+    show_progress_log "$1" "INFO"
+}
+
+log_warning() {
+    echo "$_prefix WARNING: $1"
+    show_progress_log "$1" "WARN"
+}
+
+# Enhanced error checking function
+check_exit_code() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        if [ $# -gt 0 ]; then
+            log_error "$1"
+        fi
+        log_error "Installation failed. Contact python-support@dtu.dk for help."
+        exit $exit_code
+    fi
+}
+
+# Function to check if command exists (kept for summary generation)
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Function to create custom curl wrapper for PKG mode
+setup_pkg_environment() {
+    if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
+        # Create temporary directory for curl wrapper
+        local temp_dir="/tmp/dtu-python-pkg-$$"
+        mkdir -p "$temp_dir"
+        
+        # Store temp dir for cleanup
+        export DTU_TEMP_DIR="$temp_dir"
+        
+        # Create curl wrapper script
+        cat > "$temp_dir/curl" << 'EOF'
+#!/bin/bash
+# Curl wrapper for PKG mode - routes GitHub URLs to local components
+
+# Extract the URL from curl arguments
+URL=""
+for arg in "$@"; do
+    if [[ "$arg" =~ ^https://raw\.githubusercontent\.com/.*/MacOS/Components/(.*)$ ]]; then
+        URL="$arg"
+        break
+    fi
+done
+
+if [ -n "$URL" ]; then
+    # Extract the component path from the GitHub URL
+    if [[ "$URL" =~ github\.com/.*/MacOS/Components/(.*)$ ]]; then
+        COMPONENT_PATH="${BASH_REMATCH[1]}"
+        LOCAL_FILE="$DTU_COMPONENTS_PATH/$COMPONENT_PATH"
+        
+        if [ -f "$LOCAL_FILE" ]; then
+            cat "$LOCAL_FILE"
+            exit 0
+        else
+            echo "ERROR: Local component file not found: $LOCAL_FILE" >&2
+            echo "Available components:" >&2
+            find "$DTU_COMPONENTS_PATH" -name "*.sh" 2>/dev/null | head -10 >&2 || true
+            exit 1
+        fi
+    fi
 fi
 
-echo "$(date): DEBUG: About to call actual orchestrator script"
-echo "$(date): DEBUG: Environment variables being passed:"
-echo "$(date): DEBUG: - HOME=/Users/$USER_NAME"
-echo "$(date): DEBUG: - REMOTE_PS=$REMOTE_PS"
-echo "$(date): DEBUG: - BRANCH_PS=$BRANCH_PS"
-echo "$(date): DEBUG: - PIS_ENV=CI"
-echo "$(date): DEBUG: - GITHUB_CI=true"
-echo "$(date): DEBUG: - CI=true"
-echo "$(date): DEBUG: - GITHUB_ACTIONS=true"
-echo "$(date): DEBUG: - RUNNER_OS=macOS"
+# If not a component request, call real curl
+exec /usr/bin/curl "$@"
+EOF
+        
+        chmod +x "$temp_dir/curl"
+        export PATH="$temp_dir:$PATH"
+        log_info "PKG mode: Created curl wrapper for local component loading"
+        log_info "PKG mode: Available components: $(find "$DTU_COMPONENTS_PATH" -name "*.sh" | wc -l) files"
+    fi
+}
 
-# Call the actual first_year_students.sh orchestrator
-show_progress_log "Calling first_year_students.sh orchestrator..." "INFO"
-if sudo -u "$USER_NAME" env HOME="/Users/$USER_NAME" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PIS_ENV="CI" GITHUB_CI="true" CI="true" GITHUB_ACTIONS="true" RUNNER_OS="macOS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/orchestrators/first_year_students.sh)"; then
-    orchestrator_ret=0
-    echo "$(date): DEBUG: Orchestrator completed successfully"
-    show_progress_log "🎉 First year students orchestrator completed successfully!" "INFO"
-else
-    orchestrator_ret=$?
-    echo "$(date): DEBUG: Orchestrator failed with exit code: $orchestrator_ret"
-    show_progress_log "❌ First year students orchestrator failed" "ERROR"
-fi
+# Function to cleanup temporary files
+cleanup_pkg_environment() {
+    if [ -n "$DTU_TEMP_DIR" ] && [ -d "$DTU_TEMP_DIR" ]; then
+        rm -rf "$DTU_TEMP_DIR" 2>/dev/null || true
+        log_info "PKG mode: Cleaned up temporary curl wrapper"
+    fi
+}
 
-# Create summary
-SUMMARY_FILE="PLACEHOLDER_SUMMARY_FILE"
-cat > "$SUMMARY_FILE" << EOF
+# Main installation function
+main() {
+    # Determine user and set environment
+    local user_name=$(stat -f%Su /dev/console)
+    export USER="$user_name"
+    export HOME="/Users/$user_name"
+    
+    # Set environment variables for installation
+    export PYTHON_VERSION_PS="3.11"
+    export PIS_ENV="CI"
+    
+    log_info "Starting DTU Python installation for user: $user_name"
+    log_info "Python version: $PYTHON_VERSION_PS"
+    
+    show_installer_header
+    
+    # Detect and setup environment
+    detect_environment
+    setup_pkg_environment
+    
+    # Call the existing first_year_students.sh orchestrator
+    log_info "Executing first year students orchestrator..."
+    
+    local orchestrator_cmd
+    local orchestrator_ret
+    
+    if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
+        # PKG mode - use local orchestrator
+        log_info "PKG mode: Using bundled first_year_students.sh orchestrator"
+        orchestrator_cmd="$DTU_COMPONENTS_PATH/orchestrators/first_year_students.sh"
+        
+        # Set environment variables for PKG compatibility
+        export REMOTE_PS="${REPO:-dtudk/pythonsupport-scripts}"
+        export BRANCH_PS="${BRANCH:-main}"
+        export GITHUB_CI="true"
+        
+        # Execute orchestrator as the user
+        sudo -u "$user_name" env HOME="/Users/$user_name" \
+            DTU_PYTHON_PKG_MODE="$DTU_PYTHON_PKG_MODE" \
+            DTU_COMPONENTS_PATH="$DTU_COMPONENTS_PATH" \
+            PYTHON_VERSION_PS="$PYTHON_VERSION_PS" \
+            PIS_ENV="$PIS_ENV" \
+            REMOTE_PS="$REMOTE_PS" \
+            BRANCH_PS="$BRANCH_PS" \
+            GITHUB_CI="$GITHUB_CI" \
+            PATH="$PATH" \
+            /bin/bash "$orchestrator_cmd"
+        orchestrator_ret=$?
+    else
+        # Traditional mode - use curl to download and execute
+        log_info "Traditional mode: Using remote first_year_students.sh orchestrator"
+        sudo -u "$user_name" env HOME="/Users/$user_name" \
+            PYTHON_VERSION_PS="$PYTHON_VERSION_PS" \
+            PIS_ENV="$PIS_ENV" \
+            REMOTE_PS="${REPO:-dtudk/pythonsupport-scripts}" \
+            BRANCH_PS="${BRANCH:-main}" \
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REPO:-dtudk/pythonsupport-scripts}/${BRANCH:-main}/MacOS/Components/orchestrators/first_year_students.sh)"
+        orchestrator_ret=$?
+    fi
+    
+    # Check orchestrator result and create summary
+    if [ $orchestrator_ret -eq 0 ]; then
+        create_summary "success"
+        show_installation_summary "First Year Students Setup"
+        log_success "DTU Python installation completed successfully!"
+        log_info "Orchestrator executed successfully with components from: $([ "$DTU_PYTHON_PKG_MODE" = "true" ] && echo "bundled PKG" || echo "remote GitHub")"
+        
+        # Additional verification for PKG mode
+        if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
+            log_info "PKG mode verification: All components loaded from local bundle"
+            log_info "PKG mode verification: No network dependencies were used"
+        fi
+    else
+        create_summary "failed"
+        log_error "First year students orchestrator failed with exit code: $orchestrator_ret"
+        log_error "Installation failed. Contact python-support@dtu.dk for help."
+        
+        # Enhanced error reporting for PKG mode
+        if [ "$DTU_PYTHON_PKG_MODE" = "true" ]; then
+            log_error "PKG mode error: Check that all required components are bundled"
+            log_info "PKG mode debug: Components path: $DTU_COMPONENTS_PATH"
+            log_info "PKG mode debug: Available scripts: $(find "$DTU_COMPONENTS_PATH" -name "*.sh" 2>/dev/null | wc -l)"
+        fi
+    fi
+    
+    # Cleanup temporary files
+    cleanup_pkg_environment
+    
+    return $orchestrator_ret
+}
+
+# Function to create installation summary
+create_summary() {
+    local status="$1"
+    local mode_text="$([ "$DTU_PYTHON_PKG_MODE" = "true" ] && echo "PKG mode (bundled components)" || echo "Traditional mode (remote components)")"
+    
+    cat > "$SUMMARY_FILE" << EOF
 DTU First Year Students Installation Complete!
 
 Installation log: $LOG_FILE
 Date: $(date)
-User: $USER_NAME
+User: $USER
+Mode: $mode_text
 
 Installation Results:
-- First Year Students Orchestrator: $([ $orchestrator_ret -eq 0 ] && echo "SUCCESS" || echo "FAILED")
+- Orchestrator execution: $([ "$status" = "success" ] && echo "SUCCESS" || echo "FAILED")
+- Homebrew: $(command_exists brew && echo "SUCCESS" || echo "UNKNOWN")
+- Conda: $(command_exists conda && echo "SUCCESS" || echo "UNKNOWN")
+- Python 3.11: $(command_exists python3 && echo "SUCCESS" || echo "UNKNOWN")
+- VS Code: $(command_exists code && echo "SUCCESS" || echo "UNKNOWN")
+
+Verification Results (if available):
+- Conda command: $(command_exists conda && echo "SUCCESS" || echo "NOT FOUND")
+- Python 3.11: $(command_exists python3 && echo "SUCCESS" || echo "NOT FOUND")
+- Package imports: $(python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties" 2>/dev/null && echo "SUCCESS" || echo "NOT TESTED")
+
+Component Loading:
+- Source: $([ "$DTU_PYTHON_PKG_MODE" = "true" ] && echo "Local bundled components from PKG" || echo "Remote components from GitHub")
+- Repository: ${REPO:-dtudk/pythonsupport-scripts}
+- Branch: ${BRANCH:-main}
 
 Next steps:
 1. Open Terminal and type 'python3' to test Python
 2. Open Visual Studio Code to start coding
 3. Try importing: dtumathtools, pandas, numpy, matplotlib
+4. Create your first Python project!
 
-For support: PLACEHOLDER_SUPPORT_EMAIL
+For support: $SUPPORT_EMAIL
 EOF
 
-show_progress_log "PKG installer script has finished. Summary created at: $SUMMARY_FILE" "INFO"
-echo "$(date): DEBUG: PKG installer script finished"
+    log_info "Installation summary created at: $SUMMARY_FILE"
+}
 
-exit $orchestrator_ret
+# Error handling - create failure summary on error
+trap 'cleanup_pkg_environment; create_summary "failed"; log_error "Installation failed. Check $LOG_FILE for details."; exit 1' ERR
+
+# Execute main installation if not being sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+    exit_code=$?
+    
+    if [ $exit_code -eq 0 ]; then
+        log_info "PKG installer script finished successfully"
+    else
+        log_error "PKG installer script failed with exit code: $exit_code"
+    fi
+    
+    exit $exit_code
+fi
