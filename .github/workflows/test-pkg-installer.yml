@@ -250,22 +250,38 @@ jobs:
           # Update environment to find conda
           hash -r 2>/dev/null || true
           
+          # In CI environments, we need to manually source conda after installation
+          # Check for conda initialization scripts and source them
+          CONDA_SOURCED=false
+          
+          # Try Homebrew-installed Miniconda paths
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+                           "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+                           "$HOME/miniconda3/etc/profile.d/conda.sh" \
+                           "/opt/miniconda3/etc/profile.d/conda.sh"; do
+            if [ -f "$conda_path" ]; then
+              echo "  Found conda.sh at: $conda_path"
+              source "$conda_path" 2>/dev/null || true
+              conda activate base 2>/dev/null || true
+              CONDA_SOURCED=true
+              break
+            fi
+          done
+          
           # Check Conda installation
           if command -v conda >/dev/null 2>&1; then
             echo "✓ Conda command available in PATH"
             echo "  Version: $(conda --version)"
             echo "  Location: $(which conda)"
+          elif [ "$CONDA_SOURCED" = true ]; then
+            echo "✓ Conda sourced successfully: $(conda --version 2>/dev/null || echo 'version check failed')"
           else
-            echo "❌ Conda not found in PATH"
-            # Try to source conda initialization
-            if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-              echo "  Found conda.sh at: $HOME/miniconda3/etc/profile.d/conda.sh"
-              source "$HOME/miniconda3/etc/profile.d/conda.sh"
-              command -v conda >/dev/null 2>&1 && echo "✓ Conda available after sourcing: $(conda --version)" || echo "❌ Conda still not available"
-            else
-              echo "❌ Conda initialization script not found"
-              exit 1
-            fi
+            echo "❌ Conda not found and no initialization script located"
+            echo "Checking common conda locations:"
+            ls -la /opt/homebrew/Caskroom/miniconda/*/etc/profile.d/conda.sh 2>/dev/null || echo "  - Homebrew ARM miniconda: not found"
+            ls -la /usr/local/Caskroom/miniconda/*/etc/profile.d/conda.sh 2>/dev/null || echo "  - Homebrew Intel miniconda: not found"
+            ls -la "$HOME/miniconda3/etc/profile.d/conda.sh" 2>/dev/null || echo "  - User miniconda: not found"
+            exit 1
           fi
           
           # Check Python installation
@@ -339,11 +355,21 @@ jobs:
             PYTHON_INSTALLED="✓"
           fi
           
+          # Try to find and source conda initialization
           if command -v conda >/dev/null 2>&1; then
             CONDA_INSTALLED="✓"
-          elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-            source "$HOME/miniconda3/etc/profile.d/conda.sh" 2>/dev/null || true
-            command -v conda >/dev/null 2>&1 && CONDA_INSTALLED="✓"
+          else
+            # Try Homebrew-installed Miniconda paths
+            for conda_path in "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+                             "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" \
+                             "$HOME/miniconda3/etc/profile.d/conda.sh" \
+                             "/opt/miniconda3/etc/profile.d/conda.sh"; do
+              if [ -f "$conda_path" ]; then
+                source "$conda_path" 2>/dev/null || true
+                conda activate base 2>/dev/null || true
+                command -v conda >/dev/null 2>&1 && CONDA_INSTALLED="✓" && break
+              fi
+            done
           fi
           
           # Test essential packages
