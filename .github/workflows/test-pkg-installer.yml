@@ -90,19 +90,26 @@ jobs:
           
           echo "Clean install preparation complete!"
 
-      - name: Build PKG Installer
+      - name: Find PKG Installer
         working-directory: MacOS/pkg_installer
         run: |
-          echo "=== Building PKG Installer ==="
-          ./src/build.sh
+          echo "=== Using Pre-built PKG Installer ==="
           
-          # Show build artifacts
+          # Show available PKG files
           ls -la builds/
           
           # Get the most recently created PKG file
           PKG_FILE=$(ls -t builds/DtuPythonInstaller_*.pkg | head -1)
           echo "PKG_FILE=$PKG_FILE" >> $GITHUB_ENV
           echo "📦 Using PKG file: $PKG_FILE"
+          
+          # Verify PKG exists
+          if [[ ! -f "$PKG_FILE" ]]; then
+            echo "❌ No PKG file found in builds/ directory"
+            echo "Available files:"
+            ls -la builds/ || echo "builds/ directory not found"
+            exit 1
+          fi
           
           echo "=== Package Information ==="
           installer -pkginfo -pkg "$PKG_FILE"
