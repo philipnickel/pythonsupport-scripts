@@ -78,46 +78,71 @@ for diag_component in "${DIAGNOSTICS_COMPONENTS[@]}"; do
     fi
 done
 
-# Create the main installer script for dummy PKG
-echo "Creating dummy installer script..."
+# Create the main installer script for Homebrew PKG
+echo "Creating Homebrew installer script..."
 cat > "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh" << 'EOF'
 #!/bin/bash
-# DTU Python Support - Minimal Dummy PKG
-# Phase 1: Basic PKG installation test
+# DTU Python Support - Phase 2: Homebrew Component
+# This script installs Homebrew using local components
 
-echo "🎉 DTU Python Support PKG installed successfully!"
-echo "📋 Installation details:"
-echo "  • Installation path: /usr/local/share/dtu-pythonsupport/"
-echo "  • Version: v1.0.0 (minimal dummy)"
-echo "  • Phase: 1 - Basic PKG functionality test"
+echo "=== DTU Python Support PKG - Phase 2 Installation ==="
+echo "📦 Installing Homebrew component..."
+echo "Installation path: /usr/local/share/dtu-pythonsupport/"
 echo ""
-echo "✅ PKG installation verification complete."
 
-# Create a simple status file to verify installation
+# Set environment to use local scripts
+export REMOTE_PS="local-pkg"
+export BRANCH_PS="local-pkg"
+
+# Run Homebrew installation using local component
+echo "🍺 Installing Homebrew..."
+/bin/bash "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh"
+HOMEBREW_EXIT_CODE=$?
+
+if [ $HOMEBREW_EXIT_CODE -eq 0 ]; then
+    echo "✅ Homebrew installation completed successfully!"
+else
+    echo "❌ Homebrew installation failed with exit code: $HOMEBREW_EXIT_CODE"
+fi
+
+# Create status file to track installation
 echo "DTU_PYTHON_SUPPORT_PKG_INSTALLED=true" > "/usr/local/share/dtu-pythonsupport/.pkg_status"
-echo "PKG_VERSION=1.0.0-dummy" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "PKG_VERSION=1.0.0-homebrew" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
 echo "INSTALL_DATE=\$(date)" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "HOMEBREW_COMPONENT=installed" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+echo "HOMEBREW_EXIT_CODE=$HOMEBREW_EXIT_CODE" >> "/usr/local/share/dtu-pythonsupport/.pkg_status"
+
+echo ""
+echo "=== Phase 2 PKG Installation Complete ==="
+echo "Components installed: Homebrew"
+echo "Exit code: $HOMEBREW_EXIT_CODE"
+
+exit $HOMEBREW_EXIT_CODE
 EOF
 
 chmod +x "$PKG_ROOT$LOCAL_INSTALL_PATH/install.sh"
 
-# Create postinstall script for minimal PKG
-echo "Creating minimal PKG postinstall script..."
+# Create postinstall script for Homebrew PKG
+echo "Creating Homebrew PKG postinstall script..."
 mkdir -p "$TEMP_BUILD_DIR/Scripts"
 cat > "$TEMP_BUILD_DIR/Scripts/postinstall" << 'EOF'
 #!/bin/bash
-# Minimal PKG postinstall script - Phase 1
+# Homebrew PKG postinstall script - Phase 2
 
-echo "=== DTU Python Support PKG - Phase 1 Installation ==="
+echo "=== DTU Python Support PKG - Phase 2 Installation ==="
 echo "Files installed to: /usr/local/share/dtu-pythonsupport/"
+echo "Components: Homebrew + dependencies"
 echo ""
 
-# Run the dummy installer script
+# Run the Homebrew installer script
 /usr/local/share/dtu-pythonsupport/install.sh
+INSTALL_EXIT_CODE=$?
 
 echo ""
-echo "=== Phase 1 PKG Installation Complete ==="
-exit 0
+echo "=== Phase 2 PKG Installation Complete ==="
+echo "Homebrew component installation exit code: $INSTALL_EXIT_CODE"
+
+exit $INSTALL_EXIT_CODE
 EOF
 
 chmod +x "$TEMP_BUILD_DIR/Scripts/postinstall"

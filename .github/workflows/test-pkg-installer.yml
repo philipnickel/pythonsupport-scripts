@@ -97,8 +97,8 @@ jobs:
           echo "Available PKG files:"
           ls -la builds_for_testing/
           
-          # Get the PKG file to test (currently the dummy PKG)
-          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.0.0-dummy.pkg"
+          # Get the PKG file to test (currently the Homebrew PKG)
+          PKG_FILE="builds_for_testing/DTU-Python-FirstYear-v1.0.1-homebrew.pkg"
           
           if [[ ! -f "$PKG_FILE" ]]; then
             echo "❌ PKG file not found: $PKG_FILE"
@@ -152,9 +152,9 @@ jobs:
             ls -la /tmp/macos_* 2>/dev/null || echo "No macos_* files in /tmp"
           fi
 
-      - name: Verify Dummy PKG Installation
+      - name: Verify Homebrew PKG Installation
         run: |
-          echo "=== Dummy PKG Installation Verification ==="
+          echo "=== Homebrew PKG Installation Verification ==="
           
           # Check that PKG files were installed correctly
           echo "Checking installed files..."
@@ -174,25 +174,59 @@ jobs:
             exit 1
           fi
           
-          echo ""
-          echo "✅ Dummy PKG verification complete"
-
-      # Note: VS Code, Conda, Python verification steps are disabled for dummy PKG
-      # These will be re-enabled as components are added incrementally
-      
-      - name: Test Basic Functionality (Dummy PKG)
-        run: |
-          echo "=== Testing Dummy PKG Basic Functionality ==="
-          
-          # Test that the installer script can run
-          if [ -x "/usr/local/share/dtu-pythonsupport/install.sh" ]; then
-            echo "Testing installer script execution..."
-            /usr/local/share/dtu-pythonsupport/install.sh
-            echo "✅ Installer script executed successfully"
+          # Check Homebrew component files
+          if [ -f "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh" ]; then
+            echo "✓ Homebrew component found"
           else
-            echo "❌ Installer script not executable"
+            echo "❌ Homebrew component not found"
             exit 1
           fi
+          
+          # Check shared utilities
+          if [ -f "/usr/local/share/dtu-pythonsupport/Components/Shared/master_utils.sh" ]; then
+            echo "✓ Shared utilities found"
+          else
+            echo "❌ Shared utilities not found"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Homebrew PKG verification complete"
+
+      - name: Verify Homebrew Installation (Phase 2)
+        run: |
+          echo "=== Verifying Homebrew Installation ==="
+          
+          # Update environment to find brew
+          hash -r 2>/dev/null || true
+          
+          # Check Homebrew installation
+          if command -v brew >/dev/null 2>&1; then
+            echo "✓ Homebrew command available in PATH"
+            echo "  Version: $(brew --version | head -1)"
+            echo "  Location: $(which brew)"
+          else
+            echo "❌ Homebrew not found in PATH"
+            # Try common locations
+            if [ -f "/opt/homebrew/bin/brew" ]; then
+              echo "  Found at: /opt/homebrew/bin/brew"
+              eval "$(/opt/homebrew/bin/brew shellenv)"
+              echo "✓ Homebrew available after shellenv: $(brew --version | head -1)"
+            elif [ -f "/usr/local/bin/brew" ]; then
+              echo "  Found at: /usr/local/bin/brew"
+              eval "$(/usr/local/bin/brew shellenv)"
+              echo "✓ Homebrew available after shellenv: $(brew --version | head -1)"
+            else
+              echo "❌ Homebrew not found in common locations"
+              exit 1
+            fi
+          fi
+          
+          # Test basic Homebrew functionality
+          echo ""
+          echo "Testing Homebrew functionality..."
+          brew --config | head -5
+          echo "✅ Homebrew verification complete"
 
       - name: Upload Installation Artifacts
         if: always()
@@ -205,33 +239,51 @@ jobs:
             /tmp/diagnostic_report_*.html
           retention-days: 7
 
-      - name: Show Dummy PKG Installation Summary  
+      - name: Show Homebrew PKG Installation Summary  
         if: always()
         run: |
-          echo "=== Dummy PKG Installation Summary ==="
+          echo "=== Homebrew PKG Installation Summary ==="
           echo "PKG File: $PKG_FILE"
           echo "Test Date: $(date)"
           echo "macOS Version: $(sw_vers -productVersion)"
           echo ""
           
-          # Simple status check for dummy PKG
+          # Status check for Homebrew PKG
           PKG_INSTALLED=$([ -f "/usr/local/share/dtu-pythonsupport/.pkg_status" ] && echo "✓" || echo "❌")
           INSTALLER_SCRIPT=$([ -x "/usr/local/share/dtu-pythonsupport/install.sh" ] && echo "✓" || echo "❌")
+          HOMEBREW_COMPONENT=$([ -f "/usr/local/share/dtu-pythonsupport/Components/Homebrew/install.sh" ] && echo "✓" || echo "❌")
           
-          echo "Dummy PKG Status:"
+          # Check if Homebrew is actually installed and working
+          HOMEBREW_INSTALLED="❌"
+          if command -v brew >/dev/null 2>&1; then
+            HOMEBREW_INSTALLED="✓"
+          elif [ -f "/opt/homebrew/bin/brew" ] || [ -f "/usr/local/bin/brew" ]; then
+            # Try to load Homebrew environment
+            for brew_path in "/opt/homebrew/bin/brew" "/usr/local/bin/brew"; do
+              if [ -f "$brew_path" ]; then
+                eval "$($brew_path shellenv)" 2>/dev/null || true
+                command -v brew >/dev/null 2>&1 && HOMEBREW_INSTALLED="✓" && break
+              fi
+            done
+          fi
+          
+          echo "Homebrew PKG Status:"
           echo "  PKG Files Installed: $PKG_INSTALLED"
           echo "  Installer Script Executable: $INSTALLER_SCRIPT"
+          echo "  Homebrew Component Present: $HOMEBREW_COMPONENT"
+          echo "  Homebrew Actually Installed: $HOMEBREW_INSTALLED"
           
-          # Determine overall success for dummy PKG
-          if [[ "$PKG_INSTALLED$INSTALLER_SCRIPT" == "✓✓" ]]; then
+          # Determine overall success for Homebrew PKG
+          if [[ "$PKG_INSTALLED$INSTALLER_SCRIPT$HOMEBREW_COMPONENT$HOMEBREW_INSTALLED" == "✓✓✓✓" ]]; then
             echo ""
-            echo "🎉 Dummy PKG Installation Test: SUCCESS"
-            echo "Phase 1 - Basic PKG functionality verified!"
-            echo "Ready to add components incrementally."
+            echo "🎉 Homebrew PKG Installation Test: SUCCESS"
+            echo "Phase 2 - Homebrew component verified!"
+            echo "Ready to add Python/Miniconda component."
             exit 0
           else
             echo ""
-            echo "❌ Dummy PKG Installation Test: FAILED"
-            echo "Basic PKG functionality not working."
+            echo "❌ Homebrew PKG Installation Test: FAILED"
+            echo "Homebrew component not working properly."
+            echo "Status: PKG=$PKG_INSTALLED Script=$INSTALLER_SCRIPT Component=$HOMEBREW_COMPONENT Homebrew=$HOMEBREW_INSTALLED"
             exit 1
           fi

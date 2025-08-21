@@ -5,8 +5,8 @@
 # Package metadata
 PKG_NAME="DTU Python First Year Students"
 PKG_IDENTIFIER="dk.dtu.pythonsupport.firstyear"
-PKG_VERSION="1.0.0"
-PKG_DESCRIPTION="Complete Python development environment setup for DTU first year students"
+PKG_VERSION="1.0.1"
+PKG_DESCRIPTION="Phase 2: Homebrew component installer for DTU Python development environment"
 
 # Build configuration
 BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -18,9 +18,14 @@ PKG_ROOT="$TEMP_BUILD_DIR/pkg_root"
 
 # Components to copy and localize (relative to MacOS/Components/)
 # These will be copied from the single source of truth in the repo
-# Starting with minimal dummy PKG - components will be added incrementally
+# Phase 2: Adding Homebrew component
 COMPONENTS=(
-    # Phase 1: Minimal dummy - no actual components yet
+    "Homebrew/install.sh"
+    "Shared/master_utils.sh"
+    "Shared/dependencies.sh"
+    "Shared/piwik_utility.sh"
+    "Shared/remote_utils.sh"
+    "Shared/utils.sh"
 )
 
 # Diagnostics components to copy and localize (relative to MacOS/Components/Diagnostics/)
