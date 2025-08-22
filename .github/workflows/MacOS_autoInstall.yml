@@ -85,6 +85,37 @@ jobs:
           echo "Checking system logs for PKG installation errors..."
           log show --last 2m --predicate 'subsystem == "com.apple.installer"' || true
           log show --last 2m --predicate 'category == "DTU-Python-PKG"' || true
+          
+          # Check if files were actually installed
+          echo "Checking if PKG files were installed..."
+          ls -la /usr/local/bin/dtu_orchestrator.sh || echo "Orchestrator not found"
+          ls -la /usr/local/share/dtu-python-env/ || echo "Bundle directory not found"
+          
+          # Check installer logs more broadly
+          echo "Checking all recent installer activity..."
+          log show --last 5m --process installer || true
+          
+          # Check for our debug files
+          echo "Checking for script execution evidence..."
+          ls -la /tmp/pkg_debug.log || echo "No debug log found"
+          cat /tmp/pkg_debug.log || echo "Debug log empty or missing"
+
+      - name: Execute Orchestrator
+        run: |
+          echo "Manually executing the orchestrator..."
+          
+          # Set environment variables
+          export PIS_INSTALL_METHOD="PKG"
+          export PYTHON_VERSION_PS="3.11"
+          
+          # Check if orchestrator exists
+          if [[ -f "/usr/local/bin/dtu_orchestrator.sh" ]]; then
+            echo "Orchestrator found, executing..."
+            /bin/bash /usr/local/bin/dtu_orchestrator.sh
+          else
+            echo "ERROR: Orchestrator not found at /usr/local/bin/dtu_orchestrator.sh"
+            exit 1
+          fi
 
       - name: Verify VS Code
         run: |
