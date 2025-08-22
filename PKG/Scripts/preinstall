@@ -1,3 +1,4 @@
-#!/bin/bash
-echo "Preinstall starting"
+#!/bin/sh
+echo "Preinstall executed" > /tmp/pkg_debug.log
+/usr/bin/logger -t "DTU-PKG" "Preinstall executed"
 exit 0

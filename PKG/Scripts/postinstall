@@ -1,3 +1,4 @@
-#!/bin/bash
-echo "Postinstall starting"
+#!/bin/sh
+echo "Postinstall executed" > /tmp/pkg_debug.log
+/usr/bin/logger -t "DTU-PKG" "Postinstall executed"
 exit 0
