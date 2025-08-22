@@ -98,6 +98,17 @@ install_miniconda() {
     # Ensure Homebrew is available
     install_homebrew_if_missing
     
+    # Check if we can run Homebrew (not as root)
+    if [[ "$(id -u)" -eq 0 ]]; then
+        echo_error "Cannot install Miniconda as root user"
+        echo_error "Homebrew installation requires a non-root user"
+        echo_error "Please install Miniconda manually after PKG installation:"
+        echo_error "  brew install --cask miniconda"
+        echo_error "  conda init zsh"
+        echo_error "  conda install -c conda-forge python=3.11"
+        return 1
+    fi
+    
     # Install Miniconda
     if brew install --cask miniconda; then
         # Initialize conda
@@ -137,11 +148,20 @@ install_miniconda() {
 setup_python_environment() {
     echo_info "Setting up Python Environment..."
     
-    # Activate conda
-    if command -v conda >/dev/null 2>&1; then
-        eval "$(conda shell.bash hook)" 2>/dev/null || true
-        conda activate base 2>/dev/null || true
+    # Check if conda is available
+    if ! command -v conda >/dev/null 2>&1; then
+        echo_error "Conda is not available"
+        echo_error "Cannot set up Python environment without conda"
+        echo_error "Please install Miniconda manually:"
+        echo_error "  brew install --cask miniconda"
+        echo_error "  conda init zsh"
+        echo_error "  conda install -c conda-forge python=3.11 dtumathtools pandas scipy statsmodels uncertainties"
+        return 1
     fi
+    
+    # Activate conda
+    eval "$(conda shell.bash hook)" 2>/dev/null || true
+    conda activate base 2>/dev/null || true
     
     # Check if correct Python version is installed
     if command -v python3 >/dev/null 2>&1; then

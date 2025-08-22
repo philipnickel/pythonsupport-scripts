@@ -97,28 +97,10 @@ jobs:
           
           # Check for our debug files
           echo "Checking for script execution evidence..."
-          ls -la /tmp/pkg_debug.log || echo "No debug log found"
-          cat /tmp/pkg_debug.log || echo "Debug log empty or missing"
+          ls -la /tmp/dtu_preinstall.log || echo "No preinstall log found"
+          cat /tmp/dtu_preinstall.log || echo "Preinstall log empty or missing"
           ls -la /tmp/dtu_postinstall.log || echo "No postinstall log found"
           cat /tmp/dtu_postinstall.log || echo "Postinstall log empty or missing"
-
-      - name: Execute Orchestrator Manually
-        run: |
-          echo "Manually executing the orchestrator to test if it works..."
-          
-          # Set environment variables
-          export PIS_INSTALL_METHOD="PKG"
-          export PYTHON_VERSION_PS="3.11"
-          export GITHUB_CI="true"
-          
-          # Check if orchestrator exists
-          if [[ -f "/usr/local/bin/dtu_orchestrator.sh" ]]; then
-            echo "Orchestrator found, executing..."
-            /bin/bash /usr/local/bin/dtu_orchestrator.sh
-          else
-            echo "ERROR: Orchestrator not found at /usr/local/bin/dtu_orchestrator.sh"
-            exit 1
-          fi
 
       - name: Verify VS Code
         run: |
