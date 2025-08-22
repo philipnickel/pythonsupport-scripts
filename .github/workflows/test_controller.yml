@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'main_controller.md'
+      - 'main_controller.yml'
       - 'MacOS/Components/Shared/config_check.sh'
       - '.github/workflows/test_controller.yml'
 
@@ -19,16 +19,19 @@ jobs:
 
       - name: Create test controller with disabled components
         run: |
-          cat > test_controller.md << 'EOF'
-          | Platform | Component | Status | Description |
-          |----------|-----------|--------|-------------|
-          | **macOS** | Orchestrator | **Disabled** | First year student installation |
-          | | Legacy | **Enabled** | 2024 legacy installation scripts |
-          | | PKG Installer | **Disabled** | Offline installation package |
-          | **Windows** | Orchestrator | **Enabled** | Windows installation orchestrator |
-          | | Legacy | **Disabled** | 2024 legacy installation scripts |
-          | | MSI Installer | **Enabled** | Offline installation package |
-          | **Global** | Maintenance Mode | **Disabled** | All systems operational |
+          cat > test_controller.yml << 'EOF'
+          macOS:
+            orchestrator: disabled
+            legacy: enabled
+            pkg: disabled
+          
+          windows:
+            orchestrator: enabled
+            legacy: disabled
+            msi: enabled
+          
+          maintenance_mode: disabled
+          maintenance_message: ""
           EOF
 
       - name: Test orchestrator disabled
@@ -37,7 +40,7 @@ jobs:
           export BRANCH_PS="test-branch"
           
           # Mock the controller URL to use local file
-          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.md|test_controller.md|' \
+          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.yml|test_controller.yml|' \
               MacOS/Components/Shared/config_check.sh > test_config_check.sh
           
           source test_config_check.sh
@@ -87,16 +90,19 @@ jobs:
 
       - name: Create test controller with maintenance mode
         run: |
-          cat > test_controller_maintenance.md << 'EOF'
-          | Platform | Component | Status | Description |
-          |----------|-----------|--------|-------------|
-          | **macOS** | Orchestrator | **Enabled** | First year student installation |
-          | | Legacy | **Enabled** | 2024 legacy installation scripts |
-          | | PKG Installer | **Enabled** | Offline installation package |
-          | **Windows** | Orchestrator | **Enabled** | Windows installation orchestrator |
-          | | Legacy | **Enabled** | 2024 legacy installation scripts |
-          | | MSI Installer | **Enabled** | Offline installation package |
-          | **Global** | Maintenance Mode | **Enabled** | System maintenance in progress |
+          cat > test_controller_maintenance.yml << 'EOF'
+          macOS:
+            orchestrator: enabled
+            legacy: enabled
+            pkg: enabled
+          
+          windows:
+            orchestrator: enabled
+            legacy: enabled
+            msi: enabled
+          
+          maintenance_mode: enabled
+          maintenance_message: "System maintenance in progress"
           EOF
 
       - name: Test maintenance mode blocks all components
@@ -105,7 +111,7 @@ jobs:
           export BRANCH_PS="test-branch"
           
           # Mock the controller URL to use maintenance file
-          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.md|test_controller_maintenance.md|' \
+          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.yml|test_controller_maintenance.yml|' \
               MacOS/Components/Shared/config_check.sh > test_config_maintenance.sh
           
           source test_config_maintenance.sh

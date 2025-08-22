@@ -1,12 +1,12 @@
 #!/bin/bash
 # Main Controller Check Utility
-# Verifies if component is enabled via main_controller.md
+# Verifies if component is enabled via main_controller.yml
 # Usage: check_component_enabled "component_name" || exit 1
 
 check_component_enabled() {
     local component_name="$1"
     local platform="${2:-macOS}"  # Default to macOS
-    local controller_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.md"
+    local controller_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.yml"
     
     # Fetch main controller with fallback
     local controller_content
@@ -16,23 +16,23 @@ check_component_enabled() {
     fi
     
     # Check maintenance mode first
-    if echo "$controller_content" | grep -q "Maintenance Mode.*\*\*Enabled\*\*"; then
+    if echo "$controller_content" | grep -q "maintenance_mode: enabled"; then
         echo "WARNING: System is currently under maintenance"
+        local maintenance_msg=$(echo "$controller_content" | grep "maintenance_message:" | sed 's/.*maintenance_message: *["\x27]*\([^"\x27]*\)["\x27]*.*/\1/')
+        if [[ -n "$maintenance_msg" ]]; then
+            echo "         Message: $maintenance_msg"
+        fi
         echo "         Please check the repository for updates and try again later."
         return 1
     fi
     
-    # Parse markdown table to check if component is enabled
-    local component_line
+    # Parse YAML to check if component is enabled
+    local platform_lower=$(echo "$platform" | tr '[:upper:]' '[:lower:]')
+    local component_status
+    
     case "$component_name" in
-        "orchestrator")
-            component_line=$(echo "$controller_content" | grep -i "orchestrator")
-            ;;
-        "legacy")
-            component_line=$(echo "$controller_content" | grep -i "legacy")
-            ;;
-        "pkg")
-            component_line=$(echo "$controller_content" | grep -i "pkg\|installer")
+        "orchestrator"|"legacy"|"pkg"|"msi")
+            component_status=$(echo "$controller_content" | grep -A 10 "^$platform_lower:" | grep "  $component_name:" | awk '{print $2}')
             ;;
         *)
             # Unknown component, allow by default
@@ -40,11 +40,11 @@ check_component_enabled() {
             ;;
     esac
     
-    # Check if component is disabled (contains "Disabled")
-    if echo "$component_line" | grep -q "\*\*Disabled\*\*"; then
+    # Check if component is disabled
+    if [[ "$component_status" == "disabled" ]]; then
         echo "WARNING: $component_name installation is currently disabled"
         echo "         This component has been temporarily disabled by administrators."
-        echo "         Check main_controller.md for current status."
+        echo "         Check main_controller.yml for current status."
         return 1
     fi
     
