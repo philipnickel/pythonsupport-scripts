@@ -273,7 +273,7 @@ jobs:
           GITHUB_CI: true
         run: |
           echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/2024_legacy/MacOS_AutoInstall.sh)"
 
       - name: Verify VS Code
         run: |
