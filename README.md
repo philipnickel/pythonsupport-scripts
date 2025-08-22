@@ -4,6 +4,12 @@
 
 This repository contains automated installation scripts for Python development environments and associated tools for macOS and Windows.
 
+## System Status
+
+https://github.com/philipnickel/pythonsupport-scripts/blob/main/main_controller.md
+
+> **Note**: To disable components quickly, edit [main_controller.md](main_controller.md). This table is used by administrators to communicate system availability.
+
 ## Quick Diagnostics
 
 The diagnostics system now supports targeted testing profiles for different needs:

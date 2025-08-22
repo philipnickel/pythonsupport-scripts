@@ -1,0 +1,143 @@
+name: Test Controller
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'main_controller.md'
+      - 'MacOS/Components/Shared/config_check.sh'
+      - '.github/workflows/test_controller.yml'
+
+jobs:
+  test-controller-disabled:
+    name: Test Component Disabling
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create test controller with disabled components
+        run: |
+          cat > test_controller.md << 'EOF'
+          | Platform | Component | Status | Description |
+          |----------|-----------|--------|-------------|
+          | **macOS** | Orchestrator | **Disabled** | First year student installation |
+          | | Legacy | **Enabled** | 2024 legacy installation scripts |
+          | | PKG Installer | **Disabled** | Offline installation package |
+          | **Windows** | Orchestrator | **Enabled** | Windows installation orchestrator |
+          | | Legacy | **Disabled** | 2024 legacy installation scripts |
+          | | MSI Installer | **Enabled** | Offline installation package |
+          | **Global** | Maintenance Mode | **Disabled** | All systems operational |
+          EOF
+
+      - name: Test orchestrator disabled
+        run: |
+          export REMOTE_PS="test/repo"
+          export BRANCH_PS="test-branch"
+          
+          # Mock the controller URL to use local file
+          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.md|test_controller.md|' \
+              MacOS/Components/Shared/config_check.sh > test_config_check.sh
+          
+          source test_config_check.sh
+          
+          if check_component_enabled "orchestrator"; then
+            echo "ERROR: Orchestrator should be disabled"
+            exit 1
+          else
+            echo "SUCCESS: Orchestrator correctly disabled"
+          fi
+
+      - name: Test legacy enabled
+        run: |
+          export REMOTE_PS="test/repo"
+          export BRANCH_PS="test-branch"
+          
+          source test_config_check.sh
+          
+          if check_component_enabled "legacy"; then
+            echo "SUCCESS: Legacy correctly enabled"
+          else
+            echo "ERROR: Legacy should be enabled"
+            exit 1
+          fi
+
+      - name: Test pkg disabled
+        run: |
+          export REMOTE_PS="test/repo"
+          export BRANCH_PS="test-branch"
+          
+          source test_config_check.sh
+          
+          if check_component_enabled "pkg"; then
+            echo "ERROR: PKG should be disabled"
+            exit 1
+          else
+            echo "SUCCESS: PKG correctly disabled"
+          fi
+
+  test-maintenance-mode:
+    name: Test Maintenance Mode
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create test controller with maintenance mode
+        run: |
+          cat > test_controller_maintenance.md << 'EOF'
+          | Platform | Component | Status | Description |
+          |----------|-----------|--------|-------------|
+          | **macOS** | Orchestrator | **Enabled** | First year student installation |
+          | | Legacy | **Enabled** | 2024 legacy installation scripts |
+          | | PKG Installer | **Enabled** | Offline installation package |
+          | **Windows** | Orchestrator | **Enabled** | Windows installation orchestrator |
+          | | Legacy | **Enabled** | 2024 legacy installation scripts |
+          | | MSI Installer | **Enabled** | Offline installation package |
+          | **Global** | Maintenance Mode | **Enabled** | System maintenance in progress |
+          EOF
+
+      - name: Test maintenance mode blocks all components
+        run: |
+          export REMOTE_PS="test/repo"
+          export BRANCH_PS="test-branch"
+          
+          # Mock the controller URL to use maintenance file
+          sed 's|https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.md|test_controller_maintenance.md|' \
+              MacOS/Components/Shared/config_check.sh > test_config_maintenance.sh
+          
+          source test_config_maintenance.sh
+          
+          for component in "orchestrator" "legacy" "pkg"; do
+            if check_component_enabled "$component"; then
+              echo "ERROR: $component should be blocked by maintenance mode"
+              exit 1
+            else
+              echo "SUCCESS: $component correctly blocked by maintenance mode"
+            fi
+          done
+
+  test-fallback-behavior:
+    name: Test Fallback When Controller Unavailable
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test fallback when controller fetch fails
+        run: |
+          export REMOTE_PS="nonexistent/repo"
+          export BRANCH_PS="nonexistent-branch"
+          
+          source MacOS/Components/Shared/config_check.sh
+          
+          # Should succeed (fail-open) when controller is unavailable
+          if check_component_enabled "orchestrator"; then
+            echo "SUCCESS: Fallback behavior works - allows execution when controller unavailable"
+          else
+            echo "ERROR: Should allow execution when controller unavailable"
+            exit 1
+          fi
