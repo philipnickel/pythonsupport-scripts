@@ -1,31 +1,59 @@
-#!/bin/sh
-echo "=== DTU Python Environment PKG Installation ===" > /tmp/pkg_debug.log
-echo "Postinstall starting..." >> /tmp/pkg_debug.log
-/usr/bin/logger -t "DTU-PKG" "Postinstall script starting"
+#!/bin/bash
+# DTU Python Environment PKG - Postinstall Script
+# Executes the bundled orchestrator with PKG context
 
-# Detect the logged-in user (important because installer runs as root)
-current_user=$(stat -f "%Su" /dev/console)
-user_home=$(eval echo "~$current_user")
+set -euo pipefail
 
-echo "Installing for user: $current_user" >> /tmp/pkg_debug.log
-echo "User home: $user_home" >> /tmp/pkg_debug.log
-
-# Set environment
+# Set PKG environment context
 export PIS_INSTALL_METHOD="PKG"
 export PYTHON_VERSION_PS="3.11"
-export REMOTE_PS="philipnickel/pythonsupport-scripts"
-export BRANCH_PS="CleanupAndPKG"
 
-# Download and execute orchestrator
-orchestrator_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/orchestrators/first_year_students.sh"
-echo "Downloading orchestrator from: $orchestrator_url" >> /tmp/pkg_debug.log
+echo "=== DTU Python Environment PKG Installation ==="
+echo "Installing Python development environment via PKG..."
+echo ""
 
-if /bin/bash -c "$(curl -fsSL "$orchestrator_url")"; then
-    echo "Installation completed successfully" >> /tmp/pkg_debug.log
-    /usr/bin/logger -t "DTU-PKG" "Installation completed successfully"
+# Log to system log
+logger -t "DTU-Python-PKG" "Starting DTU Python Environment installation"
+
+# Write debug info
+echo "POSTINSTALL EXECUTED" > /tmp/dtu_postinstall.log
+echo "POSTINSTALL EXECUTED" > /var/log/dtu_postinstall.log 2>/dev/null || true
+
+# Create marker file
+touch /tmp/dtu_pkg_postinstall_ran
+
+# Execute the bundled orchestrator script
+orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
+
+echo "Executing bundled installation orchestrator..."
+echo "Script: $orchestrator_script"
+echo ""
+
+# Check if orchestrator script exists
+if [[ ! -f "$orchestrator_script" ]]; then
+    echo "ERROR: Orchestrator script not found at $orchestrator_script"
+    logger -t "DTU-Python-PKG" "ERROR: Orchestrator script not found"
+    exit 1
+fi
+
+# Execute orchestrator with error handling
+echo "Calling orchestrator script with bash..."
+if /bin/bash "$orchestrator_script" 2>&1; then
+    echo ""
+    echo "=== PKG Installation Completed Successfully ==="
+    echo "Your Python development environment is ready!"
+    
+    # Log success
+    logger -t "DTU-Python-PKG" "DTU Python Environment installation completed successfully"
+    
     exit 0
 else
-    echo "Installation failed" >> /tmp/pkg_debug.log
-    /usr/bin/logger -t "DTU-PKG" "Installation failed"
+    echo ""
+    echo "=== PKG Installation Failed ==="
+    echo "Please check the error messages above."
+    
+    # Log failure  
+    logger -t "DTU-Python-PKG" "DTU Python Environment installation failed"
+    
     exit 1
 fi
