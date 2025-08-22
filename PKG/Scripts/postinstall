@@ -15,12 +15,20 @@ echo ""
 # Log to system log
 logger -t "DTU-Python-PKG" "Starting DTU Python Environment installation"
 
+# Debug: Check what was installed
+echo "DEBUG: Checking PKG installation..."
+ls -la /usr/local/bin/dtu_orchestrator.sh || echo "ERROR: Orchestrator script not found"
+ls -la /usr/local/share/dtu-python-env/ || echo "ERROR: Bundle directory not found"
+
 # Execute the bundled orchestrator script
 orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
 
 echo "Executing bundled installation orchestrator..."
 echo "Script: $orchestrator_script"
 echo ""
+
+# Add verbose execution
+set -x
 
 if /bin/bash "$orchestrator_script"; then
     echo ""

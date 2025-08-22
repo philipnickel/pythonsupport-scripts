@@ -48,12 +48,26 @@ echo "Installing development environment using bundled components..."
 echo "Bundle directory: $BUNDLE_DIR"
 echo ""
 
+# Debug information
+echo "DEBUG: Current user: $(id)"
+echo "DEBUG: Current directory: $(pwd)"
+echo "DEBUG: Environment variables:"
+env | grep -E "(PIS_|PYTHON_)" || echo "No PIS_/PYTHON_ variables found"
+
 # Check if bundle directory exists
+echo "DEBUG: Checking bundle directory..."
+ls -la /usr/local/share/ || echo "ERROR: /usr/local/share not found"
+ls -la "$BUNDLE_DIR" || echo "ERROR: Bundle directory not accessible"
+
 if [[ ! -d "$BUNDLE_DIR" ]]; then
     echo_error "Bundle directory not found: $BUNDLE_DIR"
     echo "This PKG may be corrupted or incomplete."
     exit 1
 fi
+
+# List available components
+echo "DEBUG: Available components:"
+find "$BUNDLE_DIR" -name "*.sh" | head -10
 
 # Install components using bundled scripts
 success_count=0
