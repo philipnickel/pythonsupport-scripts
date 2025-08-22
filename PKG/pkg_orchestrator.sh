@@ -12,6 +12,9 @@ readonly BUNDLE_DIR="/usr/local/share/dtu-python-env/Components"
 export PIS_INSTALL_METHOD="${PIS_INSTALL_METHOD:-PKG}"
 export PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}"
 
+# Detect CI environment
+readonly IS_CI="${GITHUB_CI:-false}"
+
 # Load bundled utilities
 if [[ -f "$BUNDLE_DIR/Shared/minimal_utils.sh" ]]; then
     source "$BUNDLE_DIR/Shared/minimal_utils.sh"
@@ -32,6 +35,23 @@ fi
 install_homebrew_if_missing() {
     if ! command -v brew >/dev/null 2>&1; then
         echo_info "Installing Homebrew..."
+        
+        # In CI, we might need to handle this differently
+        if [[ "$IS_CI" == "true" ]]; then
+            echo_info "Running in CI environment, checking for existing Homebrew..."
+            # Check if Homebrew is available in standard CI locations
+            if [[ -f "/opt/homebrew/bin/brew" ]]; then
+                echo_info "Homebrew found at /opt/homebrew/bin/brew"
+                export PATH="/opt/homebrew/bin:$PATH"
+                return 0
+            elif [[ -f "/usr/local/bin/brew" ]]; then
+                echo_info "Homebrew found at /usr/local/bin/brew"
+                export PATH="/usr/local/bin:$PATH"
+                return 0
+            fi
+        fi
+        
+        # Install Homebrew if not found
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 }
@@ -160,6 +180,7 @@ install_vscode() {
 echo "=== $ORCHESTRATOR_NAME ==="
 echo "Installing development environment using bundled components..."
 echo "Bundle directory: $BUNDLE_DIR"
+echo "CI Environment: $IS_CI"
 echo ""
 
 # Debug information
