@@ -71,26 +71,23 @@ jobs:
         run: |
           echo "Installing PKG with Python $PYTHON_VERSION_PS"
           
-          # Download PKG from GitHub releases (latest)
-          PKG_URL="https://github.com/dtudk/pythonsupport-scripts/releases/latest/download/DTU_Python_Environment.pkg"
-          
-          # For PR testing, try to download from the PR branch release first, fallback to latest
+          # For PR testing, build PKG locally from current branch
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            PR_PKG_URL="https://github.com/${{ github.event.pull_request.head.repo.full_name }}/releases/latest/download/DTU_Python_Environment.pkg"
-            echo "Attempting to download PKG from PR repository..."
-            if curl -fsSL --head "$PR_PKG_URL" >/dev/null 2>&1; then
-              PKG_URL="$PR_PKG_URL"
-              echo "Using PKG from PR repository: $PKG_URL"
-            else
-              echo "PR PKG not found, using main repository PKG: $PKG_URL"
-            fi
+            echo "Building PKG locally for PR testing..."
+            cd PKG/
+            ./build_pkg.sh
+            cd ..
+            PKG_PATH="PKG/DTU_Python_Environment.pkg"
+          else
+            # For workflow_dispatch, download from GitHub releases
+            PKG_URL="https://github.com/dtudk/pythonsupport-scripts/releases/latest/download/DTU_Python_Environment.pkg"
+            echo "Downloading PKG from: $PKG_URL"
+            curl -fsSL -o DTU_Python_Environment.pkg "$PKG_URL"
+            PKG_PATH="DTU_Python_Environment.pkg"
           fi
           
-          echo "Downloading PKG from: $PKG_URL"
-          curl -fsSL -o DTU_Python_Environment.pkg "$PKG_URL"
-          
-          echo "Installing PKG..."
-          sudo installer -pkg DTU_Python_Environment.pkg -target /
+          echo "Installing PKG from: $PKG_PATH"
+          sudo installer -pkg "$PKG_PATH" -target /
           
           echo "PKG installation completed"
 
