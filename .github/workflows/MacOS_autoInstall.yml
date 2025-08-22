@@ -269,19 +269,22 @@ jobs:
       - name: Install from main (legacy)
         if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         env:
+          REMOTE_PS: ${{ github.repository }}
+          BRANCH_PS: ${{ github.ref_name }}
           GITHUB_CI: true
         run: |
-          echo "Running legacy script from dtudk main branch with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/2024_legacy/MacOS_AutoInstall.sh)"
+          echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
 
-      - name: Install from legacy script
+      - name: Install from PR branch (legacy)
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          PYTHON_VERSION_PS: ${{ env.PYTHON_VERSION_PS }}
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
           GITHUB_CI: true
         run: |
-          echo "Running legacy script with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/2024_legacy/MacOS_AutoInstall.sh)"
+          echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
 
       - name: Verify VS Code
         run: |
