@@ -24,11 +24,10 @@ touch "$BUILD_DIR/payload/.keep"
 # Create component package
 echo "Creating component package..."
 pkgbuild \
-    --root "$BUILD_DIR/payload" \
+    --nopayload \
     --scripts "$SCRIPT_DIR/Scripts" \
     --identifier "dk.dtu.python-environment" \
     --version "$VERSION" \
-    --install-location "/" \
     "$BUILD_DIR/${PKG_NAME}-component.pkg"
 
 # Create distribution XML
