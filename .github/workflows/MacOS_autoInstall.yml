@@ -177,9 +177,12 @@ jobs:
 
       - name: Verify conda
         run: |
-          # Ensure conda is in PATH (added by installation)
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          [ -e ~/.bashrc ] && source ~/.bashrc
+          # Activate conda and ensure it takes precedence
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
+          conda activate base
+          
+          # Put conda bin directory at the FRONT of PATH
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           hash -r
           
           which conda
@@ -195,22 +198,13 @@ jobs:
 
       - name: Verify python (3.11)
         run: |
-          # Ensure conda is in PATH (added by installation)
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          [ -e ~/.bashrc ] && source ~/.bashrc
-          hash -r
-
-          # Debug: Show all python3 locations and versions
-          echo "=== DEBUG: Python installations found ==="
-          which -a python3 || echo "No python3 found in PATH"
-          echo "Homebrew python3:" && /opt/homebrew/bin/python3 --version 2>/dev/null || echo "Not found"
-          echo "Conda python3:" && /opt/homebrew/Caskroom/miniconda/base/bin/python3 --version 2>/dev/null || echo "Not found"
-          echo "Current PATH: $PATH"
-          echo "============================================"
-
-          # Activate conda base environment to ensure conda python is used
+          # Activate conda and ensure it takes precedence over homebrew python
           source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base 2>/dev/null || true
+          conda activate base
+          
+          # Put conda bin directory at the FRONT of PATH to override homebrew python
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
+          hash -r
           
           which python3
 
