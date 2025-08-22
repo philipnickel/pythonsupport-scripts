@@ -1,37 +1,3 @@
 #!/bin/bash
-# DTU Python Environment PKG - Preinstall Script
-# Checks if PKG installation is enabled via main controller
-
-set -euo pipefail
-
-# Set PKG environment context
-export PIS_INSTALL_METHOD="PKG"
-export PYTHON_VERSION_PS="3.11"
-export REMOTE_PS="dtudk/pythonsupport-scripts"
-export BRANCH_PS="main"
-
-echo "DTU Python Environment PKG - Preinstall Check"
-
-# Get PKG version from identifier
-PKG_VERSION=$(defaults read /var/db/receipts/dk.dtu.python-environment.plist PackageVersion 2>/dev/null || echo "1.0.0")
-
-# Check if this PKG version is enabled
-controller_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/main_controller.txt?$(date +%s)"
-if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
-    if echo "$controller_content" | grep -q "^macos_pkg_v${PKG_VERSION}=disabled"; then
-        echo "ERROR: PKG version ${PKG_VERSION} installation is currently disabled"
-        echo "       This version has been temporarily disabled by administrators."
-        echo "       Check main_controller.txt for current status."
-        
-        # Show user-friendly dialog
-        osascript -e 'display dialog "DTU Python Environment v'${PKG_VERSION}' installation is currently disabled by administrators. Please check for updates or try again later." with title "Installation Disabled" buttons {"OK"} default button "OK" with icon stop'
-        
-        exit 1
-    fi
-    echo "PKG version ${PKG_VERSION} installation is enabled, proceeding..."
-else
-    echo "WARNING: Could not fetch controller status, proceeding anyway..."
-fi
-
-echo "Preinstall check completed successfully"
+echo "Preinstall starting"
 exit 0
