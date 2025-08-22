@@ -1,4 +1,0 @@
-macOS:
-  orchestrator: disabled
-  legacy: enabled
-maintenance_mode: disabled

@@ -11,12 +11,6 @@ BRANCH_PS="${BRANCH_PS:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared"
 
 eval "$(curl -fsSL "$BASE_URL/minimal_utils.sh")"
-eval "$(curl -fsSL "$BASE_URL/config_check.sh")"
-
-# Check if orchestrator is enabled
-if ! check_component_enabled "orchestrator"; then
-    exit 1
-fi
 
 # Configuration
 readonly ORCHESTRATOR_NAME="DTU First Year Setup"
