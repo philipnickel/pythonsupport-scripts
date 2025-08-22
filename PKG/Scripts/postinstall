@@ -27,10 +27,16 @@ echo "Executing bundled installation orchestrator..."
 echo "Script: $orchestrator_script"
 echo ""
 
-# Add verbose execution
-set -x
+# Check if orchestrator script exists
+if [[ ! -f "$orchestrator_script" ]]; then
+    echo "ERROR: Orchestrator script not found at $orchestrator_script"
+    logger -t "DTU-Python-PKG" "ERROR: Orchestrator script not found"
+    exit 1
+fi
 
-if /bin/bash "$orchestrator_script"; then
+# Execute orchestrator with error handling
+echo "Calling orchestrator script with bash..."
+if /bin/bash "$orchestrator_script" 2>&1; then
     echo ""
     echo "=== PKG Installation Completed Successfully ==="
     echo "Your Python development environment is ready!"
