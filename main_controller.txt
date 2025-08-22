@@ -1,9 +1,9 @@
 # macOS Components
-macos_orchestrator=disabled
-macos_legacy=disabled
-macos_pkg=disabled
+macos_orchestrator=enabled
+macos_legacy=enabled
+macos_pkg=enabled
 
 # Windows Components
-windows_orchestrator=disabled
-windows_legacy=disabled
-windows_msi=disabled
+windows_orchestrator=enabled
+windows_legacy=enabled
+windows_msi=enabled
