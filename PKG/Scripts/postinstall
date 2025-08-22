@@ -1,63 +1,15 @@
-#!/bin/bash  
-# DTU Python Environment PKG - Postinstall Script
-# Downloads and executes the orchestrator with PKG context
-
-set -euo pipefail
-
-# Set PKG environment context
-export PIS_INSTALL_METHOD="PKG"
-export PYTHON_VERSION_PS="3.11"
+#!/bin/bash
+# Simple postinstall script for debugging
 
 echo "=== DTU Python Environment PKG Installation ==="
-echo "Installing Python development environment via PKG..."
-echo ""
+logger -t "DTU-Python-PKG" "Simple postinstall script starting"
 
-# Log to system log
-logger -t "DTU-Python-PKG" "Starting DTU Python Environment installation"
+# Just log what we have
+echo "Checking installation directory..."
+ls -la /usr/local/bin/dtu_orchestrator.sh || echo "Orchestrator not found"
+ls -la /usr/local/share/dtu-python-env/ || echo "Bundle directory not found"
 
-# Debug: Check what was installed
-echo "DEBUG: Checking PKG installation..."
-ls -la /usr/local/bin/dtu_orchestrator.sh || echo "ERROR: Orchestrator script not found"
-ls -la /usr/local/share/dtu-python-env/ || echo "ERROR: Bundle directory not found"
+logger -t "DTU-Python-PKG" "Simple postinstall script completed"
+echo "=== Simple Installation Test Completed ==="
 
-# Execute the bundled orchestrator script
-orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
-
-echo "Executing bundled installation orchestrator..."
-echo "Script: $orchestrator_script"
-echo ""
-
-# Check if orchestrator script exists
-if [[ ! -f "$orchestrator_script" ]]; then
-    echo "ERROR: Orchestrator script not found at $orchestrator_script"
-    logger -t "DTU-Python-PKG" "ERROR: Orchestrator script not found"
-    exit 1
-fi
-
-# Execute orchestrator with error handling
-echo "Calling orchestrator script with bash..."
-if /bin/bash "$orchestrator_script" 2>&1; then
-    echo ""
-    echo "=== PKG Installation Completed Successfully ==="
-    echo "Your Python development environment is ready!"
-    
-    # Log success
-    logger -t "DTU-Python-PKG" "DTU Python Environment installation completed successfully"
-    
-    # Show success dialog
-    osascript -e 'display dialog "DTU Python Environment has been installed successfully! Your development environment is ready to use." with title "Installation Complete" buttons {"OK"} default button "OK" with icon note' &
-    
-    exit 0
-else
-    echo ""
-    echo "=== PKG Installation Failed ==="
-    echo "Please check the error messages above."
-    
-    # Log failure  
-    logger -t "DTU-Python-PKG" "DTU Python Environment installation failed"
-    
-    # Show error dialog
-    osascript -e 'display dialog "DTU Python Environment installation failed. Please check the system logs or try running the installation manually." with title "Installation Failed" buttons {"OK"} default button "OK" with icon stop' &
-    
-    exit 1
-fi
+exit 0
