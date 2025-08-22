@@ -10,24 +10,12 @@ BRANCH_PS="${BRANCH_PS:-main}"
 export REMOTE_PS BRANCH_PS
 
 # Check if legacy is enabled
-controller_url="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/main_controller.yml"
+controller_url="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/main_controller.txt"
 if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
-    legacy_status=$(echo "$controller_content" | awk '
-        /^macOS:/ { in_platform=1; next }
-        in_platform && /^[[:space:]]*legacy:[[:space:]]*/ { 
-            gsub(/^[[:space:]]*legacy:[[:space:]]*/, "")
-            gsub(/#.*/, "")
-            gsub(/[[:space:]]*$/, "")
-            print $0
-            exit
-        }
-        /^[a-zA-Z]/ && in_platform { in_platform=0 }
-    ')
-    
-    if [[ "$legacy_status" == "disabled" ]]; then
+    if echo "$controller_content" | grep -q "^legacy=disabled"; then
         echo "WARNING: Legacy installation is currently disabled"
         echo "         This component has been temporarily disabled by administrators."
-        echo "         Check main_controller.yml for current status."
+        echo "         Check main_controller.txt for current status."
         exit 1
     fi
 fi

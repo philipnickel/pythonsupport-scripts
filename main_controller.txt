@@ -1,0 +1,3 @@
+orchestrator=disabled
+legacy=disabled
+pkg=disabled

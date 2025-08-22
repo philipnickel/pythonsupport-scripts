@@ -6,9 +6,9 @@ This repository contains automated installation scripts for Python development e
 
 ## System Status
 
-https://github.com/philipnickel/pythonsupport-scripts/blob/main/main_controller.yml
+https://github.com/philipnickel/pythonsupport-scripts/blob/main/main_controller.txt
 
-> **Note**: To disable components quickly, edit [main_controller.yml](main_controller.yml). This configuration is used by administrators to control system availability.
+> **Note**: To disable components quickly, edit [main_controller.txt](main_controller.txt). This configuration is used by administrators to control system availability.
 
 ## Quick Diagnostics
 
