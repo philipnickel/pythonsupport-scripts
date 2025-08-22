@@ -34,37 +34,66 @@ fi
 # Component installation functions
 install_homebrew_if_missing() {
     if ! command -v brew >/dev/null 2>&1; then
-        echo_info "Installing Homebrew..."
+        echo_info "Checking for existing Homebrew installation..."
         
-        # In CI, we might need to handle this differently
+        # Check if Homebrew is available in standard locations
+        if [[ -f "/opt/homebrew/bin/brew" ]]; then
+            echo_info "Homebrew found at /opt/homebrew/bin/brew"
+            export PATH="/opt/homebrew/bin:$PATH"
+            return 0
+        elif [[ -f "/usr/local/bin/brew" ]]; then
+            echo_info "Homebrew found at /usr/local/bin/brew"
+            export PATH="/usr/local/bin:$PATH"
+            return 0
+        fi
+        
+        # In CI environment, we should have Homebrew available
         if [[ "$IS_CI" == "true" ]]; then
-            echo_info "Running in CI environment, checking for existing Homebrew..."
-            # Check if Homebrew is available in standard CI locations
-            if [[ -f "/opt/homebrew/bin/brew" ]]; then
-                echo_info "Homebrew found at /opt/homebrew/bin/brew"
-                export PATH="/opt/homebrew/bin:$PATH"
+            echo_info "Running in CI environment, Homebrew should be available"
+            # Try to find Homebrew in PATH
+            if command -v brew >/dev/null 2>&1; then
+                echo_info "Homebrew found in PATH"
                 return 0
-            elif [[ -f "/usr/local/bin/brew" ]]; then
-                echo_info "Homebrew found at /usr/local/bin/brew"
-                export PATH="/usr/local/bin:$PATH"
-                return 0
+            else
+                echo_error "Homebrew not found in CI environment"
+                return 1
             fi
         fi
         
-        # Install Homebrew if not found
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # For local installation, we can't install Homebrew as root
+        echo_error "Homebrew not found and cannot install as root"
+        echo_error "Please install Homebrew manually: https://brew.sh"
+        return 1
     fi
 }
 
 install_miniconda() {
-    echo_info "Installing Python/Miniconda..."
+    echo_info "Checking Python/Miniconda installation..."
     
-    # Check if already installed
+    # Check if conda is already available and working
     if command -v conda >/dev/null 2>&1; then
         local version=$(conda --version 2>/dev/null || echo "unknown version")
-        echo_success "Python/Miniconda already installed ($version)"
+        echo_success "Python/Miniconda already available ($version)"
+        
+        # Configure conda channels if needed
+        echo_info "Configuring conda channels..."
+        conda config --remove channels defaults 2>/dev/null || true
+        conda config --remove channels default 2>/dev/null || true
+        conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+        conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+        conda config --add channels conda-forge 2>/dev/null || true
+        conda config --set channel_priority strict 2>/dev/null || true
+        conda config --set anaconda_anon_usage off 2>/dev/null || true
+        
+        # Verify channel configuration
+        echo_info "Verifying conda channel configuration..."
+        conda config --show channels
+        
         return 0
     fi
+    
+    # Only try to install Miniconda if conda is not available
+    echo_info "Conda not found, attempting to install Miniconda..."
     
     # Ensure Homebrew is available
     install_homebrew_if_missing
@@ -79,11 +108,19 @@ install_miniconda() {
             eval "$($conda_base/bin/conda shell.bash hook)"
             conda init bash zsh >/dev/null 2>&1 || true
             
-            # Configure conda channels
+            # Configure conda channels - use conda-forge as primary, accept terms
+            echo_info "Configuring conda channels..."
             conda config --remove channels defaults 2>/dev/null || true
+            conda config --remove channels default 2>/dev/null || true
+            conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+            conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
             conda config --add channels conda-forge 2>/dev/null || true
-            conda config --set channel_priority flexible 2>/dev/null || true
+            conda config --set channel_priority strict 2>/dev/null || true
             conda config --set anaconda_anon_usage off 2>/dev/null || true
+            
+            # Verify channel configuration
+            echo_info "Verifying conda channel configuration..."
+            conda config --show channels
             
             echo_success "Python/Miniconda installed successfully"
             return 0
@@ -129,17 +166,19 @@ setup_python_environment() {
         fi
     fi
     
-    # Install Python version
-    if conda install --strict-channel-priority "python=3.11" -y; then
+    # Install Python version using conda-forge
+    echo_info "Installing Python 3.11 from conda-forge..."
+    if conda install --strict-channel-priority -c conda-forge "python=3.11" -y; then
         echo_info "Python 3.11 installed"
     else
         echo_error "Failed to install Python 3.11"
         return 1
     fi
     
-    # Install required packages
+    # Install required packages from conda-forge
     local package_list="dtumathtools pandas scipy statsmodels uncertainties"
-    if conda install $package_list -y; then
+    echo_info "Installing required packages from conda-forge..."
+    if conda install --strict-channel-priority -c conda-forge $package_list -y; then
         echo_success "Python Environment configured successfully"
         return 0
     else
