@@ -70,25 +70,8 @@ jobs:
       - name: Install PKG
         run: |
           echo "Installing PKG with Python $PYTHON_VERSION_PS"
-          
-          # For PR testing, build PKG locally from current branch
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "Building PKG locally for PR testing..."
-            cd PKG/
-            ./build_pkg.sh
-            cd ..
-            PKG_PATH="PKG/DTU_Python_Environment.pkg"
-          else
-            # For workflow_dispatch, download from GitHub releases
-            PKG_URL="https://github.com/dtudk/pythonsupport-scripts/releases/latest/download/DTU_Python_Environment.pkg"
-            echo "Downloading PKG from: $PKG_URL"
-            curl -fsSL -o DTU_Python_Environment.pkg "$PKG_URL"
-            PKG_PATH="DTU_Python_Environment.pkg"
-          fi
-          
-          echo "Installing PKG from: $PKG_PATH"
-          sudo installer -pkg "$PKG_PATH" -target /
-          
+          echo "Using pre-built PKG from repository..."
+          sudo installer -pkg PKG/DTU_Python_Environment.pkg -target /
           echo "PKG installation completed"
 
       - name: Verify VS Code
