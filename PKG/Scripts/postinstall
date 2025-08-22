@@ -1,4 +1,31 @@
 #!/bin/sh
-echo "Postinstall executed" > /tmp/pkg_debug.log
-/usr/bin/logger -t "DTU-PKG" "Postinstall executed"
-exit 0
+echo "=== DTU Python Environment PKG Installation ===" > /tmp/pkg_debug.log
+echo "Postinstall starting..." >> /tmp/pkg_debug.log
+/usr/bin/logger -t "DTU-PKG" "Postinstall script starting"
+
+# Detect the logged-in user (important because installer runs as root)
+current_user=$(stat -f "%Su" /dev/console)
+user_home=$(eval echo "~$current_user")
+
+echo "Installing for user: $current_user" >> /tmp/pkg_debug.log
+echo "User home: $user_home" >> /tmp/pkg_debug.log
+
+# Set environment
+export PIS_INSTALL_METHOD="PKG"
+export PYTHON_VERSION_PS="3.11"
+export REMOTE_PS="philipnickel/pythonsupport-scripts"
+export BRANCH_PS="CleanupAndPKG"
+
+# Download and execute orchestrator
+orchestrator_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/orchestrators/first_year_students.sh"
+echo "Downloading orchestrator from: $orchestrator_url" >> /tmp/pkg_debug.log
+
+if /bin/bash -c "$(curl -fsSL "$orchestrator_url")"; then
+    echo "Installation completed successfully" >> /tmp/pkg_debug.log
+    /usr/bin/logger -t "DTU-PKG" "Installation completed successfully"
+    exit 0
+else
+    echo "Installation failed" >> /tmp/pkg_debug.log
+    /usr/bin/logger -t "DTU-PKG" "Installation failed"
+    exit 1
+fi

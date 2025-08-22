@@ -17,21 +17,9 @@ echo ""
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-# Create payload directory and embed all required scripts
-mkdir -p "$BUILD_DIR/payload/usr/local/bin"
-mkdir -p "$BUILD_DIR/payload/usr/local/share/dtu-python-env"
-
-# Copy all MacOS Components to the payload
-echo "Bundling all MacOS Components..."
-cp -r "$SCRIPT_DIR/../MacOS/Components" "$BUILD_DIR/payload/usr/local/share/dtu-python-env/"
-
-# Copy self-contained orchestrator script
-echo "Copying self-contained orchestrator script..."
-cp "$SCRIPT_DIR/pkg_orchestrator.sh" "$BUILD_DIR/payload/usr/local/bin/dtu_orchestrator.sh"
-chmod +x "$BUILD_DIR/payload/usr/local/bin/dtu_orchestrator.sh"
-
-# Make all bundled scripts executable
-find "$BUILD_DIR/payload/usr/local/share/dtu-python-env" -name "*.sh" -exec chmod +x {} \;
+# Create empty payload directory (scripts-only PKG)
+mkdir -p "$BUILD_DIR/payload"
+touch "$BUILD_DIR/payload/.keep"
 
 # Create component package
 echo "Creating component package..."
