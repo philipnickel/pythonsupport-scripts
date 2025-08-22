@@ -9,7 +9,7 @@ REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}"
 BRANCH_PS="${BRANCH_PS:-main}"
 export REMOTE_PS BRANCH_PS
 
-readonly BASE_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components"
+readonly BASE_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/2024_legacy/MacOS"
 
 echo "DTU Python Installation - Legacy Mode"
 echo "Using components from: $BASE_URL"
@@ -45,14 +45,14 @@ main() {
     local failed=0
     
     # Install Python environment
-    if ! install_component_legacy "Python Environment" "$BASE_URL/Python/first_year_setup.sh"; then
+    if ! install_component_legacy "Python Environment" "$BASE_URL/Python/Install.sh"; then
         failed=1
     fi
     
     echo
     
     # Install VS Code
-    if ! install_component_legacy "VS Code" "$BASE_URL/VSC/install.sh"; then
+    if ! install_component_legacy "VS Code" "$BASE_URL/VSC/Install.sh"; then
         failed=1
     fi
     
