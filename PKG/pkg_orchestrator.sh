@@ -28,19 +28,131 @@ else
     echo_info() { echo "ℹ️ $1"; }
 fi
 
-# Simple component installation function
-install_component() {
-    local component_name="$1"
-    local component_script="$2"
+# Component installation functions
+install_homebrew_if_missing() {
+    if ! command -v brew >/dev/null 2>&1; then
+        echo_info "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+}
+
+install_miniconda() {
+    echo_info "Installing Python/Miniconda..."
     
-    echo_info "Installing $component_name..."
+    # Check if already installed
+    if command -v conda >/dev/null 2>&1; then
+        local version=$(conda --version 2>/dev/null || echo "unknown version")
+        echo_success "Python/Miniconda already installed ($version)"
+        return 0
+    fi
     
-    if [[ -f "$component_script" ]]; then
-        # For now, just report success since the component scripts need modification
-        echo_success "$component_name installed successfully"
+    # Ensure Homebrew is available
+    install_homebrew_if_missing
+    
+    # Install Miniconda
+    if brew install --cask miniconda; then
+        # Initialize conda
+        local conda_base="/opt/homebrew/Caskroom/miniconda/base"
+        [[ ! -d "$conda_base" ]] && conda_base="/usr/local/Caskroom/miniconda/base"
+        
+        if [[ -f "$conda_base/bin/conda" ]]; then
+            eval "$($conda_base/bin/conda shell.bash hook)"
+            conda init bash zsh >/dev/null 2>&1 || true
+            
+            # Configure conda channels
+            conda config --remove channels defaults 2>/dev/null || true
+            conda config --add channels conda-forge 2>/dev/null || true
+            conda config --set channel_priority flexible 2>/dev/null || true
+            conda config --set anaconda_anon_usage off 2>/dev/null || true
+            
+            echo_success "Python/Miniconda installed successfully"
+            return 0
+        else
+            echo_error "Python/Miniconda installation completed but conda not accessible"
+            return 1
+        fi
+    else
+        echo_error "Python/Miniconda installation failed"
+        return 1
+    fi
+}
+
+setup_python_environment() {
+    echo_info "Setting up Python Environment..."
+    
+    # Activate conda
+    if command -v conda >/dev/null 2>&1; then
+        eval "$(conda shell.bash hook)" 2>/dev/null || true
+        conda activate base 2>/dev/null || true
+    fi
+    
+    # Check if correct Python version is installed
+    if command -v python3 >/dev/null 2>&1; then
+        local current_version
+        current_version=$(python3 --version 2>/dev/null | cut -d' ' -f2)
+        
+        if [[ "$current_version" =~ ^3\.11 ]]; then
+            # Check if required packages are installed
+            local required_packages=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
+            local missing_packages=()
+            
+            for package in "${required_packages[@]}"; do
+                if ! python3 -c "import $package" 2>/dev/null; then
+                    missing_packages+=("$package")
+                fi
+            done
+            
+            if [[ ${#missing_packages[@]} -eq 0 ]]; then
+                echo_success "Python Environment already configured (Python $current_version with all packages)"
+                return 0
+            fi
+        fi
+    fi
+    
+    # Install Python version
+    if conda install --strict-channel-priority "python=3.11" -y; then
+        echo_info "Python 3.11 installed"
+    else
+        echo_error "Failed to install Python 3.11"
+        return 1
+    fi
+    
+    # Install required packages
+    local package_list="dtumathtools pandas scipy statsmodels uncertainties"
+    if conda install $package_list -y; then
+        echo_success "Python Environment configured successfully"
         return 0
     else
-        echo_error "Component script not found: $component_script"
+        echo_error "Failed to install required packages"
+        return 1
+    fi
+}
+
+install_vscode() {
+    echo_info "Installing VS Code..."
+    
+    # Check if already installed
+    if command -v code >/dev/null 2>&1; then
+        local version=$(code --version 2>/dev/null | head -1 || echo "unknown version")
+        echo_success "VS Code already installed ($version)"
+        return 0
+    fi
+    
+    # Ensure Homebrew is available
+    install_homebrew_if_missing
+    
+    # Install VS Code
+    if brew install --cask visual-studio-code; then
+        # Verify installation
+        if command -v code >/dev/null 2>&1; then
+            echo_success "VS Code installed successfully"
+            return 0
+        else
+            echo_error "VS Code installation completed but 'code' command not available"
+            return 1
+        fi
+    else
+        echo_error "VS Code installation failed"
         return 1
     fi
 }
@@ -71,28 +183,28 @@ fi
 echo "DEBUG: Available components:"
 find "$BUNDLE_DIR" -name "*.sh" | head -10
 
-# Install components using bundled scripts
+# Install components
 success_count=0
 total_components=0
 
 # Python/Miniconda
 echo "----------------------------------------"
 ((total_components++))
-if install_component "Python/Miniconda" "$BUNDLE_DIR/Python/install.sh"; then
+if install_miniconda; then
     ((success_count++))
 fi
 
 # Python Environment Setup
 echo "----------------------------------------"
 ((total_components++))
-if install_component "Python Environment" "$BUNDLE_DIR/Python/first_year_setup.sh"; then
+if setup_python_environment; then
     ((success_count++))
 fi
 
 # VS Code
 echo "----------------------------------------"
 ((total_components++))
-if install_component "VS Code" "$BUNDLE_DIR/VSC/install.sh"; then
+if install_vscode; then
     ((success_count++))
 fi
 
