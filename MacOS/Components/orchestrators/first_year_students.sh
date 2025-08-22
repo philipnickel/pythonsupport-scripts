@@ -11,11 +11,16 @@ BRANCH_PS="${BRANCH_PS:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared"
 
 eval "$(curl -fsSL "$BASE_URL/minimal_utils.sh")"
-eval "$(curl -fsSL "$BASE_URL/config_check.sh")"
 
-# Check if orchestrator is enabled
-if ! check_component_enabled "orchestrator"; then
-    exit 1
+# Inline controller check to avoid eval issues
+controller_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/main_controller.txt"
+if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
+    if echo "$controller_content" | grep -q "^macos_orchestrator=disabled"; then
+        echo "WARNING: orchestrator installation is currently disabled"
+        echo "         This component has been temporarily disabled by administrators."
+        echo "         Check main_controller.txt for current status."
+        exit 1
+    fi
 fi
 
 # Configuration

@@ -5,7 +5,11 @@
 
 check_component_enabled() {
     local component_name="$1"
+    local platform="${2:-macos}"
     local controller_url="https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/main_controller.txt"
+    
+    # Build platform-specific component name
+    local full_component_name="${platform}_${component_name}"
     
     # Fetch main controller with fallback
     local controller_content
@@ -14,8 +18,8 @@ check_component_enabled() {
         return 0
     fi
     
-    # Simple grep for component=disabled
-    if echo "$controller_content" | grep -q "^${component_name}=disabled"; then
+    # Simple grep for platform_component=disabled
+    if echo "$controller_content" | grep -q "^${full_component_name}=disabled"; then
         echo "WARNING: $component_name installation is currently disabled"
         echo "         This component has been temporarily disabled by administrators."
         echo "         Check main_controller.txt for current status."
