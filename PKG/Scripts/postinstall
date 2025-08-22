@@ -22,6 +22,11 @@ echo "POSTINSTALL EXECUTED" > /var/log/dtu_postinstall.log 2>/dev/null || true
 # Create marker file
 touch /tmp/dtu_pkg_postinstall_ran
 
+# Debug: Check what was installed
+echo "DEBUG: Checking PKG installation..."
+ls -la /usr/local/bin/dtu_orchestrator.sh || echo "ERROR: Orchestrator script not found"
+ls -la /usr/local/share/dtu-python-env/ || echo "ERROR: Bundle directory not found"
+
 # Execute the bundled orchestrator script
 orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
 
@@ -36,8 +41,20 @@ if [[ ! -f "$orchestrator_script" ]]; then
     exit 1
 fi
 
+# Check if script is executable
+if [[ ! -x "$orchestrator_script" ]]; then
+    echo "ERROR: Orchestrator script is not executable"
+    chmod +x "$orchestrator_script"
+    echo "Made script executable"
+fi
+
 # Execute orchestrator with error handling
 echo "Calling orchestrator script with bash..."
+echo "Current user: $(id)"
+echo "Current directory: $(pwd)"
+echo "Environment variables:"
+env | grep -E "(PIS_|PYTHON_)" || echo "No PIS_/PYTHON_ variables found"
+
 if /bin/bash "$orchestrator_script" 2>&1; then
     echo ""
     echo "=== PKG Installation Completed Successfully ==="
