@@ -2,14 +2,14 @@
 # Edit these values to enable/disable components
 
 macOS:
-  orchestrator: enabled    # First year student installation
-  legacy: enabled          # 2024 legacy installation scripts
-  pkg: enabled             # Offline installation package
+  orchestrator: disabled   # First year student installation
+  legacy: disabled         # 2024 legacy installation scripts
+  pkg: disabled            # Offline installation package
 
 windows:
-  orchestrator: enabled    # Windows installation orchestrator
-  legacy: enabled          # 2024 legacy installation scripts
-  msi: enabled             # Offline installation package
+  orchestrator: disabled   # Windows installation orchestrator
+  legacy: disabled         # 2024 legacy installation scripts
+  msi: disabled            # Offline installation package
 
 # Global settings
 maintenance_mode: disabled
