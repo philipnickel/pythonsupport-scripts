@@ -133,8 +133,9 @@ jobs:
       run: |
         env | grep -i conda
         if type conda > /dev/null ; then
-          echo "Base environment location:"
-          conda info --base
+          echo "Conda found in PATH"
+          # Try to get conda info, but don't fail if it's not properly initialized
+          conda info --base 2>/dev/null || echo "Conda found but not properly initialized"
         else
           echo "Conda not found..."
         fi
@@ -222,8 +223,9 @@ jobs:
     - name: Remove conda (if present)
       run: |
         if type conda > /dev/null ; then
-          echo "Base environment location:"
-          conda info --base
+          echo "Conda found in PATH"
+          # Try to get conda info, but don't fail if it's not properly initialized
+          conda info --base 2>/dev/null || echo "Conda found but not properly initialized"
 
           echo "Removing conda from the environment..."
           # try and disable things in the boot-up scripts
@@ -242,8 +244,9 @@ jobs:
       run: |
         env | grep -i conda
         if type conda > /dev/null ; then
-          echo "Base environment location:"
-          conda info --base
+          echo "Conda found in PATH"
+          # Try to get conda info, but don't fail if it's not properly initialized
+          conda info --base 2>/dev/null || echo "Conda found but not properly initialized"
         else
           echo "Conda not found..."
         fi
