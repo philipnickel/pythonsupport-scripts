@@ -266,21 +266,10 @@ jobs:
             cat $HOME/.$f
           done
 
-      - name: Install from main (legacy)
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      - name: Install from legacy script
         env:
-          REMOTE_PS: ${{ github.repository }}
-          BRANCH_PS: ${{ github.ref_name }}
-          GITHUB_CI: true
-        run: |
-          echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
-
-      - name: Install from PR branch (legacy)
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
-          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           GITHUB_CI: true
         run: |
           echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
