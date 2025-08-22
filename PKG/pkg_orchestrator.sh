@@ -12,8 +12,12 @@ readonly BUNDLE_DIR="/usr/local/share/dtu-python-env/Components"
 export PIS_INSTALL_METHOD="${PIS_INSTALL_METHOD:-PKG}"
 export PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}"
 
-# Detect CI environment
+# Detect CI environment and set conda ToS auto-acceptance
 readonly IS_CI="${GITHUB_CI:-false}"
+if [[ "$IS_CI" == "true" ]]; then
+    export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
+    export CI=true
+fi
 
 # Load bundled utilities
 if [[ -f "$BUNDLE_DIR/Shared/minimal_utils.sh" ]]; then
@@ -105,18 +109,58 @@ install_miniconda() {
         [[ ! -d "$conda_base" ]] && conda_base="/usr/local/Caskroom/miniconda/base"
         
         if [[ -f "$conda_base/bin/conda" ]]; then
+            # Initialize conda properly for all shells
+            echo_info "Initializing conda for all shells..."
             eval "$($conda_base/bin/conda shell.bash hook)"
-            conda init bash zsh >/dev/null 2>&1 || true
+            conda init bash zsh fish >/dev/null 2>&1 || true
             
-            # Configure conda channels - use conda-forge as primary, accept terms
-            echo_info "Configuring conda channels..."
+            # Accept Terms of Service for ALL channels
+            echo_info "Accepting conda Terms of Service for all channels..."
+            conda tos accept --all 2>/dev/null || true
+            
+            # Configure conda channels - use ONLY conda-forge
+            echo_info "Configuring conda channels to use ONLY conda-forge..."
             conda config --remove channels defaults 2>/dev/null || true
             conda config --remove channels default 2>/dev/null || true
             conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
             conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+            conda config --remove channels https://repo.anaconda.com/pkgs/msys2 2>/dev/null || true
             conda config --add channels conda-forge 2>/dev/null || true
             conda config --set channel_priority strict 2>/dev/null || true
             conda config --set anaconda_anon_usage off 2>/dev/null || true
+            
+            # Also remove defaults from the config file directly
+            conda config --remove-key defaults 2>/dev/null || true
+            
+            # Set up conda to take precedence in shell profiles
+            echo_info "Setting up conda to take precedence in shell profiles..."
+            for shell in bash zsh; do
+                local profile_file="$HOME/.${shell}rc"
+                [[ "$shell" == "bash" ]] && profile_file="$HOME/.bash_profile"
+                
+                # Add conda initialization to shell profile if not already present
+                if [[ -f "$profile_file" ]] && ! grep -q "conda initialize" "$profile_file"; then
+                    echo "" >> "$profile_file"
+                    echo "# >>> conda initialize >>>" >> "$profile_file"
+                    echo "# !! Contents within this block are managed by 'conda init' !!" >> "$profile_file"
+                    echo "__conda_setup=\"\$('$conda_base/bin/conda' 'shell.$shell' 'hook' 2> /dev/null)\"" >> "$profile_file"
+                    echo "if [ \$? -eq 0 ]; then" >> "$profile_file"
+                    echo "    eval \"\$__conda_setup\"" >> "$profile_file"
+                    echo "else" >> "$profile_file"
+                    echo "    if [ -f \"$conda_base/etc/profile.d/conda.sh\" ]; then" >> "$profile_file"
+                    echo "        . \"$conda_base/etc/profile.d/conda.sh\"" >> "$profile_file"
+                    echo "    else" >> "$profile_file"
+                    echo "        export PATH=\"$conda_base/bin:\$PATH\"" >> "$profile_file"
+                    echo "    fi" >> "$profile_file"
+                    echo "fi" >> "$profile_file"
+                    echo "unset __conda_setup" >> "$profile_file"
+                    echo "# <<< conda initialize <<<" >> "$profile_file"
+                fi
+            done
+            
+            # Also add conda to PATH for current session
+            echo_info "Adding conda to PATH for current session..."
+            export PATH="$conda_base/bin:$PATH"
             
             # Verify channel configuration
             echo_info "Verifying conda channel configuration..."
@@ -164,44 +208,23 @@ setup_python_environment() {
         fi
     fi
     
-    # Accept conda Terms of Service first (this is what worked manually)
-    echo_info "Accepting conda Terms of Service..."
-    
-    # Try multiple approaches to accept ToS
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-    
-    # Also try without override-channels
-    conda tos accept --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-    conda tos accept --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-    
-    # Try accepting all channels at once
+    # Accept Terms of Service for all channels
+    echo_info "Accepting conda Terms of Service for all channels..."
     conda tos accept --all 2>/dev/null || true
     
-    # Remove problematic channels if ToS acceptance fails
-    echo_info "Removing problematic channels..."
-    conda config --remove channels defaults 2>/dev/null || true
-    conda config --remove channels default 2>/dev/null || true
-    conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-    conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-    
-    # Ensure conda-forge is the only channel
-    conda config --add channels conda-forge 2>/dev/null || true
-    conda config --set channel_priority strict 2>/dev/null || true
-    
-    # Install Python version using conda-forge
-    echo_info "Installing Python 3.11 from conda-forge..."
-    if conda install --strict-channel-priority -c conda-forge "python=3.11" -y; then
+    # Install Python version using default channels
+    echo_info "Installing Python 3.11..."
+    if conda install "python=3.11" -y; then
         echo_info "Python 3.11 installed"
     else
         echo_error "Failed to install Python 3.11"
         return 1
     fi
     
-    # Install required packages from conda-forge
+    # Install required packages
     local package_list="dtumathtools pandas scipy statsmodels uncertainties"
-    echo_info "Installing required packages from conda-forge..."
-    if conda install --strict-channel-priority -c conda-forge $package_list -y; then
+    echo_info "Installing required packages..."
+    if conda install $package_list -y; then
         echo_success "Python Environment configured successfully"
         return 0
     else
