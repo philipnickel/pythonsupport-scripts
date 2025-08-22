@@ -22,7 +22,9 @@ readonly COMPONENTS=(
 
 # Track orchestrator start
 if declare -f piwik_log >/dev/null 2>&1; then
-    piwik_log "orchestrator_${INSTALL_METHOD,,}_start"
+    # Convert to lowercase (compatible with older bash)
+    method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+    piwik_log "orchestrator_${method_lower}_start"
 fi
 
 echo "=== $ORCHESTRATOR_NAME ==="
@@ -95,7 +97,8 @@ install_all_components() {
         
         # Track success
         if declare -f piwik_log >/dev/null 2>&1; then
-            piwik_log "orchestrator_${INSTALL_METHOD,,}_success"
+            method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+            piwik_log "orchestrator_${method_lower}_success"
         fi
         
         return 0
@@ -109,7 +112,8 @@ install_all_components() {
         
         # Track failure
         if declare -f piwik_log >/dev/null 2>&1; then
-            piwik_log "orchestrator_${INSTALL_METHOD,,}_partial_failure"
+            method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+            piwik_log "orchestrator_${method_lower}_partial_failure"
         fi
         
         return 1
@@ -121,6 +125,6 @@ main() {
     install_all_components
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     main
 fi

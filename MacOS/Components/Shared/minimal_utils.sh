@@ -61,7 +61,9 @@ exit_with_status() {
     
     # Track analytics
     if declare -f piwik_log >/dev/null 2>&1; then
-        piwik_log "${component}_${INSTALL_METHOD,,}_${status}"
+        # Convert to lowercase (compatible with older bash)
+        local method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+        piwik_log "${component}_${method_lower}_${status}"
     fi
     
     exit "$exit_code"
