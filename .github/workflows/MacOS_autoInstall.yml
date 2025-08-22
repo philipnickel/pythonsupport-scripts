@@ -163,8 +163,8 @@ jobs:
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           GITHUB_CI: true
         run: |
-          echo "Testing First Year Orchestrator (Clean) from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students_clean.sh)"
+          echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
 
       - name: Verify VS Code
         run: |

@@ -45,14 +45,14 @@ main() {
     local failed=0
     
     # Install Python environment
-    if ! install_component_legacy "Python Environment" "$BASE_URL/Python/first_year_setup_clean.sh"; then
+    if ! install_component_legacy "Python Environment" "$BASE_URL/Python/first_year_setup.sh"; then
         failed=1
     fi
     
     echo
     
     # Install VS Code
-    if ! install_component_legacy "VS Code" "$BASE_URL/VSC/install_clean.sh"; then
+    if ! install_component_legacy "VS Code" "$BASE_URL/VSC/install.sh"; then
         failed=1
     fi
     

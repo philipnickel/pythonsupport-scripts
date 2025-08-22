@@ -1,72 +1,130 @@
 #!/bin/bash
-# @doc
-# @name: First Year Students Setup
-# @description: Complete installation orchestrator for DTU first year students - installs Homebrew, Python, VSCode, and LaTeX
-# @category: Orchestrator
-# @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/orchestrators/first_year_students.sh)"
-# @requirements: macOS system with admin privileges, internet connection
-# @notes: Uses master utility system for consistent error handling, logging, and analytics tracking
-# @/doc
+# First Year Students Orchestrator - Clean Implementation
+# Complete installation orchestrator for DTU first year students
+# Usage: /bin/bash -c "$(curl -fsSL .../first_year_students_clean.sh)"
 
-# Load master utilities (includes Piwik analytics)
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+set -euo pipefail
 
-log_info "First year students orchestrator started"
+# Load minimal utilities
+REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}"  
+BRANCH_PS="${BRANCH_PS:-main}"
+BASE_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared"
 
-# install python using component
-log_info "Installing Python..."
-piwik_log 'python_component_install' env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
-_python_ret=$?
+eval "$(curl -fsSL "$BASE_URL/minimal_utils.sh")"
 
-# install vscode using component
-log_info "Installing VSCode..."
-piwik_log 'vscode_component_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"
-_vsc_ret=$?
+# Configuration
+readonly ORCHESTRATOR_NAME="DTU First Year Setup"
+readonly COMPONENTS=(
+    "Python/Miniconda:${BASE_URL}/../Python/install.sh"
+    "Python Environment:${BASE_URL}/../Python/first_year_setup.sh" 
+    "VS Code:${BASE_URL}/../VSC/install.sh"
+)
 
-# run first year python setup (install specific version and packages)
-if [ $_python_ret -eq 0 ]; then
-  log_info "Running first year Python environment setup..."
-  piwik_log 'python_first_year_setup' env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"
-  _first_year_ret=$?
-else
-  _first_year_ret=0  # Skip if Python installation failed
+# Track orchestrator start
+if declare -f piwik_log >/dev/null 2>&1; then
+    # Convert to lowercase (compatible with older bash)
+    method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+    piwik_log "orchestrator_${method_lower}_start"
 fi
 
-# install vscode extensions
-if [ $_vsc_ret -eq 0 ]; then
-  log_info "Installing VSCode extensions for Python development..."
-  piwik_log 'vscode_extensions_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/VSC/install_extensions.sh)"
-  _extensions_ret=$?
-else
-  _extensions_ret=0  # Skip if VSCode installation failed
+echo "=== $ORCHESTRATOR_NAME ==="
+echo "Installing development environment..."
+echo
+
+install_component() {
+    local component_name="$1"
+    local component_url="$2"
+    
+    echo "Processing $component_name..."
+    
+    # Run component and capture exit code
+    local output
+    local exit_code
+    
+    if output=$(/bin/bash -c "$(curl -fsSL "$component_url")" 2>&1); then
+        exit_code=0
+    else
+        exit_code=$?
+    fi
+    
+    # Display output with proper indentation
+    echo "$output" | sed 's/^/  /'
+    
+    # Handle exit codes
+    case $exit_code in
+        0)
+            echo "  → Installation completed"
+            return 0
+            ;;
+        10) 
+            echo "  → Already installed, skipped"
+            return 0  # Don't fail orchestrator for "already installed"
+            ;;
+        *)
+            echo "  → Installation failed (exit code: $exit_code)"
+            return 1
+            ;;
+    esac
+}
+
+install_all_components() {
+    local failed_components=()
+    local total_components=${#COMPONENTS[@]}
+    local current=0
+    
+    for component_spec in "${COMPONENTS[@]}"; do
+        ((current++))
+        
+        IFS=':' read -r component_name component_url <<< "$component_spec"
+        
+        echo "[$current/$total_components] $component_name"
+        
+        if install_component "$component_name" "$component_url"; then
+            echo "✓ $component_name ready"
+        else
+            echo "✗ $component_name failed"
+            failed_components+=("$component_name")
+        fi
+        
+        echo
+    done
+    
+    # Summary
+    echo "=== Installation Summary ==="
+    if [[ ${#failed_components[@]} -eq 0 ]]; then
+        echo "✓ All components installed successfully!"
+        echo "Your development environment is ready."
+        
+        # Track success
+        if declare -f piwik_log >/dev/null 2>&1; then
+            method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+            piwik_log "orchestrator_${method_lower}_success"
+        fi
+        
+        return 0
+    else
+        echo "✗ Some components failed to install:"
+        for component in "${failed_components[@]}"; do
+            echo "  - $component" 
+        done
+        echo
+        echo "Please check the error messages above and try again."
+        
+        # Track failure
+        if declare -f piwik_log >/dev/null 2>&1; then
+            method_lower=$(echo "$INSTALL_METHOD" | tr '[:upper:]' '[:lower:]')
+            piwik_log "orchestrator_${method_lower}_partial_failure"
+        fi
+        
+        return 1
+    fi
+}
+
+# Main execution
+main() {
+    install_all_components
+}
+
+if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
+    main
 fi
-
-# Check results and provide appropriate feedback
-if [ $_python_ret -ne 0 ]; then
-  log_error "Python installation failed"
-  exit_message
-elif [ $_vsc_ret -ne 0 ]; then
-  log_error "VSCode installation failed"
-  exit_message
-elif [ $_first_year_ret -ne 0 ]; then
-  log_error "First year Python setup failed"
-  exit_message
-elif [ $_extensions_ret -ne 0 ]; then
-  log_warning "VSCode extensions installation failed, but core installation succeeded"
-  log_info "You can install extensions manually later"
-else
-  log_success "All installations completed successfully!"
-fi
-
-# Track overall success/failure
-if [ $_python_ret -eq 0 ] && [ $_vsc_ret -eq 0 ] && [ $_first_year_ret -eq 0 ] && [ $_extensions_ret -eq 0 ]; then
-    piwik_log 'orchestrator_success' echo "All components installed successfully"
-else
-    piwik_log 'orchestrator_partial_failure' echo "Some components failed to install"
-fi
-
-log_info "Script has finished. You may now close the terminal..."
-
-# Final step: run diagnostics report to validate installation and capture environment details
-log_info "Launching final diagnostics report (an HTML report will open)..."
-piwik_log 'diagnostics_final_report' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${DIAG_REMOTE_PS:-philipnickel/pythonsupport-scripts}/${DIAG_BRANCH_PS:-main}/MacOS/Components/Diagnostics/generate_report.sh)"
