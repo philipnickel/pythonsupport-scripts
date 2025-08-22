@@ -1,359 +1,102 @@
-name: MacOS_autoInstall
-
-defaults:
-  run:
-    shell: bash -l {0}
+name: MacOS Auto Install
 
 on:
   pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/**'
-      - '.github/workflows/MacOS_autoInstall.yml'
-  workflow_dispatch:
-    inputs:
-      pkg_path:
-        description: 'Path to PKG file to test'
-        required: false
-        type: string
-
-env:
-  PYTHON_VERSION_PS: "3.11"
-  PIS_ENV: "CI"
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
 
 jobs:
-  # Temporarily disabled for PKG debugging
-  # test-orchestrator:
-  #   name: Test First Year Orchestrator
-
-  # test-legacy:
-  #   name: Test Legacy Install
-
-  test-pkg:
-    name: Test PKG Installer
+  test-macos-install:
     runs-on: macos-latest
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Remove conda (if present)
-        run: |
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-
-            echo "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
-            conda init --reverse --all
-          fi
-
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Check for conda
-        run: |
-          env | grep -i conda
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-          else
-            echo "Conda not found..."
-          fi
-
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Install PKG
-        run: |
-          echo "Installing PKG with Python $PYTHON_VERSION_PS"
-          echo "Using self-contained PKG with bundled components..."
-          sudo installer -pkg PKG/DTU_Python_Environment.pkg -target /
-          echo "PKG installation completed"
-          
-          # Check system logs for PKG errors
-          echo "Checking system logs for PKG installation errors..."
-          log show --last 2m --predicate 'subsystem == "com.apple.installer"' || true
-          log show --last 2m --predicate 'category == "DTU-Python-PKG"' || true
-          
-          # Check if files were actually installed
-          echo "Checking if PKG files were installed..."
-          ls -la /usr/local/bin/dtu_orchestrator.sh || echo "Orchestrator not found"
-          ls -la /usr/local/share/dtu-python-env/ || echo "Bundle directory not found"
-          
-          # Check installer logs more broadly
-          echo "Checking all recent installer activity..."
-          log show --last 5m --process installer || true
-          
-          # Check for our debug files
-          echo "Checking for script execution evidence..."
-          ls -la /tmp/dtu_preinstall.log || echo "No preinstall log found"
-          cat /tmp/dtu_preinstall.log || echo "Preinstall log empty or missing"
-          ls -la /tmp/dtu_postinstall.log || echo "No postinstall log found"
-          cat /tmp/dtu_postinstall.log || echo "Postinstall log empty or missing"
-
-      - name: Verify VS Code
-        run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-          fi
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set Python version
+      run: |
+        echo "PYTHON_VERSION_PS=3.11" >> $GITHUB_ENV
+        
+    - name: Install PKG
+      run: |
+        echo "Installing PKG with Python $PYTHON_VERSION_PS"
+        echo "Using self-contained PKG with bundled components..."
+        sudo installer -pkg PKG/DTU_Python_Environment.pkg -target /
+        echo "PKG installation completed"
+        
+        # Check system logs for PKG errors
+        echo "Checking system logs for PKG installation errors..."
+        log show --last 2m --predicate 'subsystem == "com.apple.installer"' || true
+        log show --last 2m --predicate 'category == "DTU-Python-PKG"' || true
+        
+        # Check if files were actually installed
+        echo "Checking if PKG files were installed..."
+        ls -la /usr/local/bin/dtu_orchestrator.sh || echo "Orchestrator not found"
+        ls -la /usr/local/share/dtu-python-env/ || echo "Bundle directory not found"
+        
+        # Check installer logs more broadly
+        echo "Checking all recent installer activity..."
+        log show --last 5m --process installer || true
+        
+        # Check for our debug files
+        echo "Checking for script execution evidence..."
+        ls -la /tmp/dtu_preinstall.log || echo "No preinstall log found"
+        cat /tmp/dtu_preinstall.log || echo "Preinstall log empty or missing"
+        ls -la /tmp/dtu_postinstall.log || echo "No postinstall log found"
+        cat /tmp/dtu_postinstall.log || echo "Postinstall log empty or missing"
+        
+    - name: Verify VS Code
+      run: |
+        code --version
+        retval=$?
+        if [[ $retval -ne 0 ]]; then
+          echo "VS Code not installed correctly"
+        fi
+        exit $retval
+        
+    - name: Verify conda
+      run: |
+        # Activate conda and ensure it takes precedence
+        source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
+        conda activate base
+        
+        # Put conda bin directory at the FRONT of PATH
+        export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
+        hash -r
+        
+        which conda
+        retval=$?
+        if [[ $retval -ne 0 ]]; then
+          echo "Conda not installed correctly"
           exit $retval
-
-      - name: Verify conda
-        run: |
-          # Activate conda and ensure it takes precedence
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
-          which conda
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "Conda not installed correctly"
-            exit $retval
-          fi
-
-          # Some more output
-          conda --version
-          conda info --base
-
-      - name: Verify python (3.11)
-        run: |
-          # Activate conda and ensure it takes precedence over homebrew python
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH to override homebrew python
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
-          which python3
-
-          # Verify the installed Python version - MUST match exactly like legacy script
-          EXPECTED_VERSION="3.11"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
-            exit 1
-          fi
-          echo "Correct Python version $INSTALLED_VERSION is installed."
-
-          # Verify Python package imports - exact same test as legacy
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-
-  # test-orchestrator:
-  #   name: Test First Year Orchestrator
-  #   runs-on: macos-latest
-  #   
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Remove conda (if present)
-  #       run: |
-  #         if type conda > /dev/null ; then
-  #           echo "Base environment location:"
-  #           conda info --base
-  #
-  #           echo "Removing conda from the environment..."
-  #           # try and disable things in the boot-up scripts
-  #           conda init --reverse --all
-  #         fi
-  #
-  #         for f in bash_profile bashrc xonshrc
-  #         do
-  #           [ ! -e $HOME/.$f ] && continue
-  #           echo ""
-  #           echo "<<< .$f >>>"
-  #           cat $HOME/.$f
-  #         done
-  #
-  #     - name: Check for conda
-  #       run: |
-  #         env | grep -i conda
-  #         if type conda > /dev/null ; then
-  #           echo "Base environment location:"
-  #           conda info --base
-  #         else
-  #           echo "Conda not found..."
-  #         fi
-  #
-  #         for f in bash_profile bashrc xonshrc
-  #         do
-  #           [ ! -e $HOME/.$f ] && continue
-  #           echo ""
-  #           echo "<<< .$f >>>"
-  #           cat $HOME/.$f
-  #         done
-  #
-  #     - name: Run First Year Orchestrator
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #         GITHUB_CI: true
-  #       run: |
-  #         echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
-  #
-  #     - name: Verify VS Code
-  #       run: |
-  #         code --version
-  #         retval=$?
-  #         if [[ $retval -ne 0 ]]; then
-  #           echo "VS Code not installed correctly"
-  #         fi
-  #         exit $retval
-  #
-  #     - name: Verify conda
-  #       run: |
-  #         # Activate conda and ensure it takes precedence
-  #         source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-  #         conda activate base
-  #         
-  #         # Put conda bin directory at the FRONT of PATH
-  #         export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-  #         hash -r
-  #         
-  #         which conda
-  #         retval=$?
-  #         if [[ $retval -ne 0 ]]; then
-  #           echo "Conda not installed correctly"
-  #           exit $retval
-  #         fi
-  #
-  #         # Some more output
-  #         conda --version
-  #         conda info --base
-  #
-  #     - name: Verify python (3.11)
-  #       run: |
-  #         # Activate conda and ensure it takes precedence over homebrew python
-  #         source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-  #         conda activate base
-  #         
-  #         # Put conda bin directory at the FRONT of PATH to override homebrew python
-  #         export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-  #         hash -r
-  #         
-  #         which python3
-  #
-  #         # Verify the installed Python version - MUST match exactly like legacy script
-  #         EXPECTED_VERSION="3.11"
-  #         INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-  #         if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-  #           echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-  #           echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
-  #           exit 1
-  #         fi
-  #         echo "Correct Python version $INSTALLED_VERSION is installed."
-  #
-  #         # Verify Python package imports - exact same test as legacy
-  #         python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-
-  # test-legacy:
-  #   name: Test Legacy Install
-  #   runs-on: macos-latest
-  #   
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Remove conda (if present)
-  #       run: |
-  #         if type conda > /dev/null ; then
-  #           echo "Base environment location:"
-  #           conda info --base
-  #
-  #           echo "Removing conda from the environment..."
-  #           # try and disable things in the boot-up scripts
-  #           conda init --reverse --all
-  #         fi
-  #
-  #         for f in bash_profile bashrc xonshrc
-  #         do
-  #           [ ! -e $HOME/.$f ] && continue
-  #           echo ""
-  #           echo "<<< .$f >>>"
-  #           cat $HOME/.$f
-  #         done
-  #
-  #     - name: Check for conda
-  #       run: |
-  #         env | grep -i conda
-  #         if type conda > /dev/null ; then
-  #           echo "Base environment location:"
-  #           conda info --base
-  #         else
-  #           echo "Conda not found..."
-  #         fi
-  #
-  #         for f in bash_profile bashrc xonshrc
-  #         do
-  #           [ ! -e $HOME/.$f ] && continue
-  #           echo ""
-  #           echo "<<< .$f >>>"
-  #           cat $HOME/.$f
-  #         done
-  #
-  #     - name: Install from legacy script
-  #       env:
-  #         REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-  #         BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-  #         GITHUB_CI: true
-  #       run: |
-  #         echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
-  #         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/2024_legacy/MacOS_AutoInstall.sh)"
-  #
-  #     - name: Verify VS Code
-  #       run: |
-  #         code --version
-  #         retval=$?
-  #         if [[ $retval -ne 0 ]]; then
-  #           echo "VS Code not installed correctly"
-  #         fi
-  #         exit $retval
-  #
-  #     - name: Verify conda
-  #       run: |
-  #         which conda
-  #         retval=$?
-  #         if [[ $retval -ne 0 ]]; then
-  #           echo "Conda not installed correctly"
-  #           exit $retval
-  #         fi
-  #
-  #         # Some more output
-  #         conda --version
-  #         conda info --base
-  #
-  #     - name: Verify python (3.11)
-  #       run: |
-  #         which python3
-  #
-  #         # Verify the installed Python version
-  #         EXPECTED_VERSION="3.11"
-  #         INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-  #         if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-  #           echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-  #           exit 1
-  #         fi
-  #         echo "Correct Python version $INSTALLED_VERSION is installed."
-  #
-  #         # Verify Python package imports
-  #         python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+        fi
+        
+        # Some more output
+        conda --version
+        conda info --base
+        
+    - name: Verify python (3.11)
+      run: |
+        # Activate conda and ensure it takes precedence over homebrew python
+        source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
+        conda activate base
+        
+        # Put conda bin directory at the FRONT of PATH to override homebrew python
+        export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
+        hash -r
+        
+        which python3
+        
+        # Verify the installed Python version - MUST match exactly like legacy script
+        EXPECTED_VERSION="3.11"
+        INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+        if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+          echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+          echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
+          exit 1
+        fi
+        echo "Correct Python version $INSTALLED_VERSION is installed."
+        
+        # Verify Python package imports - exact same test as legacy
+        python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
