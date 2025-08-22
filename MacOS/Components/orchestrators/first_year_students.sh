@@ -12,15 +12,22 @@ BASE_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Comp
 
 eval "$(curl -fsSL "$BASE_URL/minimal_utils.sh")"
 
-# Inline controller check to avoid eval issues
+# Inline controller check to avoid eval issues  
 controller_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/main_controller.txt?$(date +%s)"
 if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
+    echo "DEBUG: Controller content:"
+    echo "$controller_content"
+    echo "DEBUG: Checking for macos_orchestrator=disabled"
     if echo "$controller_content" | grep -q "^macos_orchestrator=disabled"; then
         echo "WARNING: orchestrator installation is currently disabled"
         echo "         This component has been temporarily disabled by administrators."
         echo "         Check main_controller.txt for current status."
         exit 1
+    else
+        echo "DEBUG: orchestrator is enabled, proceeding..."
     fi
+else
+    echo "DEBUG: Could not fetch controller, proceeding anyway"
 fi
 
 # Configuration
