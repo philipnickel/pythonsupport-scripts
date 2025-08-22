@@ -12,20 +12,23 @@ export BRANCH_PS="main"
 
 echo "DTU Python Environment PKG - Preinstall Check"
 
-# Check if PKG installation is enabled
+# Get PKG version from identifier
+PKG_VERSION=$(defaults read /var/db/receipts/dk.dtu.python-environment.plist PackageVersion 2>/dev/null || echo "1.0.0")
+
+# Check if this PKG version is enabled
 controller_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/main_controller.txt?$(date +%s)"
 if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
-    if echo "$controller_content" | grep -q "^macos_pkg=disabled"; then
-        echo "ERROR: PKG installation is currently disabled"
-        echo "       This component has been temporarily disabled by administrators."
+    if echo "$controller_content" | grep -q "^macos_pkg_v${PKG_VERSION}=disabled"; then
+        echo "ERROR: PKG version ${PKG_VERSION} installation is currently disabled"
+        echo "       This version has been temporarily disabled by administrators."
         echo "       Check main_controller.txt for current status."
         
         # Show user-friendly dialog
-        osascript -e 'display dialog "DTU Python Environment installation is currently disabled by administrators. Please check the repository status or try again later." with title "Installation Disabled" buttons {"OK"} default button "OK" with icon stop'
+        osascript -e 'display dialog "DTU Python Environment v'${PKG_VERSION}' installation is currently disabled by administrators. Please check for updates or try again later." with title "Installation Disabled" buttons {"OK"} default button "OK" with icon stop'
         
         exit 1
     fi
-    echo "PKG installation is enabled, proceeding..."
+    echo "PKG version ${PKG_VERSION} installation is enabled, proceeding..."
 else
     echo "WARNING: Could not fetch controller status, proceeding anyway..."
 fi

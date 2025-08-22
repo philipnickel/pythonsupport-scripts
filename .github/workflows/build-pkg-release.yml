@@ -1,0 +1,44 @@
+name: Build and Release PKG
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v1.0.1)'
+        required: true
+        type: string
+
+jobs:
+  build-pkg:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Build PKG
+        run: |
+          cd PKG/
+          ./build_pkg.sh
+          
+      - name: Create Release
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          gh release create ${{ github.event.inputs.tag_name }} \
+            PKG/DTU_Python_Environment.pkg \
+            --title "DTU Python Environment ${{ github.event.inputs.tag_name }}" \
+            --notes "Self-contained PKG installer for DTU Python Environment"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload to Release
+        if: github.event_name == 'push'
+        run: |
+          gh release upload ${{ github.ref_name }} \
+            PKG/DTU_Python_Environment.pkg \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

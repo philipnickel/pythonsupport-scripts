@@ -17,14 +17,14 @@ echo ""
 # Log to system log
 logger -t "DTU-Python-PKG" "Starting DTU Python Environment installation"
 
-# Run the orchestrator with PKG context
-orchestrator_url="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/orchestrators/first_year_students.sh"
+# Execute the bundled orchestrator script
+orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
 
-echo "Downloading and executing installation orchestrator..."
-echo "URL: $orchestrator_url"
+echo "Executing bundled installation orchestrator..."
+echo "Script: $orchestrator_script"
 echo ""
 
-if /bin/bash -c "$(curl -fsSL "$orchestrator_url")"; then
+if /bin/bash "$orchestrator_script"; then
     echo ""
     echo "=== PKG Installation Completed Successfully ==="
     echo "Your Python development environment is ready!"

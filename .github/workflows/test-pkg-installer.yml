@@ -7,15 +7,14 @@ defaults:
 on:
   workflow_dispatch:
     inputs:
-      pkg_path:
-        description: 'Path to PKG file to test'
+      release_tag:
+        description: 'GitHub release tag to test (e.g., v1.0.0)'
         required: true
         type: string
-  # Disabled temporarily - using MacOS_autoInstall.yml instead
-  # pull_request:
-  #   paths:
-  #     - 'MacOS/**'
-  #     - '.github/workflows/test-pkg-installer.yml'
+  push:
+    paths:
+      - 'PKG/**'
+      - '.github/workflows/test-pkg-installer.yml'
 
 jobs:
   test-pkg:
@@ -27,6 +26,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Build PKG
+        if: github.event_name == 'push'
+        run: |
+          cd PKG/
+          ./build_pkg.sh
+          
+      - name: Download PKG from Release
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          gh release download ${{ github.event.inputs.release_tag }} -p "DTU_Python_Environment.pkg" -D PKG/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove conda (if present)
         run: |
@@ -68,8 +80,7 @@ jobs:
       - name: Install PKG
         run: |
           echo "Installing PKG with Python $PYTHON_VERSION_PS"
-          # TODO: Add PKG installation command
-          # Example: sudo installer -pkg ./path/to/installer.pkg -target /
+          sudo installer -pkg PKG/DTU_Python_Environment.pkg -target /
           echo "PKG installation completed"
 
       - name: Verify VS Code

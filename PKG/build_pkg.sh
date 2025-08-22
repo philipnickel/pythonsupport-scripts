@@ -17,9 +17,13 @@ echo ""
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-# Create empty payload directory (we don't install files, just run scripts)
-mkdir -p "$BUILD_DIR/payload"
-touch "$BUILD_DIR/payload/.keep"
+# Create payload directory and embed orchestrator script
+mkdir -p "$BUILD_DIR/payload/usr/local/bin"
+
+# Copy orchestrator script from local repository
+echo "Copying orchestrator script from current branch..."
+cp "$SCRIPT_DIR/../MacOS/Components/orchestrators/first_year_students.sh" "$BUILD_DIR/payload/usr/local/bin/dtu_orchestrator.sh"
+chmod +x "$BUILD_DIR/payload/usr/local/bin/dtu_orchestrator.sh"
 
 # Create component package
 echo "Creating component package..."
