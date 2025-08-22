@@ -7,8 +7,9 @@ set -euo pipefail
 # Set PKG environment context
 export PIS_INSTALL_METHOD="PKG"
 export PYTHON_VERSION_PS="3.11"
-export REMOTE_PS="dtudk/pythonsupport-scripts" 
-export BRANCH_PS="main"
+# Use current repository/branch for testing, fallback to main repo
+export REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" 
+export BRANCH_PS="${BRANCH_PS:-main}"
 
 echo "=== DTU Python Environment PKG Installation ==="
 echo "Installing Python development environment via PKG..."

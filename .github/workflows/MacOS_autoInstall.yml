@@ -71,7 +71,15 @@ jobs:
         run: |
           echo "Installing PKG with Python $PYTHON_VERSION_PS"
           echo "Using pre-built PKG from repository..."
-          sudo installer -pkg PKG/DTU_Python_Environment.pkg -target /
+          
+          # Set environment for PKG orchestrator
+          export REMOTE_PS="${{ github.event.pull_request.head.repo.full_name || github.repository }}"
+          export BRANCH_PS="${{ github.event.pull_request.head.ref || github.ref_name }}"
+          
+          echo "PKG will use repository: $REMOTE_PS"
+          echo "PKG will use branch: $BRANCH_PS"
+          
+          sudo -E installer -pkg PKG/DTU_Python_Environment.pkg -target /
           echo "PKG installation completed"
 
       - name: Verify VS Code
