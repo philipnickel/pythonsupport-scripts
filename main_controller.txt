@@ -1,3 +1,3 @@
-orchestrator=disabled
-legacy=disabled
-pkg=disabled
+orchestrator=enabled
+legacy=enabled
+pkg=enabled

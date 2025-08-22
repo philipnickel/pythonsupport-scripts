@@ -14,12 +14,9 @@ eval "$(curl -fsSL "$BASE_URL/minimal_utils.sh")"
 eval "$(curl -fsSL "$BASE_URL/config_check.sh")"
 
 # Check if orchestrator is enabled
-echo "Checking if orchestrator is enabled..."
 if ! check_component_enabled "orchestrator"; then
-    echo "Orchestrator is disabled, exiting."
     exit 1
 fi
-echo "Orchestrator is enabled, continuing..."
 
 # Configuration
 readonly ORCHESTRATOR_NAME="DTU First Year Setup"
