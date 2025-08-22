@@ -199,6 +199,18 @@ jobs:
           export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
           [ -e ~/.bashrc ] && source ~/.bashrc
           hash -r
+
+          # Debug: Show all python3 locations and versions
+          echo "=== DEBUG: Python installations found ==="
+          which -a python3 || echo "No python3 found in PATH"
+          echo "Homebrew python3:" && /opt/homebrew/bin/python3 --version 2>/dev/null || echo "Not found"
+          echo "Conda python3:" && /opt/homebrew/Caskroom/miniconda/base/bin/python3 --version 2>/dev/null || echo "Not found"
+          echo "Current PATH: $PATH"
+          echo "============================================"
+
+          # Activate conda base environment to ensure conda python is used
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
+          conda activate base 2>/dev/null || true
           
           which python3
 
@@ -207,6 +219,7 @@ jobs:
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
             exit 1
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
