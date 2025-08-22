@@ -28,7 +28,7 @@ mkdir -p "$PAYLOAD_DIR/usr/local/share/dtu-python-env/Components"
 
 # Copy the orchestrator script
 echo "Copying orchestrator..."
-cp "$REPO_ROOT/MacOS/Components/orchestrators/first_year_students.sh" "$PAYLOAD_DIR/usr/local/bin/dtu_orchestrator.sh"
+cp "$SCRIPT_DIR/pkg_orchestrator.sh" "$PAYLOAD_DIR/usr/local/bin/dtu_orchestrator.sh"
 chmod +x "$PAYLOAD_DIR/usr/local/bin/dtu_orchestrator.sh"
 
 # Copy all components
