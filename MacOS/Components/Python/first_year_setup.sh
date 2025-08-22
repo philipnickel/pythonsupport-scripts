@@ -13,17 +13,20 @@ eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythons
 
 log_info "First year Python setup"
 
-# Ensure conda is discoverable for non-login shells
-export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+# Load shell profile to get conda environment (conda init sets this up)
+[ -e ~/.bashrc ] && source ~/.bashrc
+[ -e ~/.bash_profile ] && source ~/.bash_profile
+[ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
 
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then
   log_info "Conda not found. Installing Python with Miniconda first..."
   env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
   
-  # Source the shell profile to get conda in PATH
+  # Re-source shell profile after conda installation
   [ -e ~/.bashrc ] && source ~/.bashrc
-  hash -r
+  [ -e ~/.bash_profile ] && source ~/.bash_profile
+  [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
 fi
 
 
