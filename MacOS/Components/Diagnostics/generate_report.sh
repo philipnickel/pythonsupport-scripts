@@ -89,59 +89,366 @@ fi
 LOG_DIR="$TEMP_DIR/logs"
 mkdir -p "$LOG_DIR"
 
-# Color codes for terminal output
+# ====================================================================
+# TERMINAL FORMATTING & DISPLAY UTILITIES
+# ====================================================================
+
+# Enhanced color palette for professional output
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+WHITE='\033[0;37m'
+GRAY='\033[0;90m'
+BRIGHT_GREEN='\033[1;32m'
+BRIGHT_YELLOW='\033[1;33m'
+BRIGHT_RED='\033[1;31m'
+BRIGHT_BLUE='\033[1;34m'
+BRIGHT_CYAN='\033[1;36m'
+BRIGHT_WHITE='\033[1;37m'
+DIM='\033[2m'
+BOLD='\033[1m'
+UNDERLINE='\033[4m'
+REVERSE='\033[7m'
 NC='\033[0m' # No Color
 
-echo "DTU Python Diagnostics Report Generator"
-echo "Selected profile: $SELECTED_PROFILE"
-echo "Temporary directory: $TEMP_DIR"
-echo "Report will be saved to: $REPORT_FILE"
-echo ""
+# Unicode characters for professional formatting
+readonly BOX_HORIZONTAL='━'
+readonly BOX_VERTICAL='┃'
+readonly BOX_TOP_LEFT='┏'
+readonly BOX_TOP_RIGHT='┓'
+readonly BOX_BOTTOM_LEFT='┗'
+readonly BOX_BOTTOM_RIGHT='┛'
+readonly BOX_CROSS='╋'
+readonly BOX_T_DOWN='┳'
+readonly BOX_T_UP='┻'
+readonly BOX_T_RIGHT='┣'
+readonly BOX_T_LEFT='┫'
+readonly BULLET='●'
+readonly ARROW='→'
+readonly CHECK='✓'
+readonly CROSS='✗'
+readonly WARNING='⚠'
+readonly INFO='ℹ'
+readonly CLOCK='⏱'
+readonly GEAR='⚙'
+readonly ROCKET='🚀'
+readonly SPARKLE='✨'
 
-# Enhanced System Information Section
-echo -e "${BLUE}═══════════════════════════════════════"
-echo "SYSTEM INFORMATION"
-echo "═══════════════════════════════════════${NC}"
+# Get terminal width for responsive formatting
+get_terminal_width() {
+    local width
+    if command -v tput >/dev/null 2>&1; then
+        width=$(tput cols 2>/dev/null)
+    fi
+    # Fallback to environment variable or default
+    width=${width:-${COLUMNS:-80}}
+    # Ensure minimum width
+    [[ $width -lt 60 ]] && width=60
+    echo $width
+}
 
-# macOS Version Information
-echo -e "${GREEN}macOS Information:${NC}"
-echo "  Product Name: $(sw_vers -productName 2>/dev/null || echo 'Unknown')"
-echo "  Version: $(sw_vers -productVersion 2>/dev/null || echo 'Unknown')"
-echo "  Build: $(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')"
-echo ""
+# Create horizontal line with specified character and width
+create_line() {
+    local char="${1:-$BOX_HORIZONTAL}"
+    local width="${2:-$(get_terminal_width)}"
+    local color="${3:-$GRAY}"
+    
+    printf "%s" "$color"
+    for ((i=1; i<=width; i++)); do
+        printf "%s" "$char"
+    done
+    printf "%s\n" "$NC"
+}
 
-# Hardware Information
-echo -e "${GREEN}Hardware Information:${NC}"
-echo "  Architecture: $(uname -m 2>/dev/null || echo 'Unknown')"
-echo "  Hostname: $(hostname 2>/dev/null || echo 'Unknown')"
-echo "  Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')"
+# Create a centered text with padding
+center_text() {
+    local text="$1"
+    local width="${2:-$(get_terminal_width)}"
+    local color="${3:-$NC}"
+    local padding_char="${4:- }"
+    
+    # Remove ANSI codes for length calculation
+    local clean_text=$(echo -e "$text" | sed 's/\x1b\[[0-9;]*m//g')
+    local text_length=${#clean_text}
+    local total_padding=$((width - text_length))
+    
+    if [[ $total_padding -le 0 ]]; then
+        printf "%s%s%s\n" "$color" "$text" "$NC"
+        return
+    fi
+    
+    local left_padding=$((total_padding / 2))
+    local right_padding=$((total_padding - left_padding))
+    
+    printf "%s" "$color"
+    for ((i=1; i<=left_padding; i++)); do
+        printf "%s" "$padding_char"
+    done
+    printf "%s" "$text"
+    for ((i=1; i<=right_padding; i++)); do
+        printf "%s" "$padding_char"
+    done
+    printf "%s\n" "$NC"
+}
+
+# Create a professional header with borders
+create_header() {
+    local title="$1"
+    local subtitle="${2:-}"
+    local width=$(get_terminal_width)
+    local inner_width=$((width - 4))
+    
+    echo
+    # Top border
+    printf "%s%s" "$BRIGHT_BLUE" "$BOX_TOP_LEFT"
+    for ((i=1; i<=inner_width; i++)); do
+        printf "%s" "$BOX_HORIZONTAL"
+    done
+    printf "%s%s\n" "$BOX_TOP_RIGHT" "$NC"
+    
+    # Title line
+    printf "%s%s %s %s%s\n" "$BRIGHT_BLUE" "$BOX_VERTICAL" \
+           "$(center_text "$BOLD$title$NC" $inner_width)" "$BOX_VERTICAL" "$NC"
+    
+    # Subtitle if provided
+    if [[ -n "$subtitle" ]]; then
+        printf "%s%s %s %s%s\n" "$BRIGHT_BLUE" "$BOX_VERTICAL" \
+               "$(center_text "$DIM$subtitle$NC" $inner_width)" "$BOX_VERTICAL" "$NC"
+    fi
+    
+    # Bottom border
+    printf "%s%s" "$BRIGHT_BLUE" "$BOX_BOTTOM_LEFT"
+    for ((i=1; i<=inner_width; i++)); do
+        printf "%s" "$BOX_HORIZONTAL"
+    done
+    printf "%s%s\n" "$BOX_BOTTOM_RIGHT" "$NC"
+    echo
+}
+
+# Create a section separator
+create_section() {
+    local title="$1"
+    local width=$(get_terminal_width)
+    
+    echo
+    printf "%s%s %s %s%s\n" "$BRIGHT_CYAN" "$BULLET" "$BOLD$title$NC" "$BRIGHT_CYAN" "$NC"
+    create_line "$BOX_HORIZONTAL" $((width-4)) "$CYAN"
+    echo
+}
+
+# Format key-value pairs with proper alignment
+format_info_line() {
+    local key="$1"
+    local value="$2"
+    local indent="${3:-  }"
+    local key_width="${4:-20}"
+    local key_color="${5:-$GREEN}"
+    local value_color="${6:-$NC}"
+    
+    printf "%s%s%-*s%s %s%s%s\n" \
+           "$indent" "$key_color" "$key_width" "$key:" "$NC" \
+           "$value_color" "$value" "$NC"
+}
+
+# Create an animated progress indicator
+show_progress() {
+    local message="$1"
+    local duration="${2:-3}"
+    local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    local frame_count=${#frames[@]}
+    
+    for ((i=0; i<duration*10; i++)); do
+        local frame_index=$((i % frame_count))
+        printf "\r%s%s %s%s" "$BRIGHT_BLUE" "${frames[$frame_index]}" "$message" "$NC"
+        sleep 0.1
+    done
+    printf "\r%s%s %s%s\n" "$BRIGHT_GREEN" "$CHECK" "$message" "$NC"
+}
+
+# Format status with consistent alignment
+format_status() {
+    local name="$1"
+    local status="$2"
+    local details="${3:-}"
+    local max_width=$(($(get_terminal_width) - 25))
+    
+    # Truncate name if too long
+    if [[ ${#name} -gt $max_width ]]; then
+        name="${name:0:$((max_width-3))}..."
+    fi
+    
+    # Status formatting
+    local status_symbol status_color status_text
+    case "$status" in
+        "PASS"|"PASSED")
+            status_symbol="$CHECK"
+            status_color="$BRIGHT_GREEN"
+            status_text="PASS"
+            ;;
+        "FAIL"|"FAILED")
+            status_symbol="$CROSS"
+            status_color="$BRIGHT_RED"
+            status_text="FAIL"
+            ;;
+        "TIMEOUT")
+            status_symbol="$WARNING"
+            status_color="$BRIGHT_YELLOW"
+            status_text="TIMEOUT"
+            ;;
+        "INFO")
+            status_symbol="$INFO"
+            status_color="$BRIGHT_CYAN"
+            status_text="INFO"
+            ;;
+        *)
+            status_symbol="$BULLET"
+            status_color="$GRAY"
+            status_text="$status"
+            ;;
+    esac
+    
+    # Format the line
+    printf "  %s%-*s%s " "$NC" "$max_width" "$name" "$NC"
+    printf "[%s%s %s%s]" "$status_color" "$status_symbol" "$status_text" "$NC"
+    
+    if [[ -n "$details" ]]; then
+        printf " %s%s%s" "$DIM" "$details" "$NC"
+    fi
+    printf "\n"
+}
+
+# Create a progress bar
+show_progress_bar() {
+    local current="$1"
+    local total="$2"
+    local message="${3:-Processing}"
+    local width="${4:-40}"
+    
+    local percentage=$((current * 100 / total))
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+    
+    printf "\r%s%s: [" "$BRIGHT_BLUE" "$message"
+    
+    # Filled portion
+    for ((i=0; i<filled; i++)); do
+        printf "%s█%s" "$BRIGHT_GREEN" "$NC"
+    done
+    
+    # Empty portion
+    for ((i=0; i<empty; i++)); do
+        printf "%s▒%s" "$DIM" "$NC"
+    done
+    
+    printf "] %s%3d%%%s (%d/%d)%s" "$BRIGHT_WHITE" "$percentage" "$NC" "$current" "$total" "$NC"
+    
+    if [[ $current -eq $total ]]; then
+        printf "\n"
+    fi
+}
+
+# Create a summary box
+create_summary_box() {
+    local title="$1"
+    shift
+    local lines=("$@")
+    local width=$(get_terminal_width)
+    local inner_width=$((width - 4))
+    
+    echo
+    # Top border with title
+    printf "%s%s" "$BRIGHT_WHITE" "$BOX_TOP_LEFT"
+    local title_padding=$(((inner_width - ${#title}) / 2))
+    for ((i=1; i<=title_padding; i++)); do
+        printf "%s" "$BOX_HORIZONTAL"
+    done
+    printf "%s %s %s" "$BOX_HORIZONTAL" "$BOLD$title$NC$BRIGHT_WHITE" "$BOX_HORIZONTAL"
+    for ((i=1; i<=title_padding; i++)); do
+        printf "%s" "$BOX_HORIZONTAL"
+    done
+    printf "%s%s\n" "$BOX_TOP_RIGHT" "$NC"
+    
+    # Content lines
+    for line in "${lines[@]}"; do
+        printf "%s%s %s %s%s\n" "$BRIGHT_WHITE" "$BOX_VERTICAL" \
+               "$(printf "%-*s" $inner_width "$line")" "$BOX_VERTICAL" "$NC"
+    done
+    
+    # Bottom border
+    printf "%s%s" "$BRIGHT_WHITE" "$BOX_BOTTOM_LEFT"
+    for ((i=1; i<=inner_width; i++)); do
+        printf "%s" "$BOX_HORIZONTAL"
+    done
+    printf "%s%s\n" "$BOX_BOTTOM_RIGHT" "$NC"
+    echo
+}
+
+# Display professional header
+create_header "DTU PYTHON DIAGNOSTICS REPORT GENERATOR" "Comprehensive System Analysis & Environment Validation"
+
+# Show configuration in a clean format
+printf "%s%s Configuration Details:%s\n" "$BRIGHT_CYAN" "$GEAR" "$NC"
+format_info_line "Selected Profile" "$SELECTED_PROFILE" "  " 18 "$CYAN" "$BRIGHT_WHITE"
+format_info_line "Report Location" "$REPORT_FILE" "  " 18 "$CYAN" "$DIM"
+format_info_line "Working Directory" "$TEMP_DIR" "  " 18 "$CYAN" "$DIM"
+echo
+
+# Professional system information display
+create_section "SYSTEM INFORMATION"
+
+# macOS Information with enhanced formatting
+printf "%s%s macOS Environment:%s\n" "$BRIGHT_GREEN" "$BULLET" "$NC"
+format_info_line "Product Name" "$(sw_vers -productName 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+format_info_line "Version" "$(sw_vers -productVersion 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+format_info_line "Build" "$(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+echo
+
+# Hardware Information with loading indicator for system_profiler
+printf "%s%s Hardware Information:%s\n" "$BRIGHT_GREEN" "$BULLET" "$NC"
+format_info_line "Architecture" "$(uname -m 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+format_info_line "Hostname" "$(hostname 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+format_info_line "Kernel" "$(uname -sr 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+
 if command -v system_profiler >/dev/null 2>&1; then
-    # Get CPU info (with timeout to prevent hanging)
+    printf "    %sGathering hardware details...%s" "$DIM" "$NC"
+    # Get CPU and memory info with timeout
     cpu_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Processor Name" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
     memory_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Memory" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
-    echo "  Processor: $cpu_info"
-    echo "  Memory: $memory_info"
+    printf "\r    %s %s\n" "$BRIGHT_GREEN$CHECK$NC" "Hardware details collected"
+    format_info_line "Processor" "$cpu_info" "    " 16 "$GREEN"
+    format_info_line "Memory" "$memory_info" "    " 16 "$GREEN"
+else
+    printf "    %s%s system_profiler not available%s\n" "$YELLOW" "$WARNING" "$NC"
 fi
-echo ""
+echo
 
-# User Environment
-echo -e "${GREEN}User Environment:${NC}"
-echo "  Username: $(whoami 2>/dev/null || echo 'Unknown')"
-echo "  Home Directory: $HOME"
-echo "  Current Shell: $SHELL"
-echo "  PATH Entries: $(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories"
-echo ""
+# User Environment with better formatting
+printf "%s%s User Environment:%s\n" "$BRIGHT_GREEN" "$BULLET" "$NC"
+format_info_line "Username" "$(whoami 2>/dev/null || echo 'Unknown')" "    " 16 "$GREEN"
+format_info_line "Home Directory" "$HOME" "    " 16 "$GREEN"
+format_info_line "Current Shell" "$SHELL" "    " 16 "$GREEN"
+format_info_line "PATH Entries" "$(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories" "    " 16 "$GREEN"
+echo
 
-# Development Tools Check
-echo -e "${GREEN}Development Tools Overview:${NC}"
-# Check for common development tools with version info
-for tool in python python3 pip pip3 conda brew code git; do
+# Development Tools with progress indicator and professional status display
+printf "%s%s Development Tools Analysis:%s\n" "$BRIGHT_GREEN" "$BULLET" "$NC"
+echo
+
+# Create array of tools to check
+tools=(python python3 pip pip3 conda brew code git)
+total_tools=${#tools[@]}
+current_tool=0
+
+for tool in "${tools[@]}"; do
+    ((current_tool++))
+    
     if command -v "$tool" >/dev/null 2>&1; then
         tool_path=$(which "$tool" 2>/dev/null)
+        
+        # Get version information
         case "$tool" in
             python|python3)
                 version=$($tool --version 2>/dev/null | head -1)
@@ -166,26 +473,28 @@ for tool in python python3 pip pip3 conda brew code git; do
                 version="version $version"
                 ;;
         esac
-        echo "  ✓ $tool: $version ($tool_path)"
+        
+        format_status "$tool ($version)" "PASS" "$DIM$tool_path$NC"
     else
-        echo "  ✗ $tool: Not found"
+        format_status "$tool" "FAIL" "Not installed or not in PATH"
     fi
 done
-echo ""
+echo
 
-# Environment Variables of Interest
-echo -e "${GREEN}Python Environment Variables:${NC}"
+# Python Environment Variables with enhanced display
+printf "%s%s Python Environment Variables:%s\n" "$BRIGHT_GREEN" "$BULLET" "$NC"
+echo
 for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
     if [[ -n "${!var}" ]]; then
-        echo "  $var: ${!var}"
+        format_info_line "$var" "${!var}" "    " 20 "$GREEN" "$BRIGHT_WHITE"
     else
-        echo "  $var: (not set)"
+        format_info_line "$var" "(not set)" "    " 20 "$GREEN" "$DIM"
     fi
 done
-echo ""
 
-echo -e "${BLUE}═══════════════════════════════════════${NC}"
-echo ""
+# Create a visual separator
+echo
+create_line "$BOX_HORIZONTAL" "$(get_terminal_width)" "$BRIGHT_BLUE"
 
 # Default repository coordinates (can be overridden via env/config)
 REPO_OWNER=${REPO_OWNER:-philipnickel}
@@ -1403,11 +1712,28 @@ HTML_TEMPLATE
 # ====================================================================
 
 # Load components from profile
-echo "═══════════════════════════════════════"
-discover_components > "$TEMP_DIR/components.sh"
+create_section "COMPONENT DISCOVERY & PROFILE LOADING"
+
+# Show loading animation for component discovery
+printf "%s%s Loading diagnostic profile: %s%s%s..." "$BRIGHT_BLUE" "$GEAR" "$BOLD" "$SELECTED_PROFILE" "$NC"
+
+# Discover components and capture output
+discover_components > "$TEMP_DIR/components.sh" 2>"$TEMP_DIR/discovery.log"
 source "$TEMP_DIR/components.sh"
-echo "═══════════════════════════════════════"
-echo ""
+
+# Show completion
+printf "\r%s%s Profile loaded successfully: %s%s%s                    \n" "$BRIGHT_GREEN" "$CHECK" "$BOLD" "$SELECTED_PROFILE" "$NC"
+
+# Display profile information in a summary box
+profile_info=()
+profile_info+=("Profile: $PROFILE_NAME")
+profile_info+=("Description: $PROFILE_DESCRIPTION")
+profile_info+=("Components: ${#DISCOVERED_CATEGORIES[@]} diagnostic checks")
+profile_info+=("")
+profile_info+=("Execution Mode: $(if [[ "$PARALLEL_ENABLED" == "true" ]]; then echo "Parallel (max $MAX_PARALLEL concurrent)"; else echo "Sequential"; fi)")
+profile_info+=("Default Timeout: ${DEFAULT_TIMEOUT}s per check")
+
+create_summary_box "DIAGNOSTIC CONFIGURATION" "${profile_info[@]}"
 
 # Track overall results
 TOTAL_PASS=0
@@ -1489,14 +1815,25 @@ for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
 done
 SYSTEM_INFO_TEXT+="\n"
 
-# Run all discovered diagnostic components
-echo "Running diagnostic checks..."
+# Professional diagnostic execution header
+create_section "DIAGNOSTIC EXECUTION"
+
+# Display execution summary
+exec_mode="Sequential Processing"
 if [[ "$PARALLEL_ENABLED" == "true" ]]; then
-    echo "Mode: Parallel (max $MAX_PARALLEL concurrent checks)"
-else
-    echo "Mode: Sequential"
+    exec_mode="Parallel Processing (max $MAX_PARALLEL concurrent)"
 fi
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+printf "%s%s Execution Configuration:%s\n" "$BRIGHT_CYAN" "$ROCKET" "$NC"
+format_info_line "Mode" "$exec_mode" "  " 16 "$CYAN" "$BRIGHT_WHITE"
+format_info_line "Total Checks" "${#DISCOVERED_CATEGORIES[@]}" "  " 16 "$CYAN" "$BRIGHT_WHITE"
+format_info_line "Timeout" "${DEFAULT_TIMEOUT}s per check" "  " 16 "$CYAN" "$BRIGHT_WHITE"
+echo
+
+# Create professional progress header
+printf "%s" "$BRIGHT_BLUE"
+create_line "$BOX_HORIZONTAL" "$(get_terminal_width)" "$BRIGHT_BLUE"
+printf "%s" "$NC"
 
 if [[ "$PARALLEL_ENABLED" == "true" ]]; then
     # Parallel execution
@@ -1504,8 +1841,10 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
     job_pids=()
     job_info=()
     
-    echo -e "\n${BLUE}Starting parallel diagnostics...${NC}"
-    echo "────────────────────────"
+    printf "\n%s%s PARALLEL EXECUTION MODE%s\n" "$BRIGHT_BLUE" "$SPARKLE" "$NC"
+    printf "%s" "$BRIGHT_CYAN"
+    create_line "─" "$(get_terminal_width)" "$BRIGHT_CYAN"
+    printf "%s" "$NC"
     
     for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
         IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
@@ -1522,29 +1861,34 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
             sleep 0.1
         done
         
-        echo "  Launching: $main_category > $subcategory → $display_name"
+        printf "  %s%s Launching:%s %-50s %s[%02d/%02d]%s\n" \
+           "$BRIGHT_BLUE" "$ARROW" "$NC" \
+           "$main_category $GRAY$ARROW$NC $subcategory $GRAY$ARROW$NC $display_name" \
+           "$DIM" "$current_tool" "${#DISCOVERED_CATEGORIES[@]}" "$NC"
         run_diagnostic_parallel "$main_category" "$subcategory" "$script_name" "$display_name" "$script_path"
         job_pids+=($!)
         job_info+=("$main_category:$subcategory:$script_name:$display_name")
         ((active_jobs++))
     done
     
-    # Wait for all jobs to complete
-    echo -e "\n${BLUE}Waiting for all checks to complete...${NC}"
+    # Wait for all jobs to complete with progress indication
+    printf "\n%s%s Waiting for all parallel checks to complete...%s\n" "$BRIGHT_YELLOW" "$CLOCK" "$NC"
     wait
     
-    echo -e "\n${BLUE}Results:${NC}"
-    echo "────────────────────────"
+    printf "\n%s%s EXECUTION RESULTS%s\n" "$BRIGHT_GREEN" "$CHECK" "$NC"
+    printf "%s" "$BRIGHT_GREEN"
+    create_line "─" "$(get_terminal_width)" "$BRIGHT_GREEN"
+    printf "%s" "$NC"
     
     # Process results
     for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
         IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
         
-        # Check if this is a new category
+        # Check if this is a new category and display professionally
         category_display="$main_category > $subcategory"
         if [[ "$category_display" != "$current_category" ]]; then
             current_category="$category_display"
-            echo -e "\n${BLUE}Category: $category_display${NC}"
+            printf "\n%s%s Category: %s%s%s\n" "$BRIGHT_MAGENTA" "$BULLET" "$BOLD" "$category_display" "$NC"
         fi
         
         # Read status from file
@@ -1554,20 +1898,20 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
             exit_code=$(cat "$status_file")
             if [[ "$exit_code" == "0" ]]; then
                 STATUS="PASS"
-                echo -e "  ${GREEN}✓ PASSED${NC} - $display_name"
+                format_status "$display_name" "PASS"
                 ((TOTAL_PASS++))
             elif [[ "$exit_code" == "124" ]]; then
                 STATUS="TIMEOUT"
-                echo -e "  ${YELLOW}⚠ TIMEOUT${NC} - $display_name"
+                format_status "$display_name" "TIMEOUT"
                 ((TOTAL_TIMEOUT++))
             else
                 STATUS="FAIL"
-                echo -e "  ${RED}✗ FAILED (exit code: $exit_code)${NC} - $display_name"
+                format_status "$display_name" "FAIL" "exit code: $exit_code"
                 ((TOTAL_FAIL++))
             fi
         else
             STATUS="FAIL"
-            echo -e "  ${RED}✗ ERROR (no status file)${NC} - $display_name"
+            format_status "$display_name" "FAIL" "no status file found"
             ((TOTAL_FAIL++))
         fi
         
@@ -1575,11 +1919,11 @@ if [[ "$PARALLEL_ENABLED" == "true" ]]; then
         log_file="$LOG_DIR/${category_key}_${script_name%.sh}.log"
         LOG_DATA=""
         if [[ -f "$log_file" ]]; then
-            # Extract execution time if available
+            # Extract and display execution time if available
             exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
             if [[ -n "$exec_time" ]]; then
-                echo "    Script path: $script_path"
-                echo "    Execution time: ${exec_time}s"
+                printf "    %s%s Script:%s %s\n" "$DIM" "$INFO" "$NC" "$script_path"
+                printf "    %s%s Time:%s %ss\n" "$DIM" "$CLOCK" "$NC" "$exec_time"
             fi
             LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
         fi

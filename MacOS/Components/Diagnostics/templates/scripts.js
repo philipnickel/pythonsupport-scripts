@@ -134,25 +134,33 @@ function escapeHtml(text) {
 
 
 function emailSupport() {
-    // Generate summary for email
-    const summaryData = generateEmailSummary();
+    // Generate comprehensive summary for email
+    const emailContent = generateComprehensiveEmailContent();
     
-    // Create email content with verbose system report
-    const subject = 'DTU Python Support - Diagnostic Report';
-    const body = `Hello DTU Python Support Team,
+    // Create email content with detailed test output and system information
+    const subject = 'DTU Python Installation Support - Diagnostic Report';
+    const body = `I've run the DTU Python Installation verification and need assistance. Please see the diagnostic details below:
 
-I've run the diagnostic report and would like assistance with my Python development environment setup.
+${emailContent.summary}
 
-${summaryData.verboseReport}
+=== SYSTEM INFORMATION ===
+${emailContent.systemInfo}
 
-Please let me know how to resolve any issues found.
+=== DETAILED TEST RESULTS ===
+${emailContent.detailedResults}
+
+${emailContent.failedTests.length > 0 ? `
+=== FAILED TESTS LOG OUTPUT ===
+${emailContent.failedTests}` : ''}
+
+Please help me resolve any issues found in the diagnostic report.
 
 Best regards,
 [Your Name]
 [Your Student ID / Email]
 
 ---
-This email was generated automatically by the DTU Python Diagnostics Report.
+This diagnostic report was generated automatically by the DTU Python Installation Support system.
 Report generated: ${new Date().toLocaleString()}
 Browser: ${navigator.userAgent}`;
 
@@ -184,32 +192,68 @@ function downloadReport() {
     URL.revokeObjectURL(link.href);
 }
 
-function generateEmailSummary() {
+function generateComprehensiveEmailContent() {
     let passed = 0, failed = 0, timeout = 0;
-    const failures = [];
     const detailedResults = [];
-    let systemInfo = '';
+    const failedTestsWithLogs = [];
+    let systemInfo = 'System information not available';
     
     // Get system information if available
-    if (diagnosticData._system_info && diagnosticData._system_info.systemInfo) {
+    if (diagnosticData._system_info && diagnosticData._system_info.log) {
+        try {
+            systemInfo = atob(diagnosticData._system_info.log);
+        } catch (e) {
+            if (diagnosticData._system_info.systemInfo) {
+                systemInfo = diagnosticData._system_info.systemInfo;
+            }
+        }
+    } else if (diagnosticData._system_info && diagnosticData._system_info.systemInfo) {
         systemInfo = diagnosticData._system_info.systemInfo;
     }
     
+    // Process all diagnostic data
     for (const [key, data] of Object.entries(diagnosticData)) {
         // Skip system info entry
         if (key === '_system_info') continue;
         
+        // Decode log content
+        let logContent = '';
+        try {
+            logContent = data.log ? atob(data.log) : 'No log data available';
+        } catch (e) {
+            logContent = 'Error decoding log data';
+        }
+        
         if (data.status === 'PASS') {
             passed++;
-            detailedResults.push(`✓ PASSED - ${data.name} (${data.category})`);
+            detailedResults.push(`✓ PASSED - ${data.name}
+   Category: ${data.category}${data.subcategory ? ` > ${data.subcategory}` : ''}
+   Output: ${logContent.substring(0, 200)}${logContent.length > 200 ? '...' : ''}
+`);
         } else if (data.status === 'TIMEOUT') {
             timeout++;
-            detailedResults.push(`⚠ TIMEOUT - ${data.name} (${data.category})`);
-            failures.push(`- ${data.name} (${data.category}) - TIMEOUT`);
+            detailedResults.push(`⚠ TIMEOUT - ${data.name}
+   Category: ${data.category}${data.subcategory ? ` > ${data.subcategory}` : ''}
+   Output: ${logContent.substring(0, 200)}${logContent.length > 200 ? '...' : ''}
+`);
+            failedTestsWithLogs.push(`--- ${data.name} (TIMEOUT) ---
+Category: ${data.category}${data.subcategory ? ` > ${data.subcategory}` : ''}
+Full Output:
+${logContent}
+
+`);
         } else if (data.status === 'FAIL') {
             failed++;
-            detailedResults.push(`✗ FAILED - ${data.name} (${data.category})`);
-            failures.push(`- ${data.name} (${data.category}) - FAILED`);
+            detailedResults.push(`✗ FAILED - ${data.name}
+   Category: ${data.category}${data.subcategory ? ` > ${data.subcategory}` : ''}
+   Output: ${logContent.substring(0, 200)}${logContent.length > 200 ? '...' : ''}
+`);
+            failedTestsWithLogs.push(`--- ${data.name} (FAILED) ---
+Category: ${data.category}${data.subcategory ? ` > ${data.subcategory}` : ''}
+Full Output:
+${logContent}
+
+`);
         }
     }
     
@@ -218,12 +262,21 @@ Passed: ${passed}
 Failed: ${failed}
 Timeout: ${timeout}`;
     
-    const verboseReport = systemInfo + '\n=== DIAGNOSTIC RESULTS ===\n' + detailedResults.join('\n');
-    
     return {
         summary,
-        failures: failures.length > 0 ? '\n' + failures.join('\n') : '',
-        verboseReport: verboseReport
+        systemInfo,
+        detailedResults: detailedResults.join('\n'),
+        failedTests: failedTestsWithLogs.join('\n')
+    };
+}
+
+// Keep the original function for backward compatibility
+function generateEmailSummary() {
+    const comprehensive = generateComprehensiveEmailContent();
+    return {
+        summary: comprehensive.summary,
+        failures: '',
+        verboseReport: comprehensive.systemInfo + '\n=== DIAGNOSTIC RESULTS ===\n' + comprehensive.detailedResults
     };
 }
 

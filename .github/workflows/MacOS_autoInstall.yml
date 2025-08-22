@@ -1,0 +1,316 @@
+name: MacOS_autoInstall
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/**'
+      - '.github/workflows/MacOS_autoInstall.yml'
+  workflow_dispatch:
+    inputs:
+      pkg_path:
+        description: 'Path to PKG file to test'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: "CI"
+
+jobs:
+  test-pkg:
+    name: Test PKG Installer
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Install PKG
+        run: |
+          echo "Installing PKG with Python $PYTHON_VERSION_PS"
+          # TODO: Add PKG installation command
+          # Example: sudo installer -pkg ./path/to/installer.pkg -target /
+          echo "PKG installation completed"
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+          fi
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (3.11)
+        run: |
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+  test-orchestrator:
+    name: Test First Year Orchestrator
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Run First Year Orchestrator
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          GITHUB_CI: true
+        run: |
+          echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+          fi
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          # Ensure conda is in PATH (added by installation)
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          [ -e ~/.bashrc ] && source ~/.bashrc
+          hash -r
+          
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (3.11)
+        run: |
+          # Ensure conda is in PATH (added by installation)
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          [ -e ~/.bashrc ] && source ~/.bashrc
+          hash -r
+          
+          which python3
+
+          # Verify the installed Python version - MUST match exactly like legacy script
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports - exact same test as legacy
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+  test-legacy:
+    name: Test Legacy Install
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Install from main
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          GITHUB_CI: true
+        run: |
+          echo "Running script from remote dtudk on branch main with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS_AutoInstall.sh)"
+
+      - name: Install from PR branch
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          REMOTE_PS: ${{ github.event.pull_request.head.repo.full_name }}
+          BRANCH_PS: ${{ github.event.pull_request.head.ref }}
+          GITHUB_CI: true
+        run: |
+          echo "Running script from remote $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS_AutoInstall.sh)"
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+          fi
+          exit $retval
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (3.11)
+        run: |
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }

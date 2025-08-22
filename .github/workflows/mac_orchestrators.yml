@@ -5,12 +5,13 @@ defaults:
     shell: bash -l {0}
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
-      - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
+  # Disabled temporarily - using MacOS_autoInstall.yml instead
+  # pull_request:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/Components/**'
+  #     - '.github/workflows/mac_orchestrators.yml'
 
 # Re-enabled after PKG installer testing completed successfully
 
@@ -25,10 +26,47 @@ jobs:
     runs-on: macos-latest
     
     steps:
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
       - name: Run First Year Orchestrator
         env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          REMOTE_PS: ${{ github.repository }}
+          BRANCH_PS: ${{ github.ref_name }}
           GITHUB_CI: true
         run: |
           echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"

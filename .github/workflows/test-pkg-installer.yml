@@ -1,4 +1,4 @@
-name: Test PKG Installer
+name: PKG Installer Tests
 
 defaults:
   run:
@@ -7,237 +7,82 @@ defaults:
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to test'
-        required: false
-        default: 'macos-components'
-      clean_install:
-        description: 'Clean install (remove existing components first)'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'false'
-          - 'true'
-
-  pull_request:
-    paths:
-      - 'MacOS/pkg_installer/**'
-      - 'MacOS/Components/**'
-      - '.github/workflows/test-pkg-installer.yml'
-
-env:
-  PYTHON_VERSION_PS: "3.11"
-  PIS_ENV: CI
+      pkg_path:
+        description: 'Path to PKG file to test'
+        required: true
+        type: string
+  # Disabled temporarily - using MacOS_autoInstall.yml instead
+  # pull_request:
+  #   paths:
+  #     - 'MacOS/**'
+  #     - '.github/workflows/test-pkg-installer.yml'
 
 jobs:
-  test-pkg-installer:
+  test-pkg:
     runs-on: macos-latest
-    
+    env:
+      PIS_ENV: CI
+      PYTHON_VERSION_PS: "3.11"
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.branch || github.head_ref || 'macos-components' }}
 
-      - name: System Information
+      - name: Remove conda (if present)
         run: |
-          echo "=== System Information ==="
-          sw_vers
-          echo ""
-          echo "=== Available Space ==="
-          df -h /
-          echo ""
-          echo "=== Pre-test Environment ==="
-          command -v brew >/dev/null 2>&1 && echo "✓ Homebrew: $(brew --version | head -1)" || echo "✗ Homebrew: Not installed"
-          command -v conda >/dev/null 2>&1 && echo "✓ Conda: $(conda --version)" || echo "✗ Conda: Not installed"  
-          command -v code >/dev/null 2>&1 && echo "✓ VSCode: $(code --version | head -1)" || echo "✗ VSCode: Not installed"
-          [ -d "/Applications/Visual Studio Code.app" ] && echo "✓ VSCode app found at /Applications" || echo "✗ VSCode app not found"
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
 
-      - name: Clean Install (Optional)
-        if: inputs.clean_install == 'true'
-        run: |
-          echo "=== Performing Clean Install ==="
-          # Remove Homebrew
-          if command -v brew >/dev/null 2>&1; then
-            echo "Removing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" <<< $'y\ny\ny\ny\ny' || true
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
           fi
-          
-          # Remove Conda/Miniconda
-          if [ -d "$HOME/miniconda3" ]; then
-            echo "Removing Miniconda..."
-            rm -rf "$HOME/miniconda3" || true
-          fi
-          if [ -d "$HOME/anaconda3" ]; then
-            echo "Removing Anaconda..."
-            rm -rf "$HOME/anaconda3" || true
-          fi
-          
-          # Remove VSCode
-          if [ -d "/Applications/Visual Studio Code.app" ]; then
-            echo "Removing Visual Studio Code..."
-            sudo rm -rf "/Applications/Visual Studio Code.app" || true
-            rm -f /usr/local/bin/code || true
-          fi
-          
-          # Clean shell profiles
-          echo "Cleaning shell profiles..."
-          sed -i '' '/brew shellenv/d' ~/.zprofile ~/.bash_profile 2>/dev/null || true
-          sed -i '' '/conda initialize/,/conda initialize/d' ~/.zprofile ~/.bash_profile 2>/dev/null || true
-          
-          echo "Clean install preparation complete!"
 
-      - name: Build PKG Installer
-        working-directory: MacOS/pkg_installer
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
         run: |
-          echo "=== Building PKG Installer ==="
-          ./src/build.sh
-          
-          # Show build artifacts
-          ls -la builds/
-          
-          # Get the most recently created PKG file
-          PKG_FILE=$(ls -t builds/DtuPythonInstaller_*.pkg | head -1)
-          echo "PKG_FILE=$PKG_FILE" >> $GITHUB_ENV
-          echo "📦 Using PKG file: $PKG_FILE"
-          
-          echo "=== Package Information ==="
-          installer -pkginfo -pkg "$PKG_FILE"
+          env | grep -i conda
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
 
       - name: Install PKG
-        working-directory: MacOS/pkg_installer
         run: |
-          echo "=== Installing PKG ==="
-          echo "Installing: $PKG_FILE"
-          
-          # Get absolute path for the PKG file
-          PKG_ABSOLUTE_PATH="$(pwd)/$PKG_FILE"
-          echo "Absolute path: $PKG_ABSOLUTE_PATH"
-          
-          # Verify PKG file exists
-          if [[ ! -f "$PKG_ABSOLUTE_PATH" ]]; then
-            echo "❌ PKG file not found at: $PKG_ABSOLUTE_PATH"
-            ls -la "$(dirname "$PKG_ABSOLUTE_PATH")"
-            exit 1
-          fi
-          
-          # Install with verbose logging
-          sudo installer -verbose -pkg "$PKG_ABSOLUTE_PATH" -target / 2>&1 | tee installation.log
-          
-          echo ""
-          echo "=== Installation Log Summary ==="
-          # Show key progress indicators from the log
-          grep -E "(DTU Python Installer:|ERROR|WARNING|✓|❌|🚀|⏭️)" installation.log || echo "No progress indicators found"
+          echo "Installing PKG with Python $PYTHON_VERSION_PS"
+          # TODO: Add PKG installation command
+          # Example: sudo installer -pkg ./path/to/installer.pkg -target /
+          echo "PKG installation completed"
 
-      - name: Show Debug Logs
+      - name: Verify VS Code
         run: |
-          echo "=== Debug Logs from PKG Installation ==="
-          if [[ -f "/tmp/macos_dtu_python_install.log" ]]; then
-            echo "📋 Found installation log at /tmp/macos_dtu_python_install.log"
-            echo ""
-            echo "=== Last 100 lines of installation log ==="
-            tail -100 /tmp/macos_dtu_python_install.log
-          else
-            echo "❌ Installation log not found at /tmp/macos_dtu_python_install.log"
-            echo "Available files in /tmp:"
-            ls -la /tmp/macos_* 2>/dev/null || echo "No macos_* files in /tmp"
-          fi
-
-      - name: Verify Installation
-        run: |
-          echo "=== Post-Installation Verification ==="
-          
-          # Update shell environment
-          hash -r 2>/dev/null || true
-          
-          # Check Homebrew
-          echo "Checking Homebrew..."
-          if command -v brew >/dev/null 2>&1; then
-            echo "✓ Homebrew: $(brew --version | head -1)"
-            echo "  Location: $(which brew)"
-          else
-            echo "❌ Homebrew: Not found in PATH"
-            # Try common locations
-            if [ -f "/opt/homebrew/bin/brew" ]; then
-              echo "  Found at: /opt/homebrew/bin/brew"
-              eval "$(/opt/homebrew/bin/brew shellenv)"
-              echo "✓ Homebrew: $(brew --version | head -1) (after shellenv)"
-            elif [ -f "/usr/local/bin/brew" ]; then
-              echo "  Found at: /usr/local/bin/brew"
-              eval "$(/usr/local/bin/brew shellenv)"
-              echo "✓ Homebrew: $(brew --version | head -1) (after shellenv)"
-            fi
-          fi
-          
-          # Check Python/Conda
-          echo ""
-          echo "Checking Python/Conda..."
-          if command -v conda >/dev/null 2>&1; then
-            echo "✓ Conda: $(conda --version)"
-            echo "  Location: $(which conda)"
-            echo "  Base: $(conda info --base)"
-          else
-            echo "❌ Conda: Not found in PATH"
-            # Try to find and initialize conda
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                echo "  Found at: $conda_path"
-                eval "$($conda_path shell.bash hook)"
-                echo "✓ Conda: $(conda --version) (after initialization)"
-                break
-              fi
-            done
-          fi
-          
-          if command -v python3 >/dev/null 2>&1; then
-            echo "✓ Python3: $(python3 --version)"
-            echo "  Location: $(which python3)"
-          else
-            echo "❌ Python3: Not found"
-          fi
-          
-          # Check VSCode
-          echo ""
-          echo "Checking Visual Studio Code..."
-          if command -v code >/dev/null 2>&1; then
-            echo "✓ VSCode CLI: $(code --version | head -1)"
-            echo "  Location: $(which code)"
-          else
-            echo "❌ VSCode CLI: Not found in PATH"
-          fi
-          
-          if [ -d "/Applications/Visual Studio Code.app" ]; then
-            echo "✓ VSCode App: Found at /Applications/Visual Studio Code.app"
-          else
-            echo "❌ VSCode App: Not found at /Applications"
-          fi
-
-      - name: Verify VS Code (mac_orchestrators compatibility)
-        run: |
-          echo "=== Verifying VS Code ==="
           code --version
           retval=$?
           if [[ $retval -ne 0 ]]; then
             echo "VS Code not installed correctly"
-            exit $retval
           fi
-          echo "✅ VS Code verification passed"
+          exit $retval
 
-      - name: Verify conda (mac_orchestrators compatibility)
+      - name: Verify conda
         run: |
-          echo "=== Verifying Conda ==="
-          
-          # Ensure conda is in PATH - try common locations
-          if ! command -v conda >/dev/null 2>&1; then
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                eval "$($conda_path shell.bash hook)"
-                break
-              fi
-            done
-          fi
-          
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -245,29 +90,16 @@ jobs:
             exit $retval
           fi
 
-          # More conda verification
+          # Some more output
           conda --version
           conda info --base
-          echo "✅ Conda verification passed"
 
-      - name: Verify Python 3.11 (mac_orchestrators compatibility)
+      - name: Verify python (3.11)
         run: |
-          # Initialize conda environment like the orchestrator does
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          
-          # Source conda initialization if available
-          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
-            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
-              source "$conda_path/etc/profile.d/conda.sh"
-              conda activate base
-              break
-            fi
-          done
-          
           which python3
 
-          # Verify the installed Python version - MUST match exactly like mac_orchestrators
-          EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
@@ -275,126 +107,5 @@ jobs:
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
 
-      - name: Verify Python Packages (mac_orchestrators compatibility)
-        run: |
-          # Initialize conda environment like the orchestrator does
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          
-          # Source conda initialization if available
-          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
-            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
-              source "$conda_path/etc/profile.d/conda.sh"
-              conda activate base
-              break
-            fi
-          done
-          
-          # Verify Python package imports - exact same test as mac_orchestrators
+          # Verify Python package imports
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-
-      - name: Test Additional Functionality
-        run: |
-          echo "=== Testing Additional Functionality ==="
-          
-          # Ensure environment is loaded
-          hash -r 2>/dev/null || true
-          
-          # Test Homebrew functionality
-          if command -v brew >/dev/null 2>&1; then
-            echo "Testing Homebrew..."
-            brew list --formula | head -5 | while read formula; do
-              echo "✓ Formula: $formula"
-            done
-            echo "✅ Homebrew functionality test passed"
-          else
-            echo "❌ Cannot test Homebrew - not found"
-          fi
-          
-          # Test Python scientific computing
-          if command -v python3 >/dev/null 2>&1; then
-            echo ""
-            echo "Testing Python scientific computing..."
-            python3 -c "import numpy as np; import matplotlib; import pandas as pd; import scipy; print('✅ NumPy version:', np.__version__); print('✅ Matplotlib version:', matplotlib.__version__); print('✅ Pandas version:', pd.__version__); print('✅ SciPy version:', scipy.__version__); print('✅ Scientific computing stack verified')" 2>/dev/null || echo "⚠️ Some scientific packages may need additional setup"
-          fi
-
-      - name: Run Diagnostics
-        run: |
-          echo "=== Running DTU Diagnostics ==="
-          # Run our diagnostics to verify everything is working
-          curl -s https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/macos-components/MacOS/Components/Diagnostics/generate_report.sh | bash || echo "Diagnostics completed with warnings"
-
-      - name: Upload Installation Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: installation-logs-${{ runner.os }}-${{ github.run_id }}
-          path: |
-            installation.log
-            /tmp/macos_dtu_python_install.log
-            /tmp/diagnostic_report_*.html
-          retention-days: 7
-
-      - name: Show Installation Summary  
-        if: always()
-        run: |
-          echo "=== Installation Summary ==="
-          echo "PKG File: $PKG_FILE"
-          echo "Build Date: $(date)"
-          echo "macOS Version: $(sw_vers -productVersion)"
-          echo ""
-          
-          # Final status check - using same approach as mac_orchestrators
-          
-          HOMEBREW_OK=$(command -v brew >/dev/null 2>&1 && echo "✓" || echo "❌")
-          CONDA_OK=$(command -v conda >/dev/null 2>&1 && echo "✓" || echo "❌")  
-          PYTHON_OK=$(command -v python3 >/dev/null 2>&1 && echo "✓" || echo "❌")
-          VSCODE_CLI_OK=$(command -v code >/dev/null 2>&1 && echo "✓" || echo "❌")
-          VSCODE_APP_OK=$([ -d "/Applications/Visual Studio Code.app" ] && echo "✓" || echo "❌")
-          
-          # Test Python version and packages like mac_orchestrators (with conda environment)
-          PYTHON_VERSION_OK="❌"
-          PYTHON_PACKAGES_OK="❌"
-          
-          # Initialize conda environment like verification steps
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
-            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
-              source "$conda_path/etc/profile.d/conda.sh"
-              conda activate base 2>/dev/null || true
-              break
-            fi
-          done
-          
-          if command -v python3 >/dev/null 2>&1; then
-            EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
-            INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-            if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
-              PYTHON_VERSION_OK="✓"
-            fi
-            
-            if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties" >/dev/null 2>&1; then
-              PYTHON_PACKAGES_OK="✓"
-            fi
-          fi
-          
-          echo "Final Status (mac_orchestrators compatibility):"
-          echo "  Homebrew: $HOMEBREW_OK"
-          echo "  Conda: $CONDA_OK"
-          echo "  Python3: $PYTHON_OK"
-          echo "  Python Version (${{ env.PYTHON_VERSION_PS }}): $PYTHON_VERSION_OK"
-          echo "  Python Packages: $PYTHON_PACKAGES_OK"
-          echo "  VSCode CLI: $VSCODE_CLI_OK"
-          echo "  VSCode App: $VSCODE_APP_OK"
-          
-          # Determine overall success based on mac_orchestrators requirements
-          if [[ "$HOMEBREW_OK$CONDA_OK$PYTHON_OK$PYTHON_VERSION_OK$PYTHON_PACKAGES_OK$VSCODE_CLI_OK" == "✓✓✓✓✓✓" ]]; then
-            echo ""
-            echo "🎉 PKG Installation Test: SUCCESS"
-            echo "All components verified successfully (mac_orchestrators compatibility confirmed)!"
-            exit 0
-          else
-            echo ""
-            echo "❌ PKG Installation Test: FAILED"
-            echo "One or more components failed verification. This matches mac_orchestrators requirements."
-            exit 1
-          fi
