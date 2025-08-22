@@ -166,6 +166,11 @@ setup_python_environment() {
         fi
     fi
     
+    # Accept conda Terms of Service first (this is what worked manually)
+    echo_info "Accepting conda Terms of Service..."
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    
     # Install Python version using conda-forge
     echo_info "Installing Python 3.11 from conda-forge..."
     if conda install --strict-channel-priority -c conda-forge "python=3.11" -y; then
