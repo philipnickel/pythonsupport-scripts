@@ -1,4 +1,7 @@
 #!/bin/sh
-echo "Preinstall executed" > /tmp/pkg_debug.log
-/usr/bin/logger -t "DTU-PKG" "Preinstall executed"
+echo "=== PREINSTALL SCRIPT ==="
+echo "Preinstall script executed at $(date)" > /tmp/dtu_preinstall.log
+echo "Current user: $(whoami)" >> /tmp/dtu_preinstall.log
+echo "Current directory: $(pwd)" >> /tmp/dtu_preinstall.log
+echo "Preinstall completed successfully"
 exit 0

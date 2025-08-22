@@ -1,12 +1,29 @@
 #!/bin/sh
-echo "POSTINSTALL EXECUTED" > /tmp/dtu_postinstall.log
-echo "POSTINSTALL EXECUTED" > /var/log/dtu_postinstall.log 2>/dev/null || true
-touch /tmp/dtu_pkg_postinstall_ran 2>/dev/null || true
+echo "=== POSTINSTALL SCRIPT ==="
+echo "Postinstall script executed at $(date)" > /tmp/dtu_postinstall.log
+echo "Current user: $(whoami)" >> /tmp/dtu_postinstall.log
+echo "Current directory: $(pwd)" >> /tmp/dtu_postinstall.log
+echo "Environment variables:" >> /tmp/dtu_postinstall.log
+env >> /tmp/dtu_postinstall.log
 
-echo "=== DTU Python Environment PKG Installation ==="
-echo "Postinstall script executed successfully"
-echo ""
+# Set environment variables for the orchestrator
+export PIS_INSTALL_METHOD="PKG"
+export PYTHON_VERSION_PS="3.11"
+export GITHUB_CI="true"
 
-# For now, just exit successfully
-# We'll add the orchestrator execution later once we confirm this works
+echo "Executing orchestrator..." >> /tmp/dtu_postinstall.log
+
+# Execute the bundled orchestrator script
+orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
+
+if [ -f "$orchestrator_script" ]; then
+    echo "Orchestrator found, executing..." >> /tmp/dtu_postinstall.log
+    /bin/bash "$orchestrator_script" >> /tmp/dtu_postinstall.log 2>&1
+    echo "Orchestrator execution completed" >> /tmp/dtu_postinstall.log
+else
+    echo "ERROR: Orchestrator not found at $orchestrator_script" >> /tmp/dtu_postinstall.log
+    exit 1
+fi
+
+echo "Postinstall completed successfully"
 exit 0
