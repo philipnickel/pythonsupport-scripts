@@ -15,7 +15,7 @@ log_info "First year students orchestrator started"
 
 # install python using component
 log_info "Installing Python..."
-piwik_log 'python_component_install' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
+piwik_log 'python_component_install' env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
 _python_ret=$?
 
 # install vscode using component
@@ -26,7 +26,7 @@ _vsc_ret=$?
 # run first year python setup (install specific version and packages)
 if [ $_python_ret -eq 0 ]; then
   log_info "Running first year Python environment setup..."
-  piwik_log 'python_first_year_setup' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"
+  piwik_log 'python_first_year_setup' env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"
   _first_year_ret=$?
 else
   _first_year_ret=0  # Skip if Python installation failed
