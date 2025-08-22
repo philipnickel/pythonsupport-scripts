@@ -19,7 +19,7 @@ export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/minic
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then
   log_info "Conda not found. Installing Python with Miniconda first..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
+  env PYTHON_VERSION_PS="${PYTHON_VERSION_PS:-3.11}" REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}" BRANCH_PS="${BRANCH_PS:-main}" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
   
   # Source the shell profile to get conda in PATH
   [ -e ~/.bashrc ] && source ~/.bashrc
