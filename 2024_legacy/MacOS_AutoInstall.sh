@@ -10,7 +10,7 @@ BRANCH_PS="${BRANCH_PS:-main}"
 export REMOTE_PS BRANCH_PS
 
 # Check if legacy is enabled
-controller_url="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/main_controller.txt"
+controller_url="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/main_controller.txt?$(date +%s)"
 if controller_content=$(curl -fsSL "$controller_url" 2>/dev/null); then
     if echo "$controller_content" | grep -q "^macos_legacy=disabled"; then
         echo "WARNING: Legacy installation is currently disabled"
