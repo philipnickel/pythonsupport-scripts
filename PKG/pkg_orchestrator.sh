@@ -98,17 +98,6 @@ install_miniconda() {
     # Ensure Homebrew is available
     install_homebrew_if_missing
     
-    # Check if we can run Homebrew (not as root)
-    if [[ "$(id -u)" -eq 0 ]]; then
-        echo_error "Cannot install Miniconda as root user"
-        echo_error "Homebrew installation requires a non-root user"
-        echo_error "Please install Miniconda manually after PKG installation:"
-        echo_error "  brew install --cask miniconda"
-        echo_error "  conda init zsh"
-        echo_error "  conda install -c conda-forge python=3.11"
-        return 1
-    fi
-    
     # Install Miniconda
     if brew install --cask miniconda; then
         # Initialize conda
@@ -148,17 +137,6 @@ install_miniconda() {
 setup_python_environment() {
     echo_info "Setting up Python Environment..."
     
-    # Check if conda is available
-    if ! command -v conda >/dev/null 2>&1; then
-        echo_error "Conda is not available"
-        echo_error "Cannot set up Python environment without conda"
-        echo_error "Please install Miniconda manually:"
-        echo_error "  brew install --cask miniconda"
-        echo_error "  conda init zsh"
-        echo_error "  conda install -c conda-forge python=3.11 dtumathtools pandas scipy statsmodels uncertainties"
-        return 1
-    fi
-    
     # Activate conda
     eval "$(conda shell.bash hook)" 2>/dev/null || true
     conda activate base 2>/dev/null || true
@@ -188,8 +166,28 @@ setup_python_environment() {
     
     # Accept conda Terms of Service first (this is what worked manually)
     echo_info "Accepting conda Terms of Service..."
+    
+    # Try multiple approaches to accept ToS
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    
+    # Also try without override-channels
+    conda tos accept --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    conda tos accept --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    
+    # Try accepting all channels at once
+    conda tos accept --all 2>/dev/null || true
+    
+    # Remove problematic channels if ToS acceptance fails
+    echo_info "Removing problematic channels..."
+    conda config --remove channels defaults 2>/dev/null || true
+    conda config --remove channels default 2>/dev/null || true
+    conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    
+    # Ensure conda-forge is the only channel
+    conda config --add channels conda-forge 2>/dev/null || true
+    conda config --set channel_priority strict 2>/dev/null || true
     
     # Install Python version using conda-forge
     echo_info "Installing Python 3.11 from conda-forge..."

@@ -11,14 +11,30 @@ export PIS_INSTALL_METHOD="PKG"
 export PYTHON_VERSION_PS="3.11"
 export GITHUB_CI="true"
 
-echo "Executing orchestrator..." >> /tmp/dtu_postinstall.log
+echo "Executing orchestrator as regular user..." >> /tmp/dtu_postinstall.log
 
-# Execute the bundled orchestrator script
+# Execute the bundled orchestrator script as the regular user
 orchestrator_script="/usr/local/bin/dtu_orchestrator.sh"
 
 if [ -f "$orchestrator_script" ]; then
-    echo "Orchestrator found, executing..." >> /tmp/dtu_postinstall.log
-    /bin/bash "$orchestrator_script" >> /tmp/dtu_postinstall.log 2>&1
+    echo "Orchestrator found, executing as regular user..." >> /tmp/dtu_postinstall.log
+    
+    # Get the real user (not root)
+    REAL_USER=$(who | awk '{print $1}' | head -1)
+    if [ -z "$REAL_USER" ]; then
+        # Fallback: try to get user from environment
+        REAL_USER=$(echo "$HOME" | sed 's|^/Users/||')
+    fi
+    
+    if [ -n "$REAL_USER" ] && [ "$REAL_USER" != "root" ]; then
+        echo "Running orchestrator as user: $REAL_USER" >> /tmp/dtu_postinstall.log
+        # Run as the regular user with proper environment
+        su - "$REAL_USER" -c "/bin/bash $orchestrator_script" >> /tmp/dtu_postinstall.log 2>&1
+    else
+        echo "Could not determine regular user, running as current user" >> /tmp/dtu_postinstall.log
+        /bin/bash "$orchestrator_script" >> /tmp/dtu_postinstall.log 2>&1
+    fi
+    
     echo "Orchestrator execution completed" >> /tmp/dtu_postinstall.log
 else
     echo "ERROR: Orchestrator not found at $orchestrator_script" >> /tmp/dtu_postinstall.log
