@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>DTU Python Development Environment</title>
+    <organization>dk.dtu</organization>
+    <domains enable_localSystem="true"/>
+    
+    <!-- Installer configuration -->
+    <options customize="never" require-scripts="false" rootVolumeOnly="false" hostArchitectures="arm64,x86_64"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="10.15"/>
+        </allowed-os-versions>
+    </volume-check>
+    
+    <!-- Define documents displayed at various steps -->
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <readme file="readme.html" mime-type="text/html"/>
+    <license file="license.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    
+    <!-- Background and styling -->
+    <background file="background.png" mime-type="image/png" alignment="topleft" scaling="proportional"/>
+    <background-darkAqua file="background-dark.png" mime-type="image/png" alignment="topleft" scaling="proportional"/>
+    
+    <!-- List all component packages -->
+    <pkg-ref id="dk.dtu.python.constructor" 
+             version="1.0.0" 
+             auth="root">DTU-Python-Stack.pkg</pkg-ref>
+             
+    <pkg-ref id="dk.dtu.vscode.component" 
+             version="1.0.0" 
+             auth="root">DTU-VSCode.pkg</pkg-ref>
+    
+    <!-- Define the order of installation -->
+    <choices-outline>
+        <line choice="default">
+            <line choice="dk.dtu.python.constructor"/>
+            <line choice="dk.dtu.vscode.component"/>
+        </line>
+    </choices-outline>
+    
+    <!-- Define the choices -->
+    <choice id="default" title="DTU Python Development Environment" description="Complete Python development environment with Visual Studio Code">
+        <pkg-ref id="dk.dtu.python.constructor"/>
+        <pkg-ref id="dk.dtu.vscode.component"/>
+    </choice>
+    
+    <choice id="dk.dtu.python.constructor" 
+            title="Python Environment" 
+            description="Python 3.11 with scientific computing packages (pandas, scipy, statsmodels, uncertainties, dtumathtools)"
+            enabled="true"
+            selected="true"
+            visible="true">
+        <pkg-ref id="dk.dtu.python.constructor"/>
+    </choice>
+    
+    <choice id="dk.dtu.vscode.component" 
+            title="Visual Studio Code" 
+            description="Visual Studio Code with Python development extensions and configuration"
+            enabled="true"
+            selected="true"
+            visible="true">
+        <pkg-ref id="dk.dtu.vscode.component"/>
+    </choice>
+    
+    <!-- Installation requirements and scripts -->
+    <installation-check script="installcheck()"/>
+    <script>
+    <![CDATA[
+        function installcheck() {
+            // Check macOS version
+            var osVersion = system.version.ProductVersion;
+            var minVersion = "10.15.0";
+            
+            if (system.compareVersions(osVersion, minVersion) < 0) {
+                my.result.title = "Unsupported macOS Version";
+                my.result.message = "This installer requires macOS 10.15 (Catalina) or later.";
+                my.result.type = "Fatal";
+                return false;
+            }
+            
+            // Check available disk space (require at least 2GB)
+            var availableSpace = system.files.freeSpaceAtPath('/');
+            var requiredSpace = 2 * 1024 * 1024 * 1024; // 2GB in bytes
+            
+            if (availableSpace < requiredSpace) {
+                my.result.title = "Insufficient Disk Space";
+                my.result.message = "This installer requires at least 2GB of free disk space.";
+                my.result.type = "Fatal";
+                return false;
+            }
+            
+            return true;
+        }
+        
+        function volumeCheck() {
+            // Ensure installation on system volume
+            if (my.target.mountpoint != '/') {
+                my.result.title = "Invalid Installation Volume";
+                my.result.message = "This installer must be installed on the startup disk.";
+                my.result.type = "Fatal";
+                return false;
+            }
+            return true;
+        }
+        
+        // Customize installer appearance
+        function customizeInstaller() {
+            // Set installer window title
+            system.env['INSTALLER_TITLE'] = 'DTU Python Development Environment';
+            
+            // Log installation start
+            system.log('Starting DTU Python Development Environment installation');
+            
+            return true;
+        }
+    ]]>
+    </script>
+</installer-gui-script>

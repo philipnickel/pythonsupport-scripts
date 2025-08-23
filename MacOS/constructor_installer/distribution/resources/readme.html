@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Read Me - DTU Python Development Environment</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+            color: #1d1d1f;
+            border-bottom: 1px solid #d2d2d7;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 25px 0 10px 0;
+            color: #1d1d1f;
+        }
+        
+        h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 20px 0 8px 0;
+            color: #1d1d1f;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: #f5f5f7;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 12px;
+            border: 1px solid #d2d2d7;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .highlight h4 {
+            margin: 0 0 10px 0;
+            color: #1e40af;
+            font-size: 13px;
+        }
+        
+        ul, ol {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        .installation-paths {
+            background: #fafafa;
+            border: 1px solid #e5e5e7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DTU Python Development Environment</h1>
+    
+    <div class="section">
+        <h2>Overview</h2>
+        <p>The DTU Python Development Environment provides a complete, self-contained Python development setup designed specifically for DTU students and coursework. This hybrid installer combines a constructor-based Python environment with a pre-configured Visual Studio Code installation.</p>
+    </div>
+    
+    <div class="section">
+        <h2>What Gets Installed</h2>
+        
+        <h3>Python Environment</h3>
+        <ul>
+            <li><strong>Python 3.11</strong> - Latest stable Python with full scientific computing stack</li>
+            <li><strong>Conda Package Manager</strong> - For easy environment and package management</li>
+            <li><strong>Scientific Packages</strong>:
+                <ul>
+                    <li>pandas - Data manipulation and analysis</li>
+                    <li>scipy - Scientific computing library</li>
+                    <li>statsmodels - Statistical modeling</li>
+                    <li>uncertainties - Uncertainty calculations</li>
+                    <li>dtumathtools - DTU-specific mathematical tools</li>
+                </ul>
+            </li>
+        </ul>
+        
+        <h3>Development Environment</h3>
+        <ul>
+            <li><strong>Visual Studio Code</strong> - Professional code editor</li>
+            <li><strong>Python Extensions</strong>:
+                <ul>
+                    <li>Python extension pack with IntelliSense and debugging</li>
+                    <li>Jupyter notebook support</li>
+                    <li>PDF viewer for documentation</li>
+                </ul>
+            </li>
+            <li><strong>Pre-configured Settings</strong> - Optimized for Python development</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>Installation Locations</h2>
+        
+        <div class="installation-paths">
+            <h4>Python Environment:</h4>
+            <div class="code">~/dtu-python-stack/</div>
+            <p>The complete Python environment is installed in your home directory, avoiding system-wide changes.</p>
+            
+            <h4>Visual Studio Code:</h4>
+            <div class="code">/Applications/Visual Studio Code.app</div>
+            <p>VS Code is installed in the standard Applications folder.</p>
+            
+            <h4>Command Line Tools:</h4>
+            <div class="code">/usr/local/bin/code</div>
+            <p>The 'code' command is available system-wide for opening files and projects.</p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Getting Started</h2>
+        
+        <div class="highlight">
+            <h4>Quick Start Guide:</h4>
+            <ol>
+                <li>Open Terminal and verify Python installation:
+                    <div class="code">~/dtu-python-stack/bin/python3 --version</div>
+                </li>
+                <li>Test package imports:
+                    <div class="code">~/dtu-python-stack/bin/python3 -c "import pandas; print('✓ All packages working')"</div>
+                </li>
+                <li>Launch Visual Studio Code:
+                    <div class="code">code</div>
+                </li>
+                <li>Create your first Python project and enjoy!</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Key Features</h2>
+        
+        <h3>No Homebrew Dependency</h3>
+        <p>This installer is completely self-contained and does not require Homebrew, eliminating common installation issues and conflicts.</p>
+        
+        <h3>Offline Installation</h3>
+        <p>All Python packages are bundled in the installer, allowing for installation without internet connectivity (VS Code extensions may require internet for initial setup).</p>
+        
+        <h3>Professional PKG Format</h3>
+        <p>Uses native macOS installer technology for reliable, enterprise-ready deployment.</p>
+        
+        <h3>Consistent Environment</h3>
+        <p>Every installation creates exactly the same environment, ensuring reproducible results across different machines.</p>
+    </div>
+    
+    <div class="section">
+        <h2>Troubleshooting</h2>
+        
+        <h3>Python Not Found</h3>
+        <p>If Python is not found in your PATH, use the direct path:</p>
+        <div class="code">~/dtu-python-stack/bin/python3</div>
+        
+        <h3>VS Code Extensions Not Loading</h3>
+        <p>Extensions are installed automatically but may take a moment to activate. Restart VS Code if needed.</p>
+        
+        <h3>Package Import Errors</h3>
+        <p>Ensure you're using the correct Python executable from the DTU installation:</p>
+        <div class="code">which python3  # Should show ~/dtu-python-stack/bin/python3</div>
+    </div>
+    
+    <div class="section">
+        <h2>Support</h2>
+        <p>For support and documentation, visit the DTU Python Support resources or contact your course instructor.</p>
+        
+        <p><strong>Version:</strong> 1.0.0<br>
+        <strong>Installation Date:</strong> <span id="install-date"></span><br>
+        <strong>Installer Type:</strong> Hybrid Constructor + VSCode PKG</p>
+    </div>
+    
+    <script>
+        document.getElementById('install-date').textContent = new Date().toLocaleDateString();
+    </script>
+</body>
+</html>
