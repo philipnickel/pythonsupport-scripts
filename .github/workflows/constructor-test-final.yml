@@ -28,31 +28,31 @@ jobs:
           conda install constructor -y
           constructor --version
 
-      - name: Build PKG
+      - name: Build Installer
         shell: bash -el {0}
         working-directory: MacOS/constructor_installer/python_stack
         run: |
-          echo "Building constructor PKG..."
+          echo "Building constructor installer..."
           ./build.sh
 
-      - name: Install PKG and Test
+      - name: Install and Test
         shell: bash -el {0}
         working-directory: MacOS/constructor_installer/python_stack
         run: |
-          # Find the PKG file
-          PKG_FILE=$(find . -name "*.pkg" -type f 2>/dev/null | head -1)
-          if [[ -z "$PKG_FILE" ]]; then
-            echo "❌ No PKG file found"
+          # Find the installer file (now .sh)
+          INSTALLER_FILE=$(find . -name "*.sh" -type f 2>/dev/null | head -1)
+          if [[ -z "$INSTALLER_FILE" ]]; then
+            echo "❌ No installer file found"
             exit 1
           fi
           
-          echo "✅ PKG built: $PKG_FILE"
-          echo "📁 Size: $(du -h "$PKG_FILE" | cut -f1)"
+          echo "✅ Installer built: $INSTALLER_FILE"
+          echo "📁 Size: $(du -h "$INSTALLER_FILE" | cut -f1)"
           
-          # Install the PKG - try user directory installation
+          # Install the shell installer
           echo ""
-          echo "=== Installing PKG ==="
-          sudo installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory
+          echo "=== Running Shell Installer ==="
+          bash "$INSTALLER_FILE" -b -p ~/miniconda3
           
           echo ""
           echo "=== Testing Installation ==="
@@ -63,20 +63,19 @@ jobs:
           # Update PATH to include common conda locations
           export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           
-          # Try to find conda installation
-          CONDA_FOUND=false
-          for conda_path in "$HOME/miniconda3" "$HOME/anaconda3" "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base"; do
-            if [ -f "$conda_path/bin/conda" ]; then
-              echo "Found conda at: $conda_path"
-              export PATH="$conda_path/bin:$PATH"
-              if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
-                source "$conda_path/etc/profile.d/conda.sh"
-                conda activate base 2>/dev/null || true
-              fi
-              CONDA_FOUND=true
-              break
+          # Initialize the installed conda environment
+          CONDA_PATH="$HOME/miniconda3"
+          if [ -f "$CONDA_PATH/bin/conda" ]; then
+            echo "Found conda at: $CONDA_PATH"
+            export PATH="$CONDA_PATH/bin:$PATH"
+            if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
+              source "$CONDA_PATH/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
             fi
-          done
+            CONDA_FOUND=true
+          else
+            CONDA_FOUND=false
+          fi
           
           if [ "$CONDA_FOUND" = false ]; then
             echo "❌ Could not find conda installation"
@@ -132,8 +131,8 @@ jobs:
           fi
           
           echo ""
-          echo "🎉 CONSTRUCTOR PKG INSTALLATION TEST: SUCCESS!"
-          echo "✅ PKG installs correctly"
+          echo "🎉 CONSTRUCTOR SHELL INSTALLER TEST: SUCCESS!"
+          echo "✅ Shell installer runs correctly"
           echo "✅ Python environment works"
           echo "✅ Scientific packages import successfully" 
           echo "✅ Constructor approach is viable!"

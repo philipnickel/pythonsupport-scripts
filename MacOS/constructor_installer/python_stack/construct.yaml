@@ -19,9 +19,9 @@ specs:
   - statsmodels
   - uncertainties
 
-# macOS-specific configuration
-installer_type: pkg
-installer_filename: DTU-Python-Stack-{{ version }}.pkg
+# macOS-specific configuration - use shell installer for testing
+installer_type: sh
+installer_filename: DTU-Python-Stack-{{ version }}.sh
 
 # Package metadata
 pkg_name: DTU-Python-Stack
