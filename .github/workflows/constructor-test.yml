@@ -2,6 +2,9 @@ name: Constructor Test
 
 on:
   workflow_dispatch:
+  push:
+    branches: [constructor-pkg-installer]
+    paths: ['.github/workflows/constructor-test.yml']
 
 env:
   PYTHON_VERSION_PS: "3.11"
