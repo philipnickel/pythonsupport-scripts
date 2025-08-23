@@ -1,0 +1,14 @@
+name: Constructor Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [constructor-pkg-installer]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: echo "Constructor test works"
