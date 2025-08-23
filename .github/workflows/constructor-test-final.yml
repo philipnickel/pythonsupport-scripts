@@ -77,6 +77,12 @@ jobs:
           # Give installation a moment to complete
           sleep 5
           
+          # Debug: Show where constructor might have installed
+          echo "=== Debug: Searching for constructor installation ==="
+          find "$HOME" -name "conda" -type f -executable 2>/dev/null | head -10 || echo "No conda executables found in home"
+          find /opt -name "conda" -type f -executable 2>/dev/null | head -10 || echo "No conda executables found in /opt"
+          ls -la "$HOME/" | grep -E "(conda|miniconda|anaconda)" || echo "No conda directories in home"
+          
           # Update PATH to include common conda locations
           export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           
