@@ -18,6 +18,7 @@ specs:
   - scipy
   - statsmodels
   - uncertainties
+  - dtumathtools
 
 # macOS-specific configuration - use shell installer for testing
 installer_type: sh
@@ -38,9 +39,6 @@ register_python_default: true
 
 # macOS specific settings
 keep_pkgs: false
-
-# Post-install script to set up environment properly
-post_install: scripts/post_install.sh
 
 # Custom channels configuration for dtumathtools
 # Note: dtumathtools should be available in conda-forge or we'll need custom channel
