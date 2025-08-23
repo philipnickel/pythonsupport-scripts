@@ -30,29 +30,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: 3.11
-
-      - name: Install Constructor
+      - name: Download PKG from Release
         run: |
-          conda install -c conda-forge constructor -y
-
-      - name: Build Constructor Installer
-        run: |
-          echo "Building Constructor-based installer..."
-          cd constructor_installer
-          constructor --platform osx-64 .
-          echo "Installer created:"
-          ls -la *.pkg
+          echo "Downloading PKG from latest release..."
+          curl -L -o DTU_Python_Environment.pkg \
+            "https://github.com/${{ github.repository }}/releases/latest/download/DTU_Python_Environment.pkg"
+          echo "PKG downloaded successfully"
+          ls -la DTU_Python_Environment.pkg
 
       - name: Install Constructor PKG
         run: |
           echo "Installing Constructor PKG..."
-          cd constructor_installer
-          sudo installer -pkg *.pkg -target /
+          sudo installer -pkg DTU_Python_Environment.pkg -target /
           echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
