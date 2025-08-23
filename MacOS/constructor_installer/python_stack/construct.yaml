@@ -1,0 +1,54 @@
+# Constructor configuration for DTU Python Stack
+# Phase 1: Python environment with required packages
+
+name: dtu-python-stack
+version: 1.0.0
+
+channels:
+  - conda-forge
+
+specs:
+  # Core Python environment
+  - python=3.11
+  - conda
+  - pip
+  
+  # Essential scientific computing packages
+  - pandas
+  - scipy
+  - statsmodels
+  - uncertainties
+
+# macOS-specific configuration
+installer_type: pkg
+installer_filename: DTU-Python-Stack-{{ version }}.pkg
+
+# Package metadata
+pkg_name: DTU Python Stack
+pkg_id: dk.dtu.python.stack
+pkg_version: "{{ version }}"
+
+# UI customization
+welcome_image: resources/welcome.png
+header_image: resources/header.png
+icon_image: resources/icon.icns
+
+# License and documentation
+license_file: resources/LICENSE.txt
+readme_file: resources/README.txt
+
+# Installation behavior
+initialize_conda: true
+initialize_by_default: true
+register_python: true
+register_python_default: true
+
+# macOS specific settings
+attempt_hardlinks: false
+keep_pkgs: false
+
+# Post-install script to set up environment properly
+post_install: scripts/post_install.sh
+
+# Custom channels configuration for dtumathtools
+# Note: dtumathtools should be available in conda-forge or we'll need custom channel

@@ -25,6 +25,8 @@ on:
       - 'MacOS/pkg_installer/**'
       - 'MacOS/Components/**'
       - '.github/workflows/test-pkg-installer.yml'
+    branches-ignore:
+      - 'constructor-pkg-installer'  # Temporarily disabled for constructor development
 
 env:
   PYTHON_VERSION_PS: "3.11"

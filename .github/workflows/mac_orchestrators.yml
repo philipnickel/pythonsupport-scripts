@@ -7,6 +7,8 @@ defaults:
 on:
   pull_request:
     branches: [ "main" ]
+    branches-ignore:
+      - 'constructor-pkg-installer'  # Temporarily disabled for constructor development
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'

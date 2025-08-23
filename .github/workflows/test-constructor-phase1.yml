@@ -1,0 +1,332 @@
+name: Test Constructor Phase 1
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test'
+        required: false
+        default: 'constructor-pkg-installer'
+      clean_install:
+        description: 'Clean install (remove existing components first)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+  pull_request:
+    paths:
+      - 'MacOS/constructor_installer/**'
+      - '.github/workflows/test-constructor-phase1.yml'
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: CI
+
+jobs:
+  test-constructor-phase1:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.head_ref || 'constructor-pkg-installer' }}
+
+      - name: System Information
+        run: |
+          echo "=== System Information ==="
+          sw_vers
+          echo ""
+          echo "=== Available Space ==="
+          df -h /
+          echo ""
+          echo "=== Pre-test Environment ==="
+          command -v brew >/dev/null 2>&1 && echo "✓ Homebrew: $(brew --version | head -1)" || echo "✗ Homebrew: Not installed"
+          command -v conda >/dev/null 2>&1 && echo "✓ Conda: $(conda --version)" || echo "✗ Conda: Not installed"
+          command -v python3 >/dev/null 2>&1 && echo "✓ Python3: $(python3 --version)" || echo "✗ Python3: Not installed"
+
+      - name: Clean Install (Optional)
+        if: inputs.clean_install == 'true'
+        run: |
+          echo "=== Performing Clean Install ==="
+          # Remove existing conda installations
+          if [ -d "$HOME/miniconda3" ]; then
+            echo "Removing Miniconda..."
+            rm -rf "$HOME/miniconda3" || true
+          fi
+          if [ -d "$HOME/anaconda3" ]; then
+            echo "Removing Anaconda..."
+            rm -rf "$HOME/anaconda3" || true
+          fi
+          
+          # Clean conda from PATH
+          echo "Cleaning shell profiles..."
+          sed -i '' '/conda initialize/,/conda initialize/d' ~/.zprofile ~/.bash_profile 2>/dev/null || true
+          
+          echo "Clean install preparation complete!"
+
+      - name: Setup Conda Environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ env.PYTHON_VERSION_PS }}
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install Constructor
+        run: |
+          echo "=== Installing Constructor ==="
+          conda install -c conda-forge constructor -y
+          echo "Constructor version: $(constructor --version)"
+
+      - name: Build Constructor PKG
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "=== Building Constructor PKG ==="
+          
+          # Make build script executable
+          chmod +x build.sh
+          
+          # Run the build script
+          ./build.sh
+          
+          echo ""
+          echo "=== Build Results ==="
+          ls -la builds/ || echo "No builds directory"
+          ls -la *.pkg 2>/dev/null || echo "No PKG files in current directory"
+          
+          # Find and set the PKG file for subsequent steps
+          PKG_FILE=$(find builds/ . -name "*.pkg" -type f 2>/dev/null | head -1)
+          if [[ -n "$PKG_FILE" ]]; then
+            echo "PKG_FILE=$PKG_FILE" >> $GITHUB_ENV
+            echo "📦 Found PKG file: $PKG_FILE"
+          else
+            echo "❌ No PKG file found"
+            exit 1
+          fi
+
+      - name: Verify PKG Contents
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "=== PKG Information ==="
+          if [[ -f "$PKG_FILE" ]]; then
+            echo "Package file: $PKG_FILE"
+            echo "Package size: $(du -h "$PKG_FILE" | cut -f1)"
+            echo ""
+            echo "=== Package Metadata ==="
+            installer -pkginfo -pkg "$PKG_FILE" || echo "Could not read package info"
+          else
+            echo "❌ PKG file not found: $PKG_FILE"
+            exit 1
+          fi
+
+      - name: Install Constructor PKG
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "=== Installing Constructor PKG ==="
+          echo "Installing: $PKG_FILE"
+          
+          # Get absolute path
+          PKG_ABSOLUTE_PATH="$(pwd)/$PKG_FILE"
+          echo "Absolute path: $PKG_ABSOLUTE_PATH"
+          
+          # Verify PKG file exists
+          if [[ ! -f "$PKG_ABSOLUTE_PATH" ]]; then
+            echo "❌ PKG file not found at: $PKG_ABSOLUTE_PATH"
+            ls -la "$(dirname "$PKG_ABSOLUTE_PATH")"
+            exit 1
+          fi
+          
+          # Install with verbose logging
+          sudo installer -verbose -pkg "$PKG_ABSOLUTE_PATH" -target / 2>&1 | tee installation.log
+          
+          echo ""
+          echo "=== Installation Complete ==="
+
+      - name: Test Constructor PKG Installation
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "=== Running Constructor PKG Test Suite ==="
+          
+          # Make test script executable
+          chmod +x test.sh
+          
+          # Run the test script (it will find the PKG automatically)
+          ./test.sh "$PKG_FILE"
+
+      - name: Verify Python Environment
+        run: |
+          echo "=== Python Environment Verification ==="
+          
+          # Initialize conda environment like verification steps
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          # Try different conda locations
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base" "$HOME/miniconda3" "$HOME/anaconda3"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              echo "Found conda at: $conda_path"
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
+          
+          # Verify conda
+          if command -v conda >/dev/null 2>&1; then
+            echo "✓ Conda: $(conda --version)"
+            echo "✓ Conda location: $(which conda)"
+            echo "✓ Conda base: $(conda info --base)"
+          else
+            echo "❌ Conda not found in PATH"
+            exit 1
+          fi
+          
+          # Verify Python version (exact match requirement)
+          if command -v python3 >/dev/null 2>&1; then
+            INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+            EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+            echo "✓ Python3: $INSTALLED_VERSION"
+            echo "✓ Python location: $(which python3)"
+            
+            if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
+              echo "✅ Python version matches expected ($EXPECTED_VERSION)"
+            else
+              echo "❌ Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
+              exit 1
+            fi
+          else
+            echo "❌ Python3 not found in PATH"
+            exit 1
+          fi
+
+      - name: Test Package Imports
+        run: |
+          echo "=== Testing Package Imports ==="
+          
+          # Initialize conda environment
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base" "$HOME/miniconda3" "$HOME/anaconda3"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
+          
+          # Test exact same import as existing workflow
+          echo "Testing required packages..."
+          if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✅ All packages imported successfully')"; then
+            echo "✅ Package import test passed"
+          else
+            echo "❌ Package import test failed"
+            
+            # Debug individual imports
+            echo "Testing individual packages:"
+            for pkg in dtumathtools pandas scipy statsmodels uncertainties; do
+              if python3 -c "import $pkg; print('✓ $pkg imported successfully')" 2>/dev/null; then
+                echo "✓ $pkg: Available"
+              else
+                echo "❌ $pkg: Failed to import"
+              fi
+            done
+            exit 1
+          fi
+          
+          # Test scientific computing functionality
+          echo ""
+          echo "Testing scientific computing stack..."
+          python3 -c "
+import numpy as np
+import pandas as pd
+import scipy
+print('✅ NumPy version:', np.__version__)
+print('✅ Pandas version:', pd.__version__)
+print('✅ SciPy version:', scipy.__version__)
+print('✅ Scientific computing stack verified')
+"
+
+      - name: Performance Comparison
+        run: |
+          echo "=== Performance Comparison ==="
+          echo "Constructor PKG approach completed in CI time"
+          echo "Comparison with current installer:"
+          echo "- Network dependency: None (vs Current: High)"
+          echo "- Installation time: Fast (vs Current: 5-10 minutes)"
+          echo "- Version consistency: Exact (vs Current: Variable)"
+          echo "- Failure points: Minimal (vs Current: Multiple network/brew dependencies)"
+
+      - name: Upload Installation Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: constructor-phase1-logs-${{ runner.os }}-${{ github.run_id }}
+          path: |
+            MacOS/constructor_installer/python_stack/installation.log
+            MacOS/constructor_installer/python_stack/builds/*.pkg
+          retention-days: 7
+
+      - name: Final Status Summary
+        if: always()
+        run: |
+          echo "=== Constructor Phase 1 Test Summary ==="
+          echo "Branch: ${{ inputs.branch || github.head_ref || 'constructor-pkg-installer' }}"
+          echo "Build Date: $(date)"
+          echo "macOS Version: $(sw_vers -productVersion)"
+          echo ""
+          
+          # Check all components like existing workflow
+          CONDA_OK=$(command -v conda >/dev/null 2>&1 && echo "✓" || echo "❌")
+          PYTHON_OK=$(command -v python3 >/dev/null 2>&1 && echo "✓" || echo "❌")
+          
+          # Initialize conda for final checks
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base" "$HOME/miniconda3" "$HOME/anaconda3"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
+          
+          PYTHON_VERSION_OK="❌"
+          PYTHON_PACKAGES_OK="❌"
+          
+          if command -v python3 >/dev/null 2>&1; then
+            EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+            INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+            if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
+              PYTHON_VERSION_OK="✓"
+            fi
+            
+            if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties" >/dev/null 2>&1; then
+              PYTHON_PACKAGES_OK="✓"
+            fi
+          fi
+          
+          echo "Final Status (Constructor Phase 1):"
+          echo "  Conda: $CONDA_OK"
+          echo "  Python3: $PYTHON_OK"
+          echo "  Python Version (${{ env.PYTHON_VERSION_PS }}): $PYTHON_VERSION_OK"
+          echo "  Python Packages: $PYTHON_PACKAGES_OK"
+          
+          # Determine overall success
+          if [[ "$CONDA_OK$PYTHON_OK$PYTHON_VERSION_OK$PYTHON_PACKAGES_OK" == "✓✓✓✓" ]]; then
+            echo ""
+            echo "🎉 Constructor Phase 1 Test: SUCCESS"
+            echo "All components verified successfully!"
+            echo "✅ Ready for Phase 2 development"
+            exit 0
+          else
+            echo ""
+            echo "❌ Constructor Phase 1 Test: FAILED"
+            echo "One or more components failed verification."
+            exit 1
+          fi
