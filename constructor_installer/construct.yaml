@@ -1,26 +1,38 @@
-name: DTU_Python_Environment
+# Constructor configuration for DTU Python Stack
+# Phase 1: Python environment with required packages
+
+name: dtu-python-stack
 version: 1.0.0
+
 channels:
   - conda-forge
 
 specs:
+  # Core Python environment
   - python=3.11
   - conda
+  - pip
+  
+  # Essential scientific computing packages
+  - pandas
+  - scipy
+  - statsmodels
+  - uncertainties
+  - dtumathtools
 
+# macOS-specific configuration 
+# Testing PKG installer with LocalSystem target
 installer_type: pkg
-company: DTU
-reverse_domain_identifier: dk.dtu.python.environment
-pkg_name: DTU_Python_Environment
-default_location_pkg: /Applications
+installer_filename: DTU-Python-Stack-{{ version }}.pkg
 
-# Control script generation
+# Package metadata
+pkg_name: DTU-Python-Stack
+
+# Installation behavior
 initialize_conda: true
-write_condarc: false
+initialize_by_default: true
+register_python: true
+register_python_default: true
 
-# Control installation domains
-pkg_domains:
-  enable_anywhere: true
-  enable_currentUserHome: true
-
-# Installer filename
-installer_filename: DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg
+# macOS specific settings
+keep_pkgs: false
