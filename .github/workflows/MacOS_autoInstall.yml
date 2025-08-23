@@ -38,12 +38,9 @@ jobs:
 
       - name: Verify VS Code
         run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-          fi
-          exit $retval
+          echo "Constructor installer only handles Python environment"
+          echo "VS Code installation is handled separately"
+          echo "Skipping VS Code verification for Constructor test"
 
       - name: Verify conda
         run: |
