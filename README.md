@@ -8,6 +8,10 @@ This repository contains automated installation scripts for Python development e
 
 We now offer a **simplified, reliable installer** built with Constructor:
 
+### **For Users:**
+Download the latest installer from [GitHub Releases](https://github.com/philipnickel/pythonsupport-scripts/releases).
+
+### **For Developers:**
 ```bash
 # Build the installer locally
 cd constructor_installer
@@ -16,11 +20,19 @@ cd constructor_installer
 # The installer will be created in dist/
 ```
 
+### **Creating Releases:**
+```bash
+# Tag a new release (this triggers automatic build and release)
+git tag v1.0.1
+git push origin v1.0.1
+```
+
 **Key Benefits:**
 - ✅ **Simplified**: No complex scripts or manual configuration
 - ✅ **Reliable**: Uses conda's native package management
 - ✅ **Clean**: Only conda-forge channels (no ToS issues)
 - ✅ **Standard**: Follows conda best practices
+- ✅ **Automated**: GitHub releases with PKG files
 
 See [constructor_installer/README.md](constructor_installer/README.md) for details.
 
