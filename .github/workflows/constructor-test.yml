@@ -36,7 +36,7 @@ jobs:
           echo "Building constructor PKG..."
           ./build.sh
 
-      - name: Verify PKG
+      - name: Install PKG
         shell: bash -el {0}
         working-directory: MacOS/constructor_installer/python_stack
         run: |
@@ -44,8 +44,96 @@ jobs:
           if [[ -n "$PKG_FILE" ]]; then
             echo "✅ PKG built successfully: $PKG_FILE"
             ls -la "$PKG_FILE"
+            echo ""
+            echo "=== Package Information ==="
             installer -pkginfo -pkg "$PKG_FILE"
+            echo ""
+            echo "=== Installing PKG ==="
+            sudo installer -verbose -pkg "$PKG_FILE" -target /
           else
             echo "❌ No PKG file found"
             exit 1
           fi
+
+      - name: Test Installation
+        shell: bash -el {0}
+        run: |
+          echo "=== Testing Constructor PKG Installation ==="
+          
+          # Initialize conda environment like existing test workflows
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          # Try different conda locations (constructor may install to different location)
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base" "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/dtu-python-stack"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              echo "Found conda at: $conda_path"
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
+          
+          # Verify conda
+          if command -v conda >/dev/null 2>&1; then
+            echo "✅ Conda: $(conda --version)"
+            echo "✅ Conda location: $(which conda)"
+            echo "✅ Conda base: $(conda info --base)"
+          else
+            echo "❌ Conda not found in PATH"
+            exit 1
+          fi
+          
+          # Verify Python version (exact match requirement like existing tests)
+          if command -v python3 >/dev/null 2>&1; then
+            INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+            EXPECTED_VERSION="${{ env.PYTHON_VERSION_PS }}"
+            echo "✅ Python3: $INSTALLED_VERSION"
+            echo "✅ Python location: $(which python3)"
+            
+            if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
+              echo "✅ Python version matches expected ($EXPECTED_VERSION)"
+            else
+              echo "❌ Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
+              exit 1
+            fi
+          else
+            echo "❌ Python3 not found in PATH"
+            exit 1
+          fi
+          
+          # Test exact same package imports as existing workflow
+          echo ""
+          echo "=== Testing Package Imports ==="
+          if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✅ All packages imported successfully')"; then
+            echo "✅ Package import test passed"
+          else
+            echo "❌ Package import test failed"
+            
+            # Debug individual imports
+            echo "Testing individual packages:"
+            for pkg in dtumathtools pandas scipy statsmodels uncertainties; do
+              if python3 -c "import $pkg; print('✓ $pkg imported successfully')" 2>/dev/null; then
+                echo "✓ $pkg: Available"
+              else
+                echo "❌ $pkg: Failed to import"
+              fi
+            done
+            exit 1
+          fi
+          
+          # Test scientific computing functionality
+          echo ""
+          echo "=== Testing Scientific Computing Stack ==="
+          python3 -c "
+import numpy as np
+import pandas as pd
+import scipy
+print('✅ NumPy version:', np.__version__)
+print('✅ Pandas version:', pd.__version__)
+print('✅ SciPy version:', scipy.__version__)
+print('✅ Scientific computing stack verified')
+"
+          
+          echo ""
+          echo "🎉 Constructor PKG installation test: SUCCESS"
+          echo "All components working correctly!"
