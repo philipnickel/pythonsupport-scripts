@@ -6,23 +6,5 @@ channels:
 specs:
   - python=3.11
   - conda
-  - dtumathtools
-  - pandas
-  - scipy
-  - statsmodels
-  - uncertainties
-  - jupyter
-  - notebook
-  - ipykernel
 
-# Installer configuration
 installer_type: pkg
-company: DTU
-reverse_domain_identifier: dk.dtu.python.environment
-
-# macOS specific settings
-default_location_pkg: /Applications
-pkg_name: DTU_Python_Environment
-
-# Installer filename
-installer_filename: DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg
