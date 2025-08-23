@@ -30,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Miniconda
+      - name: Setup Conda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
@@ -46,13 +46,13 @@ jobs:
           cd constructor_installer
           constructor --platform osx-64 .
           echo "Installer created:"
-          ls -la dist/
+          ls -la *.pkg
 
       - name: Install Constructor PKG
         run: |
           echo "Installing Constructor PKG..."
           cd constructor_installer
-          sudo installer -pkg dist/*.pkg -target /
+          sudo installer -pkg *.pkg -target /
           echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
