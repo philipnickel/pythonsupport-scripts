@@ -5,12 +5,22 @@ channels:
 
 specs:
   - python=3.11
+  - conda
 
 installer_type: pkg
 company: DTU
 reverse_domain_identifier: dk.dtu.python.environment
 pkg_name: DTU_Python_Environment
 default_location_pkg: /Applications
+
+# Control script generation
+initialize_conda: false
+write_condarc: false
+
+# Control installation domains
+pkg_domains:
+  enable_anywhere: true
+  enable_currentUserHome: true
 
 # Installer filename
 installer_filename: DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg
