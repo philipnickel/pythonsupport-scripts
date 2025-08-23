@@ -92,12 +92,24 @@ jobs:
           echo "Testing Python installations..."
           echo "Default Python3: $(python3 --version) at $(which python3)"
           
+          # Search for where constructor actually installed
+          echo "Searching for constructor installation..."
+          find "$HOME" -name "python3" -type f -executable 2>/dev/null | head -10
+          
           # Check if constructor installed Python is available
           CONSTRUCTOR_PYTHON_FOUND=false
-          for python_path in "$HOME/miniconda3/bin/python3" "$HOME/anaconda3/bin/python3" "/opt/miniconda3/bin/python3"; do
+          SEARCH_PATHS=(
+            "$HOME/miniconda3/bin/python3"
+            "$HOME/anaconda3/bin/python3" 
+            "$HOME/dtu-python-stack/bin/python3"
+            "/opt/miniconda3/bin/python3"
+            "/opt/dtu-python-stack/bin/python3"
+          )
+          
+          for python_path in "${SEARCH_PATHS[@]}"; do
             if [ -f "$python_path" ]; then
               PYTHON_VERSION=$("$python_path" --version 2>/dev/null | cut -d " " -f 2)
-              echo "Constructor Python: $PYTHON_VERSION at $python_path"
+              echo "Found Python: $PYTHON_VERSION at $python_path"
               if [[ "$PYTHON_VERSION" == "${{ env.PYTHON_VERSION_PS }}"* ]]; then
                 echo "✅ Found constructor Python 3.11 installation"
                 CONSTRUCTOR_PYTHON="$python_path"
@@ -109,7 +121,9 @@ jobs:
           
           if [ "$CONSTRUCTOR_PYTHON_FOUND" = false ]; then
             echo "❌ Could not find constructor Python 3.11 installation"
-            echo "This means the PKG didn't install Python where expected"
+            echo "Searched paths: ${SEARCH_PATHS[*]}"
+            echo "Let's check what directories were created in home:"
+            ls -la "$HOME/" | grep -v "^total\|^d.*\.\.\?$" || true
             exit 1
           fi
           
