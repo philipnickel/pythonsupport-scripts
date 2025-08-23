@@ -168,4 +168,4 @@ For Phase 1 issues:
 - Review build logs for constructor errors
 - Test individual package imports
 - Compare with existing test-pkg-installer.yml results
-- Check constructor documentation: https://conda.github.io/constructor/
+- Check constructor documentation: https://conda.github.io/constructor/# Constructor PKG Test Update
