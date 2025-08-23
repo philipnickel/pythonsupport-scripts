@@ -4,6 +4,26 @@
 
 This repository contains automated installation scripts for Python development environments and associated tools for macOS and Windows.
 
+## 🚀 New: Constructor-Based Installer
+
+We now offer a **simplified, reliable installer** built with Constructor:
+
+```bash
+# Build the installer locally
+cd constructor_installer
+./build.sh
+
+# The installer will be created in dist/
+```
+
+**Key Benefits:**
+- ✅ **Simplified**: No complex scripts or manual configuration
+- ✅ **Reliable**: Uses conda's native package management
+- ✅ **Clean**: Only conda-forge channels (no ToS issues)
+- ✅ **Standard**: Follows conda best practices
+
+See [constructor_installer/README.md](constructor_installer/README.md) for details.
+
 ## System Status
 
 https://github.com/philipnickel/pythonsupport-scripts/blob/main/main_controller.txt

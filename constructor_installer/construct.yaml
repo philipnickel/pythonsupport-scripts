@@ -1,0 +1,63 @@
+name: DTU_Python_Environment
+version: 1.0.0
+channels:
+  - conda-forge
+
+specs:
+  - python=3.11
+  - conda
+  - dtumathtools
+  - pandas
+  - scipy
+  - statsmodels
+  - uncertainties
+  - jupyter
+  - notebook
+  - ipykernel
+
+# Installer configuration
+installer_type: pkg
+company: DTU
+reverse_domain_identifier: dk.dtu.python.environment
+
+# macOS specific settings
+default_location_pkg: /Applications
+pkg_name: DTU_Python_Environment
+
+# Post-install script to install VS Code
+post_install: scripts/post_install.sh
+post_install_desc: "Install VS Code and configure the Python environment"
+
+# Welcome and conclusion messages
+welcome_text: |
+  Welcome to the DTU Python Environment Installer!
+  
+  This installer will set up a complete Python environment with:
+  • Python 3.11
+  • Essential scientific packages (pandas, scipy, statsmodels, etc.)
+  • Jupyter notebooks
+  • VS Code with Python extensions
+  
+  The environment will be installed in /Applications/DTU_Python_Environment
+
+conclusion_text: |
+  Installation Complete!
+  
+  Your DTU Python Environment has been successfully installed.
+  
+  To get started:
+  1. Open Terminal
+  2. Activate the environment: conda activate base
+  3. Launch VS Code: code .
+  4. Start coding with Python!
+  
+  The environment includes Python 3.11 and all required packages for DTU courses.
+
+# Initialize conda by default
+initialize_conda: true
+initialize_by_default: true
+
+# Write condarc file
+write_condarc: true
+conda_default_channels:
+  - conda-forge

@@ -1,7 +1,0 @@
-#!/bin/sh
-echo "=== PREINSTALL SCRIPT ==="
-echo "Preinstall script executed at $(date)" > /tmp/dtu_preinstall.log
-echo "Current user: $(whoami)" >> /tmp/dtu_preinstall.log
-echo "Current directory: $(pwd)" >> /tmp/dtu_preinstall.log
-echo "Preinstall completed successfully"
-exit 0

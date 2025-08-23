@@ -22,65 +22,38 @@ env:
   PIS_ENV: "CI"
 
 jobs:
-  test-pkg:
-    name: Test PKG Installer
+  test-constructor:
+    name: Test Constructor Installer
     runs-on: macos-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove conda (if present)
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: 3.11
+
+      - name: Install Constructor
         run: |
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
+          conda install -c conda-forge constructor -y
 
-            echo "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
-            conda init --reverse --all
-          fi
-
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Check for conda
+      - name: Build Constructor Installer
         run: |
-          env | grep -i conda
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-          else
-            echo "Conda not found..."
-          fi
+          echo "Building Constructor-based installer..."
+          cd constructor_installer
+          constructor --platform osx-64 .
+          echo "Installer created:"
+          ls -la dist/
 
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Install PKG
+      - name: Install Constructor PKG
         run: |
-          echo "Installing PKG with Python $PYTHON_VERSION_PS"
-          echo "Using pre-built PKG from repository..."
-          
-          # Set environment for PKG orchestrator
-          export REMOTE_PS="${{ github.event.pull_request.head.repo.full_name || github.repository }}"
-          export BRANCH_PS="${{ github.event.pull_request.head.ref || github.ref_name }}"
-          
-          echo "PKG will use repository: $REMOTE_PS"
-          echo "PKG will use branch: $BRANCH_PS"
-          
-          sudo -E installer -pkg PKG/DTU_Python_Environment.pkg -target /
-          echo "PKG installation completed"
+          echo "Installing Constructor PKG..."
+          cd constructor_installer
+          sudo installer -pkg dist/*.pkg -target /
+          echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
         run: |
