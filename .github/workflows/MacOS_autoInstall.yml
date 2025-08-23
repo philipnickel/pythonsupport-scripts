@@ -30,17 +30,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download PKG from Release
-        run: |
-          echo "Downloading PKG from latest release..."
-          curl -L -o DTU_Python_Environment.pkg \
-            "https://github.com/${{ github.repository }}/releases/latest/download/DTU_Python_Environment.pkg"
-          echo "PKG downloaded successfully"
-          ls -la DTU_Python_Environment.pkg
-
       - name: Install Constructor PKG
         run: |
-          echo "Installing Constructor PKG..."
+          echo "Installing Constructor PKG from repository..."
           sudo installer -pkg DTU_Python_Environment.pkg -target /
           echo "Constructor PKG installation completed"
 
