@@ -24,6 +24,8 @@ on:
     paths:
       - 'MacOS/constructor_installer/**'
       - '.github/workflows/test-constructor-phase1.yml'
+    branches:
+      - 'constructor-pkg-installer'
 
 env:
   PYTHON_VERSION_PS: "3.11"
