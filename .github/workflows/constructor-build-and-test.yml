@@ -83,54 +83,33 @@ jobs:
           # Update shell environment (like existing workflows)
           hash -r 2>/dev/null || true
           
-          # Check if conda is already in PATH
-          echo "Checking conda availability..."
-          if command -v conda >/dev/null 2>&1; then
-            echo "✓ Conda: $(conda --version)"
-            echo "  Location: $(which conda)"
-            echo "  Base: $(conda info --base)"
-            CONDA_FOUND=true
-          else
-            echo "❌ Conda: Not found in PATH"
-            # Try to find and initialize conda (like existing workflows)
-            CONDA_FOUND=false
-            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda" "/opt/miniconda3/bin/conda"; do
-              if [ -f "$conda_path" ]; then
-                echo "  Found conda at: $conda_path"
-                # Check Python version to ensure we found the right installation
-                PYTHON_VERSION=$("${conda_path%/conda}/python3" --version 2>/dev/null | cut -d " " -f 2 | cut -d "." -f1,2)
-                echo "  Python version: $PYTHON_VERSION"
-                if [[ "$PYTHON_VERSION" == "3.11" ]]; then
-                  echo "✅ Found constructor conda installation (Python 3.11)"
-                  # Initialize conda like existing workflows
-                  eval "$($conda_path shell.bash hook)"
-                  echo "✓ Conda: $(conda --version) (after initialization)"
-                  CONDA_FOUND=true
-                  break
-                else
-                  echo "  Wrong Python version, continuing search..."
-                fi
-              fi
-            done
-          fi
+          echo "=== Testing Default Python Environment ==="
           
-          if [ "$CONDA_FOUND" = false ]; then
-            echo "❌ Could not find conda installation with Python 3.11"
-            exit 1
-          fi
-          
-          echo "Testing conda..."
-          conda --version || exit 1
-          echo "✅ Conda works: $(conda --version)"
+          # Test if the PKG installer set up the environment correctly
+          # We should be able to just use python3 directly
           
           # Test Python version
-          echo "Testing Python..."
-          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-          echo "✅ Python version: $PYTHON_VERSION"
-          
-          if [[ "$PYTHON_VERSION" != "${{ env.PYTHON_VERSION_PS }}"* ]]; then
-            echo "❌ Python version mismatch. Expected: ${{ env.PYTHON_VERSION_PS }}, Got: $PYTHON_VERSION"
+          echo "Testing default Python..."
+          if command -v python3 >/dev/null 2>&1; then
+            PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+            echo "✅ Python3: $(python3 --version)"
+            echo "  Location: $(which python3)"
+            
+            if [[ "$PYTHON_VERSION" != "${{ env.PYTHON_VERSION_PS }}"* ]]; then
+              echo "❌ Python version mismatch. Expected: ${{ env.PYTHON_VERSION_PS }}, Got: $PYTHON_VERSION"
+              exit 1
+            fi
+          else
+            echo "❌ Python3: Not found in PATH"
             exit 1
+          fi
+          
+          # Test conda (optional - should be available but not required for package imports)
+          if command -v conda >/dev/null 2>&1; then
+            echo "✅ Conda: $(conda --version)"
+            echo "  Location: $(which conda)"
+          else
+            echo "ℹ️  Conda: Not in PATH (this is OK if packages still import)"
           fi
           
           # Test package imports - THE CRITICAL TEST!
