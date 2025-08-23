@@ -7,6 +7,11 @@ on:
     paths: 
       - 'MacOS/constructor_installer/**'
       - '.github/workflows/constructor-build-and-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'MacOS/constructor_installer/**'
+      - '.github/workflows/constructor-build-and-test.yml'
 
 env:
   PYTHON_VERSION_PS: "3.11"

@@ -5,12 +5,11 @@ defaults:
     shell: bash -l {0}
 
 on:
-  # Temporarily disabled while constructor development is active
-  # pull_request:
-  #   branches: [ "main" ]
-  #   paths:
-  #     - 'MacOS/Components/**'
-  #     - '.github/workflows/mac_orchestrators.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/Components/**'
+      - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
 
 # Re-enabled after PKG installer testing completed successfully
