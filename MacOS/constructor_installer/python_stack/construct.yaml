@@ -24,7 +24,7 @@ installer_type: pkg
 installer_filename: DTU-Python-Stack-{{ version }}.pkg
 
 # Package metadata
-pkg_name: DTU Python Stack
+pkg_name: DTU-Python-Stack
 
 # License and documentation
 license_file: resources/LICENSE.txt
