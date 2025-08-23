@@ -98,25 +98,33 @@ if [[ $? -eq 0 ]]; then
     echo "✅ Build completed successfully!"
     echo
     echo "=== Build Results ==="
-    ls -la "$BUILD_DIR"/*.pkg 2>/dev/null || echo "No PKG files found in $BUILD_DIR"
-    ls -la "$SCRIPT_DIR"/*.pkg 2>/dev/null || echo "No PKG files found in $SCRIPT_DIR"
+    ls -la "$BUILD_DIR"/*.sh 2>/dev/null || echo "No shell installer files found in $BUILD_DIR"
+    ls -la "$SCRIPT_DIR"/*.sh 2>/dev/null || echo "No shell installer files found in $SCRIPT_DIR"
     
-    # Find the generated PKG file
-    PKG_FILE=$(find "$BUILD_DIR" "$SCRIPT_DIR" -name "*.pkg" -type f 2>/dev/null | head -1)
-    if [[ -n "$PKG_FILE" ]]; then
+    # Find the generated installer file (.sh for shell, .pkg for PKG)
+    INSTALLER_FILE=$(find "$BUILD_DIR" "$SCRIPT_DIR" -name "*.sh" -o -name "*.pkg" -type f 2>/dev/null | head -1)
+    if [[ -n "$INSTALLER_FILE" ]]; then
         echo
-        echo "📦 Generated installer: $PKG_FILE"
-        echo "📁 Size: $(du -h "$PKG_FILE" | cut -f1)"
+        echo "📦 Generated installer: $INSTALLER_FILE"
+        echo "📁 Size: $(du -h "$INSTALLER_FILE" | cut -f1)"
         echo
-        echo "=== Package Information ==="
-        installer -pkginfo -pkg "$PKG_FILE" 2>/dev/null || echo "Could not read package info"
-        echo
-        echo "=== Next Steps ==="
-        echo "1. Test the installer: sudo installer -pkg '$PKG_FILE' -target /"
-        echo "2. Run the test script: ./test.sh '$PKG_FILE'"
+        if [[ "$INSTALLER_FILE" == *.pkg ]]; then
+            echo "=== Package Information ==="
+            installer -pkginfo -pkg "$INSTALLER_FILE" 2>/dev/null || echo "Could not read package info"
+            echo
+            echo "=== Next Steps ==="
+            echo "1. Test the installer: sudo installer -pkg '$INSTALLER_FILE' -target /"
+            echo "2. Run the test script: ./test.sh '$INSTALLER_FILE'"
+        else
+            echo "=== Shell Installer Information ==="
+            echo "Type: Shell installer (.sh)"
+            echo "=== Next Steps ==="
+            echo "1. Test the installer: bash '$INSTALLER_FILE' -b -p ~/miniconda3"
+            echo "2. Run the test script: ./test.sh '$INSTALLER_FILE'"
+        fi
         echo "3. Verify Python packages: python3 -c \"import dtumathtools, pandas, scipy, statsmodels, uncertainties\""
     else
-        echo "❌ No PKG file found after build"
+        echo "❌ No installer file found after build"
         exit 1
     fi
 else
