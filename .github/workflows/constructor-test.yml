@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [constructor-pkg-installer]
-    paths: ['MacOS/constructor_installer/**']
+    paths: ['MacOS/constructor_installer/**', '.github/workflows/constructor-test.yml']
 
 env:
   PYTHON_VERSION_PS: "3.11"
