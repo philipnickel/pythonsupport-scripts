@@ -168,5 +168,5 @@ For Phase 1 issues:
 - Review build logs for constructor errors
 - Test individual package imports
 - Compare with existing test-pkg-installer.yml results
-- Check constructor documentation: https://conda.github.io/constructor/# Constructor PKG Test Update
-# Test update for workflow trigger
+- Check constructor documentation: https://conda.github.io/constructor/# Test Constructor PKG Installation
+# Updated workflow with full installation testing
