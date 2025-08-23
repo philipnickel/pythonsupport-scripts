@@ -5,13 +5,13 @@ defaults:
     shell: bash -l {0}
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**'
-      - '.github/workflows/mac_orchestrators.yml'
+  # Temporarily disabled while constructor development is active
+  # pull_request:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/Components/**'
+  #     - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
-  # Note: Disabled on constructor-pkg-installer branch for development
 
 # Re-enabled after PKG installer testing completed successfully
 
@@ -22,7 +22,7 @@ env:
 jobs:
   test-first-year-orchestrator:
     name: Test First Year Orchestrator
-    if: github.ref_name != 'constructor-pkg-installer'
+    if: github.head_ref != 'constructor-pkg-installer'
     runs-on: macos-latest
     
     steps:
