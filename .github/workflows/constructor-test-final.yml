@@ -49,10 +49,10 @@ jobs:
           echo "✅ PKG built: $PKG_FILE"
           echo "📁 Size: $(du -h "$PKG_FILE" | cut -f1)"
           
-          # Install the PKG
+          # Install the PKG - try user directory installation
           echo ""
           echo "=== Installing PKG ==="
-          sudo installer -verbose -pkg "$PKG_FILE" -target /
+          sudo installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory
           
           echo ""
           echo "=== Testing Installation ==="
