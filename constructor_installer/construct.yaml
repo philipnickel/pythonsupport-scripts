@@ -14,7 +14,7 @@ pkg_name: DTU_Python_Environment
 default_location_pkg: /Applications
 
 # Control script generation
-initialize_conda: false
+initialize_conda: true
 write_condarc: false
 
 # Control installation domains
