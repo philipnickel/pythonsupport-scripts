@@ -1,0 +1,74 @@
+name: Constructor Install Test
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+
+jobs:
+  test-install:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION_PS }}
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install Constructor
+        shell: bash -el {0}
+        run: |
+          conda install constructor -y
+          constructor --version
+
+      - name: Build PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "Building constructor PKG..."
+          ./build.sh
+
+      - name: Install PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          PKG_FILE=$(find . -name "*.pkg" -type f 2>/dev/null | head -1)
+          echo "Installing PKG: $PKG_FILE"
+          sudo installer -verbose -pkg "$PKG_FILE" -target /
+
+      - name: Test Installation
+        shell: bash -el {0}
+        run: |
+          echo "=== Testing Installation ==="
+          
+          # Update PATH to include potential conda locations
+          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          
+          # Find and activate conda
+          for conda_path in "/opt/homebrew/Caskroom/miniconda/base" "/usr/local/Caskroom/miniconda/base" "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/dtu-python-stack"; do
+            if [ -f "$conda_path/etc/profile.d/conda.sh" ]; then
+              echo "Found conda at: $conda_path"
+              source "$conda_path/etc/profile.d/conda.sh"
+              conda activate base 2>/dev/null || true
+              break
+            fi
+          done
+          
+          # Test conda
+          conda --version || exit 1
+          
+          # Test Python
+          python3 --version || exit 1
+          
+          # Test packages (this is the critical test!)
+          python3 -c "import pandas, scipy, statsmodels, uncertainties; print('✅ Basic packages work')" || exit 1
+          
+          # Test dtumathtools (post-install script test)
+          python3 -c "import dtumathtools; print('✅ dtumathtools works')" || echo "❌ dtumathtools failed (post-install issue)"
+          
+          echo "🎉 Installation test completed!"
