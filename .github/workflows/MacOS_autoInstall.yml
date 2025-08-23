@@ -54,7 +54,7 @@ jobs:
           # Clean up any existing installation
           sudo rm -rf /Applications/dtu_python_environment
           # Install with verbose logging
-          CONDA_VERBOSITY=3 sudo installer -pkg constructor_installer/DTU-Python-Stack-1.0.0.pkg -target /
+          CONDA_VERBOSITY=3 sudo installer -pkg constructor_installer/DTU-Python-Stack-1.0.0.pkg -target /Applications
           echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
