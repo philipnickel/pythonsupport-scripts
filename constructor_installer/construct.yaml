@@ -32,9 +32,7 @@ pkg_domains:
 # Installer filename
 installer_filename: DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg
 
-# Post-install script to install VS Code
-post_install: scripts/post_install.sh
-post_install_desc: "Install VS Code and configure the Python environment"
+
 
 # Welcome and conclusion messages
 welcome_text: |
