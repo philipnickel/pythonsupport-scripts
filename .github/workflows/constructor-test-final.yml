@@ -61,8 +61,8 @@ jobs:
           echo ""
           if [[ "$INSTALLER_TYPE" == "pkg" ]]; then
             echo "=== Installing PKG ==="
-            # Use verbose conda logging and installer logging as per constructor docs
-            sudo CONDA_VERBOSITY=3 installer -verbose -pkg "$INSTALLER_FILE" -target CurrentUserHomeDirectory -dumplog
+            # Try LocalSystem target instead of CurrentUserHomeDirectory
+            sudo CONDA_VERBOSITY=3 installer -verbose -pkg "$INSTALLER_FILE" -target LocalSystem -dumplog
             CONDA_PATH="$HOME/miniconda3"  # PKG installs to standard location
           else
             echo "=== Running Shell Installer ==="

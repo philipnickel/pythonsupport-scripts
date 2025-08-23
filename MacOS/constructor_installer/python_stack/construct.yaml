@@ -21,9 +21,9 @@ specs:
   - dtumathtools
 
 # macOS-specific configuration 
-# Use 'sh' for CI testing, 'pkg' for end-user distribution
-installer_type: sh  # Change to 'pkg' for end-user builds
-installer_filename: DTU-Python-Stack-{{ version }}.sh  # Change to .pkg for end-user builds
+# Testing PKG installer with LocalSystem target
+installer_type: pkg
+installer_filename: DTU-Python-Stack-{{ version }}.pkg
 
 # Package metadata
 pkg_name: DTU-Python-Stack
