@@ -39,6 +39,10 @@ register_python_default: true
 # macOS specific settings
 keep_pkgs: false
 
+# Installation path configuration for user directory installation
+default_prefix: ~/miniconda3
+default_prefix_domain_user: true
+
 # Post-install script to set up environment properly
 post_install: scripts/post_install.sh
 
