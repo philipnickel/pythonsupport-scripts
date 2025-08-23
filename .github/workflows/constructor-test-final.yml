@@ -81,8 +81,26 @@ jobs:
           export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           
           # Initialize the installed conda environment (CONDA_PATH set above based on installer type)
+          # For PKG installer, check multiple possible installation locations
+          if [[ "$INSTALLER_TYPE" == "pkg" ]]; then
+            # PKG might install to different locations, check them in priority order
+            for try_path in "$HOME/miniconda3" "$HOME/anaconda3" "/opt/miniconda3" "/opt/anaconda3"; do
+              if [ -f "$try_path/bin/conda" ]; then
+                CONDA_PATH="$try_path"
+                # Check if this is our constructor installation by checking Python version
+                PYTHON_VERSION=$("$try_path/bin/python3" --version 2>/dev/null | cut -d " " -f 2 | cut -d "." -f1,2)
+                if [[ "$PYTHON_VERSION" == "3.11" ]]; then
+                  echo "Found constructor conda installation at: $CONDA_PATH (Python $PYTHON_VERSION)"
+                  break
+                else
+                  echo "Found conda at $try_path but wrong Python version: $PYTHON_VERSION (expected 3.11)"
+                fi
+              fi
+            done
+          fi
+          
           if [ -f "$CONDA_PATH/bin/conda" ]; then
-            echo "Found conda at: $CONDA_PATH"
+            echo "Using conda at: $CONDA_PATH"
             export PATH="$CONDA_PATH/bin:$PATH"
             if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
               source "$CONDA_PATH/etc/profile.d/conda.sh"
