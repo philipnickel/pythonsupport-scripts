@@ -9,3 +9,7 @@ specs:
 
 installer_type: pkg
 default_location_pkg: /Applications
+
+# Disable script generation
+initialize_conda: false
+write_condarc: false
