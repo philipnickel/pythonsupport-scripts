@@ -8,3 +8,4 @@ specs:
   - conda
 
 installer_type: pkg
+default_location_pkg: /Applications
