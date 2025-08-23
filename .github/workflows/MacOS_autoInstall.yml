@@ -32,10 +32,26 @@ jobs:
         with:
           lfs: true
 
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: 3.11
+          channels: conda-forge
+
+      - name: Install Constructor
+        run: |
+          conda install -c conda-forge constructor -y
+
+      - name: Build Constructor Installer
+        run: |
+          cd constructor_installer
+          constructor --platform osx-64 .
+
       - name: Install Constructor PKG
         run: |
-          echo "Installing Constructor PKG from repository..."
-          sudo installer -pkg DTU_Python_Environment.pkg -target /
+          echo "Installing Constructor PKG..."
+          sudo installer -pkg constructor_installer/dist/DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg -target /
           echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
