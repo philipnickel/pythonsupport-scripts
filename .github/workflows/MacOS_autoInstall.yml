@@ -93,14 +93,6 @@ jobs:
 
       - name: Verify conda
         run: |
-          # Activate conda and ensure it takes precedence
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -114,27 +106,18 @@ jobs:
 
       - name: Verify python (3.11)
         run: |
-          # Activate conda and ensure it takes precedence over homebrew python
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH to override homebrew python
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which python3
 
-          # Verify the installed Python version - MUST match exactly like legacy script
+          # Verify the installed Python version
           EXPECTED_VERSION="3.11"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
             exit 1
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
 
-          # Verify Python package imports - exact same test as legacy
+          # Verify Python package imports
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
   test-orchestrator:
@@ -202,14 +185,6 @@ jobs:
 
       - name: Verify conda
         run: |
-          # Activate conda and ensure it takes precedence
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -223,27 +198,18 @@ jobs:
 
       - name: Verify python (3.11)
         run: |
-          # Activate conda and ensure it takes precedence over homebrew python
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH to override homebrew python
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which python3
 
-          # Verify the installed Python version - MUST match exactly like legacy script
+          # Verify the installed Python version
           EXPECTED_VERSION="3.11"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
             exit 1
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
 
-          # Verify Python package imports - exact same test as legacy
+          # Verify Python package imports
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
   test-legacy:
@@ -311,14 +277,6 @@ jobs:
 
       - name: Verify conda
         run: |
-          # Activate conda and ensure it takes precedence
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which conda
           retval=$?
           if [[ $retval -ne 0 ]]; then
@@ -332,25 +290,16 @@ jobs:
 
       - name: Verify python (3.11)
         run: |
-          # Activate conda and ensure it takes precedence over homebrew python
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || source /usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh 2>/dev/null || true
-          conda activate base
-          
-          # Put conda bin directory at the FRONT of PATH to override homebrew python
-          export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
-          hash -r
-          
           which python3
 
-          # Verify the installed Python version - MUST match exactly like legacy script
+          # Verify the installed Python version
           EXPECTED_VERSION="3.11"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            echo "Expected: $EXPECTED_VERSION, Got: $INSTALLED_VERSION"
             exit 1
           fi
           echo "Correct Python version $INSTALLED_VERSION is installed."
 
-          # Verify Python package imports - exact same test as legacy
+          # Verify Python package imports
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
