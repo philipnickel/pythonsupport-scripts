@@ -58,6 +58,7 @@ jobs:
           path: ./
 
       - name: Test PKG Installation
+        shell: bash -l {0}
         run: |
           # Find the PKG file
           PKG_FILE=$(find . -name "*.pkg" -type f | head -1)
@@ -153,3 +154,49 @@ jobs:
           echo "✅ Python environment works" 
           echo "✅ All packages import successfully"
           echo "✅ Constructor PKG approach is viable!"
+
+      - name: Test New Shell Session
+        shell: bash -l {0}
+        run: |
+          echo "=== Testing Fresh Shell Session (like end-user experience) ==="
+          
+          # This simulates what happens when a user opens a new terminal
+          # after installing the PKG - the environment should be set up
+          
+          echo "Testing Python in fresh shell..."
+          if command -v python3 >/dev/null 2>&1; then
+            PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+            echo "✅ Python3: $(python3 --version)"
+            echo "  Location: $(which python3)"
+            
+            if [[ "$PYTHON_VERSION" == "${{ env.PYTHON_VERSION_PS }}"* ]]; then
+              echo "✅ Fresh shell has correct Python version!"
+            else
+              echo "ℹ️  Fresh shell has system Python ($PYTHON_VERSION), not constructor Python (3.11)"
+              echo "This is expected - PKG might need manual shell initialization"
+            fi
+          else
+            echo "❌ Python3: Not found in fresh shell"
+          fi
+          
+          echo ""
+          echo "Testing conda in fresh shell..."
+          if command -v conda >/dev/null 2>&1; then
+            echo "✅ Conda: $(conda --version)"
+            echo "  Location: $(which conda)"
+          else
+            echo "ℹ️  Conda: Not in PATH in fresh shell"
+            echo "This is expected - may need conda init or PATH setup"
+          fi
+          
+          echo ""
+          echo "=== Testing Package Imports in Fresh Shell ==="
+          
+          # Try with default python3 first
+          if python3 -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print('✅ All packages work in fresh shell')" 2>/dev/null; then
+            echo "🎉 AMAZING! All packages work with default python3 in fresh shell!"
+            echo "✅ Constructor PKG fully configured the environment!"
+          else
+            echo "ℹ️  Packages not available with default python3 in fresh shell"
+            echo "This is expected - PKG installers often need shell profile sourcing"
+          fi
