@@ -51,7 +51,7 @@ jobs:
       - name: Install Constructor PKG
         run: |
           echo "Installing Constructor PKG..."
-          sudo installer -pkg constructor_installer/dist/DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg -target /
+          sudo installer -pkg constructor_installer/DTU_Python_Environment-1.0.0-MacOSX-x86_64.pkg -target /
           echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
