@@ -1,0 +1,141 @@
+name: Constructor Build and Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [constructor-pkg-installer]
+    paths: 
+      - 'MacOS/constructor_installer/**'
+      - '.github/workflows/constructor-build-and-test.yml'
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+
+jobs:
+  build-pkg:
+    name: Build Constructor PKG
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION_PS }}
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install Constructor
+        shell: bash -el {0}
+        run: |
+          conda install constructor -y
+          constructor --version
+
+      - name: Build PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "Building constructor PKG..."
+          ./build.sh
+
+      - name: Upload PKG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtu-python-stack-pkg
+          path: MacOS/constructor_installer/python_stack/builds/*.pkg
+          retention-days: 1
+
+  test-pkg:
+    name: Test PKG Installation
+    runs-on: macos-latest
+    needs: build-pkg
+    steps:
+      - name: Download PKG Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dtu-python-stack-pkg
+          path: ./
+
+      - name: Test PKG Installation
+        run: |
+          # Find the PKG file
+          PKG_FILE=$(find . -name "*.pkg" -type f | head -1)
+          if [[ -z "$PKG_FILE" ]]; then
+            echo "❌ No PKG file found"
+            exit 1
+          fi
+          
+          echo "✅ Testing PKG: $PKG_FILE"
+          echo "📁 Size: $(du -h "$PKG_FILE" | cut -f1)"
+          
+          # Install the PKG (without sudo as we determined that works)
+          echo ""
+          echo "=== Installing PKG ==="
+          CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
+          
+          echo ""
+          echo "=== Testing Installation ==="
+          
+          # Give installation a moment to complete
+          sleep 5
+          
+          # Find the conda installation
+          CONDA_FOUND=false
+          for conda_path in "$HOME/miniconda3" "$HOME/anaconda3" "/opt/miniconda3" "/opt/anaconda3"; do
+            if [ -f "$conda_path/bin/conda" ]; then
+              # Check Python version to ensure we found the right installation
+              PYTHON_VERSION=$("$conda_path/bin/python3" --version 2>/dev/null | cut -d " " -f 2 | cut -d "." -f1,2)
+              echo "Found conda at: $conda_path (Python $PYTHON_VERSION)"
+              if [[ "$PYTHON_VERSION" == "3.11" ]]; then
+                echo "✅ Found constructor conda installation at: $conda_path"
+                CONDA_PATH="$conda_path"
+                CONDA_FOUND=true
+                break
+              fi
+            fi
+          done
+          
+          if [ "$CONDA_FOUND" = false ]; then
+            echo "❌ Could not find conda installation with Python 3.11"
+            exit 1
+          fi
+          
+          # Test conda
+          export PATH="$CONDA_PATH/bin:$PATH"
+          if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
+            source "$CONDA_PATH/etc/profile.d/conda.sh"
+            conda activate base 2>/dev/null || true
+          fi
+          
+          echo "Testing conda..."
+          conda --version || exit 1
+          echo "✅ Conda works: $(conda --version)"
+          
+          # Test Python version
+          echo "Testing Python..."
+          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+          echo "✅ Python version: $PYTHON_VERSION"
+          
+          if [[ "$PYTHON_VERSION" != "${{ env.PYTHON_VERSION_PS }}"* ]]; then
+            echo "❌ Python version mismatch. Expected: ${{ env.PYTHON_VERSION_PS }}, Got: $PYTHON_VERSION"
+            exit 1
+          fi
+          
+          # Test package imports - THE CRITICAL TEST!
+          echo ""
+          echo "=== Testing Package Imports ==="
+          
+          if python3 -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print('✅ All packages work')"; then
+            echo "✅ All packages imported successfully"
+          else
+            echo "❌ Package imports failed"
+            exit 1
+          fi
+          
+          echo ""
+          echo "🎉 CONSTRUCTOR PKG TEST: SUCCESS!"
+          echo "✅ PKG installs correctly"
+          echo "✅ Python environment works" 
+          echo "✅ All packages import successfully"
+          echo "✅ Constructor PKG approach is viable!"
