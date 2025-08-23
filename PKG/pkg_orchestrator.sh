@@ -71,109 +71,112 @@ install_homebrew_if_missing() {
     fi
 }
 
-install_miniconda() {
-    echo_info "Checking Python/Miniconda installation..."
+install_miniforge() {
+    echo_info "Checking Python/Miniforge installation..."
     
     # Check if conda is already available and working
     if command -v conda >/dev/null 2>&1; then
         local version=$(conda --version 2>/dev/null || echo "unknown version")
-        echo_success "Python/Miniconda already available ($version)"
+        echo_success "Python/Miniforge already available ($version)"
         
-        # Configure conda channels if needed
-        echo_info "Configuring conda channels..."
-        conda config --remove channels defaults 2>/dev/null || true
-        conda config --remove channels default 2>/dev/null || true
-        conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-        conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-        conda config --add channels conda-forge 2>/dev/null || true
-        conda config --set channel_priority strict 2>/dev/null || true
-        conda config --set anaconda_anon_usage off 2>/dev/null || true
-        
-        # Verify channel configuration
+        # Verify channel configuration (Miniforge should already be configured for conda-forge)
         echo_info "Verifying conda channel configuration..."
         conda config --show channels
         
         return 0
     fi
     
-    # Only try to install Miniconda if conda is not available
-    echo_info "Conda not found, attempting to install Miniconda..."
+    # Only try to install Miniforge if conda is not available
+    echo_info "Conda not found, attempting to install Miniforge..."
     
-    # Ensure Homebrew is available
-    install_homebrew_if_missing
+    # Download and install Miniforge
+    local miniforge_installer="/tmp/Miniforge3.sh"
+    local arch=$(uname -m)
+    local os=$(uname)
     
-    # Install Miniconda
-    if brew install --cask miniconda; then
-        # Initialize conda
-        local conda_base="/opt/homebrew/Caskroom/miniconda/base"
-        [[ ! -d "$conda_base" ]] && conda_base="/usr/local/Caskroom/miniconda/base"
-        
-        if [[ -f "$conda_base/bin/conda" ]]; then
-            # Initialize conda properly for all shells
-            echo_info "Initializing conda for all shells..."
-            eval "$($conda_base/bin/conda shell.bash hook)"
-            conda init bash zsh fish >/dev/null 2>&1 || true
-            
-            # Accept Terms of Service for ALL channels
-            echo_info "Accepting conda Terms of Service for all channels..."
-            conda tos accept --all 2>/dev/null || true
-            
-            # Configure conda channels - use ONLY conda-forge
-            echo_info "Configuring conda channels to use ONLY conda-forge..."
-            conda config --remove channels defaults 2>/dev/null || true
-            conda config --remove channels default 2>/dev/null || true
-            conda config --remove channels https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-            conda config --remove channels https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-            conda config --remove channels https://repo.anaconda.com/pkgs/msys2 2>/dev/null || true
-            conda config --add channels conda-forge 2>/dev/null || true
-            conda config --set channel_priority strict 2>/dev/null || true
-            conda config --set anaconda_anon_usage off 2>/dev/null || true
-            
-            # Also remove defaults from the config file directly
-            conda config --remove-key defaults 2>/dev/null || true
-            
-            # Set up conda to take precedence in shell profiles
-            echo_info "Setting up conda to take precedence in shell profiles..."
-            for shell in bash zsh; do
-                local profile_file="$HOME/.${shell}rc"
-                [[ "$shell" == "bash" ]] && profile_file="$HOME/.bash_profile"
-                
-                # Add conda initialization to shell profile if not already present
-                if [[ -f "$profile_file" ]] && ! grep -q "conda initialize" "$profile_file"; then
-                    echo "" >> "$profile_file"
-                    echo "# >>> conda initialize >>>" >> "$profile_file"
-                    echo "# !! Contents within this block are managed by 'conda init' !!" >> "$profile_file"
-                    echo "__conda_setup=\"\$('$conda_base/bin/conda' 'shell.$shell' 'hook' 2> /dev/null)\"" >> "$profile_file"
-                    echo "if [ \$? -eq 0 ]; then" >> "$profile_file"
-                    echo "    eval \"\$__conda_setup\"" >> "$profile_file"
-                    echo "else" >> "$profile_file"
-                    echo "    if [ -f \"$conda_base/etc/profile.d/conda.sh\" ]; then" >> "$profile_file"
-                    echo "        . \"$conda_base/etc/profile.d/conda.sh\"" >> "$profile_file"
-                    echo "    else" >> "$profile_file"
-                    echo "        export PATH=\"$conda_base/bin:\$PATH\"" >> "$profile_file"
-                    echo "    fi" >> "$profile_file"
-                    echo "fi" >> "$profile_file"
-                    echo "unset __conda_setup" >> "$profile_file"
-                    echo "# <<< conda initialize <<<" >> "$profile_file"
-                fi
-            done
-            
-            # Also add conda to PATH for current session
-            echo_info "Adding conda to PATH for current session..."
-            export PATH="$conda_base/bin:$PATH"
-            
-            # Verify channel configuration
-            echo_info "Verifying conda channel configuration..."
-            conda config --show channels
-            
-            echo_success "Python/Miniconda installed successfully"
-            return 0
+    # Determine the correct installer URL
+    if [[ "$os" == "Darwin" ]]; then
+        if [[ "$arch" == "arm64" ]]; then
+            local installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh"
         else
-            echo_error "Python/Miniconda installation completed but conda not accessible"
+            local installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh"
+        fi
+    else
+        local installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    fi
+    
+    echo_info "Downloading Miniforge installer from: $installer_url"
+    
+    # Download the installer
+    if curl -L -o "$miniforge_installer" "$installer_url"; then
+        echo_info "Miniforge installer downloaded successfully"
+        
+        # Make it executable and install
+        chmod +x "$miniforge_installer"
+        
+        # Install Miniforge in batch mode (non-interactive)
+        echo_info "Installing Miniforge..."
+        if bash "$miniforge_installer" -b -p "$HOME/miniforge3"; then
+            # Initialize conda
+            local conda_base="$HOME/miniforge3"
+            
+            if [[ -f "$conda_base/bin/conda" ]]; then
+                # Initialize conda properly for all shells
+                echo_info "Initializing conda for all shells..."
+                eval "$($conda_base/bin/conda shell.bash hook)"
+                conda init bash zsh fish >/dev/null 2>&1 || true
+                
+                # Set up conda to take precedence in shell profiles
+                echo_info "Setting up conda to take precedence in shell profiles..."
+                for shell in bash zsh; do
+                    local profile_file="$HOME/.${shell}rc"
+                    [[ "$shell" == "bash" ]] && profile_file="$HOME/.bash_profile"
+                    
+                    # Add conda initialization to shell profile if not already present
+                    if [[ -f "$profile_file" ]] && ! grep -q "conda initialize" "$profile_file"; then
+                        echo "" >> "$profile_file"
+                        echo "# >>> conda initialize >>>" >> "$profile_file"
+                        echo "# !! Contents within this block are managed by 'conda init' !!" >> "$profile_file"
+                        echo "__conda_setup=\"\$('$conda_base/bin/conda' 'shell.$shell' 'hook' 2> /dev/null)\"" >> "$profile_file"
+                        echo "if [ \$? -eq 0 ]; then" >> "$profile_file"
+                        echo "    eval \"\$__conda_setup\"" >> "$profile_file"
+                        echo "else" >> "$profile_file"
+                        echo "    if [ -f \"$conda_base/etc/profile.d/conda.sh\" ]; then" >> "$profile_file"
+                        echo "        . \"$conda_base/etc/profile.d/conda.sh\"" >> "$profile_file"
+                        echo "    else" >> "$profile_file"
+                        echo "        export PATH=\"$conda_base/bin:\$PATH\"" >> "$profile_file"
+                        echo "    fi" >> "$profile_file"
+                        echo "fi" >> "$profile_file"
+                        echo "unset __conda_setup" >> "$profile_file"
+                        echo "# <<< conda initialize <<<" >> "$profile_file"
+                    fi
+                done
+                
+                # Also add conda to PATH for current session
+                echo_info "Adding conda to PATH for current session..."
+                export PATH="$conda_base/bin:$PATH"
+                
+                # Verify channel configuration
+                echo_info "Verifying conda channel configuration..."
+                conda config --show channels
+                
+                # Clean up installer
+                rm -f "$miniforge_installer"
+                
+                echo_success "Python/Miniforge installed successfully"
+                return 0
+            else
+                echo_error "Python/Miniforge installation completed but conda not accessible"
+                rm -f "$miniforge_installer"
+                return 1
+            fi
+        else
+            echo_error "Python/Miniforge installation failed"
+            rm -f "$miniforge_installer"
             return 1
         fi
     else
-        echo_error "Python/Miniconda installation failed"
+        echo_error "Failed to download Miniforge installer"
         return 1
     fi
 }
@@ -208,11 +211,7 @@ setup_python_environment() {
         fi
     fi
     
-    # Accept Terms of Service for all channels
-    echo_info "Accepting conda Terms of Service for all channels..."
-    conda tos accept --all 2>/dev/null || true
-    
-    # Install Python version using default channels
+    # Install Python version (Miniforge comes with Python, but we can specify version if needed)
     echo_info "Installing Python 3.11..."
     if conda install "python=3.11" -y; then
         echo_info "Python 3.11 installed"
@@ -296,7 +295,7 @@ total_components=0
 # Python/Miniconda
 echo "----------------------------------------"
 ((total_components++))
-if install_miniconda; then
+    if install_miniforge; then
     ((success_count++))
 fi
 
