@@ -2,8 +2,9 @@ name: Constructor Test
 
 on:
   workflow_dispatch:
-  push:
-    branches: [constructor-pkg-installer]
+  # Disabled: superseded by constructor-build-and-test.yml
+  # push:
+  #   branches: [constructor-pkg-installer]
 
 env:
   PYTHON_VERSION_PS: "3.11"

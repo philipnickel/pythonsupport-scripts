@@ -7,12 +7,11 @@ defaults:
 on:
   pull_request:
     branches: [ "main" ]
-    branches-ignore:
-      - 'constructor-pkg-installer'  # Temporarily disabled for constructor development
     paths:
       - 'MacOS/Components/**'
       - '.github/workflows/mac_orchestrators.yml'
   workflow_dispatch:
+  # Note: Disabled on constructor-pkg-installer branch for development
 
 # Re-enabled after PKG installer testing completed successfully
 
@@ -23,7 +22,7 @@ env:
 jobs:
   test-first-year-orchestrator:
     name: Test First Year Orchestrator
-    if: true
+    if: github.ref_name != 'constructor-pkg-installer'
     runs-on: macos-latest
     
     steps:
