@@ -4,11 +4,48 @@ on:
   workflow_dispatch:
   push:
     branches: [constructor-pkg-installer]
+    paths: ['MacOS/constructor_installer/**']
+
+env:
+  PYTHON_VERSION_PS: "3.11"
 
 jobs:
-  test:
+  build-pkg:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Test
-        run: echo "Constructor test works"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION_PS }}
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install Constructor
+        shell: bash -el {0}
+        run: |
+          conda install constructor -y
+          constructor --version
+
+      - name: Build PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "Building constructor PKG..."
+          ./build.sh
+
+      - name: Verify PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          PKG_FILE=$(find . -name "*.pkg" -type f 2>/dev/null | head -1)
+          if [[ -n "$PKG_FILE" ]]; then
+            echo "✅ PKG built successfully: $PKG_FILE"
+            ls -la "$PKG_FILE"
+            installer -pkginfo -pkg "$PKG_FILE"
+          else
+            echo "❌ No PKG file found"
+            exit 1
+          fi
