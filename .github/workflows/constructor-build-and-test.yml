@@ -75,37 +75,48 @@ jobs:
           CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
           
           echo ""
-          echo "=== Testing Installation ==="
+          echo "=== Post-Installation Environment Setup ==="
           
           # Give installation a moment to complete
           sleep 5
           
-          # Find the conda installation
-          CONDA_FOUND=false
-          for conda_path in "$HOME/miniconda3" "$HOME/anaconda3" "/opt/miniconda3" "/opt/anaconda3"; do
-            if [ -f "$conda_path/bin/conda" ]; then
-              # Check Python version to ensure we found the right installation
-              PYTHON_VERSION=$("$conda_path/bin/python3" --version 2>/dev/null | cut -d " " -f 2 | cut -d "." -f1,2)
-              echo "Found conda at: $conda_path (Python $PYTHON_VERSION)"
-              if [[ "$PYTHON_VERSION" == "3.11" ]]; then
-                echo "✅ Found constructor conda installation at: $conda_path"
-                CONDA_PATH="$conda_path"
-                CONDA_FOUND=true
-                break
+          # Update shell environment (like existing workflows)
+          hash -r 2>/dev/null || true
+          
+          # Check if conda is already in PATH
+          echo "Checking conda availability..."
+          if command -v conda >/dev/null 2>&1; then
+            echo "✓ Conda: $(conda --version)"
+            echo "  Location: $(which conda)"
+            echo "  Base: $(conda info --base)"
+            CONDA_FOUND=true
+          else
+            echo "❌ Conda: Not found in PATH"
+            # Try to find and initialize conda (like existing workflows)
+            CONDA_FOUND=false
+            for conda_path in "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda" "/opt/miniconda3/bin/conda"; do
+              if [ -f "$conda_path" ]; then
+                echo "  Found conda at: $conda_path"
+                # Check Python version to ensure we found the right installation
+                PYTHON_VERSION=$("${conda_path%/conda}/python3" --version 2>/dev/null | cut -d " " -f 2 | cut -d "." -f1,2)
+                echo "  Python version: $PYTHON_VERSION"
+                if [[ "$PYTHON_VERSION" == "3.11" ]]; then
+                  echo "✅ Found constructor conda installation (Python 3.11)"
+                  # Initialize conda like existing workflows
+                  eval "$($conda_path shell.bash hook)"
+                  echo "✓ Conda: $(conda --version) (after initialization)"
+                  CONDA_FOUND=true
+                  break
+                else
+                  echo "  Wrong Python version, continuing search..."
+                fi
               fi
-            fi
-          done
+            done
+          fi
           
           if [ "$CONDA_FOUND" = false ]; then
             echo "❌ Could not find conda installation with Python 3.11"
             exit 1
-          fi
-          
-          # Test conda
-          export PATH="$CONDA_PATH/bin:$PATH"
-          if [ -f "$CONDA_PATH/etc/profile.d/conda.sh" ]; then
-            source "$CONDA_PATH/etc/profile.d/conda.sh"
-            conda activate base 2>/dev/null || true
           fi
           
           echo "Testing conda..."
