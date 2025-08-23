@@ -88,19 +88,28 @@ jobs:
           # Test if the PKG installer set up the environment correctly
           # We should be able to just use python3 directly
           
-          # Test Python version
-          echo "Testing default Python..."
-          if command -v python3 >/dev/null 2>&1; then
-            PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-            echo "✅ Python3: $(python3 --version)"
-            echo "  Location: $(which python3)"
-            
-            if [[ "$PYTHON_VERSION" != "${{ env.PYTHON_VERSION_PS }}"* ]]; then
-              echo "❌ Python version mismatch. Expected: ${{ env.PYTHON_VERSION_PS }}, Got: $PYTHON_VERSION"
-              exit 1
+          # Test Python version - check both default and constructor installation
+          echo "Testing Python installations..."
+          echo "Default Python3: $(python3 --version) at $(which python3)"
+          
+          # Check if constructor installed Python is available
+          CONSTRUCTOR_PYTHON_FOUND=false
+          for python_path in "$HOME/miniconda3/bin/python3" "$HOME/anaconda3/bin/python3" "/opt/miniconda3/bin/python3"; do
+            if [ -f "$python_path" ]; then
+              PYTHON_VERSION=$("$python_path" --version 2>/dev/null | cut -d " " -f 2)
+              echo "Constructor Python: $PYTHON_VERSION at $python_path"
+              if [[ "$PYTHON_VERSION" == "${{ env.PYTHON_VERSION_PS }}"* ]]; then
+                echo "✅ Found constructor Python 3.11 installation"
+                CONSTRUCTOR_PYTHON="$python_path"
+                CONSTRUCTOR_PYTHON_FOUND=true
+                break
+              fi
             fi
-          else
-            echo "❌ Python3: Not found in PATH"
+          done
+          
+          if [ "$CONSTRUCTOR_PYTHON_FOUND" = false ]; then
+            echo "❌ Could not find constructor Python 3.11 installation"
+            echo "This means the PKG didn't install Python where expected"
             exit 1
           fi
           
@@ -112,14 +121,15 @@ jobs:
             echo "ℹ️  Conda: Not in PATH (this is OK if packages still import)"
           fi
           
-          # Test package imports - THE CRITICAL TEST!
+          # Test package imports with constructor Python - THE CRITICAL TEST!
           echo ""
           echo "=== Testing Package Imports ==="
+          echo "Using constructor Python: $CONSTRUCTOR_PYTHON"
           
-          if python3 -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print('✅ All packages work')"; then
-            echo "✅ All packages imported successfully"
+          if "$CONSTRUCTOR_PYTHON" -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print('✅ All packages work')"; then
+            echo "✅ All packages imported successfully with constructor Python"
           else
-            echo "❌ Package imports failed"
+            echo "❌ Package imports failed with constructor Python"
             exit 1
           fi
           
