@@ -49,10 +49,10 @@ jobs:
           echo "✅ Installer built: $INSTALLER_FILE"
           echo "📁 Size: $(du -h "$INSTALLER_FILE" | cut -f1)"
           
-          # Install the shell installer
+          # Install the shell installer to a different path to avoid conflicts
           echo ""
           echo "=== Running Shell Installer ==="
-          bash "$INSTALLER_FILE" -b -p ~/miniconda3
+          bash "$INSTALLER_FILE" -b -p ~/dtu-python-stack
           
           echo ""
           echo "=== Testing Installation ==="
@@ -64,7 +64,7 @@ jobs:
           export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           
           # Initialize the installed conda environment
-          CONDA_PATH="$HOME/miniconda3"
+          CONDA_PATH="$HOME/dtu-python-stack"
           if [ -f "$CONDA_PATH/bin/conda" ]; then
             echo "Found conda at: $CONDA_PATH"
             export PATH="$CONDA_PATH/bin:$PATH"
