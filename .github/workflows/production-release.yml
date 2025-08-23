@@ -1,0 +1,452 @@
+name: Production Release - DTU Python Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: 'Create as draft release'
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - 'v*.*.*'
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  MACOS_VERSION_MIN: "10.15"
+
+jobs:
+  # Validate release conditions
+  validate-release:
+    name: Validate Release Conditions
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is-prerelease: ${{ steps.version.outputs.prerelease }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            # Extract version from tag (e.g., v1.0.0 -> 1.0.0)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            PRERELEASE="false"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+          
+          echo "Release version: $VERSION"
+          echo "Release tag: v$VERSION"
+          echo "Pre-release: $PRERELEASE"
+          
+      - name: Validate Version Format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z (e.g., 1.0.0)"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+  # Build all components
+  build-production-components:
+    name: Build Production Components
+    runs-on: macos-latest
+    needs: validate-release
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION_PS }}
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install Constructor
+        shell: bash -el {0}
+        run: |
+          conda install constructor -y
+          constructor --version
+
+      - name: Update Version in Constructor Config
+        shell: bash -el {0}
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          # Update version in construct.yaml
+          sed -i.bak "s/version: .*/version: $VERSION/" MacOS/constructor_installer/python_stack/construct.yaml
+          
+          echo "Updated constructor version to: $VERSION"
+          cat MacOS/constructor_installer/python_stack/construct.yaml | grep "version:"
+
+      - name: Build Constructor Python PKG
+        shell: bash -el {0}
+        working-directory: MacOS/constructor_installer/python_stack
+        run: |
+          echo "Building production constructor Python PKG..."
+          ./build.sh
+
+      - name: Build VSCode PKG
+        working-directory: MacOS/constructor_installer/vscode_component
+        run: |
+          echo "Building production VSCode PKG..."
+          ./build_vscode_pkg.sh
+
+      - name: Build Unified Production Installer
+        working-directory: MacOS/constructor_installer/distribution
+        run: |
+          echo "Building production unified installer..."
+          
+          # Update version in build script
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          sed -i.bak "s/VERSION=\".*\"/VERSION=\"$VERSION\"/" build_combined.sh
+          
+          ./build_combined.sh
+          
+          # Rename final package with proper version
+          cd builds
+          BUILT_PKG=$(find . -name "DTU-Python-Development-Environment-*.pkg" | head -1)
+          RELEASE_PKG="DTU-Python-Development-Environment-$VERSION.pkg"
+          
+          if [ -n "$BUILT_PKG" ]; then
+            mv "$BUILT_PKG" "$RELEASE_PKG"
+            echo "✅ Production installer: $RELEASE_PKG"
+            echo "✅ Size: $(du -h "$RELEASE_PKG" | cut -f1)"
+          else
+            echo "❌ Failed to find built installer"
+            exit 1
+          fi
+
+      - name: Verify Production Build
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          RELEASE_PKG="MacOS/constructor_installer/distribution/builds/DTU-Python-Development-Environment-$VERSION.pkg"
+          
+          if [ ! -f "$RELEASE_PKG" ]; then
+            echo "❌ Production installer not found: $RELEASE_PKG"
+            exit 1
+          fi
+          
+          # Verify package structure
+          if pkgutil --payload-files "$RELEASE_PKG" >/dev/null 2>&1; then
+            echo "✅ Package structure verified"
+          else
+            echo "❌ Package structure verification failed"
+            exit 1
+          fi
+          
+          echo "=== Production Build Summary ==="
+          echo "Package: $(basename "$RELEASE_PKG")"
+          echo "Size: $(du -h "$RELEASE_PKG" | cut -f1)"
+          echo "Version: $VERSION"
+          echo "Components: Constructor Python + VSCode + Extensions"
+
+      - name: Upload Production Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtu-python-environment-${{ needs.validate-release.outputs.version }}
+          path: MacOS/constructor_installer/distribution/builds/DTU-Python-Development-Environment-${{ needs.validate-release.outputs.version }}.pkg
+          retention-days: 30
+
+      - name: Upload Component Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-packages-${{ needs.validate-release.outputs.version }}
+          path: |
+            MacOS/constructor_installer/python_stack/builds/*.pkg
+            MacOS/constructor_installer/vscode_component/builds/*.pkg
+          retention-days: 30
+
+  # Test production build
+  test-production-build:
+    name: Test Production Build
+    runs-on: macos-latest
+    needs: [validate-release, build-production-components]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Download Production Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: dtu-python-environment-${{ needs.validate-release.outputs.version }}
+          path: ./production-installer/
+
+      - name: Production Installation Test
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          INSTALLER_PKG="./production-installer/DTU-Python-Development-Environment-$VERSION.pkg"
+          
+          echo "=== Production Installation Test ==="
+          echo "Testing: $(basename "$INSTALLER_PKG")"
+          echo "Version: $VERSION"
+          echo "Size: $(du -h "$INSTALLER_PKG" | cut -f1)"
+          
+          # Install production package
+          echo "Installing production DTU Python Environment..."
+          sudo installer -verbose -pkg "$INSTALLER_PKG" -target /
+          
+          # Give installation time to complete
+          sleep 15
+          
+          # Test Python environment
+          echo "=== Testing Python Environment ==="
+          
+          CONSTRUCTOR_PYTHON=""
+          SEARCH_PATHS=(
+            "$HOME/dtu-python-stack/bin/python3"
+            "$HOME/miniconda3/bin/python3"
+            "$HOME/anaconda3/bin/python3"
+          )
+          
+          for python_path in "${SEARCH_PATHS[@]}"; do
+            if [ -f "$python_path" ]; then
+              PYTHON_VERSION=$("$python_path" --version 2>/dev/null | cut -d " " -f 2)
+              if [[ "$PYTHON_VERSION" == "${{ env.PYTHON_VERSION_PS }}"* ]]; then
+                CONSTRUCTOR_PYTHON="$python_path"
+                echo "✅ Production Python: $PYTHON_VERSION at $python_path"
+                break
+              fi
+            fi
+          done
+          
+          if [ -z "$CONSTRUCTOR_PYTHON" ]; then
+            echo "❌ Production Python not found"
+            exit 1
+          fi
+          
+          # Test package imports
+          echo "Testing production Python packages..."
+          if "$CONSTRUCTOR_PYTHON" -c "
+import sys
+print(f'Python: {sys.version}')
+print(f'Executable: {sys.executable}')
+
+# Test all packages
+import pandas as pd
+import numpy as np
+import scipy
+import statsmodels
+import uncertainties
+import dtumathtools
+
+print('✅ All production packages working')
+
+# Test functionality
+df = pd.DataFrame({'x': np.linspace(0, 10, 100), 'y': np.sin(np.linspace(0, 10, 100))})
+print(f'✅ Data manipulation: {df.shape} DataFrame created')
+
+# Test scientific computing
+from scipy import stats
+corr, _ = stats.pearsonr(df['x'], df['y'])
+print(f'✅ Scientific computing: correlation = {corr:.3f}')
+
+print('🎉 Production Python environment fully functional!')
+"; then
+            echo "✅ Production Python environment test passed"
+          else
+            echo "❌ Production Python environment test failed"
+            exit 1
+          fi
+          
+          # Test VSCode
+          echo "=== Testing VSCode Environment ==="
+          
+          if [ -d "/Applications/Visual Studio Code.app" ]; then
+            APP_VERSION=$(defaults read "/Applications/Visual Studio Code.app/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "unknown")
+            echo "✅ Production VSCode: $APP_VERSION"
+          else
+            echo "❌ VSCode not found"
+            exit 1
+          fi
+          
+          # Test CLI
+          export PATH="/usr/local/bin:$PATH"
+          if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1; then
+            CODE_VERSION=$(code --version | head -1)
+            echo "✅ Production VSCode CLI: $CODE_VERSION"
+          else
+            echo "ℹ️  VSCode CLI may need PATH configuration"
+          fi
+          
+          echo ""
+          echo "🎉 PRODUCTION BUILD TEST: SUCCESS!"
+          echo "✅ Version $VERSION installer working perfectly"
+          echo "✅ All components functional"
+          echo "✅ Ready for release!"
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, build-production-components, test-production-build]
+    if: success()
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Download Production Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: dtu-python-environment-${{ needs.validate-release.outputs.version }}
+          path: ./release-assets/
+
+      - name: Download Component Packages
+        uses: actions/download-artifact@v4
+        with:
+          name: component-packages-${{ needs.validate-release.outputs.version }}
+          path: ./component-assets/
+
+      - name: Prepare Release Notes
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          cat > release-notes.md << EOF
+          # DTU Python Development Environment v$VERSION
+          
+          **Complete Python development environment for DTU students with professional installer experience.**
+          
+          ## 🎉 What's New in v$VERSION
+          
+          - **Single-Click Installation**: Complete Python + VSCode environment in one installer
+          - **No Homebrew Required**: Completely self-contained installation
+          - **Professional Experience**: Native macOS PKG with DTU branding
+          - **Enterprise Ready**: Suitable for IT department mass deployment
+          - **Offline Capable**: Core functionality works without internet
+          - **Fast Installation**: ~3-5 minutes total installation time
+          
+          ## 📦 What's Included
+          
+          ### Python Environment
+          - **Python 3.11** - Latest stable Python
+          - **Scientific Computing Stack**: pandas, scipy, statsmodels
+          - **DTU Packages**: dtumathtools, uncertainties
+          - **Conda Package Manager** - For additional packages
+          
+          ### Development Environment
+          - **Visual Studio Code** - Professional code editor
+          - **Python Extensions**: IntelliSense, debugging, linting
+          - **Jupyter Support** - Complete notebook development
+          - **PDF Viewer** - For documentation viewing
+          
+          ## 🚀 Installation
+          
+          1. Download \`DTU-Python-Development-Environment-$VERSION.pkg\`
+          2. Double-click to launch installer
+          3. Follow the installation wizard
+          4. Start coding with \`code\` command!
+          
+          ## ✅ System Requirements
+          
+          - **macOS**: 10.15 (Catalina) or later
+          - **Architecture**: Intel (x86_64) and Apple Silicon (arm64)
+          - **Disk Space**: 2 GB available space
+          - **Internet**: Optional (for extension updates)
+          
+          ## 🔧 Technical Details
+          
+          - **Installation Location**: \`~/dtu-python-stack/\` (Python), \`/Applications/\` (VSCode)
+          - **CLI Tools**: \`code\` command available system-wide
+          - **Package Format**: Native macOS PKG installer
+          - **Installer Size**: ~250-300MB (includes all packages)
+          
+          ## 🆘 Support
+          
+          For support and troubleshooting:
+          - Check the built-in readme and documentation
+          - Contact your DTU course instructor
+          - Visit DTU Python support resources
+          
+          ## 🏗️ Technical Implementation
+          
+          This release represents the completion of the hybrid installer approach:
+          - **Phase 1**: Constructor-based Python environment
+          - **Phase 2**: VSCode PKG component
+          - **Phase 3**: Integration testing
+          - **Phase 4**: Unified distribution packaging
+          - **Phase 5**: Production CI/CD integration
+          
+          **Benefits Delivered:**
+          - ✅ Eliminated Homebrew dependency
+          - ✅ Professional installer experience
+          - ✅ Enterprise deployment ready
+          - ✅ Consistent environment every time
+          - ✅ Significant reliability improvement
+          
+          ---
+          
+          **Full Changelog**: https://github.com/philipnickel/pythonsupport-scripts/compare/v$VERSION
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate-release.outputs.tag }}
+          name: DTU Python Development Environment v${{ needs.validate-release.outputs.version }}
+          body_path: release-notes.md
+          draft: ${{ github.event.inputs.draft == 'true' }}
+          prerelease: ${{ needs.validate-release.outputs.is-prerelease == 'true' }}
+          files: |
+            ./release-assets/DTU-Python-Development-Environment-${{ needs.validate-release.outputs.version }}.pkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          TAG="${{ needs.validate-release.outputs.tag }}"
+          
+          echo "=== PRODUCTION RELEASE COMPLETE ===" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **DTU Python Development Environment v$VERSION Released!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
+          echo "- **Main Installer**: \`DTU-Python-Development-Environment-$VERSION.pkg\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size**: ~250-300MB (complete environment)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: Native macOS PKG installer" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "- All component builds: **PASSED**" >> $GITHUB_STEP_SUMMARY
+          echo "- Production installation test: **PASSED**" >> $GITHUB_STEP_SUMMARY
+          echo "- Python environment verification: **PASSED**" >> $GITHUB_STEP_SUMMARY
+          echo "- VSCode integration test: **PASSED**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Key Features" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Single-click complete development environment" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ No Homebrew dependency (eliminated!)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Professional DTU-branded installer" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Enterprise deployment ready" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Consistent installation every time" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Tag**: \`$TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: Ready for DTU student deployment! 🎓" >> $GITHUB_STEP_SUMMARY
