@@ -46,7 +46,7 @@ jobs:
       - name: Build Constructor Installer
         run: |
           cd constructor_installer
-          constructor --platform osx-64 .
+          constructor --platform osx-64 --conda-exe $CONDA/bin/conda .
 
       - name: Install Constructor PKG
         run: |
