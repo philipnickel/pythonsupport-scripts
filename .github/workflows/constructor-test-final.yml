@@ -39,20 +39,36 @@ jobs:
         shell: bash -el {0}
         working-directory: MacOS/constructor_installer/python_stack
         run: |
-          # Find the installer file (now .sh)
-          INSTALLER_FILE=$(find . -name "*.sh" -type f 2>/dev/null | head -1)
-          if [[ -z "$INSTALLER_FILE" ]]; then
+          # Find the installer file (PKG or SH)
+          PKG_FILE=$(find . -name "*.pkg" -type f 2>/dev/null | head -1)
+          SH_FILE=$(find . -name "*.sh" -type f 2>/dev/null | head -1)
+          
+          if [[ -n "$PKG_FILE" ]]; then
+            INSTALLER_FILE="$PKG_FILE"
+            INSTALLER_TYPE="pkg"
+          elif [[ -n "$SH_FILE" ]]; then
+            INSTALLER_FILE="$SH_FILE"
+            INSTALLER_TYPE="sh"
+          else
             echo "❌ No installer file found"
             exit 1
           fi
           
-          echo "✅ Installer built: $INSTALLER_FILE"
+          echo "✅ Installer built: $INSTALLER_FILE ($INSTALLER_TYPE)"
           echo "📁 Size: $(du -h "$INSTALLER_FILE" | cut -f1)"
           
-          # Install the shell installer to a different path to avoid conflicts
+          # Install based on type
           echo ""
-          echo "=== Running Shell Installer ==="
-          bash "$INSTALLER_FILE" -b -p ~/dtu-python-stack
+          if [[ "$INSTALLER_TYPE" == "pkg" ]]; then
+            echo "=== Installing PKG ==="
+            # Use verbose conda logging and installer logging as per constructor docs
+            sudo CONDA_VERBOSITY=3 installer -verbose -pkg "$INSTALLER_FILE" -target CurrentUserHomeDirectory -dumplog
+            CONDA_PATH="$HOME/miniconda3"  # PKG installs to standard location
+          else
+            echo "=== Running Shell Installer ==="
+            bash "$INSTALLER_FILE" -b -p ~/dtu-python-stack
+            CONDA_PATH="$HOME/dtu-python-stack"  # Shell installer uses custom path
+          fi
           
           echo ""
           echo "=== Testing Installation ==="
@@ -63,8 +79,7 @@ jobs:
           # Update PATH to include common conda locations
           export PATH="/opt/homebrew/bin:/usr/local/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/usr/local/Caskroom/miniconda/base/bin:$PATH"
           
-          # Initialize the installed conda environment
-          CONDA_PATH="$HOME/dtu-python-stack"
+          # Initialize the installed conda environment (CONDA_PATH set above based on installer type)
           if [ -f "$CONDA_PATH/bin/conda" ]; then
             echo "Found conda at: $CONDA_PATH"
             export PATH="$CONDA_PATH/bin:$PATH"
@@ -131,8 +146,8 @@ jobs:
           fi
           
           echo ""
-          echo "🎉 CONSTRUCTOR SHELL INSTALLER TEST: SUCCESS!"
-          echo "✅ Shell installer runs correctly"
+          echo "🎉 CONSTRUCTOR INSTALLER TEST: SUCCESS!"
+          echo "✅ $INSTALLER_TYPE installer runs correctly"
           echo "✅ Python environment works"
           echo "✅ Scientific packages import successfully" 
           echo "✅ Constructor approach is viable!"

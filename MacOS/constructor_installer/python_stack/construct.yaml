@@ -20,9 +20,9 @@ specs:
   - uncertainties
   - dtumathtools
 
-# macOS-specific configuration - use shell installer for testing
-installer_type: sh
-installer_filename: DTU-Python-Stack-{{ version }}.sh
+# macOS-specific configuration - PKG installer for end users
+installer_type: pkg
+installer_filename: DTU-Python-Stack-{{ version }}.pkg
 
 # Package metadata
 pkg_name: DTU-Python-Stack
