@@ -353,7 +353,7 @@ jobs:
             - **Visual Studio Code**: Professional code editor with Python extensions
             - **Complete Setup**: Everything needed for DTU coursework in one installer
             
-            🤖 Generated with [Claude Code](https://claude.ai/code)
+            Generated with [Claude Code](https://claude.ai/code)
             
             Co-Authored-By: Claude <noreply@anthropic.com>
           files: |
