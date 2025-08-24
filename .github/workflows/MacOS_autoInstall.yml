@@ -38,10 +38,14 @@ jobs:
           python-version: 3.11
           channels: conda-forge
           use-mamba: true
+          mamba-version: "*"
+          conda-solver: libmamba
+          cache-environment: true
+          cache-environment-key: constructor-env-${{ hashFiles('MacOS/constructor_installer/python_stack/construct.yaml') }}
 
       - name: Install Constructor
         run: |
-          conda install -c conda-forge constructor -y
+          mamba install -c conda-forge constructor -y
 
       - name: Build Constructor Python PKG
         run: |
