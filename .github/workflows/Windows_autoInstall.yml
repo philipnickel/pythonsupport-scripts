@@ -61,9 +61,8 @@ jobs:
       - name: Build Constructor Python EXE
         run: |
           cd Windows/constructor_installer/python_stack
-          # Use cmd to run the Windows batch file
-          cmd //c build.bat
-        shell: cmd
+          cmd /c build.bat
+        shell: pwsh
 
       - name: Install Constructor EXE
         run: |
