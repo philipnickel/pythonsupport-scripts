@@ -108,11 +108,22 @@ jobs:
           $logPath = "$INSTALL_DIR\install.log"
           if (Test-Path $logPath) {
             Write-Host "Found installation log at: $logPath"
-            Write-Host "=== INSTALLATION LOG (last 100 lines) ==="
-            Get-Content $logPath -Tail 100
+            Write-Host "=== INSTALLATION LOG (last 50 lines) ==="
+            Get-Content $logPath -Tail 50
             Write-Host "=== END INSTALLATION LOG ==="
           } else {
             Write-Host "No install.log found at expected location: $logPath"
+          }
+          
+          # Check for post-install log
+          $postInstallLogPath = "$INSTALL_DIR\post_install.log"
+          if (Test-Path $postInstallLogPath) {
+            Write-Host "Found post-install log at: $postInstallLogPath"
+            Write-Host "=== POST-INSTALL LOG ==="
+            Get-Content $postInstallLogPath
+            Write-Host "=== END POST-INSTALL LOG ==="
+          } else {
+            Write-Host "No post_install.log found - post-install script may not have run"
           }
           
           if ($process.ExitCode -eq 0) {

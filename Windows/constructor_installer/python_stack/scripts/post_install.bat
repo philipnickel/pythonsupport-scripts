@@ -2,6 +2,9 @@
 REM Post-install script for DTU Python Stack - Windows
 REM Handles Python environment configuration + VS Code installation
 
+REM Create log file for debugging
+set LOGFILE=C:\dtu-python-stack\post_install.log
+echo [INFO] Starting DTU Python Stack post-install... > "%LOGFILE%"
 echo [INFO] Starting DTU Python Stack post-install...
 
 REM =============================================================================
@@ -9,6 +12,7 @@ REM Python Environment Setup
 REM =============================================================================
 
 echo [INFO] Configuring Python environment...
+echo [INFO] Configuring Python environment... >> "%LOGFILE%"
 
 REM Basic conda configuration
 conda config --set anaconda_anon_usage off >nul 2>&1 || echo [WARNING] Could not set anaconda_anon_usage
@@ -29,6 +33,7 @@ REM VS Code Installation
 REM =============================================================================
 
 echo [INFO] Installing Visual Studio Code...
+echo [INFO] Installing Visual Studio Code... >> "%LOGFILE%"
 
 set VSCODE_URL=https://code.visualstudio.com/sha/download?build=stable^&os=win32-x64-user
 set VSCODE_INSTALLER=%TEMP%\vscode_installer.exe
@@ -37,18 +42,24 @@ set VSCODE_PATH=%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe
 REM Check if already installed
 if exist "%VSCODE_PATH%" (
     echo [INFO] VS Code already installed
+    echo [INFO] VS Code already installed >> "%LOGFILE%"
 ) else (
     echo [INFO] Downloading VS Code...
+    echo [INFO] Downloading VS Code... >> "%LOGFILE%"
     powershell -Command "Invoke-WebRequest -Uri '%VSCODE_URL%' -OutFile '%VSCODE_INSTALLER%' -UseBasicParsing -TimeoutSec 60" >nul 2>&1
     if errorlevel 1 (
         echo [WARNING] Could not download VS Code ^(network timeout^)
+        echo [WARNING] Could not download VS Code ^(network timeout^) >> "%LOGFILE%"
     ) else (
         echo [INFO] Installing VS Code...
+        echo [INFO] Installing VS Code... >> "%LOGFILE%"
         "%VSCODE_INSTALLER%" /VERYSILENT /NORESTART /MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath >nul 2>&1
         if errorlevel 1 (
             echo [WARNING] Could not install VS Code
+            echo [WARNING] Could not install VS Code >> "%LOGFILE%"
         ) else (
             echo [SUCCESS] VS Code installed successfully
+            echo [SUCCESS] VS Code installed successfully >> "%LOGFILE%"
             
             REM Brief wait for VS Code to be available
             timeout /t 2 >nul 2>&1
@@ -56,6 +67,7 @@ if exist "%VSCODE_PATH%" (
             REM Install essential extensions
             if exist "%VSCODE_PATH%" (
                 echo [INFO] Installing Python extension...
+                echo [INFO] Installing Python extension... >> "%LOGFILE%"
                 "%LOCALAPPDATA%\Programs\Microsoft VS Code\bin\code.cmd" --install-extension ms-python.python --force >nul 2>&1 || echo [WARNING] Could not install Python extension
             )
         )
