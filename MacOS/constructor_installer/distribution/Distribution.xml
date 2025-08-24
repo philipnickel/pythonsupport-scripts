@@ -13,14 +13,10 @@
     </volume-check>
     
     <!-- Define documents displayed at various steps -->
-    <welcome file="welcome.html" mime-type="text/html"/>
-    <readme file="readme.html" mime-type="text/html"/>
-    <license file="license.html" mime-type="text/html"/>
-    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <readme file="Introduction.rtf" mime-type="text/rtf"/>
+    <license file="Licence.rtf" mime-type="text/rtf"/>
+    <conclusion file="Summary.rtf" mime-type="text/rtf"/>
     
-    <!-- Background and styling -->
-    <background file="background.png" mime-type="image/png" alignment="topleft" scaling="proportional"/>
-    <background-darkAqua file="background-dark.png" mime-type="image/png" alignment="topleft" scaling="proportional"/>
     
     <!-- List all component packages -->
     <pkg-ref id="dk.dtu.python.constructor" 
