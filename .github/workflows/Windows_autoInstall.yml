@@ -67,6 +67,7 @@ jobs:
           constructor . --output-dir=builds
 
       - name: Install Constructor EXE
+        timeout-minutes: 15
         run: |
           echo "Installing Constructor EXE..."
           # Find the built EXE
@@ -77,8 +78,12 @@ jobs:
           fi
           echo "Installing: $EXE_FILE"
           
-          # Install silently to user directory
-          "$EXE_FILE" /S /AddToPath=1 /RegisterPython=1 /D=$HOME/dtu-python-stack
+          # Install silently to user directory with timeout
+          timeout 900 "$EXE_FILE" /S /AddToPath=1 /RegisterPython=1 /D=$HOME/dtu-python-stack || {
+            echo "EXE installation timed out after 15 minutes"
+            echo "This may be due to network issues downloading VS Code"
+            exit 1
+          }
           echo "Constructor EXE installation completed"
 
       - name: Verify VS Code Installation (Windows)
