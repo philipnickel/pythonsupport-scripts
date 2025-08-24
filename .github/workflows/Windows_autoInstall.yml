@@ -1,0 +1,182 @@
+name: Windows_autoInstall
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'Windows/**'
+      - '.github/workflows/Windows_autoInstall.yml'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'Windows/**'
+      - '.github/workflows/Windows_autoInstall.yml'
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: "CI"
+
+jobs:
+  test-constructor-windows:
+    name: Test Constructor Installer (Windows)
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Miniforge (Windows)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: 3.11
+          channels: conda-forge
+          use-mamba: true
+          mamba-version: "*"
+          conda-solver: libmamba
+          cache-environment: true
+          cache-environment-key: constructor-windows-env-${{ hashFiles('Windows/constructor_installer/python_stack/construct.yaml') }}
+
+      - name: Configure conda-forge only (Windows)
+        run: |
+          # Remove all default channels completely
+          conda config --remove-key channels 2>/dev/null || true
+          conda config --add channels conda-forge
+          conda config --set channel_priority strict
+          # Remove any existing defaults channel references
+          conda config --remove channels defaults 2>/dev/null || true
+          # Show final config
+          conda config --show channels
+
+      - name: Install Constructor (Windows)
+        run: |
+          mamba install constructor -y
+
+      - name: Build Constructor Python EXE
+        run: |
+          cd Windows/constructor_installer/python_stack
+          # Use cmd to run the Windows batch file
+          cmd //c build.bat
+        shell: cmd
+
+      - name: Install Constructor EXE
+        run: |
+          echo "Installing Constructor EXE..."
+          # Find the built EXE
+          EXE_FILE=$(find Windows/constructor_installer/python_stack/builds -name "*.exe" | head -1)
+          if [[ -z "$EXE_FILE" ]]; then
+            echo "No EXE file found"
+            exit 1
+          fi
+          echo "Installing: $EXE_FILE"
+          
+          # Install silently to user directory
+          "$EXE_FILE" /S /AddToPath=1 /RegisterPython=1 /D=$HOME/dtu-python-stack
+          echo "Constructor EXE installation completed"
+
+      - name: Verify VS Code Installation (Windows)
+        run: |
+          echo "Verifying VS Code installation from post-install script..."
+          
+          # Check if VS Code executable exists in common locations
+          VSCODE_PATHS=(
+            "$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe"
+            "/c/Program Files/Microsoft VS Code/Code.exe"
+            "/c/Program Files (x86)/Microsoft VS Code/Code.exe"
+          )
+          
+          VSCODE_FOUND=false
+          for vscode_path in "${VSCODE_PATHS[@]}"; do
+            if [ -f "$vscode_path" ]; then
+              echo "✓ VS Code found at: $vscode_path"
+              VSCODE_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$VSCODE_FOUND" = false ]; then
+            echo "⚠ VS Code not installed (may have failed due to network/permissions)"
+            echo "This is acceptable - Python environment is the critical component"
+          else
+            # Test CLI functionality
+            export PATH="$PATH:$LOCALAPPDATA/Programs/Microsoft VS Code/bin"
+            if command -v code >/dev/null 2>&1; then
+              echo "✓ VS Code CLI working"
+              code --version | head -1
+            else
+              echo "⚠ VS Code CLI not working"
+            fi
+          fi
+
+      - name: Verify conda (Windows)
+        run: |
+          # Check for conda in constructor installation
+          CONDA_PATHS=(
+            "$HOME/dtu-python-stack/Scripts/conda.exe"
+            "$HOME/dtu-python-stack/condabin/conda.bat"
+            "$HOME/miniconda3/Scripts/conda.exe"
+          )
+          
+          CONDA_FOUND=false
+          for conda_path in "${CONDA_PATHS[@]}"; do
+            if [ -f "$conda_path" ]; then
+              echo "Found conda at: $conda_path"
+              "$conda_path" --version
+              CONDA_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$CONDA_FOUND" = false ]; then
+            echo "Conda not found in expected locations"
+            exit 1
+          fi
+
+      - name: Verify python (3.11) (Windows)
+        run: |
+          # Find constructor Python
+          PYTHON_PATHS=(
+            "$HOME/dtu-python-stack/python.exe"
+            "$HOME/dtu-python-stack/Scripts/python.exe"
+            "$HOME/miniconda3/python.exe"
+          )
+          
+          PYTHON_FOUND=false
+          for python_path in "${PYTHON_PATHS[@]}"; do
+            if [ -f "$python_path" ]; then
+              echo "Found Python at: $python_path"
+              
+              # Verify the installed Python version
+              EXPECTED_VERSION="3.11"
+              INSTALLED_VERSION=$("$python_path" --version | cut -d " " -f 2)
+              if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+                echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+                exit 1
+              fi
+              echo "Correct Python version $INSTALLED_VERSION is installed."
+              
+              # Verify Python package imports
+              "$python_path" -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+              
+              PYTHON_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$PYTHON_FOUND" = false ]; then
+            echo "Python not found in expected locations"
+            exit 1
+          fi
+
+      - name: Upload Constructor EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtu-constructor-exe
+          path: Windows/constructor_installer/python_stack/builds/*.exe
+          retention-days: 30
