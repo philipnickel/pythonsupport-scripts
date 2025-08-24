@@ -55,13 +55,15 @@ jobs:
           conda config --show channels
 
       - name: Install Constructor (Windows)
+        shell: pwsh
         run: |
           mamba install constructor -y
 
       - name: Build Constructor Python EXE
+        shell: pwsh
         run: |
           cd Windows/constructor_installer/python_stack
-          conda run -n base constructor . --output-dir=builds
+          constructor . --output-dir=builds
 
       - name: Install Constructor EXE
         run: |
