@@ -15,18 +15,22 @@ echo [INFO] Configuring Python environment...
 echo [INFO] Configuring Python environment... >> "%LOGFILE%"
 
 REM Basic conda configuration
-conda config --set anaconda_anon_usage off >nul 2>&1 || echo [WARNING] Could not set anaconda_anon_usage
-conda config --set auto_activate_base true >nul 2>&1 || echo [WARNING] Could not set auto_activate_base
+echo [INFO] Setting conda configuration... >> "%LOGFILE%"
+conda config --set anaconda_anon_usage off >nul 2>&1 || (echo [WARNING] Could not set anaconda_anon_usage && echo [WARNING] Could not set anaconda_anon_usage >> "%LOGFILE%")
+conda config --set auto_activate_base true >nul 2>&1 || (echo [WARNING] Could not set auto_activate_base && echo [WARNING] Could not set auto_activate_base >> "%LOGFILE%")
 
 REM Remove default channels to avoid commercial channel warnings
-conda config --remove channels defaults >nul 2>&1 || echo [WARNING] Could not remove defaults channel
-conda config --add channels conda-forge >nul 2>&1 || echo [WARNING] Could not add conda-forge channel
+echo [INFO] Configuring conda channels... >> "%LOGFILE%"
+conda config --remove channels defaults >nul 2>&1 || (echo [WARNING] Could not remove defaults channel && echo [WARNING] Could not remove defaults channel >> "%LOGFILE%")
+conda config --add channels conda-forge >nul 2>&1 || (echo [WARNING] Could not add conda-forge channel && echo [WARNING] Could not add conda-forge channel >> "%LOGFILE%")
 
 REM Shell integration - Windows Command Prompt and PowerShell
-conda init cmd.exe >nul 2>&1 || echo [WARNING] Could not init cmd.exe
-conda init powershell >nul 2>&1 || echo [WARNING] Could not init powershell
+echo [INFO] Setting up shell integration... >> "%LOGFILE%"
+conda init cmd.exe >nul 2>&1 || (echo [WARNING] Could not init cmd.exe && echo [WARNING] Could not init cmd.exe >> "%LOGFILE%")
+conda init powershell >nul 2>&1 || (echo [WARNING] Could not init powershell && echo [WARNING] Could not init powershell >> "%LOGFILE%")
 
 echo [SUCCESS] Python environment configured
+echo [SUCCESS] Python environment configured >> "%LOGFILE%"
 
 REM =============================================================================
 REM VS Code Installation
