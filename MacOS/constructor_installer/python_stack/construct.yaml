@@ -31,6 +31,7 @@ initialize_conda: true
 initialize_by_default: true
 register_python: true
 post_install: scripts/post_install.sh
+post_install_desc: "Setting up Python environment, downloading Visual Studio Code, installing extensions, and running diagnostics..."
 
 # macOS specific settings
 keep_pkgs: false

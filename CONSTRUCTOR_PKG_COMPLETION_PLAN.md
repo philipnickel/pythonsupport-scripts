@@ -18,30 +18,25 @@ Complete the constructor-based PKG installer implementation for DTU Python Devel
 - [ ] Optimize build time and package size
 - [ ] Validate installer works without internet connection
 
-## Phase 2: VS Code Integration 🎯 **NEXT**
+## Phase 2: Enhanced Post-Install Script 🎯 **NEXT**
 
-### 2.1 Complete VS Code PKG Component
-- [ ] Test `MacOS/constructor_installer/vscode_component/build_vscode_pkg.sh`
-- [ ] Ensure VS Code downloads correctly from Microsoft
-- [ ] Verify Python extensions install properly
-- [ ] Test VS Code CLI tools availability (`code` command)
+### 2.1 Comprehensive Post-Install Script
+- [ ] Update `post_install.sh` to download and install VS Code from Microsoft
+- [ ] Install VS Code Python extensions programmatically
+- [ ] Set up VS Code CLI tools (`code` command) in PATH
+- [ ] Run diagnostics system as final step (`generate_report.sh`)
 
-### 2.2 Unified Distribution PKG
-- [ ] Fix `MacOS/constructor_installer/distribution/Distribution.xml` JavaScript issues
-- [ ] Test combined installer with both Python and VS Code
-- [ ] Ensure proper RTF documentation displays during installation
-- [ ] Validate system-wide installation with `sudo installer`
+### 2.2 Constructor Configuration Updates
+- [ ] Add `post_install_desc` to construct.yaml for user-friendly description
+- [ ] Ensure post-install script handles both GUI and CLI installations
+- [ ] Test script works with `CurrentUserHomeDirectory` target
+- [ ] Verify all components install correctly in single PKG
 
-### 2.3 Post-Installation Diagnostics
-- [ ] Integrate diagnostics system as final installation step
-- [ ] Run `MacOS/Components/Diagnostics/generate_report.sh` after installation
-- [ ] Verify all components installed correctly (Python, VS Code, packages)
-- [ ] Generate installation report for user and troubleshooting
-
-### 2.4 Update Workflow for Unified Testing
-- [ ] Restore unified distribution build steps in workflow
-- [ ] Test complete installation: Python + VS Code + Extensions + Diagnostics
-- [ ] Ensure all three test jobs pass: constructor, orchestrator, legacy
+### 2.3 Simplified Workflow Testing
+- [ ] Remove complex distribution build steps from workflow
+- [ ] Test single constructor PKG with enhanced post-install
+- [ ] Verify Python + VS Code + Extensions + Diagnostics all work
+- [ ] Update artifact upload to use single PKG
 
 
 ## Phase 3: Production Ready 📦 **AFTER PHASE 2**
@@ -65,36 +60,29 @@ Complete the constructor-based PKG installer implementation for DTU Python Devel
 
 ## Phase 4: Windows Implementation 🪟 **PARALLEL TO PHASE 3**
 
-### 4.1 Windows Constructor PKG
-- [ ] Research conda constructor for Windows (.exe/.msi installers)
-- [ ] Adapt construct.yaml for Windows environment
-- [ ] Test Python 3.11 + scientific packages on Windows
-- [ ] Implement Windows-specific post-install scripts
+### 4.1 Windows Constructor Setup
+- [ ] Create Windows construct.yaml (.exe installer type)
+- [ ] Adapt Python 3.11 + scientific packages for Windows
+- [ ] Test conda constructor on Windows environment
 
-### 4.2 Windows VS Code Integration
-- [ ] Create Windows VS Code installer component
-- [ ] Download VS Code for Windows from Microsoft
-- [ ] Handle Windows-specific VS Code extensions and CLI setup
-- [ ] Test unified Windows installer (.msi format)
+### 4.2 Windows Post-Install Script
+- [ ] Create `post_install.bat` for Windows (.bat file required)
+- [ ] Download and install VS Code for Windows from Microsoft
+- [ ] Install VS Code Python extensions on Windows
+- [ ] Set up VS Code CLI tools in Windows PATH
+- [ ] Run Windows diagnostics (PowerShell equivalent of generate_report.sh)
 
-### 4.3 Windows Post-Installation Diagnostics
-- [ ] Adapt diagnostics system for Windows environment
-- [ ] Create Windows equivalent of `generate_report.sh` (PowerShell script)
-- [ ] Test Python, VS Code, and package verification on Windows
-- [ ] Generate Windows-compatible installation reports
-
-### 4.4 Windows CI/CD Integration
+### 4.3 Windows CI/CD Integration
 - [ ] Add Windows runners to GitHub Actions workflow
-- [ ] Create `test-windows-constructor` job
-- [ ] Test Windows installer on different Windows versions
+- [ ] Create `test-windows-constructor` job using single PKG approach
+- [ ] Test Windows installer (.exe) on different Windows versions
 - [ ] Parallel testing: macOS and Windows installers
 
-### 4.5 Cross-Platform Consistency
+### 4.4 Cross-Platform Consistency
 - [ ] Ensure same Python packages on both platforms
 - [ ] Consistent VS Code extensions across platforms
-- [ ] Unified documentation and user experience
-- [ ] Common troubleshooting procedures
-- [ ] Cross-platform diagnostics reports with same format and metrics
+- [ ] Unified post-install experience (download + install + verify)
+- [ ] Cross-platform diagnostics reports with same format
 
 ## Phase 5: Deployment Strategy 🚀 **FINAL**
 
@@ -122,22 +110,19 @@ Complete the constructor-based PKG installer implementation for DTU Python Devel
 
 #### macOS
 - [ ] ✅ Constructor PKG installs Python 3.11 + all required packages
-- [ ] ❌ Unified PKG installs both Python and VS Code successfully  
+- [ ] ❌ Single PKG with post-install script handles VS Code + extensions + diagnostics
 - [ ] ❌ All three installation methods work: constructor, orchestrator, legacy
 - [ ] ❌ Compatible with macOS 10.15+ (Intel + Apple Silicon)
-- [ ] ❌ Diagnostics system runs automatically post-installation
 
 #### Windows  
-- [ ] ❌ Constructor installer (.exe/.msi) installs Python 3.11 + packages
-- [ ] ❌ Unified Windows installer includes VS Code
+- [ ] ❌ Constructor .exe installs Python 3.11 + packages
+- [ ] ❌ Single .exe with post-install script handles VS Code + extensions + diagnostics
 - [ ] ❌ Compatible with Windows 10+ (x64 architecture)
-- [ ] ❌ Windows-specific post-install scripts work correctly
-- [ ] ❌ Windows diagnostics system runs automatically post-installation
 
 #### Cross-Platform
 - [ ] ❌ Automatic GitHub releases for both platforms
-- [ ] ❌ Installation works offline (no internet required)
-- [ ] ❌ Consistent package versions across macOS and Windows
+- [ ] ❌ Python packages work offline (VS Code downloaded during post-install)
+- [ ] ❌ Consistent package versions and post-install experience across platforms
 
 ### User Experience
 - [ ] ❌ Single-click installation (PKG on macOS, .exe/.msi on Windows)
@@ -152,42 +137,14 @@ Complete the constructor-based PKG installer implementation for DTU Python Devel
 - [ ] ❌ No conflicts with existing Python installations (macOS + Windows)
 - [ ] ❌ Proper error handling and user feedback on both platforms
 
-## Timeline
-
-### Week 1 (Current)
-- **Phase 1**: Complete macOS constructor PKG validation
-- Merge current PR once tests pass
-- Fix any critical bugs discovered in testing
-
-### Week 2  
-- **Phase 2**: macOS VS Code integration and unified distribution
-- Get complete unified macOS installer working
-- Full workflow testing all macOS components
-
-### Week 3
-- **Phase 3**: macOS production readiness  
-- Release automation for macOS
-- Documentation and cleanup
-
-### Week 4
-- **Phase 4**: Windows implementation (parallel work)
-- Windows constructor setup and testing
-- Cross-platform workflow integration
-
-### Week 5
-- **Phase 5**: Deployment preparation
-- Performance testing both platforms
-- Migration planning and user communication
-
 ## Risk Mitigation
 
 ### High Priority Risks
 1. **Constructor PKG fails in production**: Have rollback to current system (both platforms)
-2. **VS Code integration issues**: Make VS Code optional component
-3. **macOS/Windows compatibility problems**: Test on multiple OS versions
+2. **Post-install script fails**: VS Code download/install issues, network problems
+3. **macOS/Windows compatibility problems**: Test on multiple OS versions  
 4. **Code signing roadblocks**: Plan unsigned distribution strategy
-5. **Windows-specific issues**: conda constructor behavior differences on Windows
-6. **Cross-platform package consistency**: Different package versions/availability
+5. **Network dependency**: VS Code download requires internet during installation
 
 ### Contingency Plans
 - Keep existing installers as fallback (Homebrew on macOS, PowerShell on Windows)
@@ -215,16 +172,8 @@ Complete the constructor-based PKG installer implementation for DTU Python Devel
 
 ---
 
-## Current Action Items
+## Automated Execution Checklist
 
-### Immediate (Today)
-1. ✅ Monitor current workflow run for test results
-2. ❌ Fix any test failures that occur
-3. ❌ Merge PR once constructor PKG tests pass
+This plan serves as a comprehensive checklist for automated implementation. Each phase should be completed sequentially with all checkboxes validated before proceeding to the next phase.
 
-### This Week
-1. ❌ Implement unified distribution testing
-2. ❌ Get VS Code component working
-3. ❌ Full end-to-end testing
-
-**Status**: Phase 1 in progress - waiting for constructor PKG test results
+**Current Status**: Phase 1 in progress - constructor PKG testing
