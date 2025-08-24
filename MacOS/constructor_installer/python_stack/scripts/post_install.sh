@@ -2,7 +2,7 @@
 # Post-install script for DTU Python Stack
 # Handles Python environment + VS Code + Extensions + Diagnostics
 
-set -euo pipefail
+set -eo pipefail  # Remove 'u' to allow undefined variables, keep error exit for critical failures
 
 # Logging functions
 log_info() {
@@ -50,27 +50,41 @@ VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-un
 VSCODE_ZIP="/tmp/vscode.zip"
 VSCODE_APP="/Applications/Visual Studio Code.app"
 
-# Check if VS Code is already installed
-if [ -d "$VSCODE_APP" ]; then
-    log_info "VS Code already installed, skipping download"
-else
-    log_info "Downloading VS Code from Microsoft..."
-    if curl -fsSL -o "$VSCODE_ZIP" "$VSCODE_URL"; then
-        log_success "VS Code downloaded"
-        
-        log_info "Installing VS Code to Applications..."
-        unzip -q "$VSCODE_ZIP" -d /tmp/
-        mv "/tmp/Visual Studio Code.app" "$VSCODE_APP"
-        
-        # Clean up
-        rm -f "$VSCODE_ZIP"
-        
-        log_success "VS Code installed successfully"
+# Wrap VS Code installation in error handling so it doesn't fail the entire post-install
+(
+    # Check if VS Code is already installed
+    if [ -d "$VSCODE_APP" ]; then
+        log_info "VS Code already installed, skipping download"
     else
-        log_error "Failed to download VS Code"
-        log_warning "Continuing without VS Code - you can install it manually later"
+        log_info "Downloading VS Code from Microsoft..."
+        if curl -fsSL -o "$VSCODE_ZIP" "$VSCODE_URL"; then
+            log_success "VS Code downloaded"
+            
+            log_info "Installing VS Code to Applications..."
+            if unzip -q "$VSCODE_ZIP" -d /tmp/ 2>/dev/null; then
+                if mv "/tmp/Visual Studio Code.app" "$VSCODE_APP" 2>/dev/null; then
+                    log_success "VS Code installed successfully"
+                    # Clean up
+                    rm -f "$VSCODE_ZIP"
+                else
+                    log_error "Failed to move VS Code to Applications folder"
+                    log_warning "This may be due to permissions - continuing without VS Code"
+                    rm -f "$VSCODE_ZIP"
+                fi
+            else
+                log_error "Failed to extract VS Code ZIP file"
+                log_warning "Continuing without VS Code - you can install it manually later"
+                rm -f "$VSCODE_ZIP"
+            fi
+        else
+            log_error "Failed to download VS Code"
+            log_warning "This may be due to network restrictions in CI environment"
+            log_warning "Continuing without VS Code - you can install it manually later"
+        fi
     fi
-fi
+) || {
+    log_warning "VS Code installation encountered errors but continuing with post-install"
+}
 
 # =============================================================================
 # Phase 3: VS Code CLI Tools Setup
@@ -83,16 +97,35 @@ VSCODE_CLI="/usr/local/bin/code"
 VSCODE_BINARY="$VSCODE_APP/Contents/Resources/app/bin/code"
 
 if [ -f "$VSCODE_BINARY" ]; then
-    # Create /usr/local/bin if it doesn't exist
-    sudo mkdir -p /usr/local/bin
+    # Try to create /usr/local/bin if it doesn't exist (without sudo first)
+    if mkdir -p /usr/local/bin 2>/dev/null; then
+        # Success without sudo
+        log_info "Created /usr/local/bin directory"
+    elif sudo mkdir -p /usr/local/bin 2>/dev/null; then
+        # Fallback to sudo
+        log_info "Created /usr/local/bin directory with sudo"
+    else
+        log_warning "Could not create /usr/local/bin directory, CLI tools may not work"
+    fi
     
-    # Remove existing symlink if present
-    sudo rm -f "$VSCODE_CLI"
+    # Remove existing symlink if present (try without sudo first)
+    if rm -f "$VSCODE_CLI" 2>/dev/null; then
+        log_info "Removed existing code symlink"
+    elif sudo rm -f "$VSCODE_CLI" 2>/dev/null; then
+        log_info "Removed existing code symlink with sudo"
+    fi
     
-    # Create new symlink
-    sudo ln -sf "$VSCODE_BINARY" "$VSCODE_CLI"
-    
-    log_success "VS Code CLI tools configured (code command available)"
+    # Create new symlink (try without sudo first)
+    if ln -sf "$VSCODE_BINARY" "$VSCODE_CLI" 2>/dev/null; then
+        log_success "VS Code CLI tools configured (code command available)"
+    elif sudo ln -sf "$VSCODE_BINARY" "$VSCODE_CLI" 2>/dev/null; then
+        log_success "VS Code CLI tools configured with sudo (code command available)"
+    else
+        log_warning "Could not create VS Code CLI symlink, but VS Code is installed"
+        # Add VS Code binary directory to PATH instead
+        export PATH="$VSCODE_APP/Contents/Resources/app/bin:$PATH"
+        log_info "Added VS Code binary directory to PATH temporarily"
+    fi
 else
     log_warning "VS Code binary not found, CLI tools not configured"
 fi
