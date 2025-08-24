@@ -15,12 +15,6 @@ on:
     paths:
       - 'MacOS/**'
       - '.github/workflows/MacOS_autoInstall.yml'
-  workflow_dispatch:
-    inputs:
-      pkg_path:
-        description: 'Path to PKG file to test'
-        required: false
-        type: string
 
 env:
   PYTHON_VERSION_PS: "3.11"
