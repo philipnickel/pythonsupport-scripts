@@ -162,8 +162,8 @@ jobs:
         run: |
           # Check for conda in constructor installation
           CONDA_PATHS=(
-            "$HOME/dtu-python-stack/Scripts/conda.exe"
-            "$HOME/dtu-python-stack/condabin/conda.bat"
+            "/c/dtu-python-stack/Scripts/conda.exe"
+            "/c/dtu-python-stack/condabin/conda.bat"
             "$HOME/miniconda3/Scripts/conda.exe"
           )
           
@@ -186,9 +186,8 @@ jobs:
         run: |
           # Find constructor Python
           PYTHON_PATHS=(
-            "$HOME/dtu-python-stack/python.exe"
-            "$HOME/dtu-python-stack/Scripts/python.exe"
-            "$HOME/miniconda3/python.exe"
+            "/c/dtu-python-stack/python.exe"
+            "/c/dtu-python-stack/Scripts/python.exe"
           )
           
           PYTHON_FOUND=false
