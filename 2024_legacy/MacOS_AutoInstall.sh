@@ -11,7 +11,7 @@ fi
 export REMOTE_PS
 export BRANCH_PS
 
-url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS"
+url_ps="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/2024_legacy/MacOS"
 
 echo "$_prefix URL used for fetching scripts $url_ps"
 
