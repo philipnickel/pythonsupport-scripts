@@ -82,7 +82,7 @@ jobs:
           }
           
           $EXE_PATH = $EXE_FILE.FullName
-          $INSTALL_DIR = "$env:USERPROFILE\dtu-python-stack"
+          $INSTALL_DIR = "C:\dtu-python-stack"
           
           Write-Host "Installing: $EXE_PATH"
           Write-Host "File size: $([math]::Round($EXE_FILE.Length/1MB, 2)) MB"
@@ -92,12 +92,12 @@ jobs:
           # Set maximum conda verbosity for installation
           $env:CONDA_VERBOSITY = "3"
           
-          # Use proper constructor EXE flags with start /wait for blocking
+          # Use simpler direct execution
           $startTime = Get-Date
-          Write-Host "Command: cmd.exe /C start /wait `"$EXE_PATH`" /S /InstallationType=JustMe /RegisterPython=1 /NoShortcuts=1 /D=$INSTALL_DIR"
+          Write-Host "Command: `"$EXE_PATH`" /S /InstallationType=JustMe /RegisterPython=1 /NoShortcuts=1 /D=$INSTALL_DIR"
           
-          # Run installer with proper blocking
-          $process = Start-Process -FilePath "cmd.exe" -ArgumentList "/C", "start", "/wait", "`"$EXE_PATH`"", "/S", "/InstallationType=JustMe", "/RegisterPython=1", "/NoShortcuts=1", "/D=$INSTALL_DIR" -Wait -PassThru
+          # Run installer directly (path doesn't contain spaces now)
+          $process = Start-Process -FilePath "$EXE_PATH" -ArgumentList "/S", "/InstallationType=JustMe", "/RegisterPython=1", "/NoShortcuts=1", "/D=$INSTALL_DIR" -Wait -PassThru -NoNewWindow
           
           $endTime = Get-Date
           $duration = ($endTime - $startTime).TotalSeconds
