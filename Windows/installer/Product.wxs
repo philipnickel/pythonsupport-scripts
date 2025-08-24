@@ -5,8 +5,8 @@
   xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Package
-    Id="DtuPythonInstaller"
-    Name="DTU Python Installer"
+    Id="DtuPythonInstallation"
+    Name="DTU Python Installation"
     Manufacturer="DTU Python Installation Support"
     Version="1.0.0"
     UpgradeCode="73eccc80-25d0-455a-ba0d-504dd15a826c">
@@ -21,13 +21,13 @@
       </Component>
     </ComponentGroup>
 
-    <Feature Id="MainFeature" Title="DTU Python Installer" Level="1">
+    <Feature Id="MainFeature" Title="DTU Python Installation" Level="1">
       <ComponentGroupRef Id="MainComponents" />
     </Feature>
 
     <!-- Set the installation directory to something cleaner -->
     <StandardDirectory Id="ProgramFilesFolder">
-      <Directory Id="INSTALLFOLDER" Name="DTU Python Installer"></Directory>
+      <Directory Id="INSTALLFOLDER" Name="DTU Python Installation"></Directory>
     </StandardDirectory>
 
     <ui:WixUI Id="WixUI_InstallDir" />
@@ -39,7 +39,7 @@
       Id="Register"
       Property="Install"
       Execute="immediate"
-      Value="&quot;C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoLogo -NonInteractive -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installer\install.ps1&quot;" />
+      Value="&quot;C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoLogo -NonInteractive -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installation\install.ps1&quot;" />
 
     <!-- Prepare the command line for the script -->
     <CustomAction
