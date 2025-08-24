@@ -43,9 +43,20 @@ jobs:
           cache-environment: true
           cache-environment-key: constructor-env-${{ hashFiles('MacOS/constructor_installer/python_stack/construct.yaml') }}
 
+      - name: Configure conda-forge only
+        run: |
+          # Remove all default channels completely
+          conda config --remove-key channels 2>/dev/null || true
+          conda config --add channels conda-forge
+          conda config --set channel_priority strict
+          # Remove any existing defaults channel references
+          conda config --remove channels defaults 2>/dev/null || true
+          # Show final config
+          conda config --show channels
+
       - name: Install Constructor
         run: |
-          mamba install -c conda-forge constructor -y
+          mamba install constructor -y
 
       - name: Build Constructor Python PKG
         run: |
