@@ -8,13 +8,6 @@ version: 1.0.0
 channels:
   - conda-forge
 
-# Avoid Anaconda commercial channels warning  
-conda_default_channels:
-  - conda-forge
-
-# Use Miniforge-style configuration
-exclude_default_channels: true
-
 # Miniforge compatibility settings
 write_condarc: true
 condarc:
