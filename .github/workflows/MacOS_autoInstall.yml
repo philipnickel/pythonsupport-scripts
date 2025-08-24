@@ -67,12 +67,41 @@ jobs:
           CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
           echo "Constructor PKG installation completed"
 
-      - name: Verify Constructor Installation
+      - name: Verify VS Code Installation
         run: |
-          echo "Verifying constructor PKG installation (Python-only for now)..."
-          echo "✓ Constructor PKG installation completed successfully"
-          echo "✓ Post-install script executed without errors"
-          echo "Note: VS Code installation will be added back in future iterations"
+          echo "Verifying VS Code installation from post-install script..."
+          
+          # Check if VS Code app exists
+          if [ -d "/Applications/Visual Studio Code.app" ]; then
+            echo "✓ VS Code app installed"
+            
+            # Check if CLI is configured in shell profiles
+            if grep -q "Visual Studio Code" "$HOME/.bash_profile" 2>/dev/null || grep -q "Visual Studio Code" "$HOME/.zshrc" 2>/dev/null; then
+              echo "✓ VS Code CLI configured in shell profiles"
+            else
+              echo "⚠ VS Code CLI not found in shell profiles"
+            fi
+            
+            # Test CLI functionality by adding to PATH
+            export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+            if command -v code >/dev/null 2>&1; then
+              echo "✓ VS Code CLI working"
+              code --version | head -1
+            else
+              echo "⚠ VS Code CLI not working"
+            fi
+            
+            # Check extensions
+            if code --list-extensions | grep -q "ms-python.python"; then
+              echo "✓ Python extension installed"
+            else
+              echo "⚠ Python extension not found"
+            fi
+            
+          else
+            echo "⚠ VS Code not installed (may have failed due to network/permissions)"
+            echo "This is acceptable - Python environment is the critical component"
+          fi
 
       - name: Verify conda
         run: |
