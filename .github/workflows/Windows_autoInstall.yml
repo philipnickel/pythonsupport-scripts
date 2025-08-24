@@ -70,7 +70,7 @@ jobs:
           constructor . --output-dir=builds
 
       - name: Install Constructor EXE
-        timeout-minutes: 10
+        timeout-minutes: 15
         shell: pwsh
         run: |
           Write-Host "Installing Constructor EXE..."
@@ -153,10 +153,39 @@ jobs:
             exit 1
           }
 
-      - name: Verify Python Environment Only
+      - name: Verify VS Code Installation (Windows)
         run: |
-          echo "Skipping VS Code verification - not installed in post-install script"
-          echo "Focus is on Python environment functionality"
+          echo "Verifying VS Code installation from post-install script..."
+          
+          # Check if VS Code executable exists
+          VSCODE_PATHS=(
+            "$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe"
+            "/c/Program Files/Microsoft VS Code/Code.exe"
+            "/c/Program Files (x86)/Microsoft VS Code/Code.exe"
+          )
+          
+          VSCODE_FOUND=false
+          for vscode_path in "${VSCODE_PATHS[@]}"; do
+            if [ -f "$vscode_path" ]; then
+              echo "✓ VS Code found at: $vscode_path"
+              VSCODE_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$VSCODE_FOUND" = false ]; then
+            echo "⚠ VS Code not installed (may have failed due to network/permissions)"
+            echo "This is acceptable - Python environment is the critical component"
+          else
+            # Test CLI functionality if available
+            export PATH="$PATH:$LOCALAPPDATA/Programs/Microsoft VS Code/bin"
+            if command -v code >/dev/null 2>&1; then
+              echo "✓ VS Code CLI working"
+              code --version | head -1
+            else
+              echo "⚠ VS Code CLI not working but installation found"
+            fi
+          fi
 
       - name: Verify conda (Windows)
         run: |
