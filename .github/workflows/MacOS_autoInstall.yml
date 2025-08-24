@@ -48,90 +48,79 @@ jobs:
         run: |
           conda install -c conda-forge constructor -y
 
-      - name: Build Constructor Installer
+      - name: Build Constructor Python PKG
         run: |
           cd MacOS/constructor_installer/python_stack
           ./build.sh
 
-      - name: Install Constructor PKG
+      - name: Build VSCode PKG
         run: |
-          echo "Installing Constructor PKG..."
-          # Find the built PKG
-          PKG_FILE=$(find MacOS/constructor_installer/python_stack/builds -name "*.pkg" | head -1)
+          cd MacOS/constructor_installer/vscode_component
+          ./build_vscode_pkg.sh
+
+      - name: Build Unified Distribution PKG
+        run: |
+          cd MacOS/constructor_installer/distribution
+          ./build_combined.sh
+
+      - name: Install Unified PKG
+        run: |
+          echo "Installing Unified DTU PKG..."
+          # Find the built unified PKG
+          PKG_FILE=$(find MacOS/constructor_installer/distribution/builds -name "DTU-Python-Development-Environment-*.pkg" | head -1)
           if [[ -z "$PKG_FILE" ]]; then
-            echo "No PKG file found"
+            echo "No unified PKG file found"
             exit 1
           fi
           echo "Installing: $PKG_FILE"
           
-          # Install with verbose logging to user home directory
-          CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
-          echo "Constructor PKG installation completed"
+          # Install unified package
+          sudo installer -verbose -pkg "$PKG_FILE" -target /
+          echo "Unified PKG installation completed"
 
       - name: Verify VS Code
         run: |
-          echo "Constructor installer only handles Python environment"
-          echo "VS Code installation is handled separately"
-          echo "Skipping VS Code verification for Constructor test"
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+            exit $retval
+          fi
 
       - name: Verify conda
         run: |
-          # Check for conda in constructor installation
-          CONDA_PATHS=("$HOME/dtu-python-stack/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda")
-          
-          CONDA_FOUND=false
-          for conda_path in "${CONDA_PATHS[@]}"; do
-            if [ -f "$conda_path" ]; then
-              echo "Found conda at: $conda_path"
-              "$conda_path" --version
-              "$conda_path" info --base
-              CONDA_FOUND=true
-              break
-            fi
-          done
-          
-          if [ "$CONDA_FOUND" = false ]; then
-            echo "Conda not found in expected locations"
-            exit 1
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
           fi
+
+          # Some more output
+          conda --version
+          conda info --base
 
       - name: Verify python (3.11)
         run: |
-          # Find constructor Python
-          PYTHON_PATHS=("$HOME/dtu-python-stack/bin/python3" "$HOME/miniconda3/bin/python3" "$HOME/anaconda3/bin/python3")
-          
-          PYTHON_FOUND=false
-          for python_path in "${PYTHON_PATHS[@]}"; do
-            if [ -f "$python_path" ]; then
-              echo "Found Python at: $python_path"
-              
-              # Verify the installed Python version
-              EXPECTED_VERSION="3.11"
-              INSTALLED_VERSION=$("$python_path" --version | cut -d " " -f 2)
-              if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-                echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-                exit 1
-              fi
-              echo "Correct Python version $INSTALLED_VERSION is installed."
-              
-              # Verify Python package imports
-              "$python_path" -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-              
-              PYTHON_FOUND=true
-              break
-            fi
-          done
-          
-          if [ "$PYTHON_FOUND" = false ]; then
-            echo "Python not found in expected locations"
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
 
-      - name: Upload Constructor PKG
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+      - name: Upload Unified DTU PKG
         uses: actions/upload-artifact@v4
         with:
-          name: dtu-constructor-pkg
-          path: MacOS/constructor_installer/python_stack/builds/*.pkg
+          name: dtu-unified-pkg
+          path: MacOS/constructor_installer/distribution/builds/*.pkg
           retention-days: 30
 
   test-orchestrator:
@@ -328,10 +317,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Download Constructor PKG
+      - name: Download Unified DTU PKG
         uses: actions/download-artifact@v4
         with:
-          name: dtu-constructor-pkg
+          name: dtu-unified-pkg
           path: ./release-assets
           
       - name: Generate Release Tag
@@ -346,21 +335,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          name: "DTU Python PKG Installer ${{ steps.tag.outputs.tag }}"
+          name: "DTU Python Development Environment ${{ steps.tag.outputs.tag }}"
           body: |
-            ## DTU Python Development Environment PKG
+            ## DTU Python Development Environment
             
-            ✅ **Constructor PKG installer tested and verified!**
+            **Complete unified installer tested and verified!**
             
             ### Installation
             ```bash
-            installer -pkg DTU-Python-Stack-*.pkg -target CurrentUserHomeDirectory
+            # Download and double-click the PKG file, or use command line:
+            sudo installer -pkg DTU-Python-Development-Environment-*.pkg -target /
             ```
             
             ### What's Included
-            - Python 3.11 environment
-            - Scientific packages: pandas, scipy, statsmodels, uncertainties
-            - DTU-specific tools: dtumathtools
+            - **Python 3.11 Environment**: Complete conda-based Python with scientific packages
+            - **Scientific Packages**: pandas, scipy, statsmodels, uncertainties, dtumathtools  
+            - **Visual Studio Code**: Professional code editor with Python extensions
+            - **Complete Setup**: Everything needed for DTU coursework in one installer
             
             🤖 Generated with [Claude Code](https://claude.ai/code)
             

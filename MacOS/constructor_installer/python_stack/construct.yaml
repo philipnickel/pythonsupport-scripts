@@ -1,5 +1,4 @@
 # Constructor configuration for DTU Python Stack
-# Phase 1: Python environment with required packages
 
 name: dtu-python-stack
 version: 1.0.0
@@ -20,26 +19,18 @@ specs:
   - uncertainties
   - dtumathtools
 
-# macOS-specific configuration 
-# Testing PKG installer with LocalSystem target
+# macOS PKG installer configuration
 installer_type: pkg
 installer_filename: DTU-Python-Stack-{{ version }}.pkg
 
 # Package metadata
 pkg_name: DTU-Python-Stack
 
-# License and documentation
-license_file: resources/LICENSE.txt
-readme_file: resources/README.txt
-
 # Installation behavior
 initialize_conda: true
 initialize_by_default: true
 register_python: true
-register_python_default: true
+post_install: scripts/post_install.sh
 
 # macOS specific settings
 keep_pkgs: false
-
-# Custom channels configuration for dtumathtools
-# Note: dtumathtools should be available in conda-forge or we'll need custom channel
