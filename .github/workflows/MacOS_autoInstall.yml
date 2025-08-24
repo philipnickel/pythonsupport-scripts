@@ -1,0 +1,307 @@
+name: MacOS_autoInstall
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/**'
+      - '.github/workflows/MacOS_autoInstall.yml'
+  workflow_dispatch:
+    inputs:
+      pkg_path:
+        description: 'Path to PKG file to test'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION_PS: "3.11"
+  PIS_ENV: "CI"
+
+jobs:
+  test-constructor:
+    name: Test Constructor Installer
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: 3.11
+          channels: conda-forge
+
+      - name: Install Constructor
+        run: |
+          conda install -c conda-forge constructor -y
+
+      - name: Build Constructor Installer
+        run: |
+          cd MacOS/constructor_installer/python_stack
+          ./build.sh
+
+      - name: Install Constructor PKG
+        run: |
+          echo "Installing Constructor PKG..."
+          # Find the built PKG
+          PKG_FILE=$(find MacOS/constructor_installer/python_stack/builds -name "*.pkg" | head -1)
+          if [[ -z "$PKG_FILE" ]]; then
+            echo "No PKG file found"
+            exit 1
+          fi
+          echo "Installing: $PKG_FILE"
+          
+          # Install with verbose logging to user home directory
+          CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
+          echo "Constructor PKG installation completed"
+
+      - name: Verify VS Code
+        run: |
+          echo "Constructor installer only handles Python environment"
+          echo "VS Code installation is handled separately"
+          echo "Skipping VS Code verification for Constructor test"
+
+      - name: Verify conda
+        run: |
+          # Check for conda in constructor installation
+          CONDA_PATHS=("$HOME/dtu-python-stack/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda")
+          
+          CONDA_FOUND=false
+          for conda_path in "${CONDA_PATHS[@]}"; do
+            if [ -f "$conda_path" ]; then
+              echo "Found conda at: $conda_path"
+              "$conda_path" --version
+              "$conda_path" info --base
+              CONDA_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$CONDA_FOUND" = false ]; then
+            echo "Conda not found in expected locations"
+            exit 1
+          fi
+
+      - name: Verify python (3.11)
+        run: |
+          # Find constructor Python
+          PYTHON_PATHS=("$HOME/dtu-python-stack/bin/python3" "$HOME/miniconda3/bin/python3" "$HOME/anaconda3/bin/python3")
+          
+          PYTHON_FOUND=false
+          for python_path in "${PYTHON_PATHS[@]}"; do
+            if [ -f "$python_path" ]; then
+              echo "Found Python at: $python_path"
+              
+              # Verify the installed Python version
+              EXPECTED_VERSION="3.11"
+              INSTALLED_VERSION=$("$python_path" --version | cut -d " " -f 2)
+              if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+                echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+                exit 1
+              fi
+              echo "Correct Python version $INSTALLED_VERSION is installed."
+              
+              # Verify Python package imports
+              "$python_path" -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+              
+              PYTHON_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$PYTHON_FOUND" = false ]; then
+            echo "Python not found in expected locations"
+            exit 1
+          fi
+
+  test-orchestrator:
+    name: Test First Year Orchestrator
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda || echo "No conda environment variables found"
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Run First Year Orchestrator
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          GITHUB_CI: true
+        run: |
+          echo "Testing First Year Orchestrator from: $REMOTE_PS/$BRANCH_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/Components/orchestrators/first_year_students.sh)"
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+            exit $retval
+          fi
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (3.11)
+        run: |
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+  test-legacy:
+    name: Test Legacy Install
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove conda (if present)
+        run: |
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+
+            echo "Removing conda from the environment..."
+            # try and disable things in the boot-up scripts
+            conda init --reverse --all
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Check for conda
+        run: |
+          env | grep -i conda || echo "No conda environment variables found"
+          if type conda > /dev/null ; then
+            echo "Base environment location:"
+            conda info --base
+          else
+            echo "Conda not found..."
+          fi
+
+          for f in bash_profile bashrc xonshrc
+          do
+            [ ! -e $HOME/.$f ] && continue
+            echo ""
+            echo "<<< .$f >>>"
+            cat $HOME/.$f
+          done
+
+      - name: Install from legacy script
+        env:
+          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          GITHUB_CI: true
+        run: |
+          echo "Running legacy script from $REMOTE_PS on branch $BRANCH_PS with Python $PYTHON_VERSION_PS"
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/2024_legacy/MacOS_AutoInstall.sh)"
+
+      - name: Verify VS Code
+        run: |
+          code --version
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "VS Code not installed correctly"
+            exit $retval
+          fi
+
+      - name: Verify conda
+        run: |
+          which conda
+          retval=$?
+          if [[ $retval -ne 0 ]]; then
+            echo "Conda not installed correctly"
+            exit $retval
+          fi
+
+          # Some more output
+          conda --version
+          conda info --base
+
+      - name: Verify python (3.11)
+        run: |
+          which python3
+
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
