@@ -67,7 +67,7 @@ jobs:
           constructor . --output-dir=builds
 
       - name: Install Constructor EXE
-        timeout-minutes: 15
+        timeout-minutes: 10
         run: |
           echo "Installing Constructor EXE..."
           # Find the built EXE
@@ -78,47 +78,14 @@ jobs:
           fi
           echo "Installing: $EXE_FILE"
           
-          # Install silently to user directory with timeout
-          timeout 900 "$EXE_FILE" /S /AddToPath=1 /RegisterPython=1 /D=$HOME/dtu-python-stack || {
-            echo "EXE installation timed out after 15 minutes"
-            echo "This may be due to network issues downloading VS Code"
-            exit 1
-          }
+          # Install silently to user directory (Python environment only)
+          "$EXE_FILE" /S /AddToPath=1 /RegisterPython=1 /D=$HOME/dtu-python-stack
           echo "Constructor EXE installation completed"
 
-      - name: Verify VS Code Installation (Windows)
+      - name: Verify Python Environment Only
         run: |
-          echo "Verifying VS Code installation from post-install script..."
-          
-          # Check if VS Code executable exists in common locations
-          VSCODE_PATHS=(
-            "$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe"
-            "/c/Program Files/Microsoft VS Code/Code.exe"
-            "/c/Program Files (x86)/Microsoft VS Code/Code.exe"
-          )
-          
-          VSCODE_FOUND=false
-          for vscode_path in "${VSCODE_PATHS[@]}"; do
-            if [ -f "$vscode_path" ]; then
-              echo "✓ VS Code found at: $vscode_path"
-              VSCODE_FOUND=true
-              break
-            fi
-          done
-          
-          if [ "$VSCODE_FOUND" = false ]; then
-            echo "⚠ VS Code not installed (may have failed due to network/permissions)"
-            echo "This is acceptable - Python environment is the critical component"
-          else
-            # Test CLI functionality
-            export PATH="$PATH:$LOCALAPPDATA/Programs/Microsoft VS Code/bin"
-            if command -v code >/dev/null 2>&1; then
-              echo "✓ VS Code CLI working"
-              code --version | head -1
-            else
-              echo "⚠ VS Code CLI not working"
-            fi
-          fi
+          echo "Skipping VS Code verification - not installed in post-install script"
+          echo "Focus is on Python environment functionality"
 
       - name: Verify conda (Windows)
         run: |
