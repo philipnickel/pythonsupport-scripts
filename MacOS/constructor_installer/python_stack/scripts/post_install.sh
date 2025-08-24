@@ -16,10 +16,6 @@ echo "DTU Python Stack post-install script starting..."
 source "$CONDA_PREFIX/etc/profile.d/conda.sh"
 conda activate base
 
-# Install dtumathtools via pip (since it's not available in conda-forge)
-echo "Installing dtumathtools via pip..."
-pip install dtumathtools
-
 # Verify all packages are installed correctly
 echo "Verifying package installations..."
 python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print(' All packages imported successfully')"
