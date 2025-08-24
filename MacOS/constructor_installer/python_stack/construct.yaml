@@ -1,10 +1,26 @@
 # Constructor configuration for DTU Python Stack
+# Uses Miniforge-compatible settings to avoid Anaconda commercial licensing
 
 name: dtu-python-stack
 version: 1.0.0
 
+# Use only conda-forge channel (Miniforge approach)
 channels:
   - conda-forge
+
+# Avoid Anaconda commercial channels warning  
+conda_default_channels:
+  - conda-forge
+
+# Use Miniforge-style configuration
+exclude_default_channels: true
+
+# Miniforge compatibility settings
+write_condarc: true
+condarc:
+  channels:
+    - conda-forge
+  channel_priority: strict
 
 specs:
   # Core Python environment

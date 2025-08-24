@@ -29,6 +29,10 @@ log_info "Configuring Python environment..."
 conda config --set anaconda_anon_usage off 2>/dev/null || log_warning "Could not set anaconda_anon_usage"
 conda config --set auto_activate_base true 2>/dev/null || log_warning "Could not set auto_activate_base"
 
+# Remove default channels to avoid commercial channel warnings
+conda config --remove channels defaults 2>/dev/null || log_warning "Could not remove defaults channel"
+conda config --add channels conda-forge 2>/dev/null || log_warning "Could not add conda-forge channel"
+
 # Shell integration
 conda init bash 2>/dev/null || log_warning "Could not init bash"
 conda init zsh 2>/dev/null || log_warning "Could not init zsh"

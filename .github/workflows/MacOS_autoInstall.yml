@@ -31,10 +31,10 @@ jobs:
         with:
           lfs: true
 
-      - name: Setup Miniconda
+      - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: "latest"
+          miniforge-version: latest
           python-version: 3.11
           channels: conda-forge
           use-mamba: true
