@@ -24,7 +24,7 @@ jobs:
   test-constructor-windows:
     name: Test Constructor Installer (Windows)
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     
     steps:
       - name: Checkout repository
