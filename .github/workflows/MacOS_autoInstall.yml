@@ -354,3 +354,4 @@ jobs:
             release-assets/*.pkg
           draft: false
           prerelease: false
+
