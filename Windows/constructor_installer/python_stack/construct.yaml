@@ -42,5 +42,9 @@ register_python: true
 post_install: scripts/post_install.bat
 post_install_desc: "Setting up Python environment, downloading VS Code, and configuring development tools..."
 
-# Windows specific settings
+# Windows specific settings  
 keep_pkgs: false
+
+# Performance optimizations for faster builds
+attempt_hardlinks: true
+exclude_default_channels: true
