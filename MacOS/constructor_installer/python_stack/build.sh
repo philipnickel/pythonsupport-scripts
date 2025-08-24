@@ -17,28 +17,28 @@ echo "Checking prerequisites..."
 
 # Check if constructor is installed
 if ! command -v constructor >/dev/null 2>&1; then
-    echo "❌ Constructor not found. Installing constructor..."
+    echo " Constructor not found. Installing constructor..."
     if command -v conda >/dev/null 2>&1; then
         conda install -c conda-forge constructor -y
     else
-        echo "❌ Conda not found. Please install conda/miniconda first."
+        echo " Conda not found. Please install conda/miniconda first."
         exit 1
     fi
 fi
 
-echo "✅ Constructor: $(constructor --version)"
+echo " Constructor: $(constructor --version)"
 
 # Check if construct.yaml exists
 if [[ ! -f "$CONSTRUCT_FILE" ]]; then
-    echo "❌ construct.yaml not found at $CONSTRUCT_FILE"
+    echo " construct.yaml not found at $CONSTRUCT_FILE"
     exit 1
 fi
 
-echo "✅ Configuration file: $CONSTRUCT_FILE"
+echo " Configuration file: $CONSTRUCT_FILE"
 
 # Create builds directory
 mkdir -p "$BUILD_DIR"
-echo "✅ Build directory: $BUILD_DIR"
+echo " Build directory: $BUILD_DIR"
 
 # Create resources if they don't exist (placeholder for now)
 mkdir -p "$SCRIPT_DIR/resources"
@@ -74,7 +74,7 @@ For support: Python Support Team
 EOF
 fi
 
-echo "✅ Resource files prepared"
+echo " Resource files prepared"
 
 # Clean any previous builds in the working directory
 echo "Cleaning previous builds..."
@@ -95,7 +95,7 @@ constructor . --output-dir="$BUILD_DIR"
 # Check if build was successful
 if [[ $? -eq 0 ]]; then
     echo
-    echo "✅ Build completed successfully!"
+    echo " Build completed successfully!"
     echo
     echo "=== Build Results ==="
     ls -la "$BUILD_DIR"/*.sh 2>/dev/null || echo "No shell installer files found in $BUILD_DIR"
@@ -105,7 +105,7 @@ if [[ $? -eq 0 ]]; then
     INSTALLER_FILE=$(find "$BUILD_DIR" "$SCRIPT_DIR" -name "*.sh" -o -name "*.pkg" -type f 2>/dev/null | head -1)
     if [[ -n "$INSTALLER_FILE" ]]; then
         echo
-        echo "📦 Generated installer: $INSTALLER_FILE"
+        echo " Generated installer: $INSTALLER_FILE"
         echo "📁 Size: $(du -h "$INSTALLER_FILE" | cut -f1)"
         echo
         if [[ "$INSTALLER_FILE" == *.pkg ]]; then
@@ -124,11 +124,11 @@ if [[ $? -eq 0 ]]; then
         fi
         echo "3. Verify Python packages: python3 -c \"import dtumathtools, pandas, scipy, statsmodels, uncertainties\""
     else
-        echo "❌ No installer file found after build"
+        echo " No installer file found after build"
         exit 1
     fi
 else
-    echo "❌ Constructor build failed"
+    echo " Constructor build failed"
     exit 1
 fi
 

@@ -10,6 +10,11 @@ on:
     paths:
       - 'MacOS/**'
       - '.github/workflows/MacOS_autoInstall.yml'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'MacOS/**'
+      - '.github/workflows/MacOS_autoInstall.yml'
   workflow_dispatch:
     inputs:
       pkg_path:
@@ -121,6 +126,13 @@ jobs:
             echo "Python not found in expected locations"
             exit 1
           fi
+
+      - name: Upload Constructor PKG
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtu-constructor-pkg
+          path: MacOS/constructor_installer/python_stack/builds/*.pkg
+          retention-days: 30
 
   test-orchestrator:
     name: Test First Year Orchestrator
@@ -305,3 +317,55 @@ jobs:
 
           # Verify Python package imports
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [test-constructor]
+    if: github.ref == "refs/heads/main" && github.event_name == "push"
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Download Constructor PKG
+        uses: actions/download-artifact@v4
+        with:
+          name: dtu-constructor-pkg
+          path: ./release-assets
+          
+      - name: Generate Release Tag
+        id: tag
+        run: |
+          DATE=$(date +"%Y.%m.%d")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG="v${DATE}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "DTU Python PKG Installer ${{ steps.tag.outputs.tag }}"
+          body: |
+            ## DTU Python Development Environment PKG
+            
+            ✅ **Constructor PKG installer tested and verified!**
+            
+            ### Installation
+            ```bash
+            installer -pkg DTU-Python-Stack-*.pkg -target CurrentUserHomeDirectory
+            ```
+            
+            ### What's Included
+            - Python 3.11 environment
+            - Scientific packages: pandas, scipy, statsmodels, uncertainties
+            - DTU-specific tools: dtumathtools
+            
+            🤖 Generated with [Claude Code](https://claude.ai/code)
+            
+            Co-Authored-By: Claude <noreply@anthropic.com>
+          files: |
+            release-assets/*.pkg
+          draft: false
+          prerelease: false

@@ -266,23 +266,23 @@ for python_path in "\${PYTHON_PATHS[@]}"; do
         PYTHON_VERSION=\$("\$python_path" --version 2>/dev/null | cut -d " " -f 2)
         if [[ "\$PYTHON_VERSION" == "3.11"* ]]; then
             CONSTRUCTOR_PYTHON="\$python_path"
-            echo "✅ Found Python 3.11: \$python_path"
+            echo " Found Python 3.11: \$python_path"
             break
         fi
     fi
 done
 
 if [ -z "\$CONSTRUCTOR_PYTHON" ]; then
-    echo "❌ Python 3.11 not found"
+    echo " Python 3.11 not found"
     exit 1
 fi
 
 # Test package imports
 echo "Testing Python packages..."
-if "\$CONSTRUCTOR_PYTHON" -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print('✅ All packages working')"; then
-    echo "✅ Python environment fully functional"
+if "\$CONSTRUCTOR_PYTHON" -c "import pandas, scipy, statsmodels, uncertainties, dtumathtools; print(' All packages working')"; then
+    echo " Python environment fully functional"
 else
-    echo "❌ Python package imports failed"
+    echo " Python package imports failed"
     exit 1
 fi
 
@@ -291,29 +291,29 @@ echo "=== Testing VSCode Installation ==="
 
 # Test VSCode app
 if [ -d "/Applications/Visual Studio Code.app" ]; then
-    echo "✅ VSCode app installed"
+    echo " VSCode app installed"
     APP_VERSION=\$(defaults read "/Applications/Visual Studio Code.app/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "unknown")
     echo "  Version: \$APP_VERSION"
 else
-    echo "❌ VSCode app not found"
+    echo " VSCode app not found"
     exit 1
 fi
 
 # Test CLI tools
 export PATH="/usr/local/bin:\$PATH"
 if command -v code >/dev/null 2>&1; then
-    echo "✅ VSCode CLI available"
+    echo " VSCode CLI available"
     CODE_VERSION=\$(code --version | head -1)
     echo "  CLI Version: \$CODE_VERSION"
 else
-    echo "⚠️  VSCode CLI not in PATH (may need shell restart)"
+    echo "  VSCode CLI not in PATH (may need shell restart)"
 fi
 
 echo ""
-echo "🎉 UNIFIED INSTALLER TEST: SUCCESS!"
-echo "✅ Python 3.11 environment working"
-echo "✅ VSCode with extensions installed"
-echo "✅ Complete development environment ready"
+echo " UNIFIED INSTALLER TEST: SUCCESS!"
+echo " Python 3.11 environment working"
+echo " VSCode with extensions installed"
+echo " Complete development environment ready"
 EOF
     
     chmod +x "$test_script"
@@ -333,22 +333,22 @@ main() {
     verify_installer
     create_test_script
     
-    log_success "🎉 DTU Unified Installer build completed successfully!"
+    log_success " DTU Unified Installer build completed successfully!"
     
     local final_pkg="$BUILD_DIR/$INSTALLER_NAME-$VERSION-$TIMESTAMP.pkg"
     log_info ""
     log_info "=== Build Summary ==="
-    log_info "✅ Combined Python + VSCode installer created"
-    log_info "✅ Professional macOS PKG with custom UI"
-    log_info "✅ Single-click installation experience"
-    log_info "✅ DTU branding and documentation included"
-    log_info "✅ Installation test script generated"
+    log_info " Combined Python + VSCode installer created"
+    log_info " Professional macOS PKG with custom UI"
+    log_info " Single-click installation experience"
+    log_info " DTU branding and documentation included"
+    log_info " Installation test script generated"
     log_info ""
-    log_info "📦 Final Package: $(basename "$final_pkg")"
+    log_info " Final Package: $(basename "$final_pkg")"
     log_info "💾 Size: $(du -h "$final_pkg" | cut -f1)"
     log_info "📍 Location: $final_pkg"
     log_info ""
-    log_info "🚀 Ready for deployment and testing!"
+    log_info " Ready for deployment and testing!"
 }
 
 # Run main function

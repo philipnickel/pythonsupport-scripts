@@ -22,7 +22,7 @@ pip install dtumathtools
 
 # Verify all packages are installed correctly
 echo "Verifying package installations..."
-python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✅ All packages imported successfully')"
+python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print(' All packages imported successfully')"
 
 # Set up conda configuration for optimal behavior
 echo "Configuring conda settings..."
