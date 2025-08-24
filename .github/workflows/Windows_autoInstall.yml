@@ -59,6 +59,7 @@ jobs:
           mamba install constructor -y
 
       - name: Build Constructor Python EXE
+        shell: pwsh
         run: |
           cd Windows/constructor_installer/python_stack
           constructor . --output-dir=builds
