@@ -21,7 +21,7 @@ specs:
 
 # macOS PKG installer configuration
 installer_type: pkg
-installer_filename: DTU-Python-Stack-{{ version }}.pkg
+installer_filename: DTU-Python-Stack-1.0.0.pkg
 
 # Package metadata
 pkg_name: DTU-Python-Stack
