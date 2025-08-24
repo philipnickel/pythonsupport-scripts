@@ -34,9 +34,10 @@ jobs:
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          auto-update-conda: true
+          miniconda-version: "latest"
           python-version: 3.11
           channels: conda-forge
+          use-mamba: true
 
       - name: Install Constructor
         run: |
@@ -47,74 +48,85 @@ jobs:
           cd MacOS/constructor_installer/python_stack
           ./build.sh
 
-      - name: Build VSCode PKG
+      - name: Install Constructor PKG
         run: |
-          cd MacOS/constructor_installer/vscode_component
-          ./build_vscode_pkg.sh
-
-      - name: Build Unified Distribution PKG
-        run: |
-          cd MacOS/constructor_installer/distribution
-          ./build_combined.sh
-
-      - name: Install Unified PKG
-        run: |
-          echo "Installing Unified DTU PKG..."
-          # Find the built unified PKG
-          PKG_FILE=$(find MacOS/constructor_installer/distribution/builds -name "DTU-Python-Development-Environment-*.pkg" | head -1)
+          echo "Installing Constructor PKG..."
+          # Find the built PKG
+          PKG_FILE=$(find MacOS/constructor_installer/python_stack/builds -name "*.pkg" | head -1)
           if [[ -z "$PKG_FILE" ]]; then
-            echo "No unified PKG file found"
+            echo "No PKG file found"
             exit 1
           fi
           echo "Installing: $PKG_FILE"
           
-          # Install unified package
-          sudo installer -verbose -pkg "$PKG_FILE" -target /
-          echo "Unified PKG installation completed"
+          # Install with verbose logging to user home directory
+          CONDA_VERBOSITY=3 installer -verbose -pkg "$PKG_FILE" -target CurrentUserHomeDirectory -dumplog
+          echo "Constructor PKG installation completed"
 
       - name: Verify VS Code
         run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-            exit $retval
-          fi
+          echo "Constructor installer only handles Python environment"
+          echo "VS Code installation is handled separately"
+          echo "Skipping VS Code verification for Constructor test"
 
       - name: Verify conda
         run: |
-          which conda
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "Conda not installed correctly"
-            exit $retval
+          # Check for conda in constructor installation
+          CONDA_PATHS=("$HOME/dtu-python-stack/bin/conda" "$HOME/miniconda3/bin/conda" "$HOME/anaconda3/bin/conda")
+          
+          CONDA_FOUND=false
+          for conda_path in "${CONDA_PATHS[@]}"; do
+            if [ -f "$conda_path" ]; then
+              echo "Found conda at: $conda_path"
+              "$conda_path" --version
+              "$conda_path" info --base
+              CONDA_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$CONDA_FOUND" = false ]; then
+            echo "Conda not found in expected locations"
+            exit 1
           fi
-
-          # Some more output
-          conda --version
-          conda info --base
 
       - name: Verify python (3.11)
         run: |
-          which python3
-
-          # Verify the installed Python version
-          EXPECTED_VERSION="3.11"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+          # Find constructor Python
+          PYTHON_PATHS=("$HOME/dtu-python-stack/bin/python3" "$HOME/miniconda3/bin/python3" "$HOME/anaconda3/bin/python3")
+          
+          PYTHON_FOUND=false
+          for python_path in "${PYTHON_PATHS[@]}"; do
+            if [ -f "$python_path" ]; then
+              echo "Found Python at: $python_path"
+              
+              # Verify the installed Python version
+              EXPECTED_VERSION="3.11"
+              INSTALLED_VERSION=$("$python_path" --version | cut -d " " -f 2)
+              if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+                echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+                exit 1
+              fi
+              echo "Correct Python version $INSTALLED_VERSION is installed."
+              
+              # Verify Python package imports
+              "$python_path" -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+              
+              PYTHON_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$PYTHON_FOUND" = false ]; then
+            echo "Python not found in expected locations"
             exit 1
           fi
-          echo "Correct Python version $INSTALLED_VERSION is installed."
 
-          # Verify Python package imports
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-
-      - name: Upload Unified DTU PKG
+      - name: Upload Constructor PKG
         uses: actions/upload-artifact@v4
         with:
-          name: dtu-unified-pkg
-          path: MacOS/constructor_installer/distribution/builds/*.pkg
+          name: dtu-constructor-pkg
+          path: MacOS/constructor_installer/python_stack/builds/*.pkg
           retention-days: 30
 
   test-orchestrator:
