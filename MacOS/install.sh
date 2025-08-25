@@ -42,20 +42,12 @@ set -e
 # Set up installation logging
 INSTALL_LOG="/tmp/dtu_install_\$(date +%Y%m%d_%H%M%S).log"
 
-# Determine if we're running locally or remotely
-SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "\$SCRIPT_DIR/Components/Shared/simple_utils.sh" ]; then
-    # Local execution - use local files
-    source "\$SCRIPT_DIR/Components/Shared/simple_utils.sh"
-    LOCAL_MODE=true
-else
-    # Remote execution - download utilities
-    if ! eval "\$(curl -fsSL "https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/Shared/simple_utils.sh")"; then
-        echo "ERROR: Failed to load utilities from remote repository"
-        exit 1
-    fi
-    LOCAL_MODE=false
+# Load simple utilities - always try remote first since this is typically run remotely
+if ! eval "\$(curl -fsSL "https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/Shared/simple_utils.sh")"; then
+    echo "ERROR: Failed to load utilities from remote repository"
+    exit 1
 fi
+LOCAL_MODE=false
 
 # Error cleanup function
 cleanup_on_error() {
@@ -76,11 +68,7 @@ log_info "Installation log: $INSTALL_LOG"
 log_info "Phase 1: Pre-Installation System Check"
 log_info "======================================="
 
-if [ "\$LOCAL_MODE" = true ]; then
-    piwik_log 'pre_install_check' "\$SCRIPT_DIR/Components/Core/pre_install.sh"
-else
-    piwik_log 'pre_install_check' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/Core/pre_install.sh)"
-fi
+piwik_log 'pre_install_check' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/Core/pre_install.sh)"
 log_success "Pre-installation check completed"
 
 # === PHASE 2: MAIN INSTALLATION ===
@@ -89,29 +77,17 @@ log_info "=================================="
 
 # Install Python with Miniforge
 log_info "Installing Python 3.11 with Miniforge..."
-if [ "\$LOCAL_MODE" = true ]; then
-    piwik_log 'python_install' "\$SCRIPT_DIR/Components/Python/install.sh"
-else
-    piwik_log 'python_install' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
-fi
+piwik_log 'python_install' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/Python/install.sh)"
 log_success "Python installation completed"
 
 # Setup first year Python environment and packages
 log_info "Setting up first year Python environment..."
-if [ "\$LOCAL_MODE" = true ]; then
-    piwik_log 'python_first_year_setup' "\$SCRIPT_DIR/Components/Python/first_year_setup.sh"
-else
-    piwik_log 'python_first_year_setup' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/Python/first_year_setup.sh)"
-fi
+piwik_log 'python_first_year_setup' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/Python/first_year_setup.sh)"
 log_success "Python environment setup completed"
 
 # Install Visual Studio Code
 log_info "Installing Visual Studio Code..."
-if [ "\$LOCAL_MODE" = true ]; then
-    piwik_log 'vscode_install' "\$SCRIPT_DIR/Components/VSC/install.sh"
-else
-    piwik_log 'vscode_install' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-dtudk/pythonsupport-scripts}/\${BRANCH_PS:-main}/MacOS/Components/VSC/install.sh)"
-fi
+piwik_log 'vscode_install' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/VSC/install.sh)"
 log_success "VS Code installation completed"
 
 log_info "Main installation phase completed"
@@ -123,7 +99,7 @@ log_info "========================================"
 # Export the install log for post-install verification
 export INSTALL_LOG
 
-if piwik_log 'post_install_verification' /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Core/post_install.sh)"; then
+if piwik_log 'post_install_verification' /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/\${REMOTE_PS:-philipnickel/pythonsupport-scripts}/\${BRANCH_PS:-Miniforge}/MacOS/Components/Core/post_install.sh)"; then
     log_success "Post-installation verification completed successfully"
     echo ""
     echo "🎉 DTU First Year Setup Complete!"
