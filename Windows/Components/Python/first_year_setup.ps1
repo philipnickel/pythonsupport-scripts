@@ -74,6 +74,7 @@ print("All packages imported successfully!")
     
     # Set environment variable to disable conda plugins and make it non-interactive
     $env:CONDA_NO_PLUGINS = "true"
+    $env:CONDA_REPORT_ERRORS = "false"
     conda run python -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
