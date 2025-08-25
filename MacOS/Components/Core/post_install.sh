@@ -22,7 +22,7 @@ log_info "=================================================="
 
 # Run diagnostics and capture exit code
 log_info "Running diagnostic report..."
-if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/fix-html-diagnostic-report/MacOS/Components/Diagnostics/simple_report.sh)"; then
+if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
     exit_code=0
     log_success "Diagnostic report completed successfully - All tests passed"
 else

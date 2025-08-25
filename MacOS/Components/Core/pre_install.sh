@@ -11,8 +11,12 @@
 # Set strict error handling
 set -e
 
-# Load utilities directly with hardcoded repository/branch
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/Miniforge/MacOS/Components/Shared/common.sh")"; then
+# Set default repository and branch if not already set
+[ -z "$REMOTE_PS" ] && REMOTE_PS="philipnickel/pythonsupport-scripts"
+[ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
+
+# Load utilities using consistent environment variables
+if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
     echo "ERROR: Failed to load utilities from remote repository"
     exit 1
 fi

@@ -63,18 +63,6 @@ else
     echo "This installation requires administrator privileges."
     echo "You will be prompted to enter your system password."
     echo ""
-
-    # Use osascript to show native macOS password dialog (skip in non-interactive environments)
-    if [ -t 0 ] && ! osascript -e 'do shell script "echo Authentication successful" with administrator privileges' >/dev/null 2>&1; then
-        echo "Installation cancelled - administrator authentication required."
-        exit 1
-    elif [ ! -t 0 ]; then
-        echo "Non-interactive environment detected, skipping authentication prompt"
-    else
-        echo "Authentication successful. Starting installation..."
-    fi
-    
-    echo ""
     echo "Installation progress will be shown below."
     echo "Detailed logs are being written to: /tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
     echo ""

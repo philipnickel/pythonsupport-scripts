@@ -31,18 +31,8 @@ log_warning() {
 check_exit_code() {
     if [ $? -ne 0 ]; then
         log_error "${1:-Command failed}"
-        exit_message
+        exit 1
     fi
-}
-
-exit_message() {
-    echo ""
-    echo "Oh no! Something went wrong"
-    echo ""
-    echo "Please visit: https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    echo "or contact: pythonsupport@dtu.dk"
-    echo ""
-    exit 1
 }
 
 
@@ -59,14 +49,14 @@ piwik_log() {
     
     # Execute command and capture all output to log file
     if [ "$QUIET_MODE" = "true" ]; then
-        # In quiet mode, show progress animation while command runs
-        echo "Processing $event_name..." 
+        # In quiet mode, show progress spinner
+        printf "Processing $event_name... "
         
-        # Run command in background and capture output
+        # Run command in background
         ("$@") >> "$INSTALL_LOG" 2>&1 &
         local cmd_pid=$!
         
-        # Show spinner while command runs
+        # Simple spinner animation
         local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
         local i=0
         while kill -0 $cmd_pid 2>/dev/null; do
@@ -75,14 +65,14 @@ piwik_log() {
             sleep 0.1
         done
         
-        # Wait for command to finish and get exit code
+        # Get exit code and show result
         wait $cmd_pid
         exit_code=$?
         
         if [ $exit_code -eq 0 ]; then
-            printf "\r✓ $event_name completed                    \n"
+            printf "\r✓ $event_name completed\n"
         else
-            printf "\r✗ $event_name failed (check log: $INSTALL_LOG)    \n"
+            printf "\r✗ $event_name failed\n"
         fi
     else
         # In verbose mode, show output normally
