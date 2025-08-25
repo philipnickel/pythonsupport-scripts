@@ -52,16 +52,16 @@ verify_python_installation() {
             log_success "Python 3.11 installation verified"
             
             # Track analytics for successful Python installation
-            piwik_log "python_verification_success" echo "Python 3.11 verified: $python_version"
+            # piwik_log "python_verification_success" echo "Python 3.11 verified: $python_version"
         else
             VERIFICATION_ERRORS+=("Python version mismatch: found $python_version, expected 3.11.x")
             VERIFICATION_PASSED=false
-            piwik_log "python_verification_failure" echo "Python version mismatch: $python_version"
+            # piwik_log "python_verification_failure" echo "Python version mismatch: $python_version"
         fi
     else
         VERIFICATION_ERRORS+=("Python 3 not found in PATH")
         VERIFICATION_PASSED=false
-        piwik_log "python_verification_failure" echo "Python 3 not found"
+        # piwik_log "python_verification_failure" echo "Python 3 not found"
     fi
 }
 
@@ -87,11 +87,11 @@ verify_python_packages() {
         if [ ${#missing_packages[@]} -eq 0 ]; then
             PYTHON_PACKAGES_VERIFIED=true
             log_success "All required Python packages verified"
-            piwik_log "python_packages_verification_success" echo "All packages verified: ${verified_packages[*]}"
+            # piwik_log "python_packages_verification_success" echo "All packages verified: ${verified_packages[*]}"
         else
             VERIFICATION_ERRORS+=("Missing Python packages: ${missing_packages[*]}")
             VERIFICATION_PASSED=false
-            piwik_log "python_packages_verification_failure" echo "Missing packages: ${missing_packages[*]}"
+            # piwik_log "python_packages_verification_failure" echo "Missing packages: ${missing_packages[*]}"
         fi
     else
         log_warning "Skipping package verification - Python not verified"
@@ -110,11 +110,11 @@ verify_vscode_installation() {
         log_success "Visual Studio Code installation verified"
         
         # Track analytics for successful VS Code installation
-        piwik_log "vscode_verification_success" echo "VS Code verified: $vscode_version"
+        # piwik_log "vscode_verification_success" echo "VS Code verified: $vscode_version"
     else
         VERIFICATION_ERRORS+=("Visual Studio Code 'code' command not found in PATH")
         VERIFICATION_PASSED=false
-        piwik_log "vscode_verification_failure" echo "VS Code command not found"
+        # piwik_log "vscode_verification_failure" echo "VS Code command not found"
     fi
 }
 
@@ -126,11 +126,11 @@ verify_vscode_extensions() {
         if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
             VSCODE_EXTENSIONS_VERIFIED=true
             log_success "VS Code Python extension verified"
-            piwik_log "vscode_extensions_verification_success" echo "Python extension verified"
+            # piwik_log "vscode_extensions_verification_success" echo "Python extension verified"
         else
             VERIFICATION_ERRORS+=("VS Code Python extension not installed")
             VERIFICATION_PASSED=false
-            piwik_log "vscode_extensions_verification_failure" echo "Python extension not found"
+            # piwik_log "vscode_extensions_verification_failure" echo "Python extension not found"
         fi
     else
         log_warning "Skipping extension verification - VS Code not verified"
@@ -209,10 +209,10 @@ generate_verification_summary() {
     # Overall result
     if [ "$VERIFICATION_PASSED" = true ]; then
         log_success "Installation verification PASSED - DTU first-year setup is complete!"
-        piwik_log "overall_installation_success" echo "Complete installation verified successfully"
+        # piwik_log "overall_installation_success" echo "Complete installation verified successfully"
     else
         log_error "Installation verification FAILED - Setup incomplete"
-        piwik_log "overall_installation_failure" echo "Installation verification failed: ${#VERIFICATION_ERRORS[@]} errors"
+        # piwik_log "overall_installation_failure" echo "Installation verification failed: ${#VERIFICATION_ERRORS[@]} errors"
     fi
 }
 
@@ -280,9 +280,9 @@ send_final_analytics() {
     local success_rate=$((verified_components * 100 / total_components))
     
     if [ "$VERIFICATION_PASSED" = true ]; then
-        piwik_log "post_install_verification_complete" echo "Verification completed: ${verified_components}/${total_components} components (${success_rate}%)"
+        # piwik_log "post_install_verification_complete" echo "Verification completed: ${verified_components}/${total_components} components (${success_rate}%)"
     else
-        piwik_log "post_install_verification_incomplete" echo "Verification incomplete: ${verified_components}/${total_components} components (${success_rate}%)"
+        # piwik_log "post_install_verification_incomplete" echo "Verification incomplete: ${verified_components}/${total_components} components (${success_rate}%)"
     fi
 }
 
