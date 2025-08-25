@@ -141,22 +141,15 @@ verify_vscode_extensions() {
 run_diagnostics() {
     log_info "Running comprehensive diagnostics..."
     
-    local diagnostics_script="$SCRIPT_DIR/../Diagnostics/simple_report.sh"
+    # Set environment variable for the diagnostics script to use our install log
+    export INSTALL_LOG="${INSTALL_LOG:-/tmp/dtu_install_latest.log}"
     
-    if [ -f "$diagnostics_script" ]; then
-        # Set environment variable for the diagnostics script to use our install log
-        export INSTALL_LOG="${INSTALL_LOG:-/tmp/dtu_install_latest.log}"
-        
-        log_info "Generating diagnostic report..."
-        if INSTALL_LOG="$INSTALL_LOG" piwik_log "diagnostics_generation" "$diagnostics_script"; then
-            log_success "Diagnostic report generated successfully"
-            return 0
-        else
-            VERIFICATION_WARNINGS+=("Diagnostic report generation failed")
-            return 1
-        fi
+    log_info "Generating diagnostic report..."
+    if INSTALL_LOG="$INSTALL_LOG" piwik_log "diagnostics_generation" /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
+        log_success "Diagnostic report generated successfully"
+        return 0
     else
-        VERIFICATION_WARNINGS+=("Diagnostic script not found at $diagnostics_script")
+        VERIFICATION_WARNINGS+=("Diagnostic report generation failed")
         return 1
     fi
 }
