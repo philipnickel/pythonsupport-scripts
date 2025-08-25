@@ -51,8 +51,9 @@ catch {
 Write-Host "Verifying installation..."
 
 try {
-    # Test Python version
-    $pythonVersion = conda run python --version
+    # Test Python version using direct path
+    $pythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
+    $pythonVersion = & $pythonPath --version
     Write-Host "Python version: $pythonVersion"
     
     # Test package imports
@@ -72,10 +73,8 @@ for package in packages:
 print("All packages imported successfully!")
 "@
     
-    # Set environment variable to disable conda plugins and make it non-interactive
-    $env:CONDA_NO_PLUGINS = "true"
-    $env:CONDA_REPORT_ERRORS = "false"
-    conda run python -c $testScript
+    # Use Python directly instead of conda run
+    & $pythonPath -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
         exit 1
