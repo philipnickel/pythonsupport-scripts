@@ -1,18 +1,19 @@
 name: Generate Documentation
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**/*.sh'
-      - 'docs/tools/extract_docs.py'
-      - '.github/workflows/generate_docs.yml'
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/Components/**/*.sh'
-      - 'docs/tools/extract_docs.py'
-      - '.github/workflows/generate_docs.yml'
+  # Disabled for Windows testing
+  # push:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/Components/**/*.sh'
+  #     - 'docs/tools/extract_docs.py'
+  #     - '.github/workflows/generate_docs.yml'
+  # pull_request:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/Components/**/*.sh'
+  #     - 'docs/tools/extract_docs.py'
+  #     - '.github/workflows/generate_docs.yml'
   workflow_dispatch:
 
 jobs:

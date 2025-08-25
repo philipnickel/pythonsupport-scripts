@@ -5,16 +5,18 @@ defaults:
     shell: bash -l {0}
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/**'
-      - '.github/workflows/MacOS_autoInstall.yml'
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'MacOS/**'
-      - '.github/workflows/MacOS_autoInstall.yml'
+  # Disabled for Windows testing
+  # pull_request:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/**'
+  #     - '.github/workflows/MacOS_autoInstall.yml'
+  # push:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'MacOS/**'
+  #     - '.github/workflows/MacOS_autoInstall.yml'
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION_PS: "3.11"
