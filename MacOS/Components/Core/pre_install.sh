@@ -7,12 +7,7 @@
 # @requirements: macOS system
 # @/doc
 
-# Load configuration  
-echo "DEBUG: REMOTE_PS='$REMOTE_PS' BRANCH_PS='$BRANCH_PS'"
-if [ -z "$REMOTE_PS" ] || [ -z "$BRANCH_PS" ]; then
-    echo "ERROR: REMOTE_PS and BRANCH_PS must be set"
-    exit 1
-fi
+# Load configuration
 source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
 
 # Start piwik logging if available
