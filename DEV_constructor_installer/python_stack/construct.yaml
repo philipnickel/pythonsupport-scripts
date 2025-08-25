@@ -44,3 +44,8 @@ post_install_desc: "Setting up Python environment, downloading VS Code, and conf
 
 # macOS specific settings
 keep_pkgs: false
+
+# Code signing configuration (requires Apple Developer certificate)
+# Uncomment and configure when signing certificate is available:
+# signing_identity_name: "Developer ID Installer: Your Name (XXXXXXXXXX)"
+# notarization_identity_name: "Developer ID Installer: Your Name (XXXXXXXXXX)"
