@@ -34,8 +34,9 @@
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 
-    <!-- Register the installation script -->
+    <!-- Run the installation script -->
     <!-- The command opens a terminal which executes the script and waits -->
+    <!-- The script should wait for user input, or the terminal will close immediately -->
     <CustomAction
       Id="Install"
       Directory="INSTALLFOLDER"

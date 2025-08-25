@@ -38,7 +38,5 @@ automatically.
 
 ## TODO
 
-- Test with the real installation script.
 - Displays more information about the installation process to the user.
 - Perform error handling if the script fails.
-
