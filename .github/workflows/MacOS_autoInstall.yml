@@ -154,10 +154,18 @@ jobs:
           # Should still have working Python and packages
           which python3
           python3 --version
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages work with existing conda')"
+          
+          # This MUST succeed or workflow fails
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages work with existing conda')" || {
+            echo "ERROR: DTU packages not installed properly"
+            exit 1
+          }
           
           # Should have VS Code
-          code --version
+          code --version || {
+            echo "ERROR: VS Code not installed properly"  
+            exit 1
+          }
 
   test-existing-miniforge-no-packages:
     name: Test with Miniforge but Missing Packages
@@ -202,10 +210,18 @@ jobs:
           # Should now have all DTU packages
           which python3
           python3 --version
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All DTU packages now installed')"
+          
+          # This MUST succeed or workflow fails
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All DTU packages now installed')" || {
+            echo "ERROR: DTU packages not installed properly after installer run"
+            exit 1
+          }
           
           # Should have VS Code
-          code --version
+          code --version || {
+            echo "ERROR: VS Code not installed properly"
+            exit 1
+          }
 
   test-existing-vscode-no-extensions:
     name: Test with VS Code but Missing Extensions
@@ -245,9 +261,24 @@ jobs:
           # Should have Python and packages
           which python3
           python3 --version  
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Python packages installed')"
+          
+          # This MUST succeed or workflow fails
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Python packages installed')" || {
+            echo "ERROR: DTU packages not installed properly"
+            exit 1
+          }
           
           # Should still have VS Code but now with extensions
-          code --version
+          code --version || {
+            echo "ERROR: VS Code not working properly"
+            exit 1
+          }
+          
           echo "Installed extensions:"
           code --list-extensions
+          
+          # Should have Python extension at minimum
+          if ! code --list-extensions | grep -q "ms-python.python"; then
+            echo "ERROR: Python extension not installed"
+            exit 1
+          fi
