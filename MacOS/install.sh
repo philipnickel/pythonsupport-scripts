@@ -80,7 +80,7 @@ run_with_progress() {
     local event_name="$1"
     shift
     
-    log "Starting: $event_name"
+    # Starting: $event_name
     
     local exit_code
     
@@ -119,7 +119,7 @@ run_with_progress() {
         echo "$output" | tee -a "$INSTALL_LOG"
     fi
     
-    log "Completed: $event_name (exit code: $exit_code)"
+    # Completed: $event_name (exit code: $exit_code)
     return $exit_code
 }
 
@@ -150,20 +150,20 @@ echo "Started: $(date)" >> "$INSTALL_LOG"
 echo "Mode: QUIET_MODE=$QUIET_MODE, VERBOSE_MODE=$VERBOSE_MODE" >> "$INSTALL_LOG"
 echo "" >> "$INSTALL_LOG"
 
-log "DTU First Year Students - Complete Setup"
-log "========================================"
-log "Installation log: $INSTALL_LOG"
+echo "DTU First Year Students - Complete Setup"
+echo "========================================"
+echo "Installation log: $INSTALL_LOG"
 
 # === PHASE 1: PRE-INSTALLATION CHECK ===
-[ "$QUIET_MODE" != "true" ] && log "Phase 1: Pre-Installation System Check"
-[ "$QUIET_MODE" != "true" ] && log "======================================="
+[ "$QUIET_MODE" != "true" ] && echo "Phase 1: Pre-Installation System Check"
+[ "$QUIET_MODE" != "true" ] && echo "======================================="
 
 # Analytics can be added here if needed
 run_with_progress 'Pre-installation check' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh)"
 
 # === PHASE 2: MAIN INSTALLATION ===
-[ "$QUIET_MODE" != "true" ] && log "Phase 2: Main Installation Process"
-[ "$QUIET_MODE" != "true" ] && log "=================================="
+[ "$QUIET_MODE" != "true" ] && echo "Phase 2: Main Installation Process"
+[ "$QUIET_MODE" != "true" ] && echo "=================================="
 
 # Install Python with Miniforge
 run_with_progress 'Python installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
@@ -174,17 +174,17 @@ run_with_progress 'Python environment setup' /bin/bash -c "export REMOTE_PS='${R
 # Install Visual Studio Code
 run_with_progress 'Visual Studio Code installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
 
-[ "$QUIET_MODE" != "true" ] && log "Main installation phase completed"
+[ "$QUIET_MODE" != "true" ] && echo "Main installation phase completed"
 
 # === PHASE 3: POST-INSTALLATION VERIFICATION ===
-log "Phase 3: Post-Installation Verification"
-log "========================================"
+echo "Phase 3: Post-Installation Verification"
+echo "========================================"
 
 # Export the install log for post-install verification
 export INSTALL_LOG
 
 if run_with_progress 'Post-installation verification' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/post_install.sh)"; then
-    log "Post-installation verification completed successfully"
+    echo "Post-installation verification completed successfully"
     echo ""
     echo "🎉 DTU First Year Setup Complete!"
     echo "================================="
@@ -202,7 +202,7 @@ if run_with_progress 'Post-installation verification' /bin/bash -c "export REMOT
     echo "Questions? Email: pythonsupport@dtu.dk"
     exit 0
 else
-    log "Post-installation verification detected issues"
+    echo "Post-installation verification detected issues"
     echo ""
     echo "Installation completed but with some issues detected."
     echo "A diagnostic report has been generated for troubleshooting."

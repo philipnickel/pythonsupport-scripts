@@ -21,15 +21,11 @@ if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH
     exit 1
 fi
 
-log "DTU Python Support - Pre-Installation Check"
-log "=============================================="
 
 # Log installation start to Piwik if available
 if command -v piwik_log_event >/dev/null 2>&1; then
     piwik_log_event "installation" "start" "DTU Python installation started"
-    log "Installation start logged to Piwik analytics"
 else
-    log "Piwik logging not available"
 fi
 
 # Variables for tracking found installations
@@ -48,7 +44,6 @@ ERRORS=()
 
 # Check system requirements
 check_system_requirements() {
-    log "Checking system requirements..."
     
     # Check macOS version
     if ! sw_vers >/dev/null 2>&1; then
@@ -60,7 +55,6 @@ check_system_requirements() {
     local major_version=$(echo "$macos_version" | cut -d. -f1)
     local minor_version=$(echo "$macos_version" | cut -d. -f2)
     
-    log "macOS version: $macos_version"
     
     # Check for minimum macOS version (10.14 Mojave)
     if [ "$major_version" -lt 10 ] || ([ "$major_version" -eq 10 ] && [ "$minor_version" -lt 14 ]); then
@@ -69,13 +63,11 @@ check_system_requirements() {
     
     # Check architecture
     local arch=$(uname -m)
-    log "Architecture: $arch"
     
     # Check available disk space (need at least 2GB free)
     local free_space_kb=$(df -k / | tail -1 | awk '{print $4}')
     local free_space_gb=$((free_space_kb / 1024 / 1024))
     
-    log "Available disk space: ${free_space_gb}GB"
     
     if [ "$free_space_gb" -lt 2 ]; then
         WARNINGS+=("Low disk space (${free_space_gb}GB available). At least 2GB recommended.")
@@ -89,7 +81,6 @@ check_system_requirements() {
 
 # Check for existing Python installations
 check_python_installations() {
-    log "Checking for existing Python installations..."
     
     # Check system Python 3
     if command -v python3 >/dev/null 2>&1; then
@@ -97,11 +88,9 @@ check_python_installations() {
         PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
         PYTHON_PATH=$(which python3)
         
-        log "Found Python 3: $PYTHON_VERSION at $PYTHON_PATH"
         
         # Check if it's the target version (3.11.x)
         if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
-            log "Python 3.11 already installed"
         else
             WARNINGS+=("Python $PYTHON_VERSION found, but DTU requires Python 3.11.x")
         fi
@@ -109,7 +98,6 @@ check_python_installations() {
         # Check for required packages
         check_python_packages
     else
-        log "No Python 3 installation found"
     fi
     
     # Check for conda/miniconda/anaconda
@@ -118,7 +106,6 @@ check_python_installations() {
 
 # Check for conda installations
 check_conda_installations() {
-    log "Checking for conda environments..."
     
     # Check various conda installation locations
     local conda_paths=(
@@ -148,7 +135,6 @@ check_conda_installations() {
                 CONDA_TYPE="Conda"
             fi
             
-            log "Found $CONDA_TYPE $CONDA_VERSION at $conda_path"
             break
         fi
     done
@@ -158,18 +144,15 @@ check_conda_installations() {
         CONDA_FOUND=true
         CONDA_VERSION=$(conda --version 2>/dev/null | cut -d' ' -f2)
         CONDA_TYPE="Conda (in PATH)"
-        log "Found conda $CONDA_VERSION in PATH"
     fi
     
     if [ "$CONDA_FOUND" = false ]; then
-        log "No conda installation found"
     fi
 }
 
 # Check for required Python packages
 check_python_packages() {
     if [ "$PYTHON_FOUND" = true ]; then
-        log "Checking for required Python packages..."
         
         local packages=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
         local found_packages=()
@@ -185,22 +168,18 @@ check_python_packages() {
         
         if [ ${#found_packages[@]} -gt 0 ]; then
             PYTHON_PACKAGES_FOUND=true
-            log "Found packages: ${found_packages[*]}"
         fi
         
         if [ ${#missing_packages[@]} -gt 0 ]; then
-            log "Missing packages: ${missing_packages[*]}"
         fi
         
         if [ ${#found_packages[@]} -eq ${#packages[@]} ]; then
-            log "All required Python packages are installed"
         fi
     fi
 }
 
 # Check for Visual Studio Code
 check_vscode_installation() {
-    log "Checking for Visual Studio Code..."
     
     # Check common VS Code installation locations
     local vscode_paths=(
@@ -213,7 +192,6 @@ check_vscode_installation() {
         if [ -x "$vscode_path" ]; then
             VSCODE_FOUND=true
             VSCODE_VERSION=$("$vscode_path" --version 2>/dev/null | head -1)
-            log "Found VS Code $VSCODE_VERSION at $vscode_path"
             break
         fi
     done
@@ -222,11 +200,9 @@ check_vscode_installation() {
     if command -v code >/dev/null 2>&1 && [ "$VSCODE_FOUND" = false ]; then
         VSCODE_FOUND=true
         VSCODE_VERSION=$(code --version 2>/dev/null | head -1)
-        log "Found VS Code $VSCODE_VERSION in PATH"
     fi
     
     if [ "$VSCODE_FOUND" = false ]; then
-        log "Visual Studio Code not found"
     else
         check_vscode_extensions
     fi
@@ -235,13 +211,10 @@ check_vscode_installation() {
 # Check for VS Code Python extension
 check_vscode_extensions() {
     if [ "$VSCODE_FOUND" = true ]; then
-        log "Checking for VS Code Python extension..."
         
         if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
             VSCODE_EXTENSIONS_FOUND=true
-            log "Python extension for VS Code is installed"
         else
-            log "Python extension for VS Code not found"
         fi
     fi
 }
@@ -249,8 +222,6 @@ check_vscode_extensions() {
 # Generate summary report
 generate_summary() {
     echo ""
-    log "Pre-Installation Summary"
-    log "========================"
     
     echo "System Requirements:"
     echo "  ✓ macOS system detected"
@@ -307,17 +278,13 @@ generate_summary() {
             echo "  ✗ $error"
         done
         echo ""
-        log "System requirements not met. Installation cannot proceed."
         return 1
     fi
     
     echo ""
     if [ "$PYTHON_FOUND" = true ] && [ "$VSCODE_FOUND" = true ] && [ "$PYTHON_PACKAGES_FOUND" = true ] && [ "$VSCODE_EXTENSIONS_FOUND" = true ]; then
-        log "Complete DTU first-year setup detected. Installation may not be necessary."
     elif [ "$PYTHON_FOUND" = true ] || [ "$VSCODE_FOUND" = true ] || [ "$CONDA_FOUND" = true ]; then
-        log "Partial installation detected. Installation will update/complete the setup."
     else
-        log "No existing installations found. Fresh installation will proceed."
     fi
     
     return 0
@@ -342,7 +309,6 @@ PYTHON_PACKAGES_FOUND=$PYTHON_PACKAGES_FOUND
 VSCODE_EXTENSIONS_FOUND=$VSCODE_EXTENSIONS_FOUND
 EOF
     
-    log "Pre-installation findings saved to /tmp/dtu_pre_install_findings.env"
 }
 
 # Main execution
@@ -360,10 +326,8 @@ main() {
     if generate_summary; then
         export_findings
         echo ""
-        log "Pre-installation check completed successfully"
         return 0
     else
-        log "Pre-installation check failed"
         return 1
     fi
 }
