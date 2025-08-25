@@ -21,8 +21,23 @@ export SKIP_VSCODE_INSTALL=false
 
 # Check for conda installations first
 if [ -d "$HOME/miniforge3" ] && [ -x "$HOME/miniforge3/bin/conda" ]; then
-    echo "• Miniforge found - skipping Python installation"
+    echo "• Miniforge found"
     export SKIP_PYTHON_INSTALL=true
+    
+    # Check if Miniforge has correct Python version
+    if command -v python3 >/dev/null 2>&1; then
+        PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
+        if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
+            echo "  ✓ Python 3.11 ($PYTHON_VERSION)"
+        else
+            echo "  ⚠ Wrong Python version ($PYTHON_VERSION), need 3.11"
+            export SKIP_PYTHON_INSTALL=false
+        fi
+    else
+        echo "  ⚠ Python not found in PATH"
+        export SKIP_PYTHON_INSTALL=false
+    fi
+    
 elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ]; then
     echo "• Anaconda/Miniconda found"
     echo "DTU recommends Miniforge. Uninstall first? (y/n)"
@@ -36,16 +51,7 @@ elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ]; then
     fi
 fi
 
-# Only check Python version/packages if no conda found
-if [ "$SKIP_PYTHON_INSTALL" = false ] && command -v python3 >/dev/null 2>&1; then
-    PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
-    if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
-        echo "• Python 3.11 found ($PYTHON_VERSION)"
-        export SKIP_PYTHON_INSTALL=true
-    fi
-fi
-
-# Check for DTU packages (regardless of Python install status)
+# Check for DTU packages (always check if python3 available)
 if command -v python3 >/dev/null 2>&1; then
     packages=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
     all_found=true
@@ -59,6 +65,8 @@ if command -v python3 >/dev/null 2>&1; then
     if [ "$all_found" = true ]; then
         echo "• All DTU packages found - skipping package setup"
         export SKIP_FIRST_YEAR_SETUP=true
+    else
+        echo "• Some DTU packages missing - will install packages"
     fi
 fi
 
