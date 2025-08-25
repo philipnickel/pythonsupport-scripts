@@ -65,9 +65,9 @@ packages = ['pandas', 'scipy', 'statsmodels', 'uncertainties']
 for package in packages:
     try:
         __import__(package)
-        print(f"✓ {package} imported successfully")
+        print(f"OK: {package} imported successfully")
     except ImportError as e:
-        print(f"✗ {package} import failed: {e}")
+        print(f"ERROR: {package} import failed: {e}")
         sys.exit(1)
 
 print("All packages imported successfully!")
