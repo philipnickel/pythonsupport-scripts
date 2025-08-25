@@ -326,7 +326,12 @@ main() {
         
         # Run diagnostics (optional - don't fail if it doesn't work)
         echo ""
-        run_diagnostics || true
+        log_info "Running diagnostic report generation..."
+        if run_diagnostics; then
+            log_success "Diagnostic report completed successfully"
+        else
+            log_warning "Diagnostic report generation failed, continuing anyway"
+        fi
         
         # Send final analytics
         send_final_analytics
