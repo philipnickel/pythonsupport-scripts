@@ -82,6 +82,7 @@ check_python_installations() {
         
         # Check if it's the target version (3.11.x)
         if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
+            echo "Python $PYTHON_VERSION is the correct version for DTU"
         else
             WARNINGS+=("Python $PYTHON_VERSION found, but DTU requires Python 3.11.x")
         fi
@@ -137,6 +138,7 @@ check_conda_installations() {
     fi
     
     if [ "$CONDA_FOUND" = false ]; then
+        echo "No conda installation found"
     fi
 }
 
@@ -161,9 +163,11 @@ check_python_packages() {
         fi
         
         if [ ${#missing_packages[@]} -gt 0 ]; then
+            echo "Some DTU packages are missing: ${missing_packages[*]}"
         fi
         
         if [ ${#found_packages[@]} -eq ${#packages[@]} ]; then
+            echo "All DTU packages are installed"
         fi
     fi
 }
@@ -193,6 +197,7 @@ check_vscode_installation() {
     fi
     
     if [ "$VSCODE_FOUND" = false ]; then
+        echo "VS Code not found"
     else
         check_vscode_extensions
     fi
