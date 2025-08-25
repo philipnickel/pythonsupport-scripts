@@ -30,20 +30,6 @@ catch {
     $results.Python = $false
 }
 
-# Install VSCode using component
-Write-Host "Installing VSCode..."
-try {
-    $vscodeScriptUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/VSC/install.ps1"
-    $vscodeScript = Invoke-WebRequest -Uri $vscodeScriptUrl -UseBasicParsing
-    Invoke-Expression $vscodeScript.Content
-    $results.VSCode = $true
-    Write-Host "VSCode installation completed successfully"
-}
-catch {
-    Write-Host "VSCode installation failed: $($_.Exception.Message)"
-    $results.VSCode = $false
-}
-
 # Run first year python setup (install specific version and packages)
 if ($results.Python) {
     Write-Host "Running first year Python environment setup..."
@@ -62,6 +48,20 @@ if ($results.Python) {
 else {
     Write-Host "Skipping first year Python setup due to Python installation failure"
     $results.FirstYearSetup = $false
+}
+
+# Install VSCode using component
+Write-Host "Installing VSCode..."
+try {
+    $vscodeScriptUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/VSC/install.ps1"
+    $vscodeScript = Invoke-WebRequest -Uri $vscodeScriptUrl -UseBasicParsing
+    Invoke-Expression $vscodeScript.Content
+    $results.VSCode = $true
+    Write-Host "VSCode installation completed successfully"
+}
+catch {
+    Write-Host "VSCode installation failed: $($_.Exception.Message)"
+    $results.VSCode = $false
 }
 
 # Check results and provide appropriate feedback
