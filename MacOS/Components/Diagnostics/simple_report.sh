@@ -11,6 +11,16 @@
 
 # Get system info
 get_system_info() {
+    # Load configuration for system info display
+    if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
+        CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+        CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
+        if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
+            source "$CONFIG_FILE" 2>/dev/null || true
+            rm -f "$CONFIG_FILE"
+        fi
+    fi
+    
     echo "=== System Information ==="
     echo "Operating System: macOS $(sw_vers -productVersion) ($(sw_vers -productName))"
     echo "Build Version: $(sw_vers -buildVersion)"
@@ -37,6 +47,13 @@ get_system_info() {
     echo "Conda Base: $(conda info --base 2>/dev/null || echo 'Not found')"
     echo ""
     
+    echo "=== DTU Configuration ==="
+    echo "Expected Python Version: ${PYTHON_VERSION_DTU:-'Not loaded'}"
+    echo "Required DTU Packages: ${DTU_PACKAGES[*]:-'Not loaded'}"
+    echo "Repository: ${REMOTE_PS:-'Not set'}"
+    echo "Branch: ${BRANCH_PS:-'Not set'}"
+    echo ""
+    
     echo "=== VS Code Environment ==="
     echo "VS Code Location: $(which code 2>/dev/null || echo 'Not found')"
     echo "VS Code Version: $(code --version 2>/dev/null | head -1 || echo 'Not found')"
@@ -61,25 +78,49 @@ run_first_year_test() {
         local vscode_setup_failed=false
         local test_results=""
         
+        # Load configuration for consistent version/package testing
+        if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
+            CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+            CONFIG_FILE="/tmp/test_config_$$.sh"
+            if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
+                source "$CONFIG_FILE" 2>/dev/null || true
+                rm -f "$CONFIG_FILE"
+            fi
+        fi
+        
+        # Set defaults if config loading failed
+        PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.11"}
+        DTU_PACKAGES=${DTU_PACKAGES:-("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")}
+        
         # Activate conda environment for tests
         if [ -f "$HOME/miniforge3/bin/activate" ]; then
             source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
         fi
         
-        # Test Python Installation (Python 3.11)
-        echo -n "Python Installation (3.11): "
-        if python3 --version 2>/dev/null | grep -q "3.11"; then
+        # Test Python Installation (using config version)
+        echo -n "Python Installation ($PYTHON_VERSION_DTU): "
+        if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
             echo "PASS"
-            test_results="${test_results}Python Installation (3.11): PASS\n"
+            test_results="${test_results}Python Installation ($PYTHON_VERSION_DTU): PASS\n"
         else
             echo "FAIL ($(python3 --version 2>/dev/null || echo 'Not found'))"
-            test_results="${test_results}Python Installation (3.11): FAIL\n"
+            test_results="${test_results}Python Installation ($PYTHON_VERSION_DTU): FAIL\n"
             python_installation_failed=true
         fi
         
-        # Test Python Environment (packages)
+        # Test Python Environment (using config packages)
         echo -n "Python Environment (packages): "
-        if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties" 2>/dev/null; then
+        # Convert package array to import string
+        package_imports=""
+        for pkg in "${DTU_PACKAGES[@]}"; do
+            if [ -z "$package_imports" ]; then
+                package_imports="$pkg"
+            else
+                package_imports="$package_imports, $pkg"
+            fi
+        done
+        
+        if python3 -c "import $package_imports" 2>/dev/null; then
             echo "PASS"
             test_results="${test_results}Python Environment (packages): PASS\n"
         else
