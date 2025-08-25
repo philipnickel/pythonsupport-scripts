@@ -32,7 +32,7 @@ fi
 
 # Check for VS Code
 if command -v code >/dev/null 2>&1 || [ -d "/Applications/Visual Studio Code.app" ]; then
-    echo "• VS Code found - skipping VS Code installation"
+    echo "• VS Code found - skipping installation"
     export SKIP_VSCODE_INSTALL=true
 fi
 
