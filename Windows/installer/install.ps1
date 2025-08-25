@@ -26,6 +26,7 @@ function Exit-Message {
     Write-Output "   pythonsupport@dtu.dk"
     Write-Output ""
     Write-Output "Or visit us during our office hours"
+    Read-Host 'Press Enter to exit'
     exit 1
 }
 
@@ -193,4 +194,5 @@ if ((Test-Path $minicondaPath1) -or (Test-Path $minicondaPath2) -or (Test-Path $
 }
 
 Write-Output "$_prefix Installed conda and related packages for 1st year at DTU!"
-read-host 'Press Enter to exit'
+Read-Host 'Press Enter to exit'
+exit 0
