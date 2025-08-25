@@ -39,7 +39,7 @@ jobs:
             input: ""
           - scenario: "Existing Conda (Auto-Uninstall)"
             setup: "existing-conda"
-            input: "y\nyes"
+            input: "1\nyes"
           - scenario: "Existing Miniforge (Missing Packages)"
             setup: "existing-miniforge-no-packages"
             input: "n"
