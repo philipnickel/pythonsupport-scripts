@@ -17,6 +17,8 @@ This installs:
 - Visual Studio Code with Python extension
 - Complete diagnostic and verification system
 
+*Note: You may see some "404" or "command not found" messages during installation - these are cosmetic logging issues and do not affect the actual installation. Everything will install correctly.*
+
 ### Windows
 Open PowerShell as Administrator and run:
 ```powershell
