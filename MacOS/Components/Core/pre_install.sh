@@ -7,7 +7,9 @@
 # @requirements: macOS system
 # @/doc
 
-# Load configuration
+# Load configuration - set defaults if variables not provided
+REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
+BRANCH_PS=${BRANCH_PS:-"main"}
 source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
 
 # Start piwik logging if available

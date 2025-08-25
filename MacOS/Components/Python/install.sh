@@ -11,8 +11,12 @@
 # @version: 2024-12-25
 # @/doc
 
-# Load configuration
+# Load configuration - set defaults if variables not provided
+REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
+BRANCH_PS=${BRANCH_PS:-"main"}
+echo "About to load config from: https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
 source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+echo "After loading config: MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
