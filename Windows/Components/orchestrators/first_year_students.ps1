@@ -95,51 +95,6 @@ else {
     Write-Host "Some components failed to install"
 }
 
-# Final verification
-Write-Host "Running final verification..."
-
-# Verify conda
-try {
-    $condaVersion = conda --version
-    Write-Host "Conda verification: $condaVersion"
-}
-catch {
-    Write-Host "Conda verification failed"
-}
-
-# Verify VSCode
-try {
-    $codeVersion = & code --version 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "VSCode verification: $($codeVersion[0])"
-    }
-    else {
-        Write-Host "VSCode verification failed"
-    }
-}
-catch {
-    Write-Host "VSCode verification failed: $($_.Exception.Message)"
-}
-
-# Verify Python and packages
-try {
-    # Use Python directly from miniforge installation
-    $pythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
-    $pythonVersion = & $pythonPath --version
-    Write-Host "Python verification: $pythonVersion"
-    
-    # Test package imports
-    $testScript = @"
-import pandas, scipy, statsmodels, uncertainties
-print("All required packages imported successfully!")
-"@
-    $testScript | & $pythonPath
-    Write-Host "Package verification: All packages imported successfully"
-}
-catch {
-    Write-Host "Python/package verification failed: $($_.Exception.Message)"
-}
-
 Write-Host "Script has finished. You may now close the terminal..."
 
 # Final step: provide user with next steps

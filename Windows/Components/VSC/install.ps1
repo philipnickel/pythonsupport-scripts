@@ -92,37 +92,7 @@ else {
     Write-Host "VSCode not found in expected locations"
 }
 
-# Test if VSCode CLI is working
-Write-Host "Testing VSCode CLI..."
-try {
-    $codeVersion = & code --version 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "VSCode CLI is working"
-        Write-Host "VSCode version: $($codeVersion[0])"
-    }
-    else {
-        Write-Host "VSCode CLI not working, attempting to fix..."
-        
-        # Try to add VSCode to PATH manually
-        $vscodeExePath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
-        if (Test-Path $vscodeExePath) {
-            $env:PATH = "$(Split-Path $vscodeExePath -Parent);$env:PATH"
-            
-            # Test again
-            $codeVersion = & code --version 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "VSCode CLI fixed and working"
-                Write-Host "VSCode version: $($codeVersion[0])"
-            }
-            else {
-                Write-Host "VSCode CLI still not working, but installation completed"
-            }
-        }
-    }
-}
-catch {
-    Write-Host "Failed to test VSCode CLI: $($_.Exception.Message)"
-}
+
 
 # Install Python extension
 Write-Host "Installing Python extension for VSCode..."

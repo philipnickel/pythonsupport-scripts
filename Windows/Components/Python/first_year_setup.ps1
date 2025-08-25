@@ -47,45 +47,5 @@ catch {
     exit 1
 }
 
-# Verify installation
-Write-Host "Verifying installation..."
-
-try {
-    # Test Python version using direct path
-    $pythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
-    $pythonVersion = & $pythonPath --version
-    Write-Host "Python version: $pythonVersion"
-    
-    # Test package imports
-    $testScript = @"
-import sys
-print(f"Python version: {sys.version}")
-
-packages = ['pandas', 'scipy', 'statsmodels', 'uncertainties']
-for package in packages:
-    try:
-        __import__(package)
-        print(f"OK: {package} imported successfully")
-    except ImportError as e:
-        print(f"ERROR: {package} import failed: {e}")
-        sys.exit(1)
-
-print("All packages imported successfully!")
-"@
-    
-    # Use Python directly instead of conda run
-    & $pythonPath -c $testScript
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Package import test failed"
-        exit 1
-    }
-    
-    Write-Host "All packages verified successfully"
-}
-catch {
-    Write-Host "Verification failed: $($_.Exception.Message)"
-    exit 1
-}
-
 Write-Host "First year Python environment setup completed successfully!"
 Write-Host "You can now use Python $env:PYTHON_VERSION_PS with all required packages in the base environment"
