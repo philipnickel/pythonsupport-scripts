@@ -31,28 +31,13 @@ Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 # Install Python 3.11 and required packages in base environment
 Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in base environment..."
 
-$packages = @("pandas", "scipy", "statsmodels", "uncertainties", "jupyter", "ipykernel", "matplotlib", "seaborn", "numpy")
-
 try {
-    # Install Python 3.11 first
-    Write-Host "Installing Python $env:PYTHON_VERSION_PS..."
-    conda install -y "python=$env:PYTHON_VERSION_PS"
+    # Install Python 3.11 and all packages in one command using mamba for speed
+    Write-Host "Installing Python $env:PYTHON_VERSION_PS and all required packages..."
+    mamba install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to install Python $env:PYTHON_VERSION_PS"
+        Write-Host "Failed to install Python and packages"
         exit 1
-    }
-    Write-Host "Python $env:PYTHON_VERSION_PS installed successfully"
-    
-    # Install required packages
-    Write-Host "Installing required packages..."
-    foreach ($package in $packages) {
-        Write-Host "Installing $package..."
-        conda install -y $package
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to install $package"
-            exit 1
-        }
-        Write-Host "$package installed successfully"
     }
     
     Write-Host "All packages installed successfully in base environment"
@@ -67,7 +52,7 @@ Write-Host "Verifying installation..."
 
 try {
     # Test Python version
-    $pythonVersion = conda run python --version
+    $pythonVersion = mamba run python --version
     Write-Host "Python version: $pythonVersion"
     
     # Test package imports
@@ -89,7 +74,7 @@ print("All packages imported successfully!")
     
     # Set environment variable to disable conda plugins and make it non-interactive
     $env:CONDA_NO_PLUGINS = "true"
-    conda run python -c $testScript
+    mamba run python -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
         exit 1
