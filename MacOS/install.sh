@@ -36,21 +36,13 @@ echo "Phase 2: Main Installation Process"
 echo "=================================="
 
 
-# Install Python with Miniforge (conditionally)
-if [ "$SKIP_PYTHON_INSTALL" = true ]; then
-    echo "Skipping Python installation (existing conda found)"
-else
-    echo "Installing Python with Miniforge..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
-fi
+# Install Python with Miniforge
+echo "Installing Python with Miniforge..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
 
-# Run first year setup (conditionally)
-if [ "$SKIP_FIRST_YEAR_SETUP" = true ]; then
-    echo "Skipping Python package setup (packages already installed)"
-else
-    echo "Setting up Python environment and packages..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
-fi
+# Setup Python environment and packages
+echo "Setting up Python environment and packages..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
 
 # Install Visual Studio Code (conditionally)
 if [ "$SKIP_VSCODE_INSTALL" = true ]; then
