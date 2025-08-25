@@ -24,7 +24,16 @@ echo "Branch: $BRANCH_PS" >> "$INSTALL_LOG"
 # === PHASE 1: PRE-INSTALLATION CHECK ===
 echo "Phase 1: Pre-Installation System Check"
 echo "======================================="
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh)"
+# Download and run pre_install.sh with stdin preserved
+PRE_INSTALL_SCRIPT="/tmp/pre_install_$$.sh"
+curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh" -o "$PRE_INSTALL_SCRIPT"
+if [ -f "$PRE_INSTALL_SCRIPT" ]; then
+    bash "$PRE_INSTALL_SCRIPT"
+    rm -f "$PRE_INSTALL_SCRIPT"
+else
+    echo "ERROR: Failed to download pre_install.sh"
+    exit 1
+fi
 
 # Load pre-installation flags
 if [ -f /tmp/dtu_pre_install_flags.env ]; then

@@ -28,7 +28,7 @@ if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
     echo "Everything appears to be already installed!"
     echo "Cancel installation? (y/n)"
     read -r response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
+    if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
         echo "Installation cancelled - Miniforge already present"
         exit 0
     fi
@@ -41,7 +41,7 @@ elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anacond
     echo "Uninstall existing conda and continue? (y/n)"
     read -r response
     
-    if [[ "$response" =~ ^[Yy]$ ]]; then
+    if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
         echo "• Uninstalling existing conda..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
         echo "• Continuing with Miniforge installation..."
