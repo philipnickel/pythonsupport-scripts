@@ -90,7 +90,7 @@ log_info "========================================"
 # Export the install log for post-install verification
 export INSTALL_LOG
 
-if piwik_log 'post_install_verification' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/post_install_debug.sh)"; then
+if piwik_log 'post_install_verification' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/post_install.sh)"; then
     log_success "Post-installation verification completed successfully"
     echo ""
     echo "🎉 DTU First Year Setup Complete!"
