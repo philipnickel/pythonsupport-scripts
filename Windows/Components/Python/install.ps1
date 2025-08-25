@@ -120,14 +120,7 @@ catch {
     exit 1
 }
 
-# Disable anaconda usage tracking
-Write-Host "Disabling anaconda usage tracking..."
-try {
-    conda config --set anaconda_anon_usage off
-}
-catch {
-    Write-Host "Failed to disable anaconda usage tracking (non-critical)"
-}
+
 
 # Show conda installation location
 Write-Host "Conda installation location:"
