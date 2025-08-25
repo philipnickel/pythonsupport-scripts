@@ -76,7 +76,6 @@ jobs:
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          GITHUB_CI: true
           PIS_VERBOSE: true
         run: |
           echo "Testing First Year Installation from: $REMOTE_PS/$BRANCH_PS"

@@ -51,34 +51,29 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Detect CI/headless environment and set output mode
-CI_MODE=false
-QUIET_MODE=true
-
-if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ] || [ -n "$BUILD_ID" ] || [ -n "$JENKINS_URL" ]; then
-    CI_MODE=true
-    QUIET_MODE=false  # CI always runs in verbose mode
-    echo "Detected CI/automated environment - running in verbose mode"
-    echo ""
-elif [ "$VERBOSE_MODE" = "true" ]; then
-    QUIET_MODE=false  # User requested verbose mode
-    echo "Running in verbose mode (--verbose flag detected)"
+# Set output mode based on verbose flag/environment
+if [ "$VERBOSE_MODE" = "true" ]; then
+    QUIET_MODE=false
+    echo "Running in verbose mode"
     echo ""
 else
-    # Interactive mode - enable quiet mode for clean user experience
+    # Default to quiet mode for clean user experience
     QUIET_MODE=true
     
     echo "This installation requires administrator privileges."
     echo "You will be prompted to enter your system password."
     echo ""
 
-    # Use osascript to show native macOS password dialog
-    if ! osascript -e 'do shell script "echo Authentication successful" with administrator privileges' >/dev/null 2>&1; then
+    # Use osascript to show native macOS password dialog (skip in non-interactive environments)
+    if [ -t 0 ] && ! osascript -e 'do shell script "echo Authentication successful" with administrator privileges' >/dev/null 2>&1; then
         echo "Installation cancelled - administrator authentication required."
         exit 1
+    elif [ ! -t 0 ]; then
+        echo "Non-interactive environment detected, skipping authentication prompt"
+    else
+        echo "Authentication successful. Starting installation..."
     fi
-
-    echo "Authentication successful. Starting installation..."
+    
     echo ""
     echo "Installation progress will be shown below."
     echo "Detailed logs are being written to: /tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -87,8 +82,7 @@ else
     echo ""
 fi
 
-# Export modes for child scripts
-export CI_MODE
+# Export modes for child scripts  
 export QUIET_MODE
 export VERBOSE_MODE
 
@@ -109,7 +103,7 @@ export INSTALL_LOG
 # Initialize log file
 echo "=== DTU Python Support Installation Log ===" > "$INSTALL_LOG"
 echo "Started: $(date)" >> "$INSTALL_LOG"
-echo "Mode: CI_MODE=$CI_MODE, QUIET_MODE=$QUIET_MODE" >> "$INSTALL_LOG"
+echo "Mode: QUIET_MODE=$QUIET_MODE, VERBOSE_MODE=$VERBOSE_MODE" >> "$INSTALL_LOG"
 echo "" >> "$INSTALL_LOG"
 
 log_info "DTU First Year Students - Complete Setup"
@@ -120,20 +114,20 @@ log_info "Installation log: $INSTALL_LOG"
 [ "$QUIET_MODE" != "true" ] && log_info "Phase 1: Pre-Installation System Check"
 [ "$QUIET_MODE" != "true" ] && log_info "======================================="
 
-piwik_log 'Pre-installation check' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export CI_MODE='${CI_MODE}'; export QUIET_MODE='${QUIET_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh)"
+piwik_log 'Pre-installation check' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh)"
 
 # === PHASE 2: MAIN INSTALLATION ===
 [ "$QUIET_MODE" != "true" ] && log_info "Phase 2: Main Installation Process"
 [ "$QUIET_MODE" != "true" ] && log_info "=================================="
 
 # Install Python with Miniforge
-piwik_log 'Python installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export CI_MODE='${CI_MODE}'; export QUIET_MODE='${QUIET_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
+piwik_log 'Python installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
 
 # Setup first year Python environment and packages
-piwik_log 'Python environment setup' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export CI_MODE='${CI_MODE}'; export QUIET_MODE='${QUIET_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
+piwik_log 'Python environment setup' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
 
 # Install Visual Studio Code
-piwik_log 'Visual Studio Code installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export CI_MODE='${CI_MODE}'; export QUIET_MODE='${QUIET_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
+piwik_log 'Visual Studio Code installation' /bin/bash -c "export REMOTE_PS='${REMOTE_PS}'; export BRANCH_PS='${BRANCH_PS}'; export QUIET_MODE='${QUIET_MODE}'; export VERBOSE_MODE='${VERBOSE_MODE}'; export INSTALL_LOG='${INSTALL_LOG}'; $(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
 
 [ "$QUIET_MODE" != "true" ] && log_info "Main installation phase completed"
 

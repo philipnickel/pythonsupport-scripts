@@ -5,26 +5,26 @@
 # Set up global log file if not already set
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
-# Logging functions that write to both log file and stdout (if not in quiet mode)
+# Logging functions that write to both log file and stdout (if in verbose mode)
 log_info() { 
     local msg="[$(date '+%H:%M:%S')] INFO: $1"
     echo "$msg" >> "$INSTALL_LOG"
-    [ "$QUIET_MODE" != "true" ] && echo "$msg"
+    [ "$VERBOSE_MODE" = "true" ] && echo "$msg"
 }
 log_success() { 
     local msg="[$(date '+%H:%M:%S')] SUCCESS: $1"
     echo "$msg" >> "$INSTALL_LOG"
-    [ "$QUIET_MODE" != "true" ] && echo "$msg"
+    [ "$VERBOSE_MODE" = "true" ] && echo "$msg"
 }
 log_error() { 
     local msg="[$(date '+%H:%M:%S')] ERROR: $1"
     echo "$msg" >> "$INSTALL_LOG"
-    [ "$QUIET_MODE" != "true" ] && echo "$msg"
+    [ "$VERBOSE_MODE" = "true" ] && echo "$msg"
 }
 log_warning() { 
     local msg="[$(date '+%H:%M:%S')] WARNING: $1"
     echo "$msg" >> "$INSTALL_LOG"
-    [ "$QUIET_MODE" != "true" ] && echo "$msg"
+    [ "$VERBOSE_MODE" = "true" ] && echo "$msg"
 }
 
 # === ERROR HANDLING ===
