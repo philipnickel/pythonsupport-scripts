@@ -28,155 +28,52 @@ env:
 
 jobs:
   test-installer:
-    name: Test DTU Python Installation
+    name: Test DTU Python Installation - ${{ matrix.scenario }}
     runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        include:
+          - scenario: "Clean Installation"
+            setup: "clean"
+            input: ""
+          - scenario: "Existing Conda (Auto-Uninstall)"
+            setup: "existing-conda"
+            input: "y\nyes"
+          - scenario: "Existing Miniforge (Missing Packages)"
+            setup: "existing-miniforge-no-packages"
+            input: "n"
+          - scenario: "Existing VS Code (Missing Extensions)"
+            setup: "existing-vscode"
+            input: ""
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove conda (if present)
+      - name: Setup test scenario - Clean Installation
+        if: matrix.setup == 'clean'
         run: |
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-
-            echo "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
+          echo "Setting up clean installation test"
+          # Remove any existing conda
+          if type conda > /dev/null 2>/dev/null; then
             conda init --reverse --all
           fi
 
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Check for conda
+      - name: Setup test scenario - Existing Conda
+        if: matrix.setup == 'existing-conda'
         run: |
-          env | grep -i conda || echo "No conda environment variables found"
-          if type conda > /dev/null ; then
-            echo "Base environment location:"
-            conda info --base
-          else
-            echo "Conda not found..."
-          fi
-
-          for f in bash_profile bashrc xonshrc
-          do
-            [ ! -e $HOME/.$f ] && continue
-            echo ""
-            echo "<<< .$f >>>"
-            cat $HOME/.$f
-          done
-
-      - name: Run First Year Orchestrator
-        env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          PIS_VERBOSE: true
-        run: |
-          echo "Testing First Year Installation from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
-
-      - name: Verify VS Code
-        run: |
-          code --version
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "VS Code not installed correctly"
-            exit $retval
-          fi
-
-      - name: Verify conda
-        run: |
-          which conda
-          retval=$?
-          if [[ $retval -ne 0 ]]; then
-            echo "Conda not installed correctly"
-            exit $retval
-          fi
-
-          # Some more output
-          conda --version
-          conda info --base
-
-      - name: Verify python (3.11)
-        run: |
-          which python3
-
-          # Verify the installed Python version
-          EXPECTED_VERSION="3.11"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
-            exit 1
-          fi
-          echo "Correct Python version $INSTALLED_VERSION is installed."
-
-          # Verify Python package imports
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
-
-  test-existing-conda:
-    name: Test with Existing Conda Installation
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install existing conda (miniconda)
-        run: |
+          echo "Setting up existing conda test"
           # Install miniconda to simulate existing installation
           curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-$(uname -m).sh -o /tmp/miniconda.sh
           bash /tmp/miniconda.sh -b -p $HOME/miniconda3
           rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
 
-      - name: Verify existing conda
+      - name: Setup test scenario - Existing Miniforge without packages
+        if: matrix.setup == 'existing-miniforge-no-packages'
         run: |
-          conda --version
-          conda info --base
-
-      - name: Run installer with existing conda (auto-uninstall)
-        env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          echo "Testing installation with existing conda from: $REMOTE_PS/$BRANCH_PS"
-          # Answer 'y' to uninstall conda, then 'yes' to confirm uninstall
-          echo -e "y\nyes" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
-
-      - name: Verify final installation
-        run: |
-          # Should still have working Python and packages
-          which python3
-          python3 --version
-          
-          # This MUST succeed or workflow fails
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages work with existing conda')" || {
-            echo "ERROR: DTU packages not installed properly"
-            exit 1
-          }
-          
-          # Should have VS Code
-          code --version || {
-            echo "ERROR: VS Code not installed properly"  
-            exit 1
-          }
-
-  test-existing-miniforge-no-packages:
-    name: Test with Miniforge but Missing Packages
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install miniforge without DTU packages
-        run: |
+          echo "Setting up existing miniforge without packages test"
           # Install miniforge but don't install DTU packages
           curl -fsSL https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh -o /tmp/miniforge.sh
           bash /tmp/miniforge.sh -b -p $HOME/miniforge3
@@ -189,51 +86,11 @@ jobs:
           source $HOME/miniforge3/bin/activate
           conda install python=3.11 -y
 
-      - name: Verify miniforge without packages
+      - name: Setup test scenario - Existing VS Code
+        if: matrix.setup == 'existing-vscode'
         run: |
-          conda --version
-          python3 --version
-          # This should fail - no DTU packages installed
-          python3 -c "import sys; print('Python works but DTU packages should be missing')"
-
-      - name: Run installer with existing miniforge
-        env:
-          REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
-          BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          echo "Testing installation with existing miniforge from: $REMOTE_PS/$BRANCH_PS"
-          # Answer 'n' to NOT cancel installation (continue to add packages)
-          echo "n" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
-
-      - name: Verify final installation with packages
-        run: |
-          # Should now have all DTU packages
-          which python3
-          python3 --version
-          
-          # This MUST succeed or workflow fails
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All DTU packages now installed')" || {
-            echo "ERROR: DTU packages not installed properly after installer run"
-            exit 1
-          }
-          
-          # Should have VS Code
-          code --version || {
-            echo "ERROR: VS Code not installed properly"
-            exit 1
-          }
-
-  test-existing-vscode-no-extensions:
-    name: Test with VS Code but Missing Extensions
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install VS Code without extensions
-        run: |
-          # Download and install VS Code
+          echo "Setting up existing VS Code test"
+          # Download and install VS Code without extensions
           curl -fsSL https://update.code.visualstudio.com/latest/darwin-universal/stable -o /tmp/vscode.zip
           unzip -q /tmp/vscode.zip -d /tmp/
           sudo mv "/tmp/Visual Studio Code.app" /Applications/
@@ -242,39 +99,67 @@ jobs:
           # Add code command to PATH
           sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code
 
-      - name: Verify VS Code without extensions
-        run: |
-          code --version
-          # List extensions (should be minimal/none)
-          code --list-extensions
-
-      - name: Run installer with existing VS Code
+      - name: Run DTU Python Installer
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
-          echo "Testing installation with existing VS Code from: $REMOTE_PS/$BRANCH_PS"
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+          echo "Testing ${{ matrix.scenario }} from: $REMOTE_PS/$BRANCH_PS"
+          if [ -n "${{ matrix.input }}" ]; then
+            echo -e "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+          else
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+          fi
 
-      - name: Verify final installation with extensions
+      - name: Verify Installation - VS Code
         run: |
-          # Should have Python and packages
-          which python3
-          python3 --version  
-          
-          # This MUST succeed or workflow fails
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Python packages installed')" || {
-            echo "ERROR: DTU packages not installed properly"
-            exit 1
-          }
-          
-          # Should still have VS Code but now with extensions
+          echo "Verifying VS Code installation..."
           code --version || {
-            echo "ERROR: VS Code not working properly"
+            echo "ERROR: VS Code not installed properly"
+            exit 1
+          }
+
+      - name: Verify Installation - Conda
+        run: |
+          echo "Verifying conda installation..."
+          which conda || {
+            echo "ERROR: Conda not found"
             exit 1
           }
           
-          echo "Installed extensions:"
+          conda --version
+          conda info --base
+          
+          # Should be miniforge
+          if ! conda info --base | grep -q "miniforge3"; then
+            echo "ERROR: Not using miniforge"
+            exit 1
+          fi
+
+      - name: Verify Installation - Python Version
+        run: |
+          echo "Verifying Python version..."
+          which python3
+          
+          EXPECTED_VERSION="3.11"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
+            exit 1
+          fi
+          echo "✓ Correct Python version $INSTALLED_VERSION"
+
+      - name: Verify Installation - DTU Packages
+        run: |
+          echo "Verifying DTU packages..."
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')" || {
+            echo "ERROR: Failed to import DTU packages"
+            exit 1
+          }
+
+      - name: Verify Installation - VS Code Extensions
+        run: |
+          echo "Verifying VS Code extensions..."
           code --list-extensions
           
           # Should have Python extension at minimum
@@ -282,4 +167,17 @@ jobs:
             echo "ERROR: Python extension not installed"
             exit 1
           fi
+          echo "✓ Python extension installed"
 
+      - name: Final Verification Summary
+        run: |
+          echo ""
+          echo "🎉 Installation Verification Complete!"
+          echo "======================================"
+          echo "✓ VS Code: $(code --version | head -1)"
+          echo "✓ Conda: $(conda --version)"
+          echo "✓ Python: $(python3 --version)"
+          echo "✓ DTU Packages: All imported successfully"
+          echo "✓ VS Code Extensions: Python extension installed"
+          echo ""
+          echo "Test scenario '${{ matrix.scenario }}' passed all verifications!"
