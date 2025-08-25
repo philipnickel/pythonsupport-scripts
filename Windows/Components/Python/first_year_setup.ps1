@@ -50,7 +50,7 @@ foreach ($package in $packages) {
         Write-Host "$package installed successfully"
     }
     catch {
-        Write-Host "Failed to install $package: $($_.Exception.Message)"
+        Write-Host "Failed to install $package"
         exit 1
     }
 }
