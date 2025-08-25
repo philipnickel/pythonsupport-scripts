@@ -55,7 +55,7 @@ done
 CI_MODE=false
 QUIET_MODE=true
 
-if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ] || [ -n "$BUILD_ID" ] || [ -n "$JENKINS_URL" ] || [ ! -t 0 ]; then
+if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ] || [ -n "$BUILD_ID" ] || [ -n "$JENKINS_URL" ]; then
     CI_MODE=true
     QUIET_MODE=false  # CI always runs in verbose mode
     echo "Detected CI/automated environment - running in verbose mode"

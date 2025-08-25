@@ -45,29 +45,6 @@ exit_message() {
     exit 1
 }
 
-# === PROGRESS INDICATION ===
-show_progress() {
-    local message="$1"
-    local duration="${2:-3}"
-    
-    if [ "$CI_MODE" = "true" ]; then
-        echo "$message"
-        return
-    fi
-    
-    echo -n "$message "
-    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-    local i=0
-    local start_time=$(date +%s)
-    
-    while [ $(($(date +%s) - start_time)) -lt $duration ]; do
-        printf "\r$message ${chars:$i:1}"
-        i=$(((i + 1) % ${#chars}))
-        sleep 0.1
-    done
-    
-    printf "\r$message ✓\n"
-}
 
 # === CENTRALIZED PIWIK ANALYTICS ===
 # Enhanced piwik_log that pipes all output to log file
@@ -83,22 +60,29 @@ piwik_log() {
     # Execute command and capture all output to log file
     if [ "$QUIET_MODE" = "true" ]; then
         # In quiet mode, show progress animation while command runs
-        ("$@" >> "$INSTALL_LOG" 2>&1) &
+        echo "Processing $event_name..." 
+        
+        # Run command in background and capture output
+        ("$@") >> "$INSTALL_LOG" 2>&1 &
         local cmd_pid=$!
         
-        show_progress "Processing $event_name..." &
-        local progress_pid=$!
+        # Show spinner while command runs
+        local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        local i=0
+        while kill -0 $cmd_pid 2>/dev/null; do
+            printf "\rProcessing $event_name... ${chars:$i:1}"
+            i=$(((i + 1) % ${#chars}))
+            sleep 0.1
+        done
         
+        # Wait for command to finish and get exit code
         wait $cmd_pid
         exit_code=$?
         
-        kill $progress_pid 2>/dev/null
-        wait $progress_pid 2>/dev/null
-        
         if [ $exit_code -eq 0 ]; then
-            echo "✓ $event_name completed"
+            printf "\r✓ $event_name completed                    \n"
         else
-            echo "✗ $event_name failed (check log: $INSTALL_LOG)"
+            printf "\r✗ $event_name failed (check log: $INSTALL_LOG)    \n"
         fi
     else
         # In verbose mode, show output normally
