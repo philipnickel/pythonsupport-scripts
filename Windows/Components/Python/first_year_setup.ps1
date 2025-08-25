@@ -32,9 +32,9 @@ Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in base environment..."
 
 try {
-    # Install Python 3.11 and all packages in one command using mamba for speed
+    # Install Python 3.11 and all packages in one command for speed
     Write-Host "Installing Python $env:PYTHON_VERSION_PS and all required packages..."
-    mamba install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
+    conda install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
         exit 1
@@ -52,7 +52,7 @@ Write-Host "Verifying installation..."
 
 try {
     # Test Python version
-    $pythonVersion = mamba run python --version
+    $pythonVersion = conda run python --version
     Write-Host "Python version: $pythonVersion"
     
     # Test package imports
@@ -74,7 +74,7 @@ print("All packages imported successfully!")
     
     # Set environment variable to disable conda plugins and make it non-interactive
     $env:CONDA_NO_PLUGINS = "true"
-    mamba run python -c $testScript
+    conda run python -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
         exit 1
