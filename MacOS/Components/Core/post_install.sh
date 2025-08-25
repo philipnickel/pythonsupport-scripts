@@ -11,8 +11,8 @@
 # Set strict error handling
 set -e
 
-# Load simple utilities - use remote loading for compatibility when run via curl
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/simple_utils.sh")"; then
+# Load utilities with new filename to break CDN cache
+if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/utils.sh")"; then
     echo "ERROR: Failed to load utilities from remote repository"
     exit 1
 fi

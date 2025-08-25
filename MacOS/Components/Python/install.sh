@@ -11,8 +11,8 @@
 # @version: 2024-12-25
 # @/doc
 
-# Load simple utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/simple_utils.sh")"
+# Load utilities with new filename to break CDN cache
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/utils.sh")"
 
 log_info "Python (Miniforge) installation"
 

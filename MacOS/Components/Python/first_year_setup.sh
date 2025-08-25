@@ -8,8 +8,8 @@
 # @notes: This script now primarily verifies the installation since packages are installed directly in base environment
 # @/doc
 
-# Load simple utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/simple_utils.sh")"
+# Load utilities with new filename to break CDN cache
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/utils.sh")"
 
 log_info "First year Python setup verification"
 
