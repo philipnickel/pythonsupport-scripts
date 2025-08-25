@@ -148,6 +148,17 @@ catch {
     Write-Host "Failed to disable conda error reporting (non-critical)"
 }
 
+# Initialize conda for PowerShell
+Write-Host "Initializing conda for PowerShell..."
+try {
+    conda init powershell
+    Write-Host "Conda initialized for PowerShell successfully"
+}
+catch {
+    Write-Host "Failed to initialize conda for PowerShell: $($_.Exception.Message)"
+    exit 1
+}
+
 # Update conda first to fix any issues
 Write-Host "Updating conda..."
 try {
