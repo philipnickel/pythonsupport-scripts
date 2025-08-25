@@ -8,8 +8,8 @@
 # @notes: This script now primarily verifies the installation since packages are installed directly in base environment
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load simple utilities
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/simple_utils.sh")"
 
 log_info "First year Python setup verification"
 

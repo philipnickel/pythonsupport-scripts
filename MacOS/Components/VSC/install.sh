@@ -8,8 +8,8 @@
 # @notes: Uses master utility system for consistent error handling and logging. Downloads and installs VSCode directly from Microsoft
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load simple utilities
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/simple_utils.sh")"
 
 log_info "Installing Visual Studio Code"
 
@@ -87,3 +87,33 @@ else
 fi
 
 log_success "Visual Studio Code installation completed!"
+
+# Install extensions immediately after VSCode installation
+log_info "Installing Visual Studio Code extensions..."
+
+# Check if code CLI is available, use bundled path if needed
+if ! command -v code >/dev/null; then
+  if [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
+    CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+  else
+    log_error "Visual Studio Code CLI not available"
+    exit_message
+  fi
+else
+  CODE_CLI="code"
+fi
+
+# Install essential extensions
+log_info "Installing Python extension..."
+"$CODE_CLI" --install-extension ms-python.python
+check_exit_code "Failed to install Python extension"
+
+log_info "Installing Jupyter extension..."
+"$CODE_CLI" --install-extension ms-toolsai.jupyter
+check_exit_code "Failed to install Jupyter extension"
+
+log_info "Installing PDF extension..."
+"$CODE_CLI" --install-extension tomoki1207.pdf
+check_exit_code "Failed to install PDF extension"
+
+log_success "Visual Studio Code and extensions installed successfully!"
