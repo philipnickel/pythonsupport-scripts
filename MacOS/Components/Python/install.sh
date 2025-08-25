@@ -23,7 +23,9 @@ if command -v conda >/dev/null 2>&1; then
 else
   
   # Download and install Miniforge
-  curl -fsSL "$MINIFORGE_INSTALLER_URL" -o /tmp/miniforge.sh
+  ARCH=$(uname -m)
+  MINIFORGE_URL="${MINIFORGE_BASE_URL}-${ARCH}.sh"
+  curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
   if [ $? -ne 0 ]; then exit 1; fi
   
   bash /tmp/miniforge.sh -b -p "$MINIFORGE_PATH"

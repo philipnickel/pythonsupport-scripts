@@ -25,8 +25,8 @@ export VSCODE_EXTENSIONS=(
 # Installation paths
 export MINIFORGE_PATH="$HOME/miniforge3"
 
-# URLs and repositories
-export MINIFORGE_INSTALLER_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+# URLs and repositories (architecture will be detected at runtime)
+export MINIFORGE_BASE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX"
 
 # Logging configuration  
 export LOG_PREFIX="DTU_INSTALL"
