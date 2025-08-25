@@ -15,8 +15,17 @@
 REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 echo "About to load config from: https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
-echo "After loading config: MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
+CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+CONFIG_FILE="/tmp/config_$$.sh"
+curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE"
+if [ $? -eq 0 ]; then
+    source "$CONFIG_FILE"
+    rm -f "$CONFIG_FILE"
+    echo "After loading config: MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
+else
+    echo "ERROR: Failed to download config from $CONFIG_URL"
+    exit 1
+fi
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
