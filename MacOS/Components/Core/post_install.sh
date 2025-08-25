@@ -11,9 +11,11 @@
 # Set strict error handling
 set -e
 
-# Load utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../Shared/simple_utils.sh"
+# Load simple utilities - use remote loading for compatibility when run via curl
+if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-philipnickel/pythonsupport-scripts}/${BRANCH_PS:-Miniforge}/MacOS/Components/Shared/simple_utils.sh")"; then
+    echo "ERROR: Failed to load utilities from remote repository"
+    exit 1
+fi
 
 log_info "DTU Python Support - Post-Installation Verification"
 log_info "==================================================="
