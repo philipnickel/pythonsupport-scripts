@@ -280,8 +280,10 @@ send_final_analytics() {
     local success_rate=$((verified_components * 100 / total_components))
     
     if [ "$VERIFICATION_PASSED" = true ]; then
+        log_info "Verification completed: ${verified_components}/${total_components} components (${success_rate}%)"
         # piwik_log "post_install_verification_complete" echo "Verification completed: ${verified_components}/${total_components} components (${success_rate}%)"
     else
+        log_warning "Verification incomplete: ${verified_components}/${total_components} components (${success_rate}%)"
         # piwik_log "post_install_verification_incomplete" echo "Verification incomplete: ${verified_components}/${total_components} components (${success_rate}%)"
     fi
 }
