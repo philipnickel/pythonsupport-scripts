@@ -1,6 +1,14 @@
 #!/bin/bash
 # Simple Installation Report Generator
 
+# Exit codes for Piwik logging:
+# 0 = All tests passed (complete success)
+# 1 = Python Installation failed (Python 3.11)
+# 2 = Python Environment failed (packages)
+# 3 = VS Code Setup failed (VS Code + extension)
+# 4 = Multiple categories failed
+# 5 = Script error
+
 # Get system info
 get_system_info() {
     echo "macOS $(sw_vers -productVersion) ($(sw_vers -productName))"
@@ -11,56 +19,91 @@ get_system_info() {
 # Run first year test and capture results
 run_first_year_test() {
     if [ -f "$(dirname "$0")/first_year_test.sh" ]; then
-        "$(dirname "$0")/first_year_test.sh" 2>&1
+        local test_output
+        test_output=$("$(dirname "$0")/first_year_test.sh" 2>&1)
+        local test_exit_code=$?
+        echo "$test_output"
+        return $test_exit_code
     else
         # Inline test if external script not found
         echo "=== First Year Setup Test ==="
         
-        local all_passed=true
+        local python_installation_failed=false
+        local python_environment_failed=false
+        local vscode_setup_failed=false
+        local test_results=""
         
-        # Test Python 3.11
-        echo -n "Python 3.11: "
+        # Test Python Installation (Python 3.11)
+        echo -n "Python Installation (3.11): "
         if python3 --version 2>/dev/null | grep -q "3.11"; then
             echo "PASS"
+            test_results="${test_results}Python Installation (3.11): PASS\n"
         else
             echo "FAIL"
-            all_passed=false
+            test_results="${test_results}Python Installation (3.11): FAIL\n"
+            python_installation_failed=true
         fi
         
-        # Test VSCode
-        echo -n "VS Code: "
-        if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1; then
-            echo "PASS"
-        else
-            echo "FAIL"
-            all_passed=false
-        fi
-        
-        # Test Python packages
-        echo -n "Python packages: "
+        # Test Python Environment (packages)
+        echo -n "Python Environment (packages): "
         if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties" 2>/dev/null; then
             echo "PASS"
+            test_results="${test_results}Python Environment (packages): PASS\n"
         else
             echo "FAIL"
-            all_passed=false
+            test_results="${test_results}Python Environment (packages): FAIL\n"
+            python_environment_failed=true
         fi
         
-        # Test VSCode Python extension
-        echo -n "VS Code Python extension: "
-        if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
+        # Test VS Code Setup (VS Code + extension)
+        echo -n "VS Code Setup (VS Code + extension): "
+        if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
             echo "PASS"
+            test_results="${test_results}VS Code Setup (VS Code + extension): PASS\n"
         else
-            echo "FAIL" 
-            all_passed=false
+            echo "FAIL"
+            test_results="${test_results}VS Code Setup (VS Code + extension): FAIL\n"
+            vscode_setup_failed=true
         fi
         
         echo ""
-        if [ "$all_passed" = true ]; then
+        
+        # Export test results for post_install.sh to use
+        export PYTHON_INSTALLATION_PASSED=$([ "$python_installation_failed" = false ] && echo "true" || echo "false")
+        export PYTHON_ENVIRONMENT_PASSED=$([ "$python_environment_failed" = false ] && echo "true" || echo "false")
+        export VSCODE_SETUP_PASSED=$([ "$vscode_setup_failed" = false ] && echo "true" || echo "false")
+        
+        # Determine exit code based on failures
+        local failure_count=0
+        if [ "$python_installation_failed" = true ]; then
+            failure_count=$((failure_count + 1))
+        fi
+        if [ "$python_environment_failed" = true ]; then
+            failure_count=$((failure_count + 1))
+        fi
+        if [ "$vscode_setup_failed" = true ]; then
+            failure_count=$((failure_count + 1))
+        fi
+        
+        if [ $failure_count -eq 0 ]; then
             echo "Overall Result: PASS - First year setup complete!"
-            return 0
+            return 0  # All tests passed
+        elif [ $failure_count -eq 1 ]; then
+            # Single category failure - return specific code
+            if [ "$python_installation_failed" = true ]; then
+                echo "Overall Result: FAIL - Python Installation failed"
+                return 1
+            elif [ "$python_environment_failed" = true ]; then
+                echo "Overall Result: FAIL - Python Environment failed"
+                return 2
+            elif [ "$vscode_setup_failed" = true ]; then
+                echo "Overall Result: FAIL - VS Code Setup failed"
+                return 3
+            fi
         else
-            echo "Overall Result: FAIL - Some components missing"
-            return 1
+            # Multiple failures
+            echo "Overall Result: FAIL - Multiple categories failed"
+            return 4
         fi
     fi
 }
@@ -71,6 +114,7 @@ generate_html_report() {
     local timestamp=$(date)
     local system_info=$(get_system_info)
     local test_results=$(run_first_year_test)
+    local test_exit_code=$?
     local install_log=""
     
     # Parse test results for summary counts (exclude header and overall result lines)
@@ -222,13 +266,16 @@ generate_html_report() {
 EOF
 
     echo "$output_file"
+    return $test_exit_code
 }
 
 # Main execution
 main() {
     echo "Generating installation report..."
     
-    local report_file=$(generate_html_report)
+    local report_file
+    report_file=$(generate_html_report)
+    local exit_code=$?
     
     echo "Report generated: $report_file"
     
@@ -237,6 +284,9 @@ main() {
         open "$report_file"
         echo "Report opened in browser"
     fi
+    
+    # Return the test exit code for Piwik logging
+    exit $exit_code
 }
 
 main

@@ -20,6 +20,14 @@ fi
 log_info "DTU Python Support - Pre-Installation Check"
 log_info "=============================================="
 
+# Log installation start to Piwik if available
+if command -v piwik_log_event >/dev/null 2>&1; then
+    piwik_log_event "installation" "start" "DTU Python installation started"
+    log_info "Installation start logged to Piwik analytics"
+else
+    log_info "Piwik logging not available"
+fi
+
 # Variables for tracking found installations
 PYTHON_FOUND=false
 PYTHON_VERSION=""
