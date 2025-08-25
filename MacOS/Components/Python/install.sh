@@ -19,9 +19,14 @@ CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/co
 CONFIG_FILE="/tmp/config_$$.sh"
 curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE"
 if [ $? -eq 0 ]; then
+    echo "Downloaded config file. Contents:"
+    cat "$CONFIG_FILE"
+    echo "--- End of config file ---"
     source "$CONFIG_FILE"
     rm -f "$CONFIG_FILE"
     echo "After loading config: MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
+    echo "All environment variables with MINIFORGE:"
+    env | grep MINIFORGE || echo "No MINIFORGE variables found"
 else
     echo "ERROR: Failed to download config from $CONFIG_URL"
     exit 1
