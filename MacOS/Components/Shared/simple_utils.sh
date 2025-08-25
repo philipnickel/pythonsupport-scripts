@@ -25,23 +25,14 @@ exit_message() {
     exit 1
 }
 
-# === LOAD PIWIK ANALYTICS ===
-# Load the full piwik utility for analytics
-if piwik_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-philipnickel/pythonsupport-scripts}/${BRANCH_PS:-Miniforge}/MacOS/Components/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
-    eval "$piwik_script"
-else
-    # Fallback simple piwik_log if full utility fails to load
-    piwik_log() {
-        local event_name="$1"
-        shift
-        local output
-        output=$("$@" 2>&1)
-        local exit_code=$?
-        echo "$output"
-        return $exit_code
-    }
-fi
-
-# === ENVIRONMENT DEFAULTS ===
-[ -z "$REMOTE_PS" ] && REMOTE_PS="philipnickel/pythonsupport-scripts"
-[ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
+# === SIMPLE PIWIK ANALYTICS ===
+# Simple piwik_log fallback
+piwik_log() {
+    local event_name="$1"
+    shift
+    local output
+    output=$("$@" 2>&1)
+    local exit_code=$?
+    echo "$output"
+    return $exit_code
+}
