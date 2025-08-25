@@ -8,13 +8,11 @@
 # @notes: Runs diagnostics after installation to verify and report results
 # @/doc
 
-# Set strict error handling
-set -e
+# Allow scripts to continue on errors for complete diagnostics
 
-# Load utilities
+# Load utilities if available
 if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
-    echo "ERROR: Failed to load utilities from remote repository"
-    exit 1
+    echo "Warning: Could not load utilities from remote repository, continuing without them"
 fi
 
 
@@ -52,8 +50,6 @@ if command -v piwik_log_event >/dev/null 2>&1; then
     else
         piwik_log_event "post_install_diagnostics" "fail" "Some tests failed"
     fi
-    
-else
 fi
 
 # Always exit successfully - issues are reported in the diagnostic report

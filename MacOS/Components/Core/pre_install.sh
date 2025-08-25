@@ -8,8 +8,7 @@
 # @notes: Should be run before any installation process to assess system state
 # @/doc
 
-# Set strict error handling
-set -e
+# Allow scripts to continue on errors for complete diagnostics
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -89,7 +88,6 @@ check_python_installations() {
         
         # Check for required packages
         check_python_packages
-    else
     fi
     
     # Check for conda/miniconda/anaconda
@@ -206,7 +204,6 @@ check_vscode_extensions() {
         
         if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
             VSCODE_EXTENSIONS_FOUND=true
-        else
         fi
     fi
 }
@@ -275,8 +272,11 @@ generate_summary() {
     
     echo ""
     if [ "$PYTHON_FOUND" = true ] && [ "$VSCODE_FOUND" = true ] && [ "$PYTHON_PACKAGES_FOUND" = true ] && [ "$VSCODE_EXTENSIONS_FOUND" = true ]; then
+        echo "All components are already installed and configured."
     elif [ "$PYTHON_FOUND" = true ] || [ "$VSCODE_FOUND" = true ] || [ "$CONDA_FOUND" = true ]; then
+        echo "Some components found. Installation will update/complete the setup."
     else
+        echo "No existing components found. Fresh installation will proceed."
     fi
     
     return 0
