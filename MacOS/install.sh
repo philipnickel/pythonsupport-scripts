@@ -31,6 +31,17 @@ if [ -f /tmp/dtu_pre_install_flags.env ]; then
     source /tmp/dtu_pre_install_flags.env
 fi
 
+# Echo findings
+echo ""
+echo "Phase 1 Findings:"
+echo "-----------------"
+if [ "$SKIP_VSCODE_INSTALL" = true ]; then
+    echo "• VS Code: Already installed - will skip"
+else
+    echo "• VS Code: Not found - will install"
+fi
+echo ""
+
 # === PHASE 2: MAIN INSTALLATION ===
 echo "Phase 2: Main Installation Process"
 echo "=================================="
