@@ -9,6 +9,11 @@
 # @/doc
 
 # Load configuration
+echo "DEBUG: REMOTE_PS='$REMOTE_PS' BRANCH_PS='$BRANCH_PS'"
+if [ -z "$REMOTE_PS" ] || [ -z "$BRANCH_PS" ]; then
+    echo "ERROR: REMOTE_PS and BRANCH_PS must be set"
+    exit 1
+fi
 source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
 
 # Set up install log for this script

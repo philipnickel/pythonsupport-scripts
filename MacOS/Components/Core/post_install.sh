@@ -12,6 +12,13 @@
 
 # Note: Utilities loading removed to ensure script runs without external dependencies
 
+# Check that required variables are set
+echo "DEBUG: REMOTE_PS='$REMOTE_PS' BRANCH_PS='$BRANCH_PS'"
+if [ -z "$REMOTE_PS" ] || [ -z "$BRANCH_PS" ]; then
+    echo "ERROR: REMOTE_PS and BRANCH_PS must be set"
+    exit 1
+fi
+
 
 # Run diagnostics and capture exit code
 if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
