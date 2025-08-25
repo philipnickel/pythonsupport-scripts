@@ -63,23 +63,6 @@ echo "WARNING: This action cannot be undone!"
 
 # Always proceed with uninstall - no prompting
 echo "Running in non-interactive mode - proceeding with uninstall..."
-
-echo ""
-echo "Uninstalling conda installations..."
-
-# 1. Run conda init --reverse to clean up shell configurations
-for path in "${CONDA_PATHS[@]}"; do
-    if [ -x "$path/bin/conda" ]; then
-        echo "• Cleaning up shell configuration for $path"
-        "$path/bin/conda" init --reverse --all 2>/dev/null || true
-    fi
-done
-
-# 2. Remove installation directories
-for i in "${!CONDA_PATHS[@]}"; do
-    path="${CONDA_PATHS[$i]}"
-    type="${CONDA_TYPES[$i]}"
-    
     if [ -d "$path" ]; then
         echo "• Removing $type installation: $path"
         
