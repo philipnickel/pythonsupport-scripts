@@ -25,17 +25,18 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 
 ## Diagnostics
 
-Check your Python environment with targeted diagnostic profiles:
+Check your Python environment installation:
 
 ### First Year Students (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- --profile first_year
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/Miniforge/MacOS/Components/Diagnostics/simple_report.sh)"
 ```
 
-### Advanced Users (Full Diagnostics)
-```bash
-curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/generate_report.sh | bash -s -- --profile comprehensive
-```
+This generates a simple HTML report showing:
+- Python 3.11 installation status
+- VS Code and Python extension status  
+- Required package availability
+- System information
 
 ## LaTeX Support (Experimental)
 
