@@ -10,10 +10,7 @@
 
 # Allow scripts to continue on errors for complete diagnostics
 
-# Load utilities if available
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
-    echo "Warning: Could not load utilities from remote repository, continuing without them"
-fi
+# Note: Utilities loading removed to ensure script runs without external dependencies
 
 
 # Run diagnostics and capture exit code
