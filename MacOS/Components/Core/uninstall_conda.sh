@@ -170,4 +170,4 @@ echo "• Backups of shell files were created with .backup-* suffix"
 echo "• You may need to restart your terminal or run 'source ~/.bashrc' (or ~/.zshrc)"
 echo "• The PATH has been cleaned up for this session"
 echo ""
-echo "You can now run the DTU installer to install Miniforge."
+echo "You can now run the DTU installer to install Miniforge."# Updated Mon Aug 25 18:45:25 CEST 2025
