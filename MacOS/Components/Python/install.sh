@@ -14,21 +14,34 @@
 # Load configuration - set defaults if variables not provided
 REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
-echo "About to load config from: https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+echo "Loading config with REMOTE_PS='$REMOTE_PS' BRANCH_PS='$BRANCH_PS'"
 CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
 CONFIG_FILE="/tmp/config_$$.sh"
+echo "Downloading config from: $CONFIG_URL"
+
 curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE"
-if [ $? -eq 0 ]; then
-    echo "Downloaded config file. Contents:"
-    cat "$CONFIG_FILE"
-    echo "--- End of config file ---"
+curl_exit=$?
+if [ $curl_exit -eq 0 ] && [ -s "$CONFIG_FILE" ]; then
+    echo "Config downloaded successfully ($(wc -c < "$CONFIG_FILE") bytes)"
+    echo "Sourcing config..."
     source "$CONFIG_FILE"
     rm -f "$CONFIG_FILE"
-    echo "After loading config: MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
-    echo "All environment variables with MINIFORGE:"
-    env | grep MINIFORGE || echo "No MINIFORGE variables found"
+    
+    # Verify critical variables are set
+    if [ -z "$MINIFORGE_BASE_URL" ]; then
+        echo "ERROR: MINIFORGE_BASE_URL not set after loading config"
+        echo "Available environment variables:"
+        env | grep -E "(MINIFORGE|PYTHON)" | sort
+        exit 1
+    fi
+    
+    echo "Config loaded successfully:"
+    echo "  MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
+    echo "  MINIFORGE_PATH='$MINIFORGE_PATH'"
 else
-    echo "ERROR: Failed to download config from $CONFIG_URL"
+    echo "ERROR: Failed to download config from $CONFIG_URL (exit code: $curl_exit)"
+    [ -f "$CONFIG_FILE" ] && echo "File size: $(wc -c < "$CONFIG_FILE") bytes" || echo "File does not exist"
+    rm -f "$CONFIG_FILE"
     exit 1
 fi
 
@@ -43,8 +56,21 @@ else
   # Download and install Miniforge
   ARCH=$(uname -m)
   MINIFORGE_URL="${MINIFORGE_BASE_URL}-${ARCH}.sh"
+  echo "Downloading Miniforge for $ARCH from: $MINIFORGE_URL"
+  
+  # Test URL accessibility first
+  if ! curl -fsSL -I "$MINIFORGE_URL" >/dev/null 2>&1; then
+    echo "ERROR: Miniforge URL is not accessible: $MINIFORGE_URL"
+    exit 1
+  fi
+  
   curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
-  if [ $? -ne 0 ]; then exit 1; fi
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to download Miniforge installer"
+    exit 1
+  fi
+  
+  echo "Miniforge installer downloaded successfully ($(wc -c < /tmp/miniforge.sh) bytes)"
   
   bash /tmp/miniforge.sh -b -p "$MINIFORGE_PATH"
   if [ $? -ne 0 ]; then exit 1; fi
