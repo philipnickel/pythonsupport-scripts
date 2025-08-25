@@ -31,7 +31,7 @@ Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 # Install Python 3.11 and required packages in base environment
 Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in base environment..."
 
-$packages = @("pandas", "scipy", "statsmodels", "uncertainties", "dtumathtools", "jupyter", "ipykernel", "matplotlib", "seaborn", "numpy")
+$packages = @("pandas", "scipy", "statsmodels", "uncertainties", "jupyter", "ipykernel", "matplotlib", "seaborn", "numpy")
 
 try {
     # Install Python 3.11 first
@@ -67,7 +67,7 @@ Write-Host "Verifying installation..."
 
 try {
     # Test Python version
-    $pythonVersion = python --version
+    $pythonVersion = conda run python --version
     Write-Host "Python version: $pythonVersion"
     
     # Test package imports
@@ -75,7 +75,7 @@ try {
 import sys
 print(f"Python version: {sys.version}")
 
-packages = ['dtumathtools', 'pandas', 'scipy', 'statsmodels', 'uncertainties']
+packages = ['pandas', 'scipy', 'statsmodels', 'uncertainties']
 for package in packages:
     try:
         __import__(package)
@@ -89,7 +89,7 @@ print("All packages imported successfully!")
     
     # Set environment variable to disable conda plugins and make it non-interactive
     $env:CONDA_NO_PLUGINS = "true"
-    python -c $testScript
+    conda run python -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
         exit 1
