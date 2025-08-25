@@ -9,8 +9,8 @@
 # @/doc
 
 # Load utilities with new filename to break CDN cache
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
-
+# Set up install log for this script
+[ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
 # Source shell profiles to ensure conda is available
 [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true

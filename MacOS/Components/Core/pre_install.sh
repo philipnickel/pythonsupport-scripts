@@ -11,15 +11,8 @@
 # Set strict error handling
 set -e
 
-# Set default repository and branch if not already set
-[ -z "$REMOTE_PS" ] && REMOTE_PS="philipnickel/pythonsupport-scripts"
-[ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
-
-# Load utilities using consistent environment variables
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
-    echo "ERROR: Failed to load utilities from remote repository"
-    exit 1
-fi
+# Set up install log for this script
+[ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
 
 # Log installation start to Piwik if available

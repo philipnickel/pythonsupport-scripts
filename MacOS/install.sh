@@ -134,11 +134,7 @@ if [ -z "$BRANCH_PS" ]; then
     fi
 fi
 
-# Load simple utilities directly
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
-    echo "ERROR: Failed to load utilities from remote repository"
-    exit 1
-fi
+# No utilities needed - completely self-contained installer
 
 # Set up installation logging
 INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"

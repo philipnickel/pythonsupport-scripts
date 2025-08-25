@@ -9,8 +9,8 @@
 # @/doc
 
 # Load utilities with new filename to break CDN cache
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
-
+# Set up install log for this script
+[ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
 # Check if VSCode is already installed
 if command -v code > /dev/null 2>&1; then
