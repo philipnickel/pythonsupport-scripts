@@ -34,25 +34,18 @@
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 
-    <!-- Register the script for execution -->
-    <CustomAction
-      Id="Register"
-      Property="Install"
-      Execute="immediate"
-      Value="&quot;C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoLogo -NonInteractive -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installation\install.ps1&quot;" />
-
-    <!-- Prepare the command line for the script -->
+    <!-- Register the installation script -->
+    <!-- The command opens a terminal which executes the script and waits -->
     <CustomAction
       Id="Install"
-      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)"
-      DllEntry="WixQuietExec"
-      Execute="deferred"
+      Directory="INSTALLFOLDER"
+      Execute="commit"
       Impersonate="no"
-      Return="check" />
+      Return="check"
+      ExeCommand="cmd.exe /c powershell -NoLogo -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installation\install.ps1&quot;" />
 
     <InstallExecuteSequence>
       <!-- Only on first-time install, and after files exist -->
-      <Custom Action="Register" After="CostFinalize" Condition="NOT Installed" />
       <Custom Action="Install" After="InstallFiles" Condition="NOT Installed" />
     </InstallExecuteSequence>
   </Package>

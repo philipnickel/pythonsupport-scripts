@@ -5,8 +5,11 @@ This is an MSI installer for Windows, build with the
 wrapper that installs and runs a PowerShell script which performs the actual
 installation.
 
-Main inspiration:
-<https://damienbod.com/2013/09/01/wix-installer-with-powershell-scripts/>.
+Main inspirations:
+
+- <https://docs.firegiant.com/heatwave/building-wix-projects/>
+- <https://damienbod.com/2013/09/01/wix-installer-with-powershell-scripts/>.
+- <https://stackoverflow.com/questions/26378382/wix-how-to-execute-a-command-line-command-after-installation>
 
 ## Building & Running
 
