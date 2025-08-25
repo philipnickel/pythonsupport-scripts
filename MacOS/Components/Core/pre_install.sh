@@ -16,6 +16,7 @@ echo "Checking existing installations..."
 
 # Export flags for main installer
 export SKIP_PYTHON_INSTALL=false
+export SKIP_FIRST_YEAR_SETUP=false
 export SKIP_VSCODE_INSTALL=false
 
 # Check for Miniforge
@@ -39,6 +40,29 @@ if [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ]; then
     fi
 fi
 
+# Check Python version and packages
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
+    if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
+        echo "• Python 3.11 found ($PYTHON_VERSION)"
+        
+        # Check for DTU packages
+        packages=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
+        all_found=true
+        for package in "${packages[@]}"; do
+            if ! python3 -c "import $package" 2>/dev/null; then
+                all_found=false
+                break
+            fi
+        done
+        
+        if [ "$all_found" = true ]; then
+            echo "• All DTU packages found - skipping package setup"
+            export SKIP_FIRST_YEAR_SETUP=true
+        fi
+    fi
+fi
+
 # Check for VS Code
 if command -v code >/dev/null 2>&1 || [ -d "/Applications/Visual Studio Code.app" ]; then
     echo "• VS Code found - skipping VS Code installation"
@@ -48,6 +72,7 @@ fi
 # Save flags
 cat > /tmp/dtu_pre_install_flags.env << EOF
 SKIP_PYTHON_INSTALL=$SKIP_PYTHON_INSTALL
+SKIP_FIRST_YEAR_SETUP=$SKIP_FIRST_YEAR_SETUP
 SKIP_VSCODE_INSTALL=$SKIP_VSCODE_INSTALL
 EOF
 
