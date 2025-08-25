@@ -66,24 +66,10 @@ echo "Running in non-interactive mode - proceeding with uninstall..."
     if [ -d "$path" ]; then
         echo "• Removing $type installation: $path"
         
-        # Handle system installations (need sudo)
+        # Remove installation directory (skip system installations that require sudo)
         if [[ "$path" == /opt/* ]]; then
-            # Use native macOS password dialog
-            if command -v osascript >/dev/null 2>&1; then
-                echo "  Administrator privileges required for system installation"
-                echo "  A password dialog will appear..."
-                if ! osascript -e "do shell script \"rm -rf '$path'\" with administrator privileges" 2>/dev/null; then
-                    echo "  ✗ Failed to remove $path (authentication cancelled or failed)"
-                    continue
-                fi
-            else
-                # Fallback to regular sudo with timeout
-                echo "  Enter your password to remove system installation:"
-                if ! timeout 60 sudo rm -rf "$path"; then
-                    echo "  ✗ Failed to remove $path (timeout or authentication failed)"
-                    continue
-                fi
-            fi
+            echo "  ⚠  Skipping system installation $path (requires administrator privileges)"
+            echo "  ⚠  Please remove manually if needed: sudo rm -rf '$path'"
         else
             rm -rf "$path"
         fi
