@@ -74,35 +74,22 @@ else {
     Write-Host "Using existing VSCode installation"
 }
 
-# Add VSCode to PATH if not already there
+# Add VSCode to PATH for current session (like macOS approach)
 $vscodeBinPath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin"
 $vscodeExePath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
 
-# Add to current session PATH immediately
+# Simple direct PATH export for current session
 if (Test-Path $vscodeBinPath) {
     $env:PATH = "$vscodeBinPath;$env:PATH"
-    Write-Host "Added VSCode bin to current session PATH"
+    Write-Host "Added VSCode to current session PATH: $vscodeBinPath"
 }
 elseif (Test-Path $vscodeExePath) {
     $vscodeDir = Split-Path $vscodeExePath -Parent
     $env:PATH = "$vscodeDir;$env:PATH"
-    Write-Host "Added VSCode directory to current session PATH"
+    Write-Host "Added VSCode to current session PATH: $vscodeDir"
 }
-
-# Also add to user environment for persistence
-$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-if ($currentPath -notlike "*$vscodeBinPath*" -and $currentPath -notlike "*$vscodeExePath*") {
-    if (Test-Path $vscodeBinPath) {
-        $newPath = "$currentPath;$vscodeBinPath"
-        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-        Write-Host "Added VSCode to user PATH environment"
-    }
-    elseif (Test-Path $vscodeExePath) {
-        $vscodeDir = Split-Path $vscodeExePath -Parent
-        $newPath = "$currentPath;$vscodeDir"
-        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-        Write-Host "Added VSCode directory to user PATH environment"
-    }
+else {
+    Write-Host "VSCode not found in expected locations"
 }
 
 # Test if VSCode CLI is working
