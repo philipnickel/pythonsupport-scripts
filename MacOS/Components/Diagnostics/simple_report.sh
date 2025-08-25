@@ -234,57 +234,102 @@ generate_html_report() {
         .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px; color: #856404; }
         .notice-title { font-weight: bold; margin-bottom: 5px; }
         
-        .category-section { margin: 20px; border: 1px solid #ccc; }
-        .category-header { font-size: 1.2em; font-weight: bold; color: #ffffff; padding: 15px; background: #990000; text-align: center; }
-        .category-container { padding: 20px; }
+        .category-section { 
+            margin: 20px 0; 
+        }
         
-        .expandable { 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            border-radius: 4px;
-            user-select: none;
-        }
-        .expandable:hover { 
-            background: #b30000; 
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .expand-toggle { 
-            float: right; 
+        .category-header { 
+            font-size: 1.3em; 
             font-weight: bold; 
-            font-size: 1.2em;
-            transition: transform 0.3s ease;
+            color: #990000; 
+            padding: 15px 0; 
+            border-bottom: 2px solid #990000; 
+            margin-bottom: 15px;
         }
-        .expand-toggle.expanded {
-            transform: rotate(180deg);
+        
+        .category-container { 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .content { 
-            display: none; 
-            background: #f8f9fa; 
-            padding: 20px; 
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; 
-            white-space: pre-wrap; 
-            border: none;
-            margin: 0;
-            border-top: 3px solid #990000;
-            line-height: 1.4;
-            font-size: 0.9em;
-            max-height: 400px;
-            overflow-y: auto;
+        
+        .diagnostic-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .content.expanded { 
+        
+        .diagnostic-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .diagnostic-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            background: #f8f9fa;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diagnostic-header:hover {
+            background: #e9ecef;
+        }
+        
+        .diagnostic-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .diagnostic-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .diagnostic-expand-hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .diagnostic-details {
+            display: none;
+            background: #f8f9fa;
+            padding: 16px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .diagnostic-card.expanded .diagnostic-details {
             display: block;
             animation: slideDown 0.3s ease-out;
+        }
+        
+        .diagnostic-log {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 0.9em;
+            color: #333;
+            max-height: 400px;
+            overflow-y: auto;
         }
         
         @keyframes slideDown {
             from {
                 opacity: 0;
-                max-height: 0;
+                transform: translateY(-10px);
             }
             to {
                 opacity: 1;
-                max-height: 400px;
+                transform: translateY(0);
             }
         }
         .test-results { background: #f5f5f5; padding: 15px; font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; }
@@ -331,56 +376,61 @@ generate_html_report() {
         
         <div class="diagnostics">
             <div class="category-section">
-                <div class="category-header expandable" onclick="toggleExpand('test-results')">
-                    First Year Setup Validation <span class="expand-toggle" id="test-results-toggle">▼</span>
-                </div>
+                <div class="category-header">First Year Setup Validation</div>
                 <div class="category-container">
-                    <div class="content" id="test-results">$test_results</div>
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">Test Results</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$test_results</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="category-section">
-                <div class="category-header expandable" onclick="toggleExpand('system-info')">
-                    System Information <span class="expand-toggle" id="system-info-toggle">▼</span>
-                </div>
+                <div class="category-header">System Information</div>
                 <div class="category-container">
-                    <div class="content" id="system-info">$system_info</div>
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">System Details</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$system_info</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="category-section">
-                <div class="category-header expandable" onclick="toggleExpand('install-log')">
-                    Installation Log <span class="expand-toggle" id="install-log-toggle">▼</span>
-                </div>
+                <div class="category-header">Installation Log</div>
                 <div class="category-container">
-                    <div class="content" id="install-log">$install_log</div>
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">Complete Installation Output</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$install_log</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
         <script>
-        function toggleExpand(id) {
-            var content = document.getElementById(id);
-            var toggle = document.getElementById(id + '-toggle');
-            
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                toggle.textContent = '▼';
-                toggle.classList.remove('expanded');
-            } else {
-                content.classList.add('expanded');
-                toggle.textContent = '▲';
-                toggle.classList.add('expanded');
-            }
+        function toggleCard(card) {
+            card.classList.toggle('expanded');
         }
-        
-        // Initialize all toggles to show down arrow
-        document.addEventListener('DOMContentLoaded', function() {
-            var toggles = document.querySelectorAll('.expand-toggle');
-            toggles.forEach(function(toggle) {
-                toggle.textContent = '▼';
-            });
-        });
         </script>
         
         <footer>
