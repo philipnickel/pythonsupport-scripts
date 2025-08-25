@@ -7,6 +7,9 @@
 # @requirements: macOS system
 # @/doc
 
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+
 # Start piwik logging if available
 if command -v piwik_log_event >/dev/null 2>&1; then
     piwik_log_event "installation" "start" "DTU Python installation started"
@@ -18,7 +21,7 @@ echo "Checking existing installations..."
 export SKIP_VSCODE_INSTALL=false
 
 # Check for Miniforge specifically
-if [ -d "$HOME/miniforge3" ] && [ -x "$HOME/miniforge3/bin/conda" ]; then
+if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
     echo "• Miniforge found"
     echo "Everything appears to be already installed!"
     echo "Cancel installation? (y/n)"

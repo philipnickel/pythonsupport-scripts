@@ -8,7 +8,9 @@
 # @notes: This script now primarily verifies the installation since packages are installed directly in base environment
 # @/doc
 
-# Load utilities with new filename to break CDN cache
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
@@ -18,7 +20,7 @@
 [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
 
 # Update PATH to include conda
-export PATH="$HOME/miniforge3/bin:$PATH"
+export PATH="$MINIFORGE_PATH/bin:$PATH"
 
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then

@@ -8,7 +8,9 @@
 # @notes: Uses master utility system for consistent error handling and logging. Downloads and installs VSCode directly from Microsoft
 # @/doc
 
-# Load utilities with new filename to break CDN cache
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 

@@ -11,7 +11,9 @@
 # @version: 2024-12-25
 # @/doc
 
-# Load utilities with new filename to break CDN cache
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
@@ -20,14 +22,11 @@ if command -v conda >/dev/null 2>&1; then
   conda --version
 else
   
-  # Detect architecture and download Miniforge
-  ARCH=$([ $(uname -m) == "arm64" ] && echo "arm64" || echo "x86_64")
-  MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-${ARCH}.sh"
-  
-  curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
+  # Download and install Miniforge
+  curl -fsSL "$MINIFORGE_INSTALLER_URL" -o /tmp/miniforge.sh
   if [ $? -ne 0 ]; then exit 1; fi
   
-  bash /tmp/miniforge.sh -b -p "$HOME/miniforge3"
+  bash /tmp/miniforge.sh -b -p "$MINIFORGE_PATH"
   if [ $? -ne 0 ]; then exit 1; fi
   
   rm -f /tmp/miniforge.sh
