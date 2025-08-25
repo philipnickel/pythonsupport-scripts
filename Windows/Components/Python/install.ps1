@@ -143,31 +143,7 @@ catch {
     exit 1
 }
 
-# Configure conda channels (conda-forge only)
-Write-Host "Configuring conda channels..."
-try {
-    # First, explicitly add defaults to avoid the deprecation warning
-    conda config --add channels defaults 2>$null
-    
-    # Remove all channels
-    conda config --remove-key channels 2>$null
-    
-    # Add only conda-forge
-    conda config --add channels conda-forge
-    
-    # Set channel priority to strict
-    conda config --set channel_priority strict
-    
-    # Verify configuration
-    Write-Host "Final channel configuration:"
-    conda config --show channels
-    
-    Write-Host "Conda channels configured successfully"
-}
-catch {
-    Write-Host "Failed to configure conda channels: $($_.Exception.Message)"
-    exit 1
-}
+
 
 # Update conda first to fix any issues
 Write-Host "Updating conda..."
