@@ -61,24 +61,8 @@ echo ""
 echo "This will completely remove all conda installations and clean up your shell configuration."
 echo "WARNING: This action cannot be undone!"
 
-if [[ -t 0 ]] && [[ "${PIS_ENV:-}" != "CI" ]] && [[ "${CI:-}" != "true" ]]; then
-    # Interactive mode - ask for confirmation
-    echo ""
-    # Add timeout to prevent hanging
-    read -t 30 -p "Continue with uninstall? (yes/no): " -r
-    if [[ $? -ne 0 ]]; then
-        echo "
-Timeout - uninstall cancelled."
-        exit 0
-    fi
-    if [[ ! "$REPLY" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-        echo "Uninstall cancelled."
-        exit 0
-    fi
-else
-    # Non-interactive mode or CI - proceed automatically
-    echo "Running in non-interactive mode - proceeding with uninstall..."
-fi
+# Always proceed with uninstall - no prompting
+echo "Running in non-interactive mode - proceeding with uninstall..."
 
 echo ""
 echo "Uninstalling conda installations..."
