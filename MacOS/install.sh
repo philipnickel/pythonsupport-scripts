@@ -48,8 +48,8 @@ exec > "/tmp/dtu_install_output_$$.log" 2>&1
 set -e
 
 # Inherit environment variables from parent
-export REMOTE_PS="${REMOTE_PS:-philipnickel/pythonsupport-scripts}"
-export BRANCH_PS="${BRANCH_PS:-Miniforge}"
+export REMOTE_PS="$REMOTE_PS"
+export BRANCH_PS="$BRANCH_PS"
 
 # Set up installation logging
 INSTALL_LOG="/tmp/dtu_install_\$(date +%Y%m%d_%H%M%S).log"
