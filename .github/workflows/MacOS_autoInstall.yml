@@ -140,14 +140,14 @@ jobs:
           conda --version
           conda info --base
 
-      - name: Run installer with existing conda (option 1 - uninstall)
+      - name: Run installer with existing conda (auto-uninstall)
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing installation with existing conda from: $REMOTE_PS/$BRANCH_PS"
-          # Answer '1' to automatically uninstall existing conda, then 'yes' to confirm uninstall
-          echo -e "1\nyes" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+          # Answer 'y' to uninstall conda, then 'yes' to confirm uninstall
+          echo -e "y\nyes" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
 
       - name: Verify final installation
         run: |

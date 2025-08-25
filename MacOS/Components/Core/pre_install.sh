@@ -35,33 +35,18 @@ if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
 # Check for other conda installations  
 elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
     echo "• Other conda installation detected"
-    echo ""
     echo "DTU Python Support only works with Miniforge."
-    echo "You must uninstall existing conda installations first."
-    echo ""
-    echo "What would you like to do?"
-    echo "1) Automatically uninstall existing conda and continue"
-    echo "2) Abort installation (uninstall manually)"
-    echo ""
-    read -p "Choose option (1/2): " -r response
+    echo "Uninstall existing conda and continue? (y/n)"
+    read -r response
     
-    case $response in
-        1)
-            echo "• Running conda uninstall script..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
-            if [ $? -eq 0 ]; then
-                echo "• Conda uninstalled successfully, continuing with Miniforge installation..."
-            else
-                echo "• Conda uninstall failed, aborting installation"
-                exit 1
-            fi
-            ;;
-        2|*)
-            echo "Installation aborted."
-            echo "Please manually uninstall existing conda and rerun this installer."
-            exit 1
-            ;;
-    esac
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "• Uninstalling existing conda..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
+        echo "• Continuing with Miniforge installation..."
+    else
+        echo "Installation aborted."
+        exit 1
+    fi
 fi
 
 # Check for VS Code
