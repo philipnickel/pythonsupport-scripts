@@ -238,11 +238,55 @@ generate_html_report() {
         .category-header { font-size: 1.2em; font-weight: bold; color: #ffffff; padding: 15px; background: #990000; text-align: center; }
         .category-container { padding: 20px; }
         
-        .expandable { cursor: pointer; }
-        .expandable:hover { background: #e9ecef; }
-        .expand-toggle { float: right; font-weight: bold; }
-        .content { display: none; background: #f5f5f5; padding: 15px; font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; margin-top: 10px; }
-        .content.expanded { display: block; }
+        .expandable { 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            border-radius: 4px;
+            user-select: none;
+        }
+        .expandable:hover { 
+            background: #b30000; 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .expand-toggle { 
+            float: right; 
+            font-weight: bold; 
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+        .expand-toggle.expanded {
+            transform: rotate(180deg);
+        }
+        .content { 
+            display: none; 
+            background: #f8f9fa; 
+            padding: 20px; 
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; 
+            white-space: pre-wrap; 
+            border: none;
+            margin: 0;
+            border-top: 3px solid #990000;
+            line-height: 1.4;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .content.expanded { 
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 400px;
+            }
+        }
         .test-results { background: #f5f5f5; padding: 15px; font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; }
         .system-info { background: #f5f5f5; padding: 15px; font-family: monospace; border: 1px solid #ccc; }
         .install-log { background: #f5f5f5; padding: 15px; font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; }
@@ -288,7 +332,7 @@ generate_html_report() {
         <div class="diagnostics">
             <div class="category-section">
                 <div class="category-header expandable" onclick="toggleExpand('test-results')">
-                    First Year Setup Validation <span class="expand-toggle" id="test-results-toggle">[+]</span>
+                    First Year Setup Validation <span class="expand-toggle" id="test-results-toggle">▼</span>
                 </div>
                 <div class="category-container">
                     <div class="content" id="test-results">$test_results</div>
@@ -297,7 +341,7 @@ generate_html_report() {
             
             <div class="category-section">
                 <div class="category-header expandable" onclick="toggleExpand('system-info')">
-                    System Information <span class="expand-toggle" id="system-info-toggle">[+]</span>
+                    System Information <span class="expand-toggle" id="system-info-toggle">▼</span>
                 </div>
                 <div class="category-container">
                     <div class="content" id="system-info">$system_info</div>
@@ -306,7 +350,7 @@ generate_html_report() {
             
             <div class="category-section">
                 <div class="category-header expandable" onclick="toggleExpand('install-log')">
-                    Installation Log <span class="expand-toggle" id="install-log-toggle">[+]</span>
+                    Installation Log <span class="expand-toggle" id="install-log-toggle">▼</span>
                 </div>
                 <div class="category-container">
                     <div class="content" id="install-log">$install_log</div>
@@ -318,14 +362,25 @@ generate_html_report() {
         function toggleExpand(id) {
             var content = document.getElementById(id);
             var toggle = document.getElementById(id + '-toggle');
+            
             if (content.classList.contains('expanded')) {
                 content.classList.remove('expanded');
-                toggle.textContent = '[+]';
+                toggle.textContent = '▼';
+                toggle.classList.remove('expanded');
             } else {
                 content.classList.add('expanded');
-                toggle.textContent = '[-]';
+                toggle.textContent = '▲';
+                toggle.classList.add('expanded');
             }
         }
+        
+        // Initialize all toggles to show down arrow
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggles = document.querySelectorAll('.expand-toggle');
+            toggles.forEach(function(toggle) {
+                toggle.textContent = '▼';
+            });
+        });
         </script>
         
         <footer>
