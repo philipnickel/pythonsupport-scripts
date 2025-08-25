@@ -40,7 +40,7 @@
     <CustomAction
       Id="Install"
       Directory="INSTALLFOLDER"
-      Execute="commit"
+      Execute="deferred"
       Impersonate="no"
       Return="check"
       ExeCommand="cmd.exe /c powershell -NoLogo -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installation\install.ps1&quot;" />
