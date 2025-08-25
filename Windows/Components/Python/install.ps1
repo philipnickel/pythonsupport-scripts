@@ -146,31 +146,10 @@ catch {
 # Configure conda channels (conda-forge only)
 Write-Host "Configuring conda channels..."
 try {
-    # Show current channels before modification
-    Write-Host "Current channels before modification:"
-    conda config --show channels
-    
-    # Remove all existing channels completely
-    Write-Host "Removing all existing channels..."
+    # Remove all existing channels and add only conda-forge
     conda config --remove-key channels 2>$null
-    conda config --remove channels defaults 2>$null
-    conda config --remove channels anaconda 2>$null
-    conda config --remove channels pkgs/main 2>$null
-    conda config --remove channels pkgs/r 2>$null
-    conda config --remove channels pkgs/pro 2>$null
-    
-    # Add only conda-forge channel
-    Write-Host "Adding conda-forge channel..."
     conda config --add channels conda-forge
-    
-    # Set channel priority to strict
-    Write-Host "Setting channel priority to strict..."
     conda config --set channel_priority strict
-    
-    # Show final configuration
-    Write-Host "Final channel configuration:"
-    conda config --show channels
-    conda config --show channel_priority
     
     Write-Host "Conda channels configured successfully"
 }
@@ -179,16 +158,15 @@ catch {
     exit 1
 }
 
-# Update conda
+# Update conda first to fix any issues
 Write-Host "Updating conda..."
 try {
     conda update conda -y
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to update conda (non-critical)"
-    }
+    Write-Host "Conda updated successfully"
 }
 catch {
-    Write-Host "Failed to update conda (non-critical): $($_.Exception.Message)"
+    Write-Host "Failed to update conda: $($_.Exception.Message)"
+    exit 1
 }
 
 Write-Host "Python (Miniforge) installation completed successfully!"

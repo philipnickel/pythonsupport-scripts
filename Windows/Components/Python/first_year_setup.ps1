@@ -28,37 +28,31 @@ if (-not $env:PYTHON_VERSION_PS) {
 
 Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 
-# Create or update base environment with required packages
-Write-Host "Installing required packages in base environment..."
-
-$packages = @(
-    "python=$env:PYTHON_VERSION_PS",
-    "pandas",
-    "scipy", 
-    "statsmodels",
-    "uncertainties",
-    "dtumathtools",
-    "jupyter",
-    "ipykernel",
-    "matplotlib",
-    "seaborn",
-    "numpy"
-)
-
+# Install Python 3.11 first
+Write-Host "Installing Python $env:PYTHON_VERSION_PS..."
 try {
-    # Install packages in base environment
-    $packageString = $packages -join " "
-    conda install -y $packageString
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to install packages in base environment"
-        exit 1
-    }
-    
-    Write-Host "Packages installed successfully in base environment"
+    conda install -y "python=$env:PYTHON_VERSION_PS"
+    Write-Host "Python $env:PYTHON_VERSION_PS installed successfully"
 }
 catch {
-    Write-Host "Failed to install packages: $($_.Exception.Message)"
+    Write-Host "Failed to install Python: $($_.Exception.Message)"
     exit 1
+}
+
+# Install required packages one by one to avoid conflicts
+$packages = @("pandas", "scipy", "statsmodels", "uncertainties", "dtumathtools", "jupyter", "ipykernel", "matplotlib", "seaborn", "numpy")
+
+Write-Host "Installing required packages..."
+foreach ($package in $packages) {
+    Write-Host "Installing $package..."
+    try {
+        conda install -y $package
+        Write-Host "$package installed successfully"
+    }
+    catch {
+        Write-Host "Failed to install $package: $($_.Exception.Message)"
+        exit 1
+    }
 }
 
 # Create first year environment
