@@ -31,7 +31,9 @@ function Load-Utility {
         $utilUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Shared/$UtilName.ps1"
         $utilScript = Invoke-WebRequest -Uri $utilUrl -UseBasicParsing -ErrorAction Stop
         if ($utilScript.Content) {
-            Invoke-Expression $utilScript.Content
+            # Execute in global scope to make functions available
+            $scriptBlock = [ScriptBlock]::Create($utilScript.Content)
+            & $scriptBlock
             Write-Host "$Prefix ✓ Loaded $UtilName utilities"
             return $true
         }

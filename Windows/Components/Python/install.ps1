@@ -13,11 +13,12 @@
 # Load master utilities
 try {
     $masterUtilsUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Shared/master_utils.ps1"
-    Invoke-Expression (Invoke-WebRequest -Uri $masterUtilsUrl -UseBasicParsing).Content
+    $masterUtilsScript = Invoke-WebRequest -Uri $masterUtilsUrl -UseBasicParsing
+    & ([ScriptBlock]::Create($masterUtilsScript.Content))
 }
 catch {
-    Write-LogError "Failed to load master utilities: $($_.Exception.Message)"
-    Exit-Message
+    Write-Error "Failed to load master utilities: $($_.Exception.Message)"
+    exit 1
 }
 
 Write-LogInfo "Python (Miniforge) installation"

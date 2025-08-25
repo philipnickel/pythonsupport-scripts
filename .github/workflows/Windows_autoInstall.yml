@@ -10,11 +10,13 @@ on:
     paths:
       - 'Windows/**'
       - '.github/workflows/Windows_autoInstall.yml'
+      - 'dev_plan_miniforge_windows.md'
   push:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
       - '.github/workflows/Windows_autoInstall.yml'
+      - 'dev_plan_miniforge_windows.md'
 
 env:
   PYTHON_VERSION_PS: "3.11"

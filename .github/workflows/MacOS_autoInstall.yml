@@ -9,16 +9,12 @@ on:
     branches: [ "main" ]
     paths:
       - 'MacOS/**'
-      - 'Windows/**'
       - '.github/workflows/MacOS_autoInstall.yml'
-      - '.github/workflows/Windows_autoInstall.yml'
   push:
     branches: [ "main" ]
     paths:
       - 'MacOS/**'
-      - 'Windows/**'
       - '.github/workflows/MacOS_autoInstall.yml'
-      - '.github/workflows/Windows_autoInstall.yml'
 
 env:
   PYTHON_VERSION_PS: "3.11"
