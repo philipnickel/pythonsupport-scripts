@@ -34,7 +34,6 @@ Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in ba
 try {
     # Install Python 3.11 and all packages in one command for speed
     Write-Host "Installing Python $env:PYTHON_VERSION_PS and all required packages..."
-    $env:CONDA_NO_PLUGINS = "true"
     conda install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
