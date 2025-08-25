@@ -32,17 +32,37 @@ if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
     fi
     echo "• Continuing with installation anyway..."
 
-# Check for other conda installations
+# Check for other conda installations  
 elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
     echo "• Other conda installation detected"
-    echo "For a clean DTU installation, please uninstall existing conda first."
-    echo "Continue anyway? (y/n)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "Installation aborted. Please uninstall conda and try again."
-        exit 1
-    fi
-    echo "• Continuing with existing conda..."
+    echo ""
+    echo "For best results, DTU recommends uninstalling existing conda first."
+    echo "What would you like to do?"
+    echo "1) Automatically uninstall existing conda and continue"
+    echo "2) Continue with existing conda (not recommended)"
+    echo "3) Abort installation"
+    echo ""
+    read -p "Choose option (1/2/3): " -r response
+    
+    case $response in
+        1)
+            echo "• Running conda uninstall script..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
+            if [ $? -eq 0 ]; then
+                echo "• Conda uninstalled successfully, continuing with installation..."
+            else
+                echo "• Conda uninstall failed, aborting installation"
+                exit 1
+            fi
+            ;;
+        2)
+            echo "• Continuing with existing conda installation..."
+            ;;
+        3|*)
+            echo "Installation aborted."
+            exit 1
+            ;;
+    esac
 fi
 
 # Check for VS Code
