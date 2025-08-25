@@ -85,14 +85,17 @@ catch {
 Write-Host "Installing packages in $envName environment..."
 
 try {
-    conda activate $envName
-    conda install -n $envName -y $packageString
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to install packages in $envName environment"
-        exit 1
+    foreach ($package in $packages) {
+        Write-Host "Installing $package in $envName environment..."
+        conda install -n $envName -y $package
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to install $package in $envName environment"
+            exit 1
+        }
+        Write-Host "$package installed successfully in $envName environment"
     }
     
-    Write-Host "Packages installed successfully in $envName environment"
+    Write-Host "All packages installed successfully in $envName environment"
 }
 catch {
     Write-Host "Failed to install packages in $envName environment: $($_.Exception.Message)"
@@ -102,8 +105,7 @@ catch {
 # Install Jupyter kernel for the environment
 Write-Host "Installing Jupyter kernel for $envName environment..."
 try {
-    conda activate $envName
-    python -m ipykernel install --user --name $envName --display-name "Python $env:PYTHON_VERSION_PS (First Year)"
+    conda run -n $envName python -m ipykernel install --user --name $envName --display-name "Python $env:PYTHON_VERSION_PS (First Year)"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Jupyter kernel"
         exit 1
@@ -121,8 +123,7 @@ Write-Host "Verifying installation..."
 
 try {
     # Test Python version
-    conda activate $envName
-    $pythonVersion = python --version
+    $pythonVersion = conda run -n $envName python --version
     Write-Host "Python version: $pythonVersion"
     
     # Test package imports
@@ -142,7 +143,7 @@ for package in packages:
 print("All packages imported successfully!")
 "@
     
-    $testScript | python
+    conda run -n $envName python -c $testScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Package import test failed"
         exit 1
