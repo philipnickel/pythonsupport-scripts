@@ -18,7 +18,6 @@ set -e
 # Log installation start to Piwik if available
 if command -v piwik_log_event >/dev/null 2>&1; then
     piwik_log_event "installation" "start" "DTU Python installation started"
-else
 fi
 
 # Variables for tracking found installations
