@@ -63,6 +63,12 @@ echo "WARNING: This action cannot be undone!"
 
 # Always proceed with uninstall - no prompting
 echo "Running in non-interactive mode - proceeding with uninstall..."
+
+# 2. Remove installation directories
+for i in "${!CONDA_PATHS[@]}"; do
+    path="${CONDA_PATHS[$i]}"
+    type="${CONDA_TYPES[$i]}"
+    
     if [ -d "$path" ]; then
         echo "• Removing $type installation: $path"
         
