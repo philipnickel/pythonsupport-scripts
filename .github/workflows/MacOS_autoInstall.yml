@@ -140,12 +140,18 @@ jobs:
       - name: Verify Installation - Python Version
         run: |
           echo "Verifying Python version..."
+          
+          # Activate conda environment to ensure we're using the right Python
+          source ~/miniforge3/bin/activate
           which python3
           
           EXPECTED_VERSION="3.11"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
+            echo "PATH: $PATH"
+            echo "Available Python versions:"
+            ls -la ~/miniforge3/bin/python*
             exit 1
           fi
           echo "✓ Correct Python version $INSTALLED_VERSION"
@@ -153,8 +159,13 @@ jobs:
       - name: Verify Installation - DTU Packages
         run: |
           echo "Verifying DTU packages..."
+          
+          # Activate conda environment to ensure we're using the right Python
+          source ~/miniforge3/bin/activate
           python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')" || {
             echo "ERROR: Failed to import DTU packages"
+            echo "Available packages:"
+            conda list | grep -E "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
             exit 1
           }
 

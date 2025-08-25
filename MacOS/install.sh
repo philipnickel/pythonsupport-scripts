@@ -64,9 +64,11 @@ echo "Installing Python with Miniforge..."
 echo "Setting up Python environment and packages..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
 
-# Install Visual Studio Code (conditionally)
+# Install Visual Studio Code and extensions
 if [ "$SKIP_VSCODE_INSTALL" = true ]; then
-    echo "Skipping VS Code installation (already installed)"
+    echo "VS Code already installed - ensuring extensions are installed..."
+    # Even if VS Code is installed, we need to install extensions
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
 else
     echo "Installing Visual Studio Code..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
