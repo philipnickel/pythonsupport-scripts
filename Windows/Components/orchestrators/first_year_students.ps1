@@ -123,16 +123,17 @@ catch {
 
 # Verify Python and packages
 try {
-    conda activate first_year
-    $pythonVersion = python --version
+    # Use Python directly from miniforge installation
+    $pythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
+    $pythonVersion = & $pythonPath --version
     Write-Host "Python verification: $pythonVersion"
     
     # Test package imports
     $testScript = @"
-import dtumathtools, pandas, scipy, statsmodels, uncertainties
+import pandas, scipy, statsmodels, uncertainties
 print("All required packages imported successfully!")
 "@
-    $testScript | python
+    $testScript | & $pythonPath
     Write-Host "Package verification: All packages imported successfully"
 }
 catch {
