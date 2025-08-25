@@ -70,7 +70,7 @@ jobs:
             }
           }
 
-      - name: Run Windows First Year Orchestrator and Verify
+      - name: Run Windows First Year Orchestrator
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
@@ -84,47 +84,51 @@ jobs:
           # Run the orchestrator
           $orchestratorUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/orchestrators/first_year_students.ps1"
           Invoke-Expression (Invoke-WebRequest -Uri $orchestratorUrl -UseBasicParsing).Content
-          
-          Write-Host "=== Verification Phase ==="
-          
-          # Verify VS Code
-          Write-Host "Verifying VS Code..."
-          code --version
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "VS Code not installed correctly"
-            exit $LASTEXITCODE
-          }
-          
-          # Verify conda
-          Write-Host "Verifying conda..."
-          conda --version
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Conda not installed correctly"
-            exit $LASTEXITCODE
-          }
-          
-          # Some more conda output
-          conda --version
-          conda info --base
-          
-          # Verify python (3.11)
-          Write-Host "Verifying Python..."
-          $condaPythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
-          & $condaPythonPath --version
-          
-          # Verify the installed Python version
-          $EXPECTED_VERSION = "3.11"
-          $INSTALLED_VERSION = (& $condaPythonPath --version 2>&1) -replace "Python ", ""
-          if ($INSTALLED_VERSION -notlike "$EXPECTED_VERSION*") {
-            Write-Host "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
+
+      - name: Verify VS Code
+        run: |
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          try {
+            Get-Command code
+            code --version
+          } catch {
+            Write-Output "VS Code not installed correctly"
+            Write-Output $_
             exit 1
           }
-          Write-Host "Correct Python version $INSTALLED_VERSION is installed."
-          
+
+      - name: Verify conda
+        run: |
+          try {
+            Get-Command conda
+            conda --version
+            conda info --base
+          } catch {
+            Write-Output "Conda not installed correctly"
+            Write-Output $_
+            exit 1
+          }
+
+      - name: Verify python (3.11)
+        run: |
+          Get-Command python
+
+          # Verify the installed Python version
+          $expectedVersion = "3.11"
+          $condaPythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
+          $installedVersion = (& $condaPythonPath --version 2>&1) -replace "Python ", ""
+          if (-not $installedVersion.StartsWith($expectedVersion)) {
+            Write-Output "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            exit 1
+          }
+          Write-Output "Correct Python version $installedVersion is installed."
+
           # Verify Python package imports
-          & $condaPythonPath -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to import Python packages"
+          try {
+            & $condaPythonPath -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+          } catch {
+            Write-Output "Failed to import Python packages"
+            Write-Output $_
             exit 1
           }
 
