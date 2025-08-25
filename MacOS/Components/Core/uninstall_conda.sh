@@ -64,7 +64,13 @@ echo "WARNING: This action cannot be undone!"
 if [[ -t 0 ]] && [[ "${PIS_ENV:-}" != "CI" ]] && [[ "${CI:-}" != "true" ]]; then
     # Interactive mode - ask for confirmation
     echo ""
-    read -p "Continue with uninstall? (yes/no): " -r
+    # Add timeout to prevent hanging
+    read -t 30 -p "Continue with uninstall? (yes/no): " -r
+    if [[ $? -ne 0 ]]; then
+        echo "
+Timeout - uninstall cancelled."
+        exit 0
+    fi
     if [[ ! "$REPLY" =~ ^[Yy]([Ee][Ss])?$ ]]; then
         echo "Uninstall cancelled."
         exit 0
@@ -95,7 +101,22 @@ for i in "${!CONDA_PATHS[@]}"; do
         
         # Handle system installations (need sudo)
         if [[ "$path" == /opt/* ]]; then
-            sudo rm -rf "$path"
+            # Use native macOS password dialog
+            if command -v osascript >/dev/null 2>&1; then
+                echo "  Administrator privileges required for system installation"
+                echo "  A password dialog will appear..."
+                if ! osascript -e "do shell script \"rm -rf '$path'\" with administrator privileges" 2>/dev/null; then
+                    echo "  ✗ Failed to remove $path (authentication cancelled or failed)"
+                    continue
+                fi
+            else
+                # Fallback to regular sudo with timeout
+                echo "  Enter your password to remove system installation:"
+                if ! timeout 60 sudo rm -rf "$path"; then
+                    echo "  ✗ Failed to remove $path (timeout or authentication failed)"
+                    continue
+                fi
+            fi
         else
             rm -rf "$path"
         fi
