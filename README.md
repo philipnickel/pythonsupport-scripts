@@ -9,7 +9,7 @@ This repository contains automated installation scripts for Python development e
 ### macOS
 Open Terminal (⌘ + Space, search "Terminal") and run:
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/Miniforge/MacOS/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/install.sh)"
 ```
 
 This installs:
@@ -31,7 +31,7 @@ Check your Python environment installation:
 
 ### First Year Students (Recommended)
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/Miniforge/MacOS/Components/Diagnostics/simple_report.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
 ```
 
 This generates a simple HTML report showing:

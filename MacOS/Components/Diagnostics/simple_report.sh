@@ -25,9 +25,6 @@ get_system_info() {
     echo "Operating System: macOS $(sw_vers -productVersion) ($(sw_vers -productName))"
     echo "Build Version: $(sw_vers -buildVersion)"
     echo "Architecture: $(uname -m)"
-    echo "Hostname: $(hostname)"
-    echo "User: $(whoami)"
-    echo "Date: $(date)"
     echo ""
     
     echo "=== Hardware Information ==="
@@ -50,8 +47,6 @@ get_system_info() {
     echo "=== DTU Configuration ==="
     echo "Expected Python Version: ${PYTHON_VERSION_DTU:-'Not loaded'}"
     echo "Required DTU Packages: ${DTU_PACKAGES[*]:-'Not loaded'}"
-    echo "Repository: ${REMOTE_PS:-'Not set'}"
-    echo "Branch: ${BRANCH_PS:-'Not set'}"
     echo ""
     
     echo "=== VS Code Environment ==="
@@ -208,6 +203,23 @@ generate_html_report() {
     local fail_count=$(echo "$test_results" | grep ": FAIL$" | wc -l)
     local total_count=$((pass_count + fail_count))
     
+    # Generate professional status message
+    local status_message
+    local status_class
+    if [ $fail_count -eq 0 ] && [ $total_count -gt 0 ]; then
+        status_message="Everything is set up and working correctly"
+        status_class="status-success"
+    elif [ $fail_count -eq 1 ]; then
+        status_message="Setup is mostly complete with one issue to resolve"
+        status_class="status-warning"
+    elif [ $fail_count -gt 1 ]; then
+        status_message="Several setup issues need to be resolved"
+        status_class="status-error"
+    else
+        status_message="No tests completed"
+        status_class="status-unknown"
+    fi
+    
     # Read installation log if available
     if [ -n "$INSTALL_LOG" ] && [ -f "$INSTALL_LOG" ]; then
         install_log=$(cat "$INSTALL_LOG")
@@ -223,21 +235,25 @@ generate_html_report() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DTU Python Installation Support - First Year</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 10px; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; min-height: 100vh; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 20px; margin: 0; }
+        .container { max-width: 1000px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; }
         
-        header { background: #990000; color: #ffffff; padding: 20px; display: flex; align-items: center; gap: 20px; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
+        header { background: #990000; color: #ffffff; padding: 30px 20px; display: flex; align-items: center; gap: 25px; }
+        .header-left { flex-shrink: 0; }
         .header-content { flex: 1; }
-        .dtu-logo { height: 60px; filter: brightness(0) invert(1); }
-        h1 { font-size: 1.8em; margin: 0; line-height: 1.2; }
-        .subtitle { font-size: 1.1em; margin-top: 5px; opacity: 0.9; }
-        .timestamp { font-size: 0.85em; margin-top: 10px; opacity: 0.8; }
+        .dtu-logo { height: 50px; filter: brightness(0) invert(1); }
+        h1 { font-size: 1.9em; margin: 0; line-height: 1.2; font-weight: bold; }
+        .subtitle { font-size: 1.2em; margin-top: 8px; opacity: 0.9; font-weight: normal; }
+        .timestamp { font-size: 0.9em; margin-top: 12px; opacity: 0.8; }
         
-        .summary { display: flex; justify-content: center; gap: 60px; padding: 25px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
-        .summary-item { text-align: center; }
-        .summary-number { font-size: 3em; font-weight: bold; }
-        .summary-label { color: #666; text-transform: uppercase; font-size: 0.9em; margin-top: 5px; }
+        .summary { display: flex; justify-content: center; padding: 30px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
+        .status-message { text-align: center; }
+        .status-text { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        .status-details { font-size: 0.9em; color: #666; }
+        .status-success .status-text { color: #008835; }
+        .status-warning .status-text { color: #f57c00; }
+        .status-error .status-text { color: #E83F48; }
+        .status-unknown .status-text { color: #666; }
         .passed { color: #008835; }
         .failed { color: #E83F48; }
         .total { color: #990000; }
@@ -268,6 +284,7 @@ generate_html_report() {
         
         .category-section { 
             margin: 20px 0; 
+            padding: 0 20px;
         }
         
         .category-header { 
@@ -388,17 +405,9 @@ generate_html_report() {
         </header>
         
         <div class="summary">
-            <div class="summary-item">
-                <div class="summary-number passed">$pass_count</div>
-                <div class="summary-label">Passed</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-number failed">$fail_count</div>
-                <div class="summary-label">Failed</div>
-            </div>
-            <div class="summary-item">
-                <div class="summary-number total">$total_count</div>
-                <div class="summary-label">Total Checks</div>
+            <div class="status-message $status_class">
+                <div class="status-text">$status_message</div>
+                <div class="status-details">$pass_count of $total_count components working properly</div>
             </div>
         </div>
         
@@ -520,11 +529,11 @@ generate_html_report() {
         
         function openEmail() {
             const subject = encodeURIComponent('DTU Python Installation Support Request');
-            const body = encodeURIComponent('Hello DTU Python Support Team,\\n\\nI am having issues with my Python development environment setup. I have attached the diagnostic report generated by your installation tool.\\n\\nPlease help me resolve these issues:\\n\\n' + 
-                '• Python Installation: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python') ? 'Working' : 'Needs attention') + '\\n' +
-                '• Python Environment: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python Environment') ? 'Working' : 'Needs attention') + '\\n' +
-                '• VS Code Setup: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: VS Code') ? 'Working' : 'Needs attention') + '\\n\\n' +
-                'Thank you for your assistance.\\n\\nBest regards');
+            const body = encodeURIComponent('Python environment setup issue\\n\\nCourse: [PLEASE FILL OUT]\\n\\nDiagnostic report attached.\\n\\nComponents:\\n' + 
+                '• Python: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python') ? 'Working' : 'Issue') + '\\n' +
+                '• Packages: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python Environment') ? 'Working' : 'Issue') + '\\n' +
+                '• VS Code: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: VS Code') ? 'Working' : 'Issue') + '\\n\\n' +
+                'Additional notes:\\nIf you have any additional notes\\n\\nThanks');
             
             window.location.href = 'mailto:pythonsupport@dtu.dk?subject=' + subject + '&body=' + body;
             closeEmailModal();
