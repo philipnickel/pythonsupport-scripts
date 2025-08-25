@@ -17,18 +17,26 @@ echo "• Visual Studio Code with Python extension"
 echo "• Complete diagnostic and verification system"
 echo ""
 
-# Ask for system password confirmation using macOS native dialog
-echo "This installation requires administrator privileges."
-echo "You will be prompted to enter your system password."
-echo ""
+# Detect CI/headless environment
+CI_MODE=false
+if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ] || [ -n "$BUILD_ID" ] || [ -n "$JENKINS_URL" ] || [ ! -t 0 ]; then
+    CI_MODE=true
+    echo "Detected CI/automated environment - running in non-interactive mode"
+    echo ""
+else
+    # Interactive mode - ask for system password confirmation using macOS native dialog
+    echo "This installation requires administrator privileges."
+    echo "You will be prompted to enter your system password."
+    echo ""
 
-# Use osascript to show native macOS password dialog
-if ! osascript -e 'do shell script "echo Authentication successful" with administrator privileges' >/dev/null 2>&1; then
-    echo "Installation cancelled - administrator authentication required."
-    exit 1
+    # Use osascript to show native macOS password dialog
+    if ! osascript -e 'do shell script "echo Authentication successful" with administrator privileges' >/dev/null 2>&1; then
+        echo "Installation cancelled - administrator authentication required."
+        exit 1
+    fi
+
+    echo "Authentication successful. Starting installation..."
 fi
-
-echo "Authentication successful. Starting installation..."
 
 # Create a temporary script for the installation process
 TEMP_INSTALL_SCRIPT="/tmp/dtu_install_process_$$.sh"
@@ -136,49 +144,63 @@ EOF
 
 chmod +x "$TEMP_INSTALL_SCRIPT"
 
-# Run installation in background and show native macOS progress dialog
+# Run installation in background and show progress
 {
     # Start the installation process in background
     "$TEMP_INSTALL_SCRIPT" &
     INSTALL_PID=$!
     
-    # Show native macOS progress dialog with live log updates
-    osascript << EOF &
-    set progress total steps to -1
-    set progress completed steps to 0
-    set progress description to "Installing DTU Python Environment..."
-    set progress additional description to "Initializing installation process..."
-    
-    repeat
-        delay 2
-        -- Check if process is still running
-        if (do shell script "ps -p $INSTALL_PID > /dev/null 2>&1; echo \$?") is not equal to "0" then
-            exit repeat
-        end if
+    if [ "$CI_MODE" = "false" ]; then
+        # Show native macOS progress dialog with live log updates (interactive mode only)
+        osascript << EOF &
+        set progress total steps to -1
+        set progress completed steps to 0
+        set progress description to "Installing DTU Python Environment..."
+        set progress additional description to "Initializing installation process..."
         
-        -- Get the last few lines of the log to show current activity
-        try
-            set logContent to (do shell script "tail -3 '/tmp/dtu_install_output_$$.log' 2>/dev/null | grep -E '\\[(INFO|SUCCESS|ERROR)\\]' | tail -1 | sed 's/\\[.*\\] //' | cut -c1-60")
-            if logContent is not equal to "" then
-                set progress additional description to logContent & "..."
+        repeat
+            delay 2
+            -- Check if process is still running
+            if (do shell script "ps -p $INSTALL_PID > /dev/null 2>&1; echo \$?") is not equal to "0" then
+                exit repeat
             end if
-        end try
-    end repeat
-    
-    set progress completed steps to 1
-    set progress description to "Installation completed!"
-    set progress additional description to "Finalizing setup and generating diagnostics..."
-    delay 1
+            
+            -- Get the last few lines of the log to show current activity
+            try
+                set logContent to (do shell script "tail -3 '/tmp/dtu_install_output_$$.log' 2>/dev/null | grep -E '\\[(INFO|SUCCESS|ERROR)\\]' | tail -1 | sed 's/\\[.*\\] //' | cut -c1-60")
+                if logContent is not equal to "" then
+                    set progress additional description to logContent & "..."
+                end if
+            end try
+        end repeat
+        
+        set progress completed steps to 1
+        set progress description to "Installation completed!"
+        set progress additional description to "Finalizing setup and generating diagnostics..."
+        delay 1
 EOF
-    
-    PROGRESS_PID=$!
+        PROGRESS_PID=$!
+    else
+        # CI mode - show simple text progress
+        echo "Installation running in background..."
+        while kill -0 $INSTALL_PID 2>/dev/null; do
+            # Show last log line if available
+            if [ -f "/tmp/dtu_install_output_$$.log" ]; then
+                tail -1 "/tmp/dtu_install_output_$$.log" 2>/dev/null | grep -E '\[(INFO|SUCCESS|ERROR)\]' | sed 's/\[.*\] /[CI] /' || true
+            fi
+            sleep 3
+        done
+        PROGRESS_PID=""
+    fi
     
     # Wait for installation to complete
     wait $INSTALL_PID
     INSTALL_EXIT_CODE=$?
     
-    # Kill the progress dialog
-    kill $PROGRESS_PID 2>/dev/null || true
+    # Kill the progress dialog (only if not in CI mode)
+    if [ -n "$PROGRESS_PID" ]; then
+        kill $PROGRESS_PID 2>/dev/null || true
+    fi
     
     # Read the actual exit code from the file
     if [ -f "/tmp/dtu_install_exit_code_$$.txt" ]; then
@@ -188,7 +210,10 @@ EOF
     # Show results
     echo ""
     if [ "$INSTALL_EXIT_CODE" -eq 0 ]; then
-        osascript -e 'display notification "DTU Python environment installed successfully!" with title "Installation Complete" sound name "Glass"'
+        # Show notification only in interactive mode
+        if [ "$CI_MODE" = "false" ]; then
+            osascript -e 'display notification "DTU Python environment installed successfully!" with title "Installation Complete" sound name "Glass"' 2>/dev/null || true
+        fi
         echo "✅ Installation completed successfully!"
         echo ""
         echo "🎉 Your DTU Python environment is ready!"
@@ -196,14 +221,19 @@ EOF
         echo "• Visual Studio Code with Python extension"
         echo "• Complete diagnostic system"
         echo ""
-        echo "To get started:"
-        echo "• Open Terminal and type: code"
-        echo "• Or find Visual Studio Code in Applications"
-        echo ""
+        if [ "$CI_MODE" = "false" ]; then
+            echo "To get started:"
+            echo "• Open Terminal and type: code"
+            echo "• Or find Visual Studio Code in Applications"
+            echo ""
+        fi
         echo "Need help? Visit: https://pythonsupport.dtu.dk"
         echo "Questions? Email: pythonsupport@dtu.dk"
     else
-        osascript -e 'display notification "Installation encountered issues. Check the log for details." with title "Installation Issues" sound name "Basso"'
+        # Show notification only in interactive mode
+        if [ "$CI_MODE" = "false" ]; then
+            osascript -e 'display notification "Installation encountered issues. Check the log for details." with title "Installation Issues" sound name "Basso"' 2>/dev/null || true
+        fi
         echo "⚠️  Installation completed with issues."
         echo ""
         echo "Please check the installation log for details:"
@@ -213,8 +243,10 @@ EOF
         echo "📧 Email: pythonsupport@dtu.dk"
         echo "🌐 Visit: https://pythonsupport.dtu.dk/install/macos/automated-error.html"
         echo ""
-        echo "You can view the detailed log with:"
-        echo "cat /tmp/dtu_install_output_$$.log"
+        if [ "$CI_MODE" = "false" ]; then
+            echo "You can view the detailed log with:"
+            echo "cat /tmp/dtu_install_output_$$.log"
+        fi
     fi
     
     # Cleanup temporary files
