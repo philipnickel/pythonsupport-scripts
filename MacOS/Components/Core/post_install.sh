@@ -210,28 +210,9 @@ generate_verification_summary() {
     if [ "$VERIFICATION_PASSED" = true ]; then
         log_success "Installation verification PASSED - DTU first-year setup is complete!"
         piwik_log "overall_installation_success" echo "Complete installation verified successfully"
-        
-        echo ""
-        echo "🎉 Congratulations! Your DTU first-year Python setup is ready."
-        echo "You can now:"
-        echo "  • Open VS Code by running: code"
-        echo "  • Start coding with Python 3.11 and all required packages"
-        echo "  • Access dtumathtools for your mathematics courses"
-        echo ""
-        echo "Need help? Visit: https://pythonsupport.dtu.dk"
-        echo "Questions? Email: pythonsupport@dtu.dk"
-        
-        return 0
     else
         log_error "Installation verification FAILED - Setup incomplete"
         piwik_log "overall_installation_failure" echo "Installation verification failed: ${#VERIFICATION_ERRORS[@]} errors"
-        
-        echo ""
-        echo "Installation was not completed successfully."
-        echo "Please visit: https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-        echo "Or contact: pythonsupport@dtu.dk for assistance"
-        
-        return 1
     fi
 }
 
@@ -321,29 +302,43 @@ main() {
     verify_vscode_extensions
     
     # Generate and show summary
-    if generate_verification_summary; then
-        compare_with_pre_install
-        
-        # Run diagnostics (optional - don't fail if it doesn't work)
+    generate_verification_summary
+    compare_with_pre_install
+    
+    # Run diagnostics (optional - don't fail if it doesn't work)
+    echo ""
+    log_info "Running diagnostic report generation..."
+    if run_diagnostics; then
+        log_success "Diagnostic report completed successfully"
+    else
+        log_warning "Diagnostic report generation failed, continuing anyway"
+    fi
+    
+    # Send final analytics
+    send_final_analytics
+    
+    # Cleanup
+    cleanup
+    
+    # Final result based on verification status
+    echo ""
+    if [ "$VERIFICATION_PASSED" = true ]; then
+        echo "🎉 Congratulations! Your DTU first-year Python setup is ready."
+        echo "You can now:"
+        echo "  • Open VS Code by running: code"
+        echo "  • Start coding with Python 3.11 and all required packages"
+        echo "  • Access dtumathtools for your mathematics courses"
         echo ""
-        log_info "Running diagnostic report generation..."
-        if run_diagnostics; then
-            log_success "Diagnostic report completed successfully"
-        else
-            log_warning "Diagnostic report generation failed, continuing anyway"
-        fi
-        
-        # Send final analytics
-        send_final_analytics
-        
-        # Cleanup
-        cleanup
-        
+        echo "Need help? Visit: https://pythonsupport.dtu.dk"
+        echo "Questions? Email: pythonsupport@dtu.dk"
         echo ""
         log_success "Post-installation verification completed successfully"
         return 0
     else
-        send_final_analytics
+        echo "Installation was not completed successfully."
+        echo "Please visit: https://pythonsupport.dtu.dk/install/macos/automated-error.html"
+        echo "Or contact: pythonsupport@dtu.dk for assistance"
+        echo ""
         log_error "Post-installation verification failed"
         return 1
     fi
