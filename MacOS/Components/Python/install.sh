@@ -1,77 +1,101 @@
 #!/bin/bash
 # @doc
-# @name: Python Component Installer
-# @description: Installs Python via Miniconda with essential packages for data science and academic work
+# @name: Python Component Installer (Miniforge)
+# @description: Installs Python via Miniforge without Homebrew dependency
 # @category: Python
-# @requires: macOS, Internet connection, Homebrew (will be installed if missing)
+# @requires: macOS, Internet connection
 # @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
 # @example: PYTHON_VERSION_PS=3.11 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/install.sh)"
-# @notes: Uses master utility system for consistent error handling and logging. Script automatically installs Homebrew if not present. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+# @notes: Uses master utility system for consistent error handling and logging. Installs Miniforge directly from GitHub releases. Supports multiple Python versions via PYTHON_VERSION_PS environment variable.
 # @author: Python Support Team
-# @version: 2024-08-18
+# @version: 2024-12-25
 # @/doc
 
 # Load master utilities
 eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
 
-log_info "Python (Miniconda) installation"
+log_info "Python (Miniforge) installation"
 log_info "Starting installation process..."
 
-# Check for homebrew and install if needed
-ensure_homebrew
-
-# Install miniconda
-# Check if miniconda is installed
-log_info "Installing Miniconda..."
-if conda --version > /dev/null; then
-  log_success "Miniconda or anaconda is already installed"
+# Check if conda is already installed
+log_info "Checking for existing conda installation..."
+if command -v conda >/dev/null 2>&1; then
+  log_success "Conda is already installed"
+  conda --version
 else
-  log_info "Miniconda or anaconda not found, installing Miniconda"
-  brew install --cask miniconda
-  check_exit_code "Failed to install Miniconda"
+  log_info "Installing Miniforge..."
+  
+  # Detect architecture
+  if [[ $(uname -m) == "arm64" ]]; then
+    ARCH="arm64"
+  else
+    ARCH="x86_64"
+  fi
+  
+  # Download and install Miniforge
+  MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-${ARCH}.sh"
+  
+  log_info "Downloading Miniforge for ${ARCH}..."
+  curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
+  check_exit_code "Failed to download Miniforge installer"
+  
+  log_info "Installing Miniforge (this may take a few minutes)..."
+  bash /tmp/miniforge.sh -b -p "$HOME/miniforge3"
+  check_exit_code "Failed to install Miniforge"
+  
+  # Clean up installer
+  rm -f /tmp/miniforge.sh
+  
+  # Add to PATH
+  export PATH="$HOME/miniforge3/bin:$PATH"
+  
+  log_info "Initializing conda..."
+  "$HOME/miniforge3/bin/conda" init bash
+  check_exit_code "Failed to initialize conda for bash"
+  
+  "$HOME/miniforge3/bin/conda" init zsh
+  check_exit_code "Failed to initialize conda for zsh"
 fi
+
 clear -x
 
-log_info "Initialising conda..."
-conda init bash
-check_exit_code "Failed to initialize conda for bash"
+# Source shell configurations to get conda in PATH
+[ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+[ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
+[ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
 
-conda init zsh
-check_exit_code "Failed to initialize conda for zsh"
+# Update PATH to include conda
+export PATH="$HOME/miniforge3/bin:$PATH"
 
-# Anaconda has this package which tracks usage metrics
-# We will disable this, and if it fails, so be it.
-# I.e. we shouldn't check whether it actually succeeds
-conda config --set anaconda_anon_usage off
+# Disable conda's usage tracking
+conda config --set anaconda_anon_usage off 2>/dev/null || true
 
-# need to restart terminal to activate conda
-# restart terminal and continue
-# conda puts its source stuff in the bashrc file
-[ -e ~/.bashrc ] && source ~/.bashrc
-
-log_info "Showing where it is installed:"
+log_info "Showing conda installation location:"
 conda info --base
 check_exit_code "Failed to get conda base directory"
 
-log_info "Updating environment variables"
+log_info "Updating environment variables..."
 hash -r
 clear -x
 
-# We will not install the Anaconda GUI
-# There may be license issues due to DTU being
-# a rather big institution. So our installation guides
-# will be pre-cautious here, and remove the defaults channels.
-log_info "Removing defaults channel (due to licensing problems)"
-conda config --remove channels defaults
-conda config --add channels conda-forge
-
-# Sadly, there can be a deadlock here
-# When channel_priority == strict
-# newer versions of conda will sometimes be unable to downgrade.
-# However, when channel_priority == flexible
-# it will sometimes not revert the libmamba suite which breaks
-# the following conda install commands.
-# Hmmm.... :(
+# Configure conda channels (conda-forge is default in Miniforge)
+log_info "Configuring conda channels..."
 conda config --set channel_priority flexible
+conda config --show channels
 
-log_success "Installed Miniconda successfully!"
+# Install Python and required packages directly in base environment
+log_info "Installing Python ${PYTHON_VERSION_PS:-3.11} and packages in base environment..."
+conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
+check_exit_code "Failed to install Python and packages"
+
+clear -x
+log_success "Miniforge installation completed successfully!"
+
+# Verify installation
+log_info "Verifying installation..."
+python3 --version
+conda --version
+python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')"
+check_exit_code "Package verification failed"
+
+log_success "All packages verified successfully!"

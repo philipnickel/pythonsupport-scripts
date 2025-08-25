@@ -1,11 +1,11 @@
 #!/bin/bash
 # @doc
-# @name: VSCode Installation
-# @description: Installs Visual Studio Code on macOS with Python extension setup
+# @name: VSCode Installation (Direct Download)
+# @description: Installs Visual Studio Code on macOS without Homebrew dependency
 # @category: IDE
 # @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
-# @requirements: macOS system, Homebrew (for cask installation)
-# @notes: Uses master utility system for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
+# @requirements: macOS system, internet connection
+# @notes: Uses master utility system for consistent error handling and logging. Downloads and installs VSCode directly from Microsoft
 # @/doc
 
 # Load master utilities
@@ -13,41 +13,76 @@ eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythons
 
 log_info "Installing Visual Studio Code"
 
-# Check for homebrew and install if needed
-ensure_homebrew
-
-# check if vs code is installed
-log_info "Installing Visual Studio Code if not already installed..."
-# if output is empty, then install vs code
 # Check if VSCode is already installed
+log_info "Checking for existing Visual Studio Code installation..."
 if command -v code > /dev/null 2>&1; then
-    vspath=$(which code)
+    vscode_path=$(which code)
+    log_success "Visual Studio Code is already installed at: $vscode_path"
 elif [ -d "/Applications/Visual Studio Code.app" ]; then
-    vspath="/Applications/Visual Studio Code.app"
+    vscode_path="/Applications/Visual Studio Code.app"
+    log_success "Visual Studio Code is already installed at: $vscode_path"
+    # Add to PATH if not already there
+    if ! command -v code > /dev/null 2>&1; then
+        log_info "Adding VSCode command line tools to PATH..."
+        sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
+    fi
 else
-    vspath=""
-fi
-check_exit_code "Failed to check VSCode installation status"
-
-if [ -n "$vspath" ]  ; then
-    log_success "Visual Studio Code is already installed"
-else
-    log_info "Installing Visual Studio Code"
-    brew install --cask visual-studio-code
+    log_info "Visual Studio Code not found, downloading and installing..."
+    
+    # Detect architecture for proper download
+    if [[ $(uname -m) == "arm64" ]]; then
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-arm64"
+        ARCH="arm64"
+    else
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin"
+        ARCH="x64"
+    fi
+    
+    log_info "Downloading Visual Studio Code for macOS (${ARCH})..."
+    curl -fsSL "$VSCODE_URL" -o /tmp/VSCode.zip
+    check_exit_code "Failed to download Visual Studio Code"
+    
+    log_info "Extracting Visual Studio Code..."
+    unzip -qq /tmp/VSCode.zip -d /tmp/
+    check_exit_code "Failed to extract Visual Studio Code"
+    
+    log_info "Installing Visual Studio Code to Applications folder..."
+    if [ -d "/Applications/Visual Studio Code.app" ]; then
+        log_info "Removing existing installation..."
+        rm -rf "/Applications/Visual Studio Code.app"
+    fi
+    
+    mv "/tmp/Visual Studio Code.app" "/Applications/"
     check_exit_code "Failed to install Visual Studio Code"
+    
+    # Clean up
+    rm -f /tmp/VSCode.zip
+    
+    log_info "Setting up command line tools..."
+    # Create symlink for 'code' command
+    sudo mkdir -p /usr/local/bin 2>/dev/null || true
+    sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
+    
+    # Add to PATH for this session
+    export PATH="/usr/local/bin:$PATH"
 fi
 
+# Update PATH and refresh
 hash -r
 clear -x
 
-log_info "Setting up Visual Studio Code environment..."
-eval "$(brew shellenv)"
-
-# Test if code is installed correctly
-if code --version > /dev/null; then
+log_info "Verifying Visual Studio Code installation..."
+# Test if code command works
+if code --version > /dev/null 2>&1; then
+    log_success "Visual Studio Code installed and accessible via 'code' command"
+    code --version
+elif [ -d "/Applications/Visual Studio Code.app" ]; then
     log_success "Visual Studio Code installed successfully"
+    log_info "Application is available in /Applications/Visual Studio Code.app"
+    # Try to access the binary directly
+    "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" --version 2>/dev/null || true
 else
-    log_error "Visual Studio Code installation failed"
+    log_error "Visual Studio Code installation verification failed"
     exit_message
 fi
 

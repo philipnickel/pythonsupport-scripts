@@ -8,31 +8,27 @@
 # @notes: Provides automated dependency installation and verification functions
 # @/doc
 
-# Function to check and install Homebrew if needed
-ensure_homebrew() {
-    if ! command -v brew >/dev/null 2>&1; then
-        log_info "Homebrew is not installed. Installing Homebrew..."
-        local url_ps=$(get_base_url)
-        log_info "Installing from $url_ps/Components/Homebrew/install.sh"
-        /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
-
-        # The above will install everything in a subshell.
-        # So just to be sure we have it on the path
-        [ -e ~/.bash_profile ] && source ~/.bash_profile
-        [ -e ~/.zshrc ] && source ~/.zshrc
-
-        # update binary locations 
-        hash -r
-        
-        # Verify installation
-        if ! command -v brew >/dev/null 2>&1; then
-            log_error "Homebrew installation failed"
-            exit_message
-        fi
-        
-        log_success "Homebrew installed successfully"
+# Function to ensure conda environment is available (replaces ensure_homebrew)
+ensure_conda_available() {
+    # Source shell profiles to make conda available
+    [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+    [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true  
+    [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+    
+    # Add miniforge to PATH if it exists
+    if [ -d "$HOME/miniforge3/bin" ]; then
+        export PATH="$HOME/miniforge3/bin:$PATH"
+    fi
+    
+    # Update PATH hash
+    hash -r
+    
+    if command -v conda >/dev/null 2>&1; then
+        log_info "Conda is available"
+        return 0
     else
-        log_info "Homebrew is already installed"
+        log_info "Conda not found in PATH"
+        return 1
     fi
 }
 
@@ -48,47 +44,35 @@ ensure_conda_env() {
     fi
 }
 
-# Function to install Homebrew packages
-install_brew_package() {
+# Function to install conda packages
+install_conda_package() {
     local package="$1"
-    local cask="$2"
     
-    ensure_homebrew
+    ensure_conda_available
     
-    if [ "$cask" = "true" ]; then
-        if ! brew list --cask "$package" >/dev/null 2>&1; then
-            log_info "Installing $package via Homebrew cask..."
-            brew install --cask "$package"
-            check_exit_code "Failed to install $package"
-            log_success "$package installed successfully"
-        else
-            log_info "$package is already installed"
-        fi
+    if ! conda list "$package" >/dev/null 2>&1; then
+        log_info "Installing $package via conda..."
+        conda install "$package" -y
+        check_exit_code "Failed to install $package"
+        log_success "$package installed successfully"
     else
-        if ! brew list "$package" >/dev/null 2>&1; then
-            log_info "Installing $package via Homebrew..."
-            brew install "$package"
-            check_exit_code "Failed to install $package"
-            log_success "$package installed successfully"
-        else
-            log_info "$package is already installed"
-        fi
+        log_info "$package is already installed"
     fi
 }
 
-# Function to check if a package is available in Homebrew
-check_brew_package() {
+# Function to check if a package is available in conda
+check_conda_package() {
     local package="$1"
-    brew search "$package" >/dev/null 2>&1
+    conda search "$package" >/dev/null 2>&1
 }
 
-# Function to update Homebrew
-update_homebrew() {
-    ensure_homebrew
-    log_info "Updating Homebrew..."
-    brew update
-    check_exit_code "Failed to update Homebrew"
-    log_success "Homebrew updated successfully"
+# Function to update conda
+update_conda() {
+    ensure_conda_available
+    log_info "Updating conda..."
+    conda update conda -y
+    check_exit_code "Failed to update conda"
+    log_success "Conda updated successfully"
 }
 
 # Function to verify system dependencies

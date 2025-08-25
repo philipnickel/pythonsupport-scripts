@@ -91,20 +91,27 @@ source_remote_script() {
     fi
 }
 
-# Function to check and install Homebrew if needed
-ensure_homebrew() {
-    if ! command -v brew > /dev/null; then
-        log_info "Homebrew is not installed. Installing Homebrew..."
-        local url_ps=$(get_base_url)
-        log_info "Installing from $url_ps/Components/Homebrew/install.sh"
-        /bin/bash -c "$(curl -fsSL $url_ps/Components/Homebrew/install.sh)"
-
-        # The above will install everything in a subshell.
-        # So just to be sure we have it on the path
-        [ -e ~/.bash_profile ] && source ~/.bash_profile
-
-        # update binary locations 
-        hash -r
+# Function to ensure conda environment is available
+ensure_conda_available() {
+    # Source shell profiles to make conda available
+    [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+    [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true  
+    [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+    
+    # Add miniforge to PATH if it exists
+    if [ -d "$HOME/miniforge3/bin" ]; then
+        export PATH="$HOME/miniforge3/bin:$PATH"
+    fi
+    
+    # Update PATH hash
+    hash -r
+    
+    if command -v conda >/dev/null 2>&1; then
+        log_info "Conda is available"
+        return 0
+    else
+        log_info "Conda not found in PATH"
+        return 1
     fi
 }
 
