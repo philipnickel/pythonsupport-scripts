@@ -9,7 +9,7 @@
 # @/doc
 
 # Load utilities with new filename to break CDN cache
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/utils.sh")"
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
 
 log_info "First year Python setup verification"
 

@@ -43,7 +43,7 @@ fi
 [ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
 
 # Load simple utilities directly
-if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/utils.sh")"; then
+if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
     echo "ERROR: Failed to load utilities from remote repository"
     exit 1
 fi
