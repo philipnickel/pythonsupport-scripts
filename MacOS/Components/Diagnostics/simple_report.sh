@@ -99,20 +99,20 @@ run_first_year_test() {
         fi
         
         # Test Python Installation (using config version)
-        echo "🔍 Testing Python Installation ($PYTHON_VERSION_DTU)..."
+        echo "Testing Python Installation ($PYTHON_VERSION_DTU)..."
         if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
-            echo "✅ Python Installation ($PYTHON_VERSION_DTU): PASS"
-            test_results="${test_results}✅ Python Installation ($PYTHON_VERSION_DTU): PASS\n"
+            echo "PASS: Python Installation ($PYTHON_VERSION_DTU): PASS"
+            test_results="${test_results}PASS: Python Installation ($PYTHON_VERSION_DTU): PASS\n"
         else
             actual_version=$(python3 --version 2>/dev/null || echo 'Not found')
-            echo "❌ Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
-            test_results="${test_results}❌ Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)\n"
+            echo "FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
+            test_results="${test_results}FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)\n"
             python_installation_failed=true
         fi
         echo ""
         
         # Test Python Environment (using config packages)
-        echo "🔍 Testing Python Environment (packages)..."
+        echo "Testing Python Environment (packages)..."
         # Convert package array to import string
         package_imports=""
         for pkg in "${DTU_PACKAGES[@]}"; do
@@ -124,23 +124,23 @@ run_first_year_test() {
         done
         
         if python3 -c "import $package_imports" 2>/dev/null; then
-            echo "✅ Python Environment (packages): PASS"
-            test_results="${test_results}✅ Python Environment (packages): PASS\n   All required packages installed: ${DTU_PACKAGES[*]}\n"
+            echo "PASS: Python Environment (packages): PASS"
+            test_results="${test_results}PASS: Python Environment (packages): PASS\n   All required packages installed: ${DTU_PACKAGES[*]}\n"
         else
-            echo "❌ Python Environment (packages): FAIL"
-            test_results="${test_results}❌ Python Environment (packages): FAIL\n   Required packages: ${DTU_PACKAGES[*]}\n"
+            echo "FAIL: Python Environment (packages): FAIL"
+            test_results="${test_results}FAIL: Python Environment (packages): FAIL\n   Required packages: ${DTU_PACKAGES[*]}\n"
             python_environment_failed=true
         fi
         echo ""
         
         # Test VS Code Setup (VS Code + extension)
-        echo "🔍 Testing VS Code Setup..."
+        echo "Testing VS Code Setup..."
         if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-            echo "✅ VS Code Setup: PASS"
-            test_results="${test_results}✅ VS Code Setup: PASS\n   VS Code and Python extension are installed\n"
+            echo "PASS: VS Code Setup: PASS"
+            test_results="${test_results}PASS: VS Code Setup: PASS\n   VS Code and Python extension are installed\n"
         else
-            echo "❌ VS Code Setup: FAIL"
-            test_results="${test_results}❌ VS Code Setup: FAIL\n   Missing VS Code or Python extension\n"
+            echo "FAIL: VS Code Setup: FAIL"
+            test_results="${test_results}FAIL: VS Code Setup: FAIL\n   Missing VS Code or Python extension\n"
             vscode_setup_failed=true
         fi
         
@@ -165,30 +165,30 @@ run_first_year_test() {
         
         echo "════════════════════════════════════════"
         if [ $failure_count -eq 0 ]; then
-            echo "🎉 OVERALL RESULT: PASS"
+            echo "OVERALL RESULT: PASS"
             echo "   First year setup is complete and working!"
-            test_results="${test_results}\n🎉 OVERALL RESULT: PASS\n   First year setup is complete and working!\n"
+            test_results="${test_results}\nOVERALL RESULT: PASS\n   First year setup is complete and working!\n"
             return 0  # All tests passed
         elif [ $failure_count -eq 1 ]; then
             # Single category failure - return specific code
             if [ "$python_installation_failed" = true ]; then
-                echo "⚠️  OVERALL RESULT: FAIL - Python Installation Issue"
-                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - Python Installation Issue\n"
+                echo "OVERALL RESULT: FAIL - Python Installation Issue"
+                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Installation Issue\n"
                 return 1
             elif [ "$python_environment_failed" = true ]; then
-                echo "⚠️  OVERALL RESULT: FAIL - Python Environment Issue"
-                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - Python Environment Issue\n"
+                echo "OVERALL RESULT: FAIL - Python Environment Issue"
+                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Environment Issue\n"
                 return 2
             elif [ "$vscode_setup_failed" = true ]; then
-                echo "⚠️  OVERALL RESULT: FAIL - VS Code Setup Issue"
-                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - VS Code Setup Issue\n"
+                echo "OVERALL RESULT: FAIL - VS Code Setup Issue"
+                test_results="${test_results}\nOVERALL RESULT: FAIL - VS Code Setup Issue\n"
                 return 3
             fi
         else
             # Multiple failures
-            echo "❌ OVERALL RESULT: FAIL - Multiple Issues Found"
+            echo "OVERALL RESULT: FAIL - Multiple Issues Found"
             echo "   Please check the individual test results above."
-            test_results="${test_results}\n❌ OVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
+            test_results="${test_results}\nOVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
             return 4
         fi
     fi
@@ -223,18 +223,21 @@ generate_html_report() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DTU Python Installation Support - First Year</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 10px; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; min-height: 100vh; }
         
-        header { background: #990000; color: #ffffff; padding: 30px; text-align: center; }
-        .dtu-logo { height: 50px; margin-bottom: 15px; filter: brightness(0) invert(1); }
-        h1 { font-size: 2em; margin-bottom: 10px; }
-        .timestamp { font-size: 0.9em; }
+        header { background: #990000; color: #ffffff; padding: 20px; display: flex; align-items: center; gap: 20px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-content { flex: 1; }
+        .dtu-logo { height: 60px; filter: brightness(0) invert(1); }
+        h1 { font-size: 1.8em; margin: 0; line-height: 1.2; }
+        .subtitle { font-size: 1.1em; margin-top: 5px; opacity: 0.9; }
+        .timestamp { font-size: 0.85em; margin-top: 10px; opacity: 0.8; }
         
-        .summary { display: flex; justify-content: center; gap: 40px; padding: 20px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
+        .summary { display: flex; justify-content: center; gap: 60px; padding: 25px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
         .summary-item { text-align: center; }
-        .summary-number { font-size: 2.5em; font-weight: bold; }
-        .summary-label { color: #666; text-transform: uppercase; font-size: 0.8em; }
+        .summary-number { font-size: 3em; font-weight: bold; }
+        .summary-label { color: #666; text-transform: uppercase; font-size: 0.9em; margin-top: 5px; }
         .passed { color: #008835; }
         .failed { color: #E83F48; }
         .total { color: #990000; }
@@ -373,10 +376,15 @@ generate_html_report() {
 <body>
     <div class="container">
         <header>
-            <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
-                 alt="DTU Logo" class="dtu-logo" onerror="this.style.display='none'">
-            <h1>DTU Python Installation Support - First Year</h1>
-            <div class="timestamp">Generated on: $timestamp</div>
+            <div class="header-left">
+                <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
+                     alt="DTU Logo" class="dtu-logo" onerror="this.style.display='none'">
+            </div>
+            <div class="header-content">
+                <h1>DTU Python Installation Support</h1>
+                <div class="subtitle">Installation Summary</div>
+                <div class="timestamp">Generated on: $timestamp</div>
+            </div>
         </header>
         
         <div class="summary">
@@ -395,7 +403,7 @@ generate_html_report() {
         </div>
         
         <div class="download-section">
-            <button onclick="showEmailModal()" class="download-button">📧 Email Support</button>
+            <button onclick="showEmailModal()" class="download-button">Email Support</button>
         </div>
         
         <!-- Email Support Modal -->
@@ -403,7 +411,7 @@ generate_html_report() {
             <div class="modal-content">
                 <div class="modal-header">
                     <span class="close" onclick="closeEmailModal()">&times;</span>
-                    <h2>📧 Email Support Instructions</h2>
+                    <h2>Email Support Instructions</h2>
                 </div>
                 <div class="modal-body">
                     <div class="step">
@@ -411,7 +419,7 @@ generate_html_report() {
                         <div class="step-content">
                             <div class="step-title">Download Report</div>
                             <div class="step-description">Click the button below to download this diagnostic report to your computer. You'll need this file for the next step.</div>
-                            <button onclick="downloadReport()" class="action-button">📥 Download Report</button>
+                            <button onclick="downloadReport()" class="action-button">Download Report</button>
                         </div>
                     </div>
                     <div class="step">
@@ -419,7 +427,7 @@ generate_html_report() {
                         <div class="step-content">
                             <div class="step-title">Send Email</div>
                             <div class="step-description">Click below to open your email client with a pre-filled message to DTU Python Support. Attach the downloaded report file from Step 1.</div>
-                            <button onclick="openEmail()" class="action-button">✉️ Open Email Client</button>
+                            <button onclick="openEmail()" class="action-button">Open Email Client</button>
                         </div>
                     </div>
                 </div>
@@ -513,9 +521,9 @@ generate_html_report() {
         function openEmail() {
             const subject = encodeURIComponent('DTU Python Installation Support Request');
             const body = encodeURIComponent('Hello DTU Python Support Team,\\n\\nI am having issues with my Python development environment setup. I have attached the diagnostic report generated by your installation tool.\\n\\nPlease help me resolve these issues:\\n\\n' + 
-                '• Python Installation: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ Python') ? 'Working' : 'Needs attention') + '\\n' +
-                '• Python Environment: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ Python Environment') ? 'Working' : 'Needs attention') + '\\n' +
-                '• VS Code Setup: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ VS Code') ? 'Working' : 'Needs attention') + '\\n\\n' +
+                '• Python Installation: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python') ? 'Working' : 'Needs attention') + '\\n' +
+                '• Python Environment: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python Environment') ? 'Working' : 'Needs attention') + '\\n' +
+                '• VS Code Setup: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: VS Code') ? 'Working' : 'Needs attention') + '\\n\\n' +
                 'Thank you for your assistance.\\n\\nBest regards');
             
             window.location.href = 'mailto:pythonsupport@dtu.dk?subject=' + subject + '&body=' + body;
