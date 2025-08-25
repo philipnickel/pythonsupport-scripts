@@ -17,7 +17,9 @@ if [ -z "$REMOTE_PS" ] || [ -z "$BRANCH_PS" ]; then
     echo "ERROR: REMOTE_PS and BRANCH_PS must be set"
     exit 1
 fi
+echo "DEBUG: Loading config from: https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
 source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+echo "DEBUG: After loading config, MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -30,6 +32,7 @@ else
   # Download and install Miniforge
   ARCH=$(uname -m)
   MINIFORGE_URL="${MINIFORGE_BASE_URL}-${ARCH}.sh"
+  echo "DEBUG: ARCH='$ARCH' MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL' MINIFORGE_URL='$MINIFORGE_URL'"
   curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
   if [ $? -ne 0 ]; then exit 1; fi
   
