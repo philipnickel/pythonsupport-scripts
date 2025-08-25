@@ -20,8 +20,18 @@ echo "=== DTU Python Support Installation Log ===" > "$INSTALL_LOG"
 echo "Started: $(date)" >> "$INSTALL_LOG"
 echo "Repository: $REMOTE_PS" >> "$INSTALL_LOG"
 echo "Branch: $BRANCH_PS" >> "$INSTALL_LOG"
+echo "" >> "$INSTALL_LOG"
+
+# Function to log all output
+log_and_display() {
+    while IFS= read -r line; do
+        echo "$line"
+        echo "$line" >> "$INSTALL_LOG"
+    done
+}
 
 # === PHASE 1: PRE-INSTALLATION CHECK ===
+{
 echo "Phase 1: Pre-Installation System Check"
 echo "======================================="
 # Download and run pre_install.sh with stdin preserved
@@ -34,6 +44,7 @@ else
     echo "ERROR: Failed to download pre_install.sh"
     exit 1
 fi
+} 2>&1 | log_and_display
 
 # Load pre-installation flags
 if [ -f /tmp/dtu_pre_install_flags.env ]; then
@@ -52,6 +63,7 @@ fi
 echo ""
 
 # === PHASE 2: MAIN INSTALLATION ===
+{
 echo "Phase 2: Main Installation Process"
 echo "=================================="
 
@@ -73,8 +85,10 @@ else
     echo "Installing Visual Studio Code..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
 fi
+} 2>&1 | log_and_display
 
 # === PHASE 3: POST-INSTALLATION VERIFICATION ===
+{
 echo "Phase 3: Post-Installation Verification"
 echo "========================================"
 
@@ -85,3 +99,4 @@ echo "================================="
 echo "Next steps:"
 echo "• See the Installation HTML report for details"
 echo "Need help? Visit: https://pythonsupport.dtu.dk"
+} 2>&1 | log_and_display

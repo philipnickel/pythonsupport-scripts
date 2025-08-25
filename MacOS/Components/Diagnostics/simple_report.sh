@@ -11,9 +11,37 @@
 
 # Get system info
 get_system_info() {
-    echo "macOS $(sw_vers -productVersion) ($(sw_vers -productName))"
+    echo "=== System Information ==="
+    echo "Operating System: macOS $(sw_vers -productVersion) ($(sw_vers -productName))"
+    echo "Build Version: $(sw_vers -buildVersion)"
     echo "Architecture: $(uname -m)"
+    echo "Hostname: $(hostname)"
+    echo "User: $(whoami)"
     echo "Date: $(date)"
+    echo ""
+    
+    echo "=== Hardware Information ==="
+    echo "Model: $(system_profiler SPHardwareDataType | grep "Model Name" | cut -d: -f2 | xargs)"
+    echo "Processor: $(system_profiler SPHardwareDataType | grep "Chip" | cut -d: -f2 | xargs || system_profiler SPHardwareDataType | grep "Processor Name" | cut -d: -f2 | xargs)"
+    echo "Memory: $(system_profiler SPHardwareDataType | grep "Memory" | cut -d: -f2 | xargs)"
+    echo ""
+    
+    echo "=== Python Environment ==="
+    if [ -f "$HOME/miniforge3/bin/activate" ]; then
+        source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
+    fi
+    echo "Python Location: $(which python3 2>/dev/null || echo 'Not found')"
+    echo "Python Version: $(python3 --version 2>/dev/null || echo 'Not found')"
+    echo "Conda Location: $(which conda 2>/dev/null || echo 'Not found')"
+    echo "Conda Version: $(conda --version 2>/dev/null || echo 'Not found')"
+    echo "Conda Base: $(conda info --base 2>/dev/null || echo 'Not found')"
+    echo ""
+    
+    echo "=== VS Code Environment ==="
+    echo "VS Code Location: $(which code 2>/dev/null || echo 'Not found')"
+    echo "VS Code Version: $(code --version 2>/dev/null | head -1 || echo 'Not found')"
+    echo "Installed Extensions:"
+    code --list-extensions 2>/dev/null | head -10 || echo "No extensions found"
 }
 
 # Run first year test and capture results
@@ -33,13 +61,18 @@ run_first_year_test() {
         local vscode_setup_failed=false
         local test_results=""
         
+        # Activate conda environment for tests
+        if [ -f "$HOME/miniforge3/bin/activate" ]; then
+            source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
+        fi
+        
         # Test Python Installation (Python 3.11)
         echo -n "Python Installation (3.11): "
         if python3 --version 2>/dev/null | grep -q "3.11"; then
             echo "PASS"
             test_results="${test_results}Python Installation (3.11): PASS\n"
         else
-            echo "FAIL"
+            echo "FAIL ($(python3 --version 2>/dev/null || echo 'Not found'))"
             test_results="${test_results}Python Installation (3.11): FAIL\n"
             python_installation_failed=true
         fi
