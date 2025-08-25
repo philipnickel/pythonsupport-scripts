@@ -106,7 +106,7 @@ jobs:
         run: |
           echo "Testing ${{ matrix.scenario }} from: $REMOTE_PS/$BRANCH_PS"
           if [ -n "${{ matrix.input }}" ]; then
-            echo -e "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           else
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           fi
