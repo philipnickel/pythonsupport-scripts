@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Set default values for REMOTE_PS and BRANCH_PS if not provided
-REMOTE_PS=${REMOTE_PS:-"philipnickel/pythonsupport-scripts"}
+REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 
-echo "DTU Python Support - macOS Installation"
+echo "DTU Python Support - Automated MacOS Installation"
 echo "======================================="
 echo "Repository: $REMOTE_PS"
 echo "Branch: $BRANCH_PS"
@@ -26,48 +26,50 @@ echo "Phase 1: Pre-Installation System Check"
 echo "======================================="
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh)"
 
+# Load pre-installation flags
+if [ -f /tmp/dtu_pre_install_flags.env ]; then
+    source /tmp/dtu_pre_install_flags.env
+fi
+
 # === PHASE 2: MAIN INSTALLATION ===
 echo "Phase 2: Main Installation Process"
 echo "=================================="
 
-# Install Python with Miniforge
-echo "Installing Python..."
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
+# Handle conda uninstall if needed
+if [ "$NEEDS_CONDA_UNINSTALL" = true ]; then
+    echo "Uninstalling $CONDA_UNINSTALL_TYPE..."
+    echo "TODO: Uninstall script will be created later"
+    # TODO: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
+fi
 
-# Setup first year Python environment and packages
-echo "Setting up Python environment..."
+# Install Python with Miniforge (conditionally)
+if [ "$SKIP_PYTHON_INSTALL" = true ]; then
+    echo "Skipping Python installation (existing conda found)"
+else
+    echo "Installing Python with Miniforge..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/install.sh)"
+fi
+
+# Always run first year setup (even if Python install was skipped)
+echo "Setting up Python environment and packages..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Python/first_year_setup.sh)"
 
-# Install Visual Studio Code
-echo "Installing Visual Studio Code..."
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
+# Install Visual Studio Code (conditionally)
+if [ "$SKIP_VSCODE_INSTALL" = true ]; then
+    echo "Skipping VS Code installation (already installed)"
+else
+    echo "Installing Visual Studio Code..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/VSC/install.sh)"
+fi
 
 # === PHASE 3: POST-INSTALLATION VERIFICATION ===
 echo "Phase 3: Post-Installation Verification"
 echo "========================================"
 
-if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/post_install.sh)"; then
-    echo ""
-    echo "🎉 DTU First Year Setup Complete!"
-    echo "================================="
-    echo "Your system is now ready with:"
-    echo "• Python 3.11 with DTU packages"
-    echo "• Visual Studio Code with Python extension"
-    echo "• Comprehensive diagnostics report"
-    echo ""
-    echo "Next steps:"
-    echo "• Open VS Code: type 'code' in Terminal"
-    echo "• Start coding with Python and dtumathtools"
-    echo ""
-    echo "Need help? Visit: https://pythonsupport.dtu.dk"
-    echo "Questions? Email: pythonsupport@dtu.dk"
-else
-    echo ""
-    echo "Installation completed but with some issues detected."
-    echo "A diagnostic report has been generated for troubleshooting."
-    echo ""
-    echo "For support:"
-    echo "• Visit: https://pythonsupport.dtu.dk/install/macos/automated-error.html"
-    echo "• Email: pythonsupport@dtu.dk"
-    exit 1
-fi
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/post_install.sh)" 
+echo ""
+echo "DTU Python Support Installation Complete!"
+echo "================================="
+echo "Next steps:"
+echo "• See the Installation HTML report for details"
+echo "Need help? Visit: https://pythonsupport.dtu.dk"

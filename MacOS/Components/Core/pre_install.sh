@@ -8,328 +8,162 @@
 # @notes: Should be run before any installation process to assess system state
 # @/doc
 
-# Allow scripts to continue on errors for complete diagnostics
-
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
-
-# Log installation start to Piwik if available
+# Start piwik logging if available
 if command -v piwik_log_event >/dev/null 2>&1; then
-    piwik_log_event "installation" "start" "DTU Python installation started"
+    piwik_log_event "installation" "start" "DTU Python pre-installation check started"
 fi
 
-# Variables for tracking found installations
-PYTHON_FOUND=false
-PYTHON_VERSION=""
-PYTHON_PATH=""
-VSCODE_FOUND=false
-VSCODE_VERSION=""
-CONDA_FOUND=false
-CONDA_TYPE=""
-CONDA_VERSION=""
-PYTHON_PACKAGES_FOUND=false
-VSCODE_EXTENSIONS_FOUND=false
-WARNINGS=()
-ERRORS=()
+echo "DTU Python Support - Pre-Installation Check"
+echo "============================================="
+echo ""
 
-# Check system requirements
-check_system_requirements() {
-    
-    # Check macOS version
-    if ! sw_vers >/dev/null 2>&1; then
-        ERRORS+=("This script requires macOS")
-        return 1
-    fi
-    
-    local macos_version=$(sw_vers -productVersion)
-    local major_version=$(echo "$macos_version" | cut -d. -f1)
-    local minor_version=$(echo "$macos_version" | cut -d. -f2)
-    
-    
-    # Check for minimum macOS version (10.14 Mojave)
-    if [ "$major_version" -lt 10 ] || ([ "$major_version" -eq 10 ] && [ "$minor_version" -lt 14 ]); then
-        ERRORS+=("macOS 10.14 (Mojave) or later is required")
-    fi
-    
-    # Check architecture
-    local arch=$(uname -m)
-    
-    # Check available disk space (need at least 2GB free)
-    local free_space_kb=$(df -k / | tail -1 | awk '{print $4}')
-    local free_space_gb=$((free_space_kb / 1024 / 1024))
-    
-    
-    if [ "$free_space_gb" -lt 2 ]; then
-        WARNINGS+=("Low disk space (${free_space_gb}GB available). At least 2GB recommended.")
-    fi
-    
-    # Check internet connectivity
-    if ! ping -c 1 google.com >/dev/null 2>&1; then
-        WARNINGS+=("Internet connectivity check failed. Installation may not work properly.")
-    fi
-}
+# Export flags for main installer to use
+export SKIP_PYTHON_INSTALL=false
+export SKIP_VSCODE_INSTALL=false
+export NEEDS_CONDA_UNINSTALL=false
+export CONDA_UNINSTALL_TYPE=""
 
-# Check for existing Python installations
-check_python_installations() {
-    
-    # Check system Python 3
-    if command -v python3 >/dev/null 2>&1; then
-        PYTHON_FOUND=true
-        PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
-        PYTHON_PATH=$(which python3)
-        
-        
-        # Check if it's the target version (3.11.x)
-        if echo "$PYTHON_VERSION" | grep -q "^3\.11\."; then
-            echo "Python $PYTHON_VERSION is the correct version for DTU"
-        else
-            WARNINGS+=("Python $PYTHON_VERSION found, but DTU requires Python 3.11.x")
-        fi
-        
-        # Check for required packages
-        check_python_packages
-    fi
-    
-    # Check for conda/miniconda/anaconda
-    check_conda_installations
-}
+# Check for existing conda installations
+echo "Checking for existing conda installations..."
 
-# Check for conda installations
-check_conda_installations() {
+# Check for Miniforge (preferred)
+if [ -d "$HOME/miniforge3" ] && [ -x "$HOME/miniforge3/bin/conda" ]; then
+    echo "✓ Miniforge found at $HOME/miniforge3"
+    echo "  → Python installation will be skipped, but packages will still be set up"
+    export SKIP_PYTHON_INSTALL=true
     
-    # Check various conda installation locations
-    local conda_paths=(
-        "$HOME/miniconda3/bin/conda"
-        "$HOME/anaconda3/bin/conda"
-        "$HOME/miniforge3/bin/conda"
-        "/opt/miniconda3/bin/conda"
-        "/opt/anaconda3/bin/conda"
-        "/opt/miniforge3/bin/conda"
-        "/usr/local/miniconda3/bin/conda"
-        "/usr/local/anaconda3/bin/conda"
-    )
-    
-    for conda_path in "${conda_paths[@]}"; do
-        if [ -x "$conda_path" ]; then
-            CONDA_FOUND=true
-            CONDA_VERSION=$("$conda_path" --version 2>/dev/null | cut -d' ' -f2)
-            
-            # Determine conda type
-            if echo "$conda_path" | grep -q "miniconda"; then
-                CONDA_TYPE="Miniconda"
-            elif echo "$conda_path" | grep -q "anaconda"; then
-                CONDA_TYPE="Anaconda"
-            elif echo "$conda_path" | grep -q "miniforge"; then
-                CONDA_TYPE="Miniforge"
-            else
-                CONDA_TYPE="Conda"
-            fi
-            
-            break
-        fi
-    done
-    
-    # Also check if conda command is in PATH
-    if command -v conda >/dev/null 2>&1 && [ "$CONDA_FOUND" = false ]; then
-        CONDA_FOUND=true
-        CONDA_VERSION=$(conda --version 2>/dev/null | cut -d' ' -f2)
-        CONDA_TYPE="Conda (in PATH)"
+    # Log to piwik
+    if command -v piwik_log_event >/dev/null 2>&1; then
+        piwik_log_event "pre_check" "miniforge_found" "Miniforge installation detected"
     fi
     
-    if [ "$CONDA_FOUND" = false ]; then
-        echo "No conda installation found"
-    fi
-}
-
-# Check for required Python packages
-check_python_packages() {
-    if [ "$PYTHON_FOUND" = true ]; then
-        
-        local packages=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
-        local found_packages=()
-        local missing_packages=()
-        
-        for package in "${packages[@]}"; do
-            if python3 -c "import $package" 2>/dev/null; then
-                found_packages+=("$package")
-            else
-                missing_packages+=("$package")
-            fi
-        done
-        
-        if [ ${#found_packages[@]} -gt 0 ]; then
-            PYTHON_PACKAGES_FOUND=true
-        fi
-        
-        if [ ${#missing_packages[@]} -gt 0 ]; then
-            echo "Some DTU packages are missing: ${missing_packages[*]}"
-        fi
-        
-        if [ ${#found_packages[@]} -eq ${#packages[@]} ]; then
-            echo "All DTU packages are installed"
-        fi
-    fi
-}
-
-# Check for Visual Studio Code
-check_vscode_installation() {
-    
-    # Check common VS Code installation locations
-    local vscode_paths=(
-        "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
-        "/usr/local/bin/code"
-        "/opt/homebrew/bin/code"
-    )
-    
-    for vscode_path in "${vscode_paths[@]}"; do
-        if [ -x "$vscode_path" ]; then
-            VSCODE_FOUND=true
-            VSCODE_VERSION=$("$vscode_path" --version 2>/dev/null | head -1)
-            break
-        fi
-    done
-    
-    # Also check if code command is in PATH
-    if command -v code >/dev/null 2>&1 && [ "$VSCODE_FOUND" = false ]; then
-        VSCODE_FOUND=true
-        VSCODE_VERSION=$(code --version 2>/dev/null | head -1)
-    fi
-    
-    if [ "$VSCODE_FOUND" = false ]; then
-        echo "VS Code not found"
+# Check for Anaconda/Miniconda (needs user decision)
+elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ]; then
+    if [ -d "$HOME/anaconda3" ] || [ -d "/opt/anaconda3" ]; then
+        CONDA_TYPE="Anaconda"
+        CONDA_PATH=$([ -d "$HOME/anaconda3" ] && echo "$HOME/anaconda3" || echo "/opt/anaconda3")
     else
-        check_vscode_extensions
+        CONDA_TYPE="Miniconda"
+        CONDA_PATH=$([ -d "$HOME/miniconda3" ] && echo "$HOME/miniconda3" || echo "/opt/miniconda3")
     fi
-}
-
-# Check for VS Code Python extension
-check_vscode_extensions() {
-    if [ "$VSCODE_FOUND" = true ]; then
-        
-        if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-            VSCODE_EXTENSIONS_FOUND=true
-        fi
-    fi
-}
-
-# Generate summary report
-generate_summary() {
+    
+    echo "⚠  $CONDA_TYPE installation found at $CONDA_PATH"
+    echo ""
+    echo "DTU recommends using Miniforge instead of $CONDA_TYPE for better compatibility."
+    echo "Would you like to uninstall $CONDA_TYPE and install Miniforge?"
+    echo ""
+    read -p "Uninstall $CONDA_TYPE? (y/n): " -n 1 -r
     echo ""
     
-    echo "System Requirements:"
-    echo "  ✓ macOS system detected"
-    echo "  ✓ Architecture: $(uname -m)"
-    echo "  ✓ macOS version: $(sw_vers -productVersion)"
-    
-    echo ""
-    echo "Current Installation Status:"
-    
-    if [ "$PYTHON_FOUND" = true ]; then
-        echo "  Python 3: ✓ Found ($PYTHON_VERSION)"
-        if [ "$PYTHON_PACKAGES_FOUND" = true ]; then
-            echo "  Python packages: ✓ Some packages found"
-        else
-            echo "  Python packages: ✗ None found"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "→ $CONDA_TYPE will be uninstalled before installing Miniforge"
+        export NEEDS_CONDA_UNINSTALL=true
+        export CONDA_UNINSTALL_TYPE="$CONDA_TYPE"
+        export SKIP_PYTHON_INSTALL=false
+        
+        # Log to piwik
+        if command -v piwik_log_event >/dev/null 2>&1; then
+            piwik_log_event "pre_check" "conda_uninstall_requested" "$CONDA_TYPE uninstall requested by user"
         fi
     else
-        echo "  Python 3: ✗ Not found"
-        echo "  Python packages: ✗ Not applicable"
-    fi
-    
-    if [ "$CONDA_FOUND" = true ]; then
-        echo "  Conda: ✓ Found ($CONDA_TYPE $CONDA_VERSION)"
-    else
-        echo "  Conda: ✗ Not found"
-    fi
-    
-    if [ "$VSCODE_FOUND" = true ]; then
-        echo "  VS Code: ✓ Found ($VSCODE_VERSION)"
-        if [ "$VSCODE_EXTENSIONS_FOUND" = true ]; then
-            echo "  Python extension: ✓ Found"
-        else
-            echo "  Python extension: ✗ Not found"
+        echo "→ Keeping existing $CONDA_TYPE installation"
+        echo "→ Python installation will be skipped"
+        export SKIP_PYTHON_INSTALL=true
+        
+        # Log to piwik
+        if command -v piwik_log_event >/dev/null 2>&1; then
+            piwik_log_event "pre_check" "conda_kept" "$CONDA_TYPE installation kept by user"
         fi
-    else
-        echo "  VS Code: ✗ Not found"
-        echo "  Python extension: ✗ Not applicable"
     fi
     
-    # Show warnings
-    if [ ${#WARNINGS[@]} -gt 0 ]; then
-        echo ""
-        echo "Warnings:"
-        for warning in "${WARNINGS[@]}"; do
-            echo "  ⚠  $warning"
-        done
-    fi
+# No conda installation found
+else
+    echo "→ No conda installation found, Miniforge will be installed"
+    export SKIP_PYTHON_INSTALL=false
     
-    # Show errors
-    if [ ${#ERRORS[@]} -gt 0 ]; then
-        echo ""
-        echo "Errors:"
-        for error in "${ERRORS[@]}"; do
-            echo "  ✗ $error"
-        done
-        echo ""
-        return 1
+    # Log to piwik
+    if command -v piwik_log_event >/dev/null 2>&1; then
+        piwik_log_event "pre_check" "no_conda" "No conda installation found"
     fi
-    
-    echo ""
-    if [ "$PYTHON_FOUND" = true ] && [ "$VSCODE_FOUND" = true ] && [ "$PYTHON_PACKAGES_FOUND" = true ] && [ "$VSCODE_EXTENSIONS_FOUND" = true ]; then
-        echo "All components are already installed and configured."
-    elif [ "$PYTHON_FOUND" = true ] || [ "$VSCODE_FOUND" = true ] || [ "$CONDA_FOUND" = true ]; then
-        echo "Some components found. Installation will update/complete the setup."
-    else
-        echo "No existing components found. Fresh installation will proceed."
-    fi
-    
-    return 0
-}
+fi
 
-# Export findings for use by other scripts
-export_findings() {
-    # Create a summary file that other scripts can source
-    cat > /tmp/dtu_pre_install_findings.env << EOF
-# DTU Pre-Installation Findings
+echo ""
+
+# Check for existing VS Code installation
+echo "Checking for Visual Studio Code..."
+
+if command -v code >/dev/null 2>&1; then
+    VSCODE_VERSION=$(code --version 2>/dev/null | head -1)
+    echo "✓ VS Code found (version: $VSCODE_VERSION)"
+    echo "  → VS Code installation will be skipped"
+    export SKIP_VSCODE_INSTALL=true
+    
+    # Log to piwik
+    if command -v piwik_log_event >/dev/null 2>&1; then
+        piwik_log_event "pre_check" "vscode_found" "VS Code installation detected: $VSCODE_VERSION"
+    fi
+    
+elif [ -d "/Applications/Visual Studio Code.app" ]; then
+    echo "✓ VS Code found at /Applications/Visual Studio Code.app"
+    echo "  → VS Code installation will be skipped, but 'code' command may need setup"
+    export SKIP_VSCODE_INSTALL=true
+    
+    # Log to piwik
+    if command -v piwik_log_event >/dev/null 2>&1; then
+        piwik_log_event "pre_check" "vscode_found_no_cli" "VS Code app found but CLI not in PATH"
+    fi
+    
+else
+    echo "→ VS Code not found, it will be installed"
+    export SKIP_VSCODE_INSTALL=false
+    
+    # Log to piwik
+    if command -v piwik_log_event >/dev/null 2>&1; then
+        piwik_log_event "pre_check" "no_vscode" "No VS Code installation found"
+    fi
+fi
+
+echo ""
+
+# Summary
+echo "Pre-installation Summary:"
+echo "========================="
+if [ "$SKIP_PYTHON_INSTALL" = true ]; then
+    echo "• Python: Skip installation (existing conda found)"
+else
+    echo "• Python: Will install Miniforge"
+fi
+
+if [ "$NEEDS_CONDA_UNINSTALL" = true ]; then
+    echo "• Conda: Will uninstall $CONDA_UNINSTALL_TYPE first"
+fi
+
+if [ "$SKIP_VSCODE_INSTALL" = true ]; then
+    echo "• VS Code: Skip installation (already installed)"
+else
+    echo "• VS Code: Will install"
+fi
+
+echo ""
+echo "Proceeding with installation..."
+
+# Export findings for other scripts to use
+cat > /tmp/dtu_pre_install_flags.env << EOF
+# DTU Pre-Installation Flags
 # Generated: $(date)
 
-PYTHON_FOUND=$PYTHON_FOUND
-PYTHON_VERSION="$PYTHON_VERSION"
-PYTHON_PATH="$PYTHON_PATH"
-VSCODE_FOUND=$VSCODE_FOUND
-VSCODE_VERSION="$VSCODE_VERSION"
-CONDA_FOUND=$CONDA_FOUND
-CONDA_TYPE="$CONDA_TYPE"
-CONDA_VERSION="$CONDA_VERSION"
-PYTHON_PACKAGES_FOUND=$PYTHON_PACKAGES_FOUND
-VSCODE_EXTENSIONS_FOUND=$VSCODE_EXTENSIONS_FOUND
+SKIP_PYTHON_INSTALL=$SKIP_PYTHON_INSTALL
+SKIP_VSCODE_INSTALL=$SKIP_VSCODE_INSTALL
+NEEDS_CONDA_UNINSTALL=$NEEDS_CONDA_UNINSTALL
+CONDA_UNINSTALL_TYPE="$CONDA_UNINSTALL_TYPE"
 EOF
-    
-}
 
-# Main execution
-main() {
-    echo "DTU Python Support - Pre-Installation Check"
-    echo "============================================="
-    echo ""
-    
-    # Run all checks
-    check_system_requirements || return 1
-    check_python_installations
-    check_vscode_installation
-    
-    # Generate summary and export findings
-    if generate_summary; then
-        export_findings
-        echo ""
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Run main function if script is executed directly
-if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
-    main "$@"
+# Log completion to piwik
+if command -v piwik_log_event >/dev/null 2>&1; then
+    piwik_log_event "pre_check" "complete" "Pre-installation check completed"
 fi
+
+exit 0
