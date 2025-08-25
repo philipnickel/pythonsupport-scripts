@@ -11,23 +11,23 @@
 # Load utilities with new filename to break CDN cache
 eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
 
-log_info "Installing Visual Studio Code"
+log "Installing Visual Studio Code"
 
 # Check if VSCode is already installed
-log_info "Checking for existing Visual Studio Code installation..."
+log "Checking for existing Visual Studio Code installation..."
 if command -v code > /dev/null 2>&1; then
     vscode_path=$(which code)
-    log_success "Visual Studio Code is already installed at: $vscode_path"
+    log "Visual Studio Code is already installed at: $vscode_path"
 elif [ -d "/Applications/Visual Studio Code.app" ]; then
     vscode_path="/Applications/Visual Studio Code.app"
-    log_success "Visual Studio Code is already installed at: $vscode_path"
+    log "Visual Studio Code is already installed at: $vscode_path"
     # Add to PATH if not already there
     if ! command -v code > /dev/null 2>&1; then
-        log_info "Adding VSCode command line tools to PATH..."
+        log "Adding VSCode command line tools to PATH..."
         sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
     fi
 else
-    log_info "Visual Studio Code not found, downloading and installing..."
+    log "Visual Studio Code not found, downloading and installing..."
     
     # Detect architecture for proper download
     if [[ $(uname -m) == "arm64" ]]; then
@@ -38,27 +38,27 @@ else
         ARCH="x64"
     fi
     
-    log_info "Downloading Visual Studio Code for macOS (${ARCH})..."
+    log "Downloading Visual Studio Code for macOS (${ARCH})..."
     curl -fsSL "$VSCODE_URL" -o /tmp/VSCode.zip
-    check_exit_code "Failed to download Visual Studio Code"
+    if [ $? -ne 0 ]; then log "Failed to download Visual Studio Code"; exit 1; fi
     
-    log_info "Extracting Visual Studio Code..."
+    log "Extracting Visual Studio Code..."
     unzip -qq /tmp/VSCode.zip -d /tmp/
-    check_exit_code "Failed to extract Visual Studio Code"
+    if [ $? -ne 0 ]; then log "Failed to extract Visual Studio Code"; exit 1; fi
     
-    log_info "Installing Visual Studio Code to Applications folder..."
+    log "Installing Visual Studio Code to Applications folder..."
     if [ -d "/Applications/Visual Studio Code.app" ]; then
-        log_info "Removing existing installation..."
+        log "Removing existing installation..."
         rm -rf "/Applications/Visual Studio Code.app"
     fi
     
     mv "/tmp/Visual Studio Code.app" "/Applications/"
-    check_exit_code "Failed to install Visual Studio Code"
+    if [ $? -ne 0 ]; then log "Failed to install Visual Studio Code"; exit 1; fi
     
     # Clean up
     rm -f /tmp/VSCode.zip
     
-    log_info "Setting up command line tools..."
+    log "Setting up command line tools..."
     # Create symlink for 'code' command
     sudo mkdir -p /usr/local/bin 2>/dev/null || true
     sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
@@ -71,17 +71,17 @@ fi
 hash -r
 clear -x
 
-log_success "Visual Studio Code installation completed!"
+log "Visual Studio Code installation completed!"
 
 # Install extensions immediately after VSCode installation
-log_info "Installing Visual Studio Code extensions..."
+log "Installing Visual Studio Code extensions..."
 
 # Check if code CLI is available, use bundled path if needed
 if ! command -v code >/dev/null; then
   if [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
     CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
   else
-    log_error "Visual Studio Code CLI not available"
+    log "Visual Studio Code CLI not available"
     exit_message
   fi
 else
@@ -89,16 +89,16 @@ else
 fi
 
 # Install essential extensions
-log_info "Installing Python extension..."
+log "Installing Python extension..."
 "$CODE_CLI" --install-extension ms-python.python
-check_exit_code "Failed to install Python extension"
+if [ $? -ne 0 ]; then log "Failed to install Python extension"; exit 1; fi
 
-log_info "Installing Jupyter extension..."
+log "Installing Jupyter extension..."
 "$CODE_CLI" --install-extension ms-toolsai.jupyter
-check_exit_code "Failed to install Jupyter extension"
+if [ $? -ne 0 ]; then log "Failed to install Jupyter extension"; exit 1; fi
 
-log_info "Installing PDF extension..."
+log "Installing PDF extension..."
 "$CODE_CLI" --install-extension tomoki1207.pdf
-check_exit_code "Failed to install PDF extension"
+if [ $? -ne 0 ]; then log "Failed to install PDF extension"; exit 1; fi
 
-log_success "Visual Studio Code and extensions installed successfully!"
+log "Visual Studio Code and extensions installed successfully!"

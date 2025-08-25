@@ -11,7 +11,7 @@
 # Load utilities with new filename to break CDN cache
 eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
 
-log_info "First year Python setup verification"
+log "First year Python setup verification"
 
 # Source shell profiles to ensure conda is available
 [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
@@ -23,7 +23,7 @@ export PATH="$HOME/miniforge3/bin:$PATH"
 
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then
-  log_info "Conda not found. Installing Python with Miniforge first..."
+  log "Conda not found. Installing Python with Miniforge first..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
   
   # Re-source shell profile after conda installation
@@ -34,9 +34,9 @@ if ! command -v conda >/dev/null 2>&1; then
 fi
 
 # Install required packages without verification (verification happens in post-install)
-log_info "Installing Python ${PYTHON_VERSION_PS:-3.11} and required packages..."
+log "Installing Python ${PYTHON_VERSION_PS:-3.11} and required packages..."
 conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
-check_exit_code "Failed to install Python and packages"
+if [ $? -ne 0 ]; then log "Failed to install Python and packages"; exit 1; fi
 
 clear -x
-log_success "Python environment setup completed"
+log "Python environment setup completed"

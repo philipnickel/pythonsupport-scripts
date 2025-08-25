@@ -14,30 +14,30 @@
 # Load utilities with new filename to break CDN cache
 eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"
 
-log_info "Python (Miniforge) installation"
+log "Python (Miniforge) installation"
 
 # Check if conda is already installed
 if command -v conda >/dev/null 2>&1; then
-  log_success "Conda is already installed"
+  log "Conda is already installed"
   conda --version
 else
-  log_info "Installing Miniforge..."
+  log "Installing Miniforge..."
   
   # Detect architecture and download Miniforge
   ARCH=$([ $(uname -m) == "arm64" ] && echo "arm64" || echo "x86_64")
   MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-${ARCH}.sh"
   
   curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
-  check_exit_code "Failed to download Miniforge installer"
+  if [ $? -ne 0 ]; then log "Failed to download Miniforge installer"; exit 1; fi
   
   bash /tmp/miniforge.sh -b -p "$HOME/miniforge3"
-  check_exit_code "Failed to install Miniforge"
+  if [ $? -ne 0 ]; then log "Failed to install Miniforge"; exit 1; fi
   
   rm -f /tmp/miniforge.sh
   
   # Initialize conda for shells
   "$HOME/miniforge3/bin/conda" init bash zsh
-  check_exit_code "Failed to initialize conda"
+  if [ $? -ne 0 ]; then log "Failed to initialize conda"; exit 1; fi
 fi
 
 # Update PATH and source configurations
@@ -50,4 +50,4 @@ export PATH="$HOME/miniforge3/bin:$PATH"
 conda config --set anaconda_anon_usage off 2>/dev/null || true
 conda config --set channel_priority flexible
 
-log_success "Miniforge installation completed successfully!"
+log "Miniforge installation completed successfully!"
