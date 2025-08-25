@@ -1,22 +1,73 @@
 #!/bin/bash
 # ====================================================================
-# DTU Python Diagnostics Report Generator - Cleaned & Organized
+# DTU Python Diagnostics Report Generator - Enhanced with Profiles & Templates
 # ====================================================================
-# Auto-discovers and organizes diagnostic components by directory structure
+# Auto-discovers and organizes diagnostic components by profile configuration
+# and uses template system for HTML generation
 #
 # SCRIPT STRUCTURE:
-# Section 1: Initialization & Configuration - Setup, config loading, variables
+# Section 1: Initialization & Configuration - Setup, config loading, variables, argument parsing
 # Section 2: Utility Functions - Helper functions for metadata, timeouts, etc.
-# Section 3: Component Discovery & Diagnostic Execution - Find and run tests
-# Section 4: HTML Report Generation - Create interactive HTML report
+# Section 3: Component Discovery & Diagnostic Execution - Find and run tests from profiles
+# Section 4: HTML Report Generation - Create interactive HTML report using templates
 # Section 5: Finalization & Cleanup - Summary, browser opening, cleanup
 #
 # MAINTAINABILITY NOTES:
 # - Each section has a clear purpose and can be modified independently
-# - HTML generation is contained in one large heredoc for easier styling
+# - HTML generation uses external templates for easier customization
 # - Configuration is externalized to report_config.sh
+# - Components are loaded from profile configuration files
 # - All temporary files are automatically cleaned up
 # ====================================================================
+
+# ====================================================================
+# COMMAND-LINE ARGUMENT PARSING
+# ====================================================================
+
+# Default profile
+SELECTED_PROFILE="comprehensive"
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --profile)
+            SELECTED_PROFILE="$2"
+            shift 2
+            ;;
+        --profile=*)
+            SELECTED_PROFILE="${1#*=}"
+            shift
+            ;;
+        -h|--help)
+            echo "DTU Python Diagnostics Report Generator"
+            echo "Usage: $0 [options] [output_file]"
+            echo ""
+            echo "Options:"
+            echo "  --profile <name>     Use specific diagnostic profile (default: comprehensive)"
+            echo "  -h, --help          Show this help message"
+            echo ""
+            echo "Available profiles:"
+            if [[ -d "$(dirname "${BASH_SOURCE[0]}")/profiles" ]]; then
+                for profile_file in "$(dirname "${BASH_SOURCE[0]}")/profiles"/*.conf; do
+                    if [[ -f "$profile_file" ]]; then
+                        profile_name=$(basename "$profile_file" .conf)
+                        echo "  - $profile_name"
+                    fi
+                done
+            fi
+            exit 0
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            echo "Use --help for usage information" >&2
+            exit 1
+            ;;
+        *)
+            # This is the output file argument
+            break
+            ;;
+    esac
+done
 
 # Don't exit on errors - we want report to generate even with failures
 set +e
@@ -29,8 +80,12 @@ set +e
 TEMP_DIR=$(mktemp -d -t "dtu_diagnostics")
 trap "rm -rf '$TEMP_DIR'" EXIT INT TERM
 
-# Output locations
-REPORT_FILE="${1:-$HOME/Desktop/DTU_Python_Diagnostics_$(date +%Y%m%d_%H%M%S).html}"
+# Output locations - include profile name in filename
+if [[ "$SELECTED_PROFILE" != "comprehensive" ]]; then
+    REPORT_FILE="${1:-$HOME/Desktop/DTU_Python_Diagnostics_${SELECTED_PROFILE}_$(date +%Y%m%d_%H%M%S).html}"
+else
+    REPORT_FILE="${1:-$HOME/Desktop/DTU_Python_Diagnostics_$(date +%Y%m%d_%H%M%S).html}"
+fi
 LOG_DIR="$TEMP_DIR/logs"
 mkdir -p "$LOG_DIR"
 
@@ -42,8 +97,94 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo "DTU Python Diagnostics Report Generator"
+echo "Selected profile: $SELECTED_PROFILE"
 echo "Temporary directory: $TEMP_DIR"
 echo "Report will be saved to: $REPORT_FILE"
+echo ""
+
+# Enhanced System Information Section
+echo -e "${BLUE}═══════════════════════════════════════"
+echo "SYSTEM INFORMATION"
+echo "═══════════════════════════════════════${NC}"
+
+# macOS Version Information
+echo -e "${GREEN}macOS Information:${NC}"
+echo "  Product Name: $(sw_vers -productName 2>/dev/null || echo 'Unknown')"
+echo "  Version: $(sw_vers -productVersion 2>/dev/null || echo 'Unknown')"
+echo "  Build: $(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')"
+echo ""
+
+# Hardware Information
+echo -e "${GREEN}Hardware Information:${NC}"
+echo "  Architecture: $(uname -m 2>/dev/null || echo 'Unknown')"
+echo "  Hostname: $(hostname 2>/dev/null || echo 'Unknown')"
+echo "  Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')"
+if command -v system_profiler >/dev/null 2>&1; then
+    # Get CPU info (with timeout to prevent hanging)
+    cpu_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Processor Name" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    memory_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Memory" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    echo "  Processor: $cpu_info"
+    echo "  Memory: $memory_info"
+fi
+echo ""
+
+# User Environment
+echo -e "${GREEN}User Environment:${NC}"
+echo "  Username: $(whoami 2>/dev/null || echo 'Unknown')"
+echo "  Home Directory: $HOME"
+echo "  Current Shell: $SHELL"
+echo "  PATH Entries: $(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories"
+echo ""
+
+# Development Tools Check
+echo -e "${GREEN}Development Tools Overview:${NC}"
+# Check for common development tools with version info
+for tool in python python3 pip pip3 conda brew code git; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        tool_path=$(which "$tool" 2>/dev/null)
+        case "$tool" in
+            python|python3)
+                version=$($tool --version 2>/dev/null | head -1)
+                ;;
+            pip|pip3)
+                version=$($tool --version 2>/dev/null | head -1 | awk '{print $2}')
+                version="version $version"
+                ;;
+            conda)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $(echo "$version" | awk '{print $2}')"
+                ;;
+            brew)
+                version="version $($tool --version 2>/dev/null | head -1 | awk '{print $2}')"
+                ;;
+            code)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $version"
+                ;;
+            git)
+                version=$($tool --version 2>/dev/null | awk '{print $3}')
+                version="version $version"
+                ;;
+        esac
+        echo "  ✓ $tool: $version ($tool_path)"
+    else
+        echo "  ✗ $tool: Not found"
+    fi
+done
+echo ""
+
+# Environment Variables of Interest
+echo -e "${GREEN}Python Environment Variables:${NC}"
+for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
+    if [[ -n "${!var}" ]]; then
+        echo "  $var: ${!var}"
+    else
+        echo "  $var: (not set)"
+    fi
+done
+echo ""
+
+echo -e "${BLUE}═══════════════════════════════════════${NC}"
 echo ""
 
 # Default repository coordinates (can be overridden via env/config)
@@ -88,37 +229,93 @@ download_repo_file() {
     return 1
 }
 
-# Function to auto-discover diagnostic components
+# Function to load diagnostic components from profile configuration
 discover_components() {
-    echo -e "${BLUE}Loading diagnostic components from repository...${NC}" >&2
+    echo -e "${BLUE}Loading diagnostic components for profile: $SELECTED_PROFILE${NC}" >&2
     
-    # Define all diagnostic components that will be curled from repository
-    # Format: "Category:Subcategory:script_name:Display Name:repo_path"
-    local -a component_definitions=(
-        "Python:Installation:python_installation_check:Python Installation Check:Components/Python/Installation/python_installation_check.sh"
-        "Python:Environment:python_environment:Python Environment Configuration:Components/Python/Environment/python_environment.sh"
-        "Python:Packages:first_year_packages:First Year Required Packages:Components/Python/Packages/first_year_packages.sh"
-        "Conda:Installation:conda_installation:Conda Installation Check:Components/Conda/Installation/conda_installation.sh"
-        "Conda:Environments:conda_environments:Conda Environments Check:Components/Conda/Environments/conda_environments.sh"
-        "Development:Homebrew:homebrew_installation:Homebrew Installation Check:Components/Development/Homebrew/homebrew_installation.sh"
-        "Development:LaTeX:latex_installation:LaTeX Installation Check:Components/Development/LaTeX/latex_installation.sh"
-        "System:Information:system_info:System Information:Components/System/Information/system_info.sh"
-        "System:Compatibility:python_compatibility:Python Development Compatibility:Components/System/Compatibility/python_compatibility.sh"
-        "System:Test:timeout_test:Timeout Test Script:Components/System/Test/timeout_test.sh"
-        "VSCode:Installation:vscode_installation:VS Code Installation Check:Components/VSCode/Installation/vscode_installation.sh"
-        "VSCode:Extensions:python_extensions:Python Development Extensions:Components/VSCode/Extensions/python_extensions.sh"
-    )
+    local profile_file
+    local profile_loaded=false
+    
+    # Determine script directory
+    if [[ "${BASH_SOURCE[0]}" == "/dev/stdin" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]]; then
+        # Running remotely via curl - download profile from repository
+        echo "Downloading profile configuration from repository..." >&2
+        profile_file="$TEMP_DIR/${SELECTED_PROFILE}.conf"
+        if download_repo_file "MacOS/Components/Diagnostics/profiles/${SELECTED_PROFILE}.conf" "$profile_file"; then
+            source "$profile_file"
+            profile_loaded=true
+            echo "  Profile loaded from repository: $SELECTED_PROFILE" >&2
+        fi
+    else
+        # Running locally
+        local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        profile_file="$SCRIPT_DIR/profiles/${SELECTED_PROFILE}.conf"
+        if [[ -f "$profile_file" ]]; then
+            source "$profile_file"
+            profile_loaded=true
+            echo "  Profile loaded from local file: $profile_file" >&2
+        fi
+    fi
+    
+    # Fallback to comprehensive profile if selected profile not found
+    if [[ "$profile_loaded" != "true" ]]; then
+        echo -e "${YELLOW}Warning: Profile '$SELECTED_PROFILE' not found. Falling back to comprehensive profile.${NC}" >&2
+        SELECTED_PROFILE="comprehensive"
+        
+        if [[ "${BASH_SOURCE[0]}" == "/dev/stdin" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]]; then
+            profile_file="$TEMP_DIR/comprehensive.conf"
+            if download_repo_file "MacOS/Components/Diagnostics/profiles/comprehensive.conf" "$profile_file"; then
+                source "$profile_file"
+                profile_loaded=true
+            fi
+        else
+            local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            profile_file="$SCRIPT_DIR/profiles/comprehensive.conf"
+            if [[ -f "$profile_file" ]]; then
+                source "$profile_file"
+                profile_loaded=true
+            fi
+        fi
+    fi
+    
+    # Ultimate fallback to hardcoded comprehensive components if no profile found
+    if [[ "$profile_loaded" != "true" ]]; then
+        echo -e "${YELLOW}Warning: No profile configuration found. Using hardcoded comprehensive components.${NC}" >&2
+        PROFILE_NAME="Comprehensive Environment (Fallback)"
+        PROFILE_DESCRIPTION="Complete diagnostic suite - all available Python, conda, development tools, and system checks (fallback mode)"
+        COMPONENTS=(
+            "Python:Installation:python_installation_check:Python Installation Check:Components/Python/Installation/python_installation_check.sh"
+            "Python:Environment:python_environment:Python Environment Configuration:Components/Python/Environment/python_environment.sh"
+            "Python:Packages:first_year_packages:First Year Required Packages:Components/Python/Packages/first_year_packages.sh"
+            "Conda:Installation:conda_installation:Conda Installation Check:Components/Conda/Installation/conda_installation.sh"
+            "Conda:Environments:conda_environments:Conda Environments Check:Components/Conda/Environments/conda_environments.sh"
+            "Development:Homebrew:homebrew_installation:Homebrew Installation Check:Components/Development/Homebrew/homebrew_installation.sh"
+            "System Information:Information:system_info:System Information:Components/System Information/Information/system_info.sh"
+            "Visual Studio Code:Installation:vscode_installation:VS Code Installation Check:Components/Visual Studio Code/Installation/vscode_installation.sh"
+            "Visual Studio Code:Extensions:python_extensions:Python Development Extensions:Components/Visual Studio Code/Extensions/python_extensions.sh"
+        )
+    fi
+    
+    # Validate that COMPONENTS array is set
+    if [[ -z "${COMPONENTS:-}" ]] || [[ "${#COMPONENTS[@]}" -eq 0 ]]; then
+        echo -e "${RED}Error: No components defined in profile configuration${NC}" >&2
+        exit 1
+    fi
     
     # Output component definitions for sourcing
     echo "DISCOVERED_CATEGORIES=("
-    for component in "${component_definitions[@]}"; do
+    for component in "${COMPONENTS[@]}"; do
         echo "  \"$component\""
     done
     echo ")"
     
+    # Set global profile variables for template processing
+    echo "PROFILE_NAME='${PROFILE_NAME:-$SELECTED_PROFILE}'"
+    echo "PROFILE_DESCRIPTION='${PROFILE_DESCRIPTION:-Diagnostic profile: $SELECTED_PROFILE}'"
+    
     # Count components
-    local count=${#component_definitions[@]}
-    echo "  Loaded $count diagnostic components from repository" >&2
+    local count=${#COMPONENTS[@]}
+    echo "  Loaded $count diagnostic components from profile: $SELECTED_PROFILE" >&2
     echo "" >&2
 }
 
@@ -191,7 +388,10 @@ run_diagnostic() {
     local exit_code=0
     local start_time=$(date +%s)
     
-    echo -n "Running $main_category > $subcategory → $display_name... "
+    echo -e "\n${BLUE}Running:${NC} $main_category > $subcategory → $display_name"
+    echo "  Script: $script_path"
+    echo "  Timeout: ${timeout:-$DEFAULT_TIMEOUT}s"
+    echo -n "  Status: "
     
     # Download script from repository with branch fallbacks
     local temp_script="$TEMP_DIR/${script_name}.sh"
@@ -220,30 +420,30 @@ run_diagnostic() {
     if [[ -n "$timeout_cmd" ]]; then
         if $timeout_cmd "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
-            echo -e "${GREEN}✓ Passed${NC}"
+            echo -e "${GREEN}✓ PASSED${NC}"
         else
             exit_code=$?
             if [[ $exit_code -eq 124 ]]; then
-                echo -e "${YELLOW}⚠ Timeout (${timeout}s)${NC}"
+                echo -e "${YELLOW}⚠ TIMEOUT after ${timeout}s${NC}"
                 echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                 echo "" >> "$log_file"
             else
-                echo -e "${RED}✗ Failed (exit code: $exit_code)${NC}"
+                echo -e "${RED}✗ FAILED with exit code $exit_code${NC}"
             fi
         fi
     else
         # Use bash-based timeout as fallback
         if bash_timeout "$timeout" bash "$temp_script" > "$log_file" 2>&1; then
             exit_code=0
-            echo -e "${GREEN}✓ Passed${NC}"
+            echo -e "${GREEN}✓ PASSED${NC}"
         else
             exit_code=$?
             if [[ $exit_code -eq 124 ]]; then
-                echo -e "${YELLOW}⚠ Timeout (${timeout}s)${NC}"
+                echo -e "${YELLOW}⚠ TIMEOUT after ${timeout}s${NC}"
                 echo "ERROR: Script timed out after ${timeout}s" >> "$log_file"
                 echo "" >> "$log_file"
             else
-                echo -e "${RED}✗ Failed (exit code: $exit_code)${NC}"
+                echo -e "${RED}✗ FAILED with exit code $exit_code${NC}"
             fi
         fi
     fi
@@ -251,6 +451,7 @@ run_diagnostic() {
     # Calculate execution time
     local end_time=$(date +%s)
     local exec_time=$((end_time - start_time))
+    echo "  Execution time: ${exec_time}s"
     echo "EXEC_TIME:${exec_time}" >> "$log_file"
     
     # Save status for parallel processing
@@ -338,206 +539,10 @@ run_diagnostic_parallel() {
     } &
 }
 
-# ====================================================================
-# SECTION 3: COMPONENT DISCOVERY & DIAGNOSTIC EXECUTION
-# ====================================================================
-
-# Auto-discover components
-echo "═══════════════════════════════════════"
-discover_components > "$TEMP_DIR/components.sh"
-source "$TEMP_DIR/components.sh"
-echo "═══════════════════════════════════════"
-echo ""
-
-# Track overall results
-TOTAL_PASS=0
-TOTAL_FAIL=0
-TOTAL_TIMEOUT=0
-JSON_DATA=""
-current_category=""
-
-# Run all discovered diagnostic components
-echo "Running diagnostic checks..."
-if [[ "$PARALLEL_ENABLED" == "true" ]]; then
-    echo "Mode: Parallel (max $MAX_PARALLEL concurrent checks)"
-else
-    echo "Mode: Sequential"
-fi
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if [[ "$PARALLEL_ENABLED" == "true" ]]; then
-    # Parallel execution
-    active_jobs=0
-    job_pids=()
-    job_info=()
-    
-    echo -e "\n${BLUE}Starting parallel diagnostics...${NC}"
-    echo "────────────────────────"
-    
-    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
-        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
-        
-        # Wait for a slot if we're at max parallel jobs
-        while [[ $active_jobs -ge $MAX_PARALLEL ]]; do
-            for i in "${!job_pids[@]}"; do
-                if ! kill -0 "${job_pids[$i]}" 2>/dev/null; then
-                    unset job_pids[$i]
-                    ((active_jobs--))
-                    break
-                fi
-            done
-            sleep 0.1
-        done
-        
-        echo "  Launching: $main_category > $subcategory → $display_name"
-        run_diagnostic_parallel "$main_category" "$subcategory" "$script_name" "$display_name" "$script_path"
-        job_pids+=($!)
-        job_info+=("$main_category:$subcategory:$script_name:$display_name")
-        ((active_jobs++))
-    done
-    
-    # Wait for all jobs to complete
-    echo -e "\n${BLUE}Waiting for all checks to complete...${NC}"
-    wait
-    
-    echo -e "\n${BLUE}Results:${NC}"
-    echo "────────────────────────"
-    
-    # Process results
-    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
-        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
-        
-        # Check if this is a new category
-        category_display="$main_category > $subcategory"
-        if [[ "$category_display" != "$current_category" ]]; then
-            current_category="$category_display"
-            echo -e "\n${BLUE}Category: $category_display${NC}"
-        fi
-        
-        # Read status from file
-        category_key="${main_category}_${subcategory//\//_}"
-        status_file="$TEMP_DIR/status_${category_key}_${script_name%.sh}"
-        if [[ -f "$status_file" ]]; then
-            exit_code=$(cat "$status_file")
-            if [[ "$exit_code" == "0" ]]; then
-                STATUS="PASS"
-                echo -e "  $display_name: ${GREEN}✓ Passed${NC}"
-                ((TOTAL_PASS++))
-            elif [[ "$exit_code" == "124" ]]; then
-                STATUS="TIMEOUT"
-                echo -e "  $display_name: ${YELLOW}⚠ Timeout${NC}"
-                ((TOTAL_TIMEOUT++))
-            else
-                STATUS="FAIL"
-                echo -e "  $display_name: ${RED}✗ Failed${NC}"
-                ((TOTAL_FAIL++))
-            fi
-        else
-            STATUS="FAIL"
-            echo -e "  $display_name: ${RED}✗ Error${NC}"
-            ((TOTAL_FAIL++))
-        fi
-        
-        # Get log content and base64 encode it
-        log_file="$LOG_DIR/${category_key}_${script_name%.sh}.log"
-        LOG_DATA=""
-        if [[ -f "$log_file" ]]; then
-            # Extract execution time if available
-            exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
-            if [[ -n "$exec_time" ]]; then
-                echo "    Execution time: ${exec_time}s"
-            fi
-            LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
-        fi
-        
-        # Build JSON data
-        if [[ -n "$JSON_DATA" ]]; then
-            JSON_DATA="${JSON_DATA},"
-        fi
-        JSON_DATA="${JSON_DATA}
-            '${category_key}_${script_name}': {
-                category: '${main_category}',
-                subcategory: '${subcategory}',
-                name: '${display_name}',
-                status: '${STATUS}',
-                log: '${LOG_DATA}'
-            }"
-    done
-else
-    # Sequential execution (original code)
-    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
-        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
-        
-        # Check if this is a new category
-        category_display="$main_category > $subcategory"
-        if [[ "$category_display" != "$current_category" ]]; then
-            current_category="$category_display"
-            echo -e "\n${BLUE}Category: $category_display${NC}"
-            echo "────────────────────────"
-        fi
-        
-        STATUS="FAIL"
-        if run_diagnostic "$main_category" "$subcategory" "$script_name" "$display_name" "$script_path"; then
-            STATUS="PASS"
-            ((TOTAL_PASS++))
-        else
-            exit_code=$?
-            if [[ $exit_code -eq 124 ]]; then
-                STATUS="TIMEOUT"
-                ((TOTAL_TIMEOUT++))
-            else
-                ((TOTAL_FAIL++))
-            fi
-        fi
-        
-        # Get log content and base64 encode it
-        category_key="${main_category}_${subcategory//\//_}"
-        log_file="$LOG_DIR/${category_key}_${script_name%.sh}.log"
-        LOG_DATA=""
-        if [[ -f "$log_file" ]]; then
-            # Extract execution time if available
-            exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
-            if [[ -n "$exec_time" ]]; then
-                echo "    Execution time: ${exec_time}s"
-            fi
-            LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
-        fi
-        
-        # Build JSON data
-        if [[ -n "$JSON_DATA" ]]; then
-            JSON_DATA="${JSON_DATA},"
-        fi
-        JSON_DATA="${JSON_DATA}
-            '${category_key}_${script_name}': {
-                category: '${main_category}',
-                subcategory: '${subcategory}',
-                name: '${display_name}',
-                status: '${STATUS}',
-                log: '${LOG_DATA}'
-            }"
-    done
-fi
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# ====================================================================
-# SECTION 4: HTML REPORT GENERATION
-# ====================================================================
-
-# Generate HTML report with organized categories
-echo "Generating HTML report with navigation..."
-
-# Ensure we have write access to report location
-if ! touch "$REPORT_FILE" 2>/dev/null; then
-    echo -e "${RED}Error: Cannot write to $REPORT_FILE${NC}"
-    echo "Trying alternative location..."
-    REPORT_FILE="/tmp/DTU_Python_Diagnostics_$(date +%Y%m%d_%H%M%S).html"
-    echo "Using: $REPORT_FILE"
-fi
-
-# Generate report with error handling
-{
+# Function to generate report with embedded fallback template
+generate_fallback_report() {
+    echo "Generating report with embedded fallback template..."
+    {
 cat > "$REPORT_FILE" << 'HTML_TEMPLATE'
 <!DOCTYPE html>
 <html lang="en">
@@ -1046,7 +1051,7 @@ cat > "$REPORT_FILE" << 'HTML_TEMPLATE'
         <header>
             <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
                  alt="DTU Logo" class="dtu-logo" onerror="this.style.display='none'">
-            <h1>DTU Python Diagnostics Report</h1>
+            <h1>$PROFILE_NAME - DTU Python Diagnostics Report</h1>
             <div class="timestamp">Generated on: <span id="timestamp"></span></div>
         </header>
             
@@ -1079,8 +1084,8 @@ cat > "$REPORT_FILE" << 'HTML_TEMPLATE'
             </div>
             
             <div class="notice">
-                <div class="notice-title">System Diagnostics Overview</div>
-                Python development environment diagnostic results. Click any test to view detailed logs.
+                <div class="notice-title">$PROFILE_NAME Diagnostics Overview</div>
+                $PROFILE_DESCRIPTION Click any test to view detailed logs.
             </div>
             
             <div class="diagnostics" id="diagnostics-container">
@@ -1099,13 +1104,7 @@ cat > "$REPORT_FILE" << 'HTML_TEMPLATE'
     <script>
         // Embedded diagnostic data (base64 encoded logs)
         const diagnosticData = {
-HTML_TEMPLATE
-
-# Insert the JSON data
-echo "$JSON_DATA" >> "$REPORT_FILE"
-
-# Complete the HTML
-cat >> "$REPORT_FILE" << 'HTML_FOOTER'
+            $JSON_DATA
         };
         
         // Initialize report
@@ -1244,23 +1243,13 @@ cat >> "$REPORT_FILE" << 'HTML_FOOTER'
             // Generate summary for email
             const summaryData = generateEmailSummary();
             
-            // Create email content
+            // Create email content with verbose system report
             const subject = 'DTU Python Support - Diagnostic Report';
             const body = `Hello DTU Python Support Team,
 
 I've run the diagnostic report and would like assistance with my Python development environment setup.
 
-SYSTEM SUMMARY:
-${summaryData.summary}
-
-FAILED DIAGNOSTICS:
-${summaryData.failures}
-
-SYSTEM INFO:
-- Report generated: ${new Date().toLocaleString()}
-- Browser: ${navigator.userAgent}
-
-Please note: I can provide the detailed diagnostic report file if needed. Use the "Download Report" button to save the complete report.
+${summaryData.verboseReport}
 
 Please let me know how to resolve any issues found.
 
@@ -1269,7 +1258,9 @@ Best regards,
 [Your Student ID / Email]
 
 ---
-This email was generated automatically by the DTU Python Diagnostics Report.`;
+This email was generated automatically by the DTU Python Diagnostics Report.
+Report generated: ${new Date().toLocaleString()}
+Browser: ${navigator.userAgent}`;
 
             // Create mailto link
             const mailtoLink = `mailto:pythonsupport@dtu.dk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -1302,15 +1293,28 @@ This email was generated automatically by the DTU Python Diagnostics Report.`;
         function generateEmailSummary() {
             let passed = 0, failed = 0, timeout = 0;
             const failures = [];
+            const detailedResults = [];
+            let systemInfo = '';
+            
+            // Get system information if available
+            if (diagnosticData._system_info && diagnosticData._system_info.systemInfo) {
+                systemInfo = diagnosticData._system_info.systemInfo;
+            }
             
             for (const [key, data] of Object.entries(diagnosticData)) {
+                // Skip system info entry
+                if (key === '_system_info') continue;
+                
                 if (data.status === 'PASS') {
                     passed++;
+                    detailedResults.push(`✓ PASSED - ${data.name} (${data.category})`);
                 } else if (data.status === 'TIMEOUT') {
                     timeout++;
+                    detailedResults.push(`⚠ TIMEOUT - ${data.name} (${data.category})`);
                     failures.push(`- ${data.name} (${data.category}) - TIMEOUT`);
-                } else {
+                } else if (data.status === 'FAIL') {
                     failed++;
+                    detailedResults.push(`✗ FAILED - ${data.name} (${data.category})`);
                     failures.push(`- ${data.name} (${data.category}) - FAILED`);
                 }
             }
@@ -1320,9 +1324,12 @@ Passed: ${passed}
 Failed: ${failed}
 Timeout: ${timeout}`;
             
+            const verboseReport = systemInfo + '\n=== DIAGNOSTIC RESULTS ===\n' + detailedResults.join('\n');
+            
             return {
                 summary,
-                failures: failures.length > 0 ? '\n' + failures.join('\n') : ''
+                failures: failures.length > 0 ? '\n' + failures.join('\n') : '',
+                verboseReport: verboseReport
             };
         }
         
@@ -1387,34 +1394,460 @@ Timeout: ${timeout}`;
     </script>
 </body>
 </html>
-HTML_FOOTER
-} || {
-    echo -e "${RED}Error generating HTML report${NC}"
-    echo "Attempting to save raw results..."
-    
-    # Save raw results as fallback
-    FALLBACK_FILE="/tmp/DTU_Diagnostics_RAW_$(date +%Y%m%d_%H%M%S).txt"
-    {
-        echo "DTU Python Diagnostics - Raw Results"
-        echo "Generated: $(date)"
-        echo "=================================="
-        echo ""
-        echo "Summary: Passed=$TOTAL_PASS Failed=$TOTAL_FAIL Timeout=$TOTAL_TIMEOUT Total=$((TOTAL_PASS + TOTAL_FAIL + TOTAL_TIMEOUT))"
-        echo ""
-        echo "Detailed Logs:"
-        echo "--------------"
-        for log_file in "$LOG_DIR"/*.log; do
-            if [[ -f "$log_file" ]]; then
-                echo ""
-                echo "=== $(basename "$log_file" .log) ==="
-                cat "$log_file"
-            fi
-        done
-    } > "$FALLBACK_FILE"
-    
-    echo "Raw results saved to: $FALLBACK_FILE"
-    REPORT_FILE="$FALLBACK_FILE"
+HTML_TEMPLATE
+    } | sed "s|\$PROFILE_NAME|$PROFILE_NAME|g" | sed "s|\$PROFILE_DESCRIPTION|$PROFILE_DESCRIPTION|g" | sed "s|\$JSON_DATA|$JSON_DATA|g"
 }
+
+# ====================================================================
+# SECTION 3: COMPONENT DISCOVERY & DIAGNOSTIC EXECUTION
+# ====================================================================
+
+# Load components from profile
+echo "═══════════════════════════════════════"
+discover_components > "$TEMP_DIR/components.sh"
+source "$TEMP_DIR/components.sh"
+echo "═══════════════════════════════════════"
+echo ""
+
+# Track overall results
+TOTAL_PASS=0
+TOTAL_FAIL=0
+TOTAL_TIMEOUT=0
+JSON_DATA=""
+current_category=""
+
+# Capture system information for email summary
+SYSTEM_INFO_TEXT=""
+SYSTEM_INFO_TEXT+="DTU Python Diagnostics System Report\n"
+SYSTEM_INFO_TEXT+="Generated: $(date '+%Y-%m-%d %H:%M:%S')\n"
+SYSTEM_INFO_TEXT+="Profile: $PROFILE_NAME\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="=== SYSTEM INFORMATION ===\n"
+SYSTEM_INFO_TEXT+="macOS Information:\n"
+SYSTEM_INFO_TEXT+="  Product Name: $(sw_vers -productName 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Version: $(sw_vers -productVersion 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Build: $(sw_vers -buildVersion 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Hardware Information:\n"
+SYSTEM_INFO_TEXT+="  Architecture: $(uname -m 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Hostname: $(hostname 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Kernel: $(uname -sr 2>/dev/null || echo 'Unknown')\n"
+if command -v system_profiler >/dev/null 2>&1; then
+    cpu_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Processor Name" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    memory_info=$(timeout 3 system_profiler SPHardwareDataType 2>/dev/null | grep "Memory" | cut -d':' -f2 | sed 's/^ *//' || echo 'Unknown')
+    SYSTEM_INFO_TEXT+="  Processor: $cpu_info\n"
+    SYSTEM_INFO_TEXT+="  Memory: $memory_info\n"
+fi
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="User Environment:\n"
+SYSTEM_INFO_TEXT+="  Username: $(whoami 2>/dev/null || echo 'Unknown')\n"
+SYSTEM_INFO_TEXT+="  Home Directory: $HOME\n"
+SYSTEM_INFO_TEXT+="  Current Shell: $SHELL\n"
+SYSTEM_INFO_TEXT+="  PATH Entries: $(echo $PATH | tr ':' '\n' | wc -l | tr -d ' ') directories\n"
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Development Tools Overview:\n"
+for tool in python python3 pip pip3 conda brew code git; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        tool_path=$(which "$tool" 2>/dev/null)
+        case "$tool" in
+            python|python3)
+                version=$($tool --version 2>/dev/null | head -1)
+                ;;
+            pip|pip3)
+                version=$($tool --version 2>/dev/null | head -1 | awk '{print $2}')
+                version="version $version"
+                ;;
+            conda)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $(echo "$version" | awk '{print $2}')"
+                ;;
+            brew)
+                version="version $($tool --version 2>/dev/null | head -1 | awk '{print $2}')"
+                ;;
+            code)
+                version=$($tool --version 2>/dev/null | head -1)
+                version="version $version"
+                ;;
+            git)
+                version=$($tool --version 2>/dev/null | awk '{print $3}')
+                version="version $version"
+                ;;
+        esac
+        SYSTEM_INFO_TEXT+="  ✓ $tool: $version ($tool_path)\n"
+    else
+        SYSTEM_INFO_TEXT+="  ✗ $tool: Not found\n"
+    fi
+done
+SYSTEM_INFO_TEXT+="\n"
+SYSTEM_INFO_TEXT+="Python Environment Variables:\n"
+for var in PYTHONPATH VIRTUAL_ENV CONDA_DEFAULT_ENV PYTHONHOME; do
+    if [[ -n "${!var}" ]]; then
+        SYSTEM_INFO_TEXT+="  $var: ${!var}\n"
+    else
+        SYSTEM_INFO_TEXT+="  $var: (not set)\n"
+    fi
+done
+SYSTEM_INFO_TEXT+="\n"
+
+# Run all discovered diagnostic components
+echo "Running diagnostic checks..."
+if [[ "$PARALLEL_ENABLED" == "true" ]]; then
+    echo "Mode: Parallel (max $MAX_PARALLEL concurrent checks)"
+else
+    echo "Mode: Sequential"
+fi
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [[ "$PARALLEL_ENABLED" == "true" ]]; then
+    # Parallel execution
+    active_jobs=0
+    job_pids=()
+    job_info=()
+    
+    echo -e "\n${BLUE}Starting parallel diagnostics...${NC}"
+    echo "────────────────────────"
+    
+    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
+        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
+        
+        # Wait for a slot if we're at max parallel jobs
+        while [[ $active_jobs -ge $MAX_PARALLEL ]]; do
+            for i in "${!job_pids[@]}"; do
+                if ! kill -0 "${job_pids[$i]}" 2>/dev/null; then
+                    unset job_pids[$i]
+                    ((active_jobs--))
+                    break
+                fi
+            done
+            sleep 0.1
+        done
+        
+        echo "  Launching: $main_category > $subcategory → $display_name"
+        run_diagnostic_parallel "$main_category" "$subcategory" "$script_name" "$display_name" "$script_path"
+        job_pids+=($!)
+        job_info+=("$main_category:$subcategory:$script_name:$display_name")
+        ((active_jobs++))
+    done
+    
+    # Wait for all jobs to complete
+    echo -e "\n${BLUE}Waiting for all checks to complete...${NC}"
+    wait
+    
+    echo -e "\n${BLUE}Results:${NC}"
+    echo "────────────────────────"
+    
+    # Process results
+    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
+        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
+        
+        # Check if this is a new category
+        category_display="$main_category > $subcategory"
+        if [[ "$category_display" != "$current_category" ]]; then
+            current_category="$category_display"
+            echo -e "\n${BLUE}Category: $category_display${NC}"
+        fi
+        
+        # Read status from file
+        category_key="${main_category}_${subcategory//\//_}"
+        status_file="$TEMP_DIR/status_${category_key}_${script_name%.sh}"
+        if [[ -f "$status_file" ]]; then
+            exit_code=$(cat "$status_file")
+            if [[ "$exit_code" == "0" ]]; then
+                STATUS="PASS"
+                echo -e "  ${GREEN}✓ PASSED${NC} - $display_name"
+                ((TOTAL_PASS++))
+            elif [[ "$exit_code" == "124" ]]; then
+                STATUS="TIMEOUT"
+                echo -e "  ${YELLOW}⚠ TIMEOUT${NC} - $display_name"
+                ((TOTAL_TIMEOUT++))
+            else
+                STATUS="FAIL"
+                echo -e "  ${RED}✗ FAILED (exit code: $exit_code)${NC} - $display_name"
+                ((TOTAL_FAIL++))
+            fi
+        else
+            STATUS="FAIL"
+            echo -e "  ${RED}✗ ERROR (no status file)${NC} - $display_name"
+            ((TOTAL_FAIL++))
+        fi
+        
+        # Get log content and base64 encode it
+        log_file="$LOG_DIR/${category_key}_${script_name%.sh}.log"
+        LOG_DATA=""
+        if [[ -f "$log_file" ]]; then
+            # Extract execution time if available
+            exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
+            if [[ -n "$exec_time" ]]; then
+                echo "    Script path: $script_path"
+                echo "    Execution time: ${exec_time}s"
+            fi
+            LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
+        fi
+        
+        # Build JSON data
+        if [[ -n "$JSON_DATA" ]]; then
+            JSON_DATA="${JSON_DATA},"
+        fi
+        JSON_DATA="${JSON_DATA}
+            '${category_key}_${script_name}': {
+                category: '${main_category}',
+                subcategory: '${subcategory}',
+                name: '${display_name}',
+                status: '${STATUS}',
+                log: '${LOG_DATA}'
+            }"
+    done
+else
+    # Sequential execution (original code)
+    for category_data in "${DISCOVERED_CATEGORIES[@]}"; do
+        IFS=':' read -r main_category subcategory script_name display_name script_path <<< "$category_data"
+        
+        # Check if this is a new category
+        category_display="$main_category > $subcategory"
+        if [[ "$category_display" != "$current_category" ]]; then
+            current_category="$category_display"
+            echo -e "\n${BLUE}Category: $category_display${NC}"
+            echo "────────────────────────"
+        fi
+        
+        STATUS="FAIL"
+        if run_diagnostic "$main_category" "$subcategory" "$script_name" "$display_name" "$script_path"; then
+            STATUS="PASS"
+            ((TOTAL_PASS++))
+        else
+            exit_code=$?
+            if [[ $exit_code -eq 124 ]]; then
+                STATUS="TIMEOUT"
+                ((TOTAL_TIMEOUT++))
+            else
+                ((TOTAL_FAIL++))
+            fi
+        fi
+        
+        # Get log content and base64 encode it
+        category_key="${main_category}_${subcategory//\//_}"
+        log_file="$LOG_DIR/${category_key}_${script_name%.sh}.log"
+        LOG_DATA=""
+        if [[ -f "$log_file" ]]; then
+            # Extract execution time if available
+            exec_time=$(grep "^EXEC_TIME:" "$log_file" | cut -d':' -f2)
+            if [[ -n "$exec_time" ]]; then
+                echo "    Execution time: ${exec_time}s"
+            fi
+            LOG_DATA=$(grep -v "^EXEC_TIME:" "$log_file" | base64 2>/dev/null | tr -d '\n' || echo "")
+        fi
+        
+        # Build JSON data
+        if [[ -n "$JSON_DATA" ]]; then
+            JSON_DATA="${JSON_DATA},"
+        fi
+        JSON_DATA="${JSON_DATA}
+            '${category_key}_${script_name}': {
+                category: '${main_category}',
+                subcategory: '${subcategory}',
+                name: '${display_name}',
+                status: '${STATUS}',
+                log: '${LOG_DATA}'
+            }"
+    done
+fi
+
+# Wrap JSON_DATA in proper JavaScript object literal format, including system information
+SYSTEM_INFO_ESCAPED=$(echo "$SYSTEM_INFO_TEXT" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+
+if [[ -n "$JSON_DATA" ]]; then
+    JSON_DATA="{$JSON_DATA,
+        '_system_info': {
+            category: 'System',
+            subcategory: 'Information',
+            name: 'System Information',
+            status: 'INFO',
+            log: '$(echo "$SYSTEM_INFO_ESCAPED" | base64 2>/dev/null | tr -d '\n' || echo "")',
+            systemInfo: '$SYSTEM_INFO_ESCAPED'
+        }
+    }"
+else
+    JSON_DATA="{
+        '_system_info': {
+            category: 'System',
+            subcategory: 'Information', 
+            name: 'System Information',
+            status: 'INFO',
+            log: '$(echo "$SYSTEM_INFO_ESCAPED" | base64 2>/dev/null | tr -d '\n' || echo "")',
+            systemInfo: '$SYSTEM_INFO_ESCAPED'
+        }
+    }"
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# ====================================================================
+# SECTION 4: HTML REPORT GENERATION
+# ====================================================================
+
+# ====================================================================
+# TEMPLATE PROCESSING FUNCTIONS
+# ====================================================================
+
+# Function to load template files
+load_template_file() {
+    local file_path="$1"
+    local temp_file="$2"
+    
+    if [[ "${BASH_SOURCE[0]}" == "/dev/stdin" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]]; then
+        # Running remotely via curl - download template from repository
+        if download_repo_file "MacOS/Components/Diagnostics/$file_path" "$temp_file"; then
+            cat "$temp_file"
+            return 0
+        fi
+    else
+        # Running locally
+        local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        local local_file="$SCRIPT_DIR/$file_path"
+        if [[ -f "$local_file" ]]; then
+            cat "$local_file"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Function to process template placeholders using robust multi-line replacement
+process_template() {
+    local template_content="$1"
+    local css_content="$2"
+    local js_content="$3"
+    local json_data="$4"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # Create temporary files for content
+    local temp_template="$TEMP_DIR/template_processing.html"
+    local temp_css="$TEMP_DIR/css_content.txt" 
+    local temp_js="$TEMP_DIR/js_content.txt"
+    local temp_json="$TEMP_DIR/json_data.txt"
+    local process_script="$TEMP_DIR/process_template.sh"
+    
+    # Write content to temporary files to avoid shell escaping issues
+    echo "$template_content" > "$temp_template"
+    echo "$css_content" > "$temp_css"
+    echo "$js_content" > "$temp_js"
+    echo "$json_data" > "$temp_json"
+    
+    # Create a robust processing script using bash parameter expansion
+    cat > "$process_script" << 'EOF'
+#!/bin/bash
+template_file="$1"
+css_file="$2"  
+js_file="$3"
+json_file="$4"
+profile_name="$5"
+profile_desc="$6"
+timestamp="$7"
+
+# Function to safely replace content in template
+replace_placeholder() {
+    local template="$1"
+    local placeholder="$2" 
+    local content_file="$3"
+    
+    if [[ "$template" == *"$placeholder"* ]]; then
+        # Find the placeholder position and split the template
+        local before="${template%%$placeholder*}"
+        local after="${template##*$placeholder}"
+        local content
+        content=$(cat "$content_file")
+        
+        # Reconstruct template with content inserted
+        template="${before}${content}${after}"
+    fi
+    
+    echo "$template"
+}
+
+# Function to replace simple string placeholders  
+replace_simple() {
+    local template="$1"
+    local placeholder="$2"
+    local replacement="$3"
+    
+    # Use parameter expansion for simple string replacement
+    echo "${template//$placeholder/$replacement}"
+}
+
+# Read the template
+template_content=$(cat "$template_file")
+
+# Simple string replacements first
+template_content=$(replace_simple "$template_content" "{{PROFILE_NAME}}" "$profile_name")
+template_content=$(replace_simple "$template_content" "{{PROFILE_DESCRIPTION}}" "$profile_desc")
+template_content=$(replace_simple "$template_content" "{{TIMESTAMP}}" "$timestamp")
+template_content=$(replace_simple "$template_content" "{{SUMMARY_HTML}}" "")
+
+# Handle CSS content replacement
+template_content=$(replace_placeholder "$template_content" "{{CSS_CONTENT}}" "$css_file")
+
+# Handle JS content replacement (first replace DIAGNOSTIC_DATA in JS file)
+if [[ -f "$js_file" ]]; then
+    json_content=$(cat "$json_file")
+    js_content=$(cat "$js_file")
+    # Replace DIAGNOSTIC_DATA placeholder in JS content
+    js_content=${js_content//\{\{DIAGNOSTIC_DATA\}\}/$json_content}
+    # Write updated JS content back to file
+    echo "$js_content" > "$js_file"
+fi
+
+# Replace JS content in template
+template_content=$(replace_placeholder "$template_content" "{{JS_CONTENT}}" "$js_file")
+
+# Output the processed template
+printf '%s\n' "$template_content"
+EOF
+        
+    chmod +x "$process_script"
+    "$process_script" "$temp_template" "$temp_css" "$temp_js" "$temp_json" "$PROFILE_NAME" "$PROFILE_DESCRIPTION" "$timestamp"
+}
+
+# Generate HTML report using template system
+echo "Generating HTML report using template system..."
+echo "Profile: $PROFILE_NAME"
+
+# Ensure we have write access to report location
+if ! touch "$REPORT_FILE" 2>/dev/null; then
+    echo -e "${RED}Error: Cannot write to $REPORT_FILE${NC}"
+    echo "Trying alternative location..."
+    if [[ "$SELECTED_PROFILE" != "comprehensive" ]]; then
+        REPORT_FILE="/tmp/DTU_Python_Diagnostics_${SELECTED_PROFILE}_$(date +%Y%m%d_%H%M%S).html"
+    else
+        REPORT_FILE="/tmp/DTU_Python_Diagnostics_$(date +%Y%m%d_%H%M%S).html"
+    fi
+    echo "Using: $REPORT_FILE"
+fi
+
+# Load template files
+echo "Loading template files..."
+html_template=$(load_template_file "templates/base.html" "$TEMP_DIR/base.html")
+css_content=$(load_template_file "templates/styles.css" "$TEMP_DIR/styles.css")
+js_content=$(load_template_file "templates/scripts.js" "$TEMP_DIR/scripts.js")
+
+# Check if templates loaded successfully
+if [[ -z "$html_template" ]] || [[ -z "$css_content" ]] || [[ -z "$js_content" ]]; then
+    echo -e "${YELLOW}Warning: Could not load some template files. Using embedded fallback templates.${NC}"
+    
+    # Fallback to embedded templates
+    generate_fallback_report
+else
+    echo "Templates loaded successfully. Processing..."
+    
+    # Generate report with templates
+    {
+        process_template "$html_template" "$css_content" "$js_content" "$JSON_DATA"
+    } > "$REPORT_FILE" || {
+        echo -e "${RED}Error generating HTML report with templates${NC}"
+        echo "Falling back to embedded template..."
+        generate_fallback_report
+    }
+fi
 
 echo "Report generated successfully!"
 echo ""

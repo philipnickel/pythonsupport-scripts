@@ -10,7 +10,7 @@ echo "========================"
 
 # Check if conda is available
 if ! command -v conda >/dev/null 2>&1; then
-    echo "❌ Conda not found - cannot check environments"
+    echo "FAIL Conda not found - cannot check environments"
     exit 1
 fi
 
@@ -52,9 +52,9 @@ if conda env list > /dev/null 2>&1; then
     echo "Total environments: $env_count"
     
     if [ -n "$active_env" ]; then
-        echo "✓ Active environment: $active_env"
+        echo "PASS Active environment: $active_env"
     else
-        echo "✓ Active environment: base"
+        echo "PASS Active environment: base"
     fi
 else
     echo "  Unable to list environments"
@@ -85,4 +85,4 @@ else
 fi
 
 echo ""
-echo "✅ Conda environments check complete - PASSED"
+echo "PASSED Conda environments check complete - PASSED"

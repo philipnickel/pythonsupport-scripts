@@ -51,20 +51,20 @@ issues_found=0
 # Check if Python can import basic modules
 if command -v python3 >/dev/null 2>&1; then
     if python3 -c "import sys, os" >/dev/null 2>&1; then
-        echo "✓ Python can import basic modules"
+        echo "PASS Python can import basic modules"
     else
-        echo "✗ Python cannot import basic modules"
+        echo "FAIL Python cannot import basic modules"
         issues_found=1
     fi
 else
-    echo "✗ python3 not available"
+    echo "FAIL python3 not available"
     issues_found=1
 fi
 
 echo ""
 
 if [ $issues_found -eq 0 ]; then
-    echo "✅ Python environment configuration check complete - PASSED"
+    echo "PASSED Python environment configuration check complete - PASSED"
 else
     echo "⚠ Python environment issues detected - CHECK NEEDED"
     exit 1

@@ -1,1 +1,109 @@
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PKG Installer Build Artifacts
+MacOS/pkg_installer/builds/*.pkg
+MacOS/pkg_installer/temp_build/
+MacOS/pkg_installer/src/metadata/.version.bak
+
+# GitHub Actions Artifacts
+installation.log
+/tmp/
+tmp/
+installation-logs-*/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Browser automation
+.playwright/
+.playwright-mcp/
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Documentation builds
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# JetBrains
+.idea/
+
+# Vim
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+.temporary/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# System files
+.fuse_hidden*
+.nfs*
+
+# Application specific
+*.dmg
+*.app
