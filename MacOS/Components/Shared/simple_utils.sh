@@ -27,7 +27,7 @@ exit_message() {
 
 # === LOAD PIWIK ANALYTICS ===
 # Load the full piwik utility for analytics
-if piwik_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
+if piwik_script=$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-philipnickel/pythonsupport-scripts}/${BRANCH_PS:-Miniforge}/MacOS/Components/Shared/piwik_utility.sh" 2>/dev/null) && [ -n "$piwik_script" ]; then
     eval "$piwik_script"
 else
     # Fallback simple piwik_log if full utility fails to load
@@ -43,5 +43,5 @@ else
 fi
 
 # === ENVIRONMENT DEFAULTS ===
-[ -z "$REMOTE_PS" ] && REMOTE_PS="dtudk/pythonsupport-scripts"
-[ -z "$BRANCH_PS" ] && BRANCH_PS="main"
+[ -z "$REMOTE_PS" ] && REMOTE_PS="philipnickel/pythonsupport-scripts"
+[ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
