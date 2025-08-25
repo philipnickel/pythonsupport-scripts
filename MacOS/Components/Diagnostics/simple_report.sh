@@ -88,10 +88,18 @@ run_first_year_test() {
         PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.11"}
         DTU_PACKAGES=${DTU_PACKAGES:-("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")}
         
-        # Activate conda environment for tests
+        # Activate conda environment for tests and reload shell profiles
         if [ -f "$HOME/miniforge3/bin/activate" ]; then
             source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
         fi
+        
+        # Reload shell profiles to ensure conda is in PATH
+        [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+        [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
+        [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+        
+        # Update PATH to include conda
+        export PATH="$HOME/miniforge3/bin:$PATH"
         
         # Test Python Installation (using config version)
         echo "Testing Python Installation ($PYTHON_VERSION_DTU)..."
