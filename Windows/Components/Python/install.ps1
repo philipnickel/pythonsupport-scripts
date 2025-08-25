@@ -138,6 +138,16 @@ catch {
 
 
 
+# Disable conda error reporting to prevent interactive prompts
+Write-Host "Configuring conda to disable error reporting..."
+try {
+    conda config --set report_errors false
+    Write-Host "Conda error reporting disabled"
+}
+catch {
+    Write-Host "Failed to disable conda error reporting (non-critical)"
+}
+
 # Update conda first to fix any issues
 Write-Host "Updating conda..."
 try {
