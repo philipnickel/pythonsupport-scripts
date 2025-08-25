@@ -35,12 +35,6 @@ fi
 echo "Phase 2: Main Installation Process"
 echo "=================================="
 
-# Handle conda uninstall if needed
-if [ "$NEEDS_CONDA_UNINSTALL" = true ]; then
-    echo "Uninstalling $CONDA_UNINSTALL_TYPE..."
-    echo "TODO: Uninstall script will be created later"
-    # TODO: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
-fi
 
 # Install Python with Miniforge (conditionally)
 if [ "$SKIP_PYTHON_INSTALL" = true ]; then
