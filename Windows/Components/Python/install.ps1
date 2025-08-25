@@ -60,12 +60,15 @@ if (-not $condaFound) {
     
     # Install Miniforge silently
     Write-Host "Installing Miniforge..."
+    Write-Host "Installer path: $installerPath"
+    Write-Host "Installation directory: $env:USERPROFILE\miniforge3"
     try {
         $process = Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniforge3" -Wait -PassThru
         if ($process.ExitCode -ne 0) {
             Write-Host "Miniforge installation failed with exit code: $($process.ExitCode)"
             exit 1
         }
+        Write-Host "Miniforge installation completed with exit code: $($process.ExitCode)"
     }
     catch {
         Write-Host "Failed to install Miniforge: $($_.Exception.Message)"
@@ -143,26 +146,31 @@ catch {
 # Configure conda channels (conda-forge only)
 Write-Host "Configuring conda channels..."
 try {
-    # Remove all existing channels
-    conda config --remove-key channels 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to remove existing channels"
-        exit 1
-    }
+    # Show current channels before modification
+    Write-Host "Current channels before modification:"
+    conda config --show channels
     
-    # Add conda-forge channel
+    # Remove all existing channels completely
+    Write-Host "Removing all existing channels..."
+    conda config --remove-key channels 2>$null
+    conda config --remove channels defaults 2>$null
+    conda config --remove channels anaconda 2>$null
+    conda config --remove channels pkgs/main 2>$null
+    conda config --remove channels pkgs/r 2>$null
+    conda config --remove channels pkgs/pro 2>$null
+    
+    # Add only conda-forge channel
+    Write-Host "Adding conda-forge channel..."
     conda config --add channels conda-forge
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to add conda-forge channel"
-        exit 1
-    }
     
     # Set channel priority to strict
+    Write-Host "Setting channel priority to strict..."
     conda config --set channel_priority strict
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to set channel priority"
-        exit 1
-    }
+    
+    # Show final configuration
+    Write-Host "Final channel configuration:"
+    conda config --show channels
+    conda config --show channel_priority
     
     Write-Host "Conda channels configured successfully"
 }
