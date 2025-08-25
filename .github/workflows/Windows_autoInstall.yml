@@ -109,11 +109,12 @@ jobs:
           
           # Verify python (3.11)
           Write-Host "Verifying Python..."
-          python --version
+          $condaPythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
+          & $condaPythonPath --version
           
           # Verify the installed Python version
           $EXPECTED_VERSION = "3.11"
-          $INSTALLED_VERSION = (python --version 2>&1) -replace "Python ", ""
+          $INSTALLED_VERSION = (& $condaPythonPath --version 2>&1) -replace "Python ", ""
           if ($INSTALLED_VERSION -notlike "$EXPECTED_VERSION*") {
             Write-Host "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
@@ -121,7 +122,7 @@ jobs:
           Write-Host "Correct Python version $INSTALLED_VERSION is installed."
           
           # Verify Python package imports
-          python -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+          & $condaPythonPath -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Failed to import Python packages"
             exit 1
