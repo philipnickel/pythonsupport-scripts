@@ -7,28 +7,18 @@
 # @notes: Creates Python 3.11 environment with DTU-specific packages for first year students
 # @/doc
 
-# Load master utilities
-try {
-    $masterUtilsUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Shared/master_utils.ps1"
-    Invoke-Expression (Invoke-WebRequest -Uri $masterUtilsUrl -UseBasicParsing).Content
-}
-catch {
-    Write-LogError "Failed to load master utilities: $($_.Exception.Message)"
-    Exit-Message
-}
-
-Write-LogInfo "First year Python environment setup"
-Write-LogInfo "Starting configuration process..."
+Write-Host "First year Python environment setup"
+Write-Host "Starting configuration process..."
 
 # Check if conda is available
-Write-LogInfo "Checking conda availability..."
+Write-Host "Checking conda availability..."
 try {
     $condaVersion = conda --version
-    Write-LogSuccess "Conda is available: $condaVersion"
+    Write-Host "Conda is available: $condaVersion"
 }
 catch {
-    Write-LogError "Conda is not available in PATH"
-    Exit-Message
+    Write-Host "Conda is not available in PATH"
+    exit 1
 }
 
 # Set Python version (default to 3.11 if not specified)
@@ -36,10 +26,10 @@ if (-not $env:PYTHON_VERSION_PS) {
     $env:PYTHON_VERSION_PS = "3.11"
 }
 
-Write-LogInfo "Configuring Python $env:PYTHON_VERSION_PS environment..."
+Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 
 # Create or update base environment with required packages
-Write-LogInfo "Installing required packages in base environment..."
+Write-Host "Installing required packages in base environment..."
 
 $packages = @(
     "python=$env:PYTHON_VERSION_PS",
@@ -59,75 +49,87 @@ try {
     # Install packages in base environment
     $packageString = $packages -join " "
     conda install -y $packageString
-    Check-ExitCode "Failed to install packages in base environment"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to install packages in base environment"
+        exit 1
+    }
     
-    Write-LogSuccess "Packages installed successfully in base environment"
+    Write-Host "Packages installed successfully in base environment"
 }
 catch {
-    Write-LogError "Failed to install packages: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to install packages: $($_.Exception.Message)"
+    exit 1
 }
 
 # Create first year environment
 $envName = "first_year"
-Write-LogInfo "Creating first year environment: $envName"
+Write-Host "Creating first year environment: $envName"
 
 try {
     # Check if environment already exists
     $envExists = conda env list | Select-String "^$envName\s"
     
     if ($envExists) {
-        Write-LogInfo "Environment $envName already exists, updating..."
+        Write-Host "Environment $envName already exists, updating..."
         conda env update -n $envName -f "$env:USERPROFILE\miniforge3\envs\$envName\environment.yml" 2>$null
     }
     else {
-        Write-LogInfo "Creating new environment $envName..."
+        Write-Host "Creating new environment $envName..."
         conda create -n $envName python=$env:PYTHON_VERSION_PS -y
-        Check-ExitCode "Failed to create environment $envName"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to create environment $envName"
+            exit 1
+        }
     }
 }
 catch {
-    Write-LogError "Failed to create/update environment: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to create/update environment: $($_.Exception.Message)"
+    exit 1
 }
 
 # Install packages in first year environment
-Write-LogInfo "Installing packages in $envName environment..."
+Write-Host "Installing packages in $envName environment..."
 
 try {
     conda activate $envName
     conda install -n $envName -y $packageString
-    Check-ExitCode "Failed to install packages in $envName environment"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to install packages in $envName environment"
+        exit 1
+    }
     
-    Write-LogSuccess "Packages installed successfully in $envName environment"
+    Write-Host "Packages installed successfully in $envName environment"
 }
 catch {
-    Write-LogError "Failed to install packages in $envName environment: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to install packages in $envName environment: $($_.Exception.Message)"
+    exit 1
 }
 
 # Install Jupyter kernel for the environment
-Write-LogInfo "Installing Jupyter kernel for $envName environment..."
+Write-Host "Installing Jupyter kernel for $envName environment..."
 try {
     conda activate $envName
     python -m ipykernel install --user --name $envName --display-name "Python $env:PYTHON_VERSION_PS (First Year)"
-    Check-ExitCode "Failed to install Jupyter kernel"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to install Jupyter kernel"
+        exit 1
+    }
     
-    Write-LogSuccess "Jupyter kernel installed successfully"
+    Write-Host "Jupyter kernel installed successfully"
 }
 catch {
-    Write-LogError "Failed to install Jupyter kernel: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to install Jupyter kernel: $($_.Exception.Message)"
+    exit 1
 }
 
 # Verify installation
-Write-LogInfo "Verifying installation..."
+Write-Host "Verifying installation..."
 
 try {
     # Test Python version
     conda activate $envName
     $pythonVersion = python --version
-    Write-LogInfo "Python version: $pythonVersion"
+    Write-Host "Python version: $pythonVersion"
     
     # Test package imports
     $testScript = @"
@@ -147,44 +149,18 @@ print("All packages imported successfully!")
 "@
     
     $testScript | python
-    Check-ExitCode "Package import test failed"
-    
-    Write-LogSuccess "All packages verified successfully"
-}
-catch {
-    Write-LogError "Verification failed: $($_.Exception.Message)"
-    Exit-Message
-}
-
-# Configure conda to activate first year environment by default
-Write-LogInfo "Configuring conda to activate first year environment by default..."
-try {
-    # Add activation to PowerShell profile
-    $profilePath = Set-PowerShellProfile
-    $activationLine = "conda activate $envName"
-    
-    if (-not (Select-String -Path $profilePath -Pattern $activationLine -Quiet)) {
-        Add-Content -Path $profilePath -Value "`n# Auto-activate first year environment`n$activationLine"
-        Write-LogSuccess "Added auto-activation to PowerShell profile"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Package import test failed"
+        exit 1
     }
-    else {
-        Write-LogInfo "Auto-activation already configured"
-    }
+    
+    Write-Host "All packages verified successfully"
 }
 catch {
-    Write-LogWarning "Failed to configure auto-activation: $($_.Exception.Message)"
+    Write-Host "Verification failed: $($_.Exception.Message)"
+    exit 1
 }
 
-# Set up environment variables
-Write-LogInfo "Setting up environment variables..."
-try {
-    $env:CONDA_DEFAULT_ENV = $envName
-    Write-LogSuccess "Environment variables configured"
-}
-catch {
-    Write-LogWarning "Failed to set environment variables: $($_.Exception.Message)"
-}
-
-Write-LogSuccess "First year Python environment setup completed successfully!"
-Write-LogInfo "You can now use Python $env:PYTHON_VERSION_PS with all required packages"
-Write-LogInfo "To activate the environment manually, run: conda activate $envName"
+Write-Host "First year Python environment setup completed successfully!"
+Write-Host "You can now use Python $env:PYTHON_VERSION_PS with all required packages"
+Write-Host "To activate the environment manually, run: conda activate $envName"

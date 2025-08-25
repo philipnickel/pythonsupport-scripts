@@ -5,34 +5,19 @@
 # @requires: Windows 10/11, Internet connection, PowerShell 5.1+
 # @usage: . .\install.ps1
 # @example: $env:PYTHON_VERSION_PS="3.11"; . .\install.ps1
-# @notes: Uses master utility system for consistent error handling and logging. Downloads and installs Miniforge directly from GitHub releases. Supports multiple Python versions via PYTHON_VERSION_PS environment variable. Creates conda environments and installs essential data science packages.
+# @notes: Downloads and installs Miniforge directly from GitHub releases. Supports multiple Python versions via PYTHON_VERSION_PS environment variable.
 # @author: Python Support Team
 # @version: 2024-12-19
 # @/doc
 
-# Load master utilities
-try {
-    $masterUtilsUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Shared/master_utils.ps1"
-    $masterUtilsScript = Invoke-WebRequest -Uri $masterUtilsUrl -UseBasicParsing
-    & ([ScriptBlock]::Create($masterUtilsScript.Content))
-}
-catch {
-    Write-Error "Failed to load master utilities: $($_.Exception.Message)"
-    exit 1
-}
-
-Write-LogInfo "Python (Miniforge) installation"
-Write-LogInfo "Starting installation process..."
-
-# Check system requirements
-Test-SystemRequirements
-Test-AllDependencies
+Write-Host "Python (Miniforge) installation"
+Write-Host "Starting installation process..."
 
 # Set execution policy to allow script execution
-Set-ExecutionPolicySafe
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Check if conda is already installed
-Write-LogInfo "Checking for existing conda installation..."
+Write-Host "Checking for existing conda installation..."
 $condaPaths = @(
     "$env:USERPROFILE\miniforge3\Scripts\conda.exe",
     "$env:USERPROFILE\miniconda3\Scripts\conda.exe",
@@ -45,7 +30,7 @@ $condaPaths = @(
 $condaFound = $false
 foreach ($path in $condaPaths) {
     if (Test-Path $path) {
-        Write-LogSuccess "Found existing conda installation at: $path"
+        Write-Host "Found existing conda installation at: $path"
         $env:PATH = "$(Split-Path $path -Parent);$env:PATH"
         $condaFound = $true
         break
@@ -53,34 +38,37 @@ foreach ($path in $condaPaths) {
 }
 
 if (-not $condaFound) {
-    Write-LogInfo "No existing conda installation found, installing Miniforge..."
+    Write-Host "No existing conda installation found, installing Miniforge..."
     
     # Download Miniforge installer
     $miniforgeUrl = "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
     $installerPath = Join-Path $env:TEMP "Miniforge3-Windows-x86_64.exe"
     
-    Write-LogInfo "Downloading Miniforge installer..."
+    Write-Host "Downloading Miniforge installer..."
     try {
         Invoke-WebRequest -Uri $miniforgeUrl -OutFile $installerPath -UseBasicParsing
-        Check-ExitCode "Failed to download Miniforge installer"
-    }
-    catch {
-        Write-LogError "Failed to download Miniforge: $($_.Exception.Message)"
-        Exit-Message
-    }
-    
-    # Install Miniforge silently
-    Write-LogInfo "Installing Miniforge..."
-    try {
-        $process = Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniforge3" -Wait -PassThru
-        if ($process.ExitCode -ne 0) {
-            Write-LogError "Miniforge installation failed with exit code: $($process.ExitCode)"
-            Exit-Message
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to download Miniforge installer"
+            exit 1
         }
     }
     catch {
-        Write-LogError "Failed to install Miniforge: $($_.Exception.Message)"
-        Exit-Message
+        Write-Host "Failed to download Miniforge: $($_.Exception.Message)"
+        exit 1
+    }
+    
+    # Install Miniforge silently
+    Write-Host "Installing Miniforge..."
+    try {
+        $process = Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniforge3" -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            Write-Host "Miniforge installation failed with exit code: $($process.ExitCode)"
+            exit 1
+        }
+    }
+    catch {
+        Write-Host "Failed to install Miniforge: $($_.Exception.Message)"
+        exit 1
     }
     
     # Clean up installer
@@ -90,84 +78,108 @@ if (-not $condaFound) {
     
     # Add Miniforge to PATH
     $miniforgePath = "$env:USERPROFILE\miniforge3\Scripts"
-    Add-ToPath $miniforgePath
+    $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($currentPath -notlike "*$miniforgePath*") {
+        $newPath = "$currentPath;$miniforgePath"
+        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+    }
     $env:PATH = "$miniforgePath;$env:PATH"
     
-    Write-LogSuccess "Miniforge installed successfully"
+    Write-Host "Miniforge installed successfully"
 }
 else {
-    Write-LogSuccess "Using existing conda installation"
+    Write-Host "Using existing conda installation"
 }
 
 # Initialize conda
-Write-LogInfo "Initializing conda..."
+Write-Host "Initializing conda..."
 try {
     # Initialize conda for PowerShell
     conda init powershell
-    Check-ExitCode "Failed to initialize conda for PowerShell"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to initialize conda for PowerShell"
+        exit 1
+    }
     
     # Initialize conda for Command Prompt
     conda init cmd.exe
-    Check-ExitCode "Failed to initialize conda for Command Prompt"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to initialize conda for Command Prompt"
+        exit 1
+    }
     
     # Reload environment variables
     $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
 }
 catch {
-    Write-LogError "Failed to initialize conda: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to initialize conda: $($_.Exception.Message)"
+    exit 1
 }
 
 # Disable anaconda usage tracking
-Write-LogInfo "Disabling anaconda usage tracking..."
+Write-Host "Disabling anaconda usage tracking..."
 try {
     conda config --set anaconda_anon_usage off
 }
 catch {
-    Write-LogWarning "Failed to disable anaconda usage tracking (non-critical)"
+    Write-Host "Failed to disable anaconda usage tracking (non-critical)"
 }
 
 # Show conda installation location
-Write-LogInfo "Conda installation location:"
+Write-Host "Conda installation location:"
 try {
     conda info --base
-    Check-ExitCode "Failed to get conda base directory"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to get conda base directory"
+        exit 1
+    }
 }
 catch {
-    Write-LogError "Failed to get conda base directory: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to get conda base directory: $($_.Exception.Message)"
+    exit 1
 }
 
 # Configure conda channels (conda-forge only)
-Write-LogInfo "Configuring conda channels..."
+Write-Host "Configuring conda channels..."
 try {
     # Remove all existing channels
     conda config --remove-key channels 2>$null
-    Check-ExitCode "Failed to remove existing channels"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to remove existing channels"
+        exit 1
+    }
     
     # Add conda-forge channel
     conda config --add channels conda-forge
-    Check-ExitCode "Failed to add conda-forge channel"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to add conda-forge channel"
+        exit 1
+    }
     
     # Set channel priority to strict
     conda config --set channel_priority strict
-    Check-ExitCode "Failed to set channel priority"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to set channel priority"
+        exit 1
+    }
     
-    Write-LogSuccess "Conda channels configured successfully"
+    Write-Host "Conda channels configured successfully"
 }
 catch {
-    Write-LogError "Failed to configure conda channels: $($_.Exception.Message)"
-    Exit-Message
+    Write-Host "Failed to configure conda channels: $($_.Exception.Message)"
+    exit 1
 }
 
 # Update conda
-Write-LogInfo "Updating conda..."
+Write-Host "Updating conda..."
 try {
     conda update conda -y
-    Check-ExitCode "Failed to update conda"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to update conda (non-critical)"
+    }
 }
 catch {
-    Write-LogWarning "Failed to update conda (non-critical): $($_.Exception.Message)"
+    Write-Host "Failed to update conda (non-critical): $($_.Exception.Message)"
 }
 
-Write-LogSuccess "Python (Miniforge) installation completed successfully!"
+Write-Host "Python (Miniforge) installation completed successfully!"
