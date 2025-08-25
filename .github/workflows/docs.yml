@@ -1,11 +1,12 @@
 name: Deploy Documentation
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'docs/**'
-      - 'MacOS/Components/**/*.sh'
+  # Disabled for Windows testing
+  # push:
+  #   branches: [ "main" ]
+  #   paths:
+  #     - 'docs/**'
+  #     - 'MacOS/Components/**/*.sh'
   workflow_dispatch:
 
 permissions:
