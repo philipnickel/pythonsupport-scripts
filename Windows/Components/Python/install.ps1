@@ -45,15 +45,16 @@ if (-not $condaFound) {
     $installerPath = Join-Path $env:TEMP "Miniforge3-Windows-x86_64.exe"
     
     Write-Host "Downloading Miniforge installer..."
+    Write-Host "URL: $miniforgeUrl"
+    Write-Host "Target: $installerPath"
     try {
-        Invoke-WebRequest -Uri $miniforgeUrl -OutFile $installerPath -UseBasicParsing
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Failed to download Miniforge installer"
-            exit 1
-        }
+        $response = Invoke-WebRequest -Uri $miniforgeUrl -OutFile $installerPath -UseBasicParsing -Verbose
+        Write-Host "Download completed. File size: $((Get-Item $installerPath).Length) bytes"
     }
     catch {
         Write-Host "Failed to download Miniforge: $($_.Exception.Message)"
+        Write-Host "Exception type: $($_.Exception.GetType().Name)"
+        Write-Host "Status code: $($_.Exception.Response.StatusCode)"
         exit 1
     }
     
