@@ -72,6 +72,7 @@ run_first_year_test() {
     else
         # Inline test if external script not found
         echo "=== First Year Setup Test ==="
+        echo ""
         
         local python_installation_failed=false
         local python_environment_failed=false
@@ -98,18 +99,20 @@ run_first_year_test() {
         fi
         
         # Test Python Installation (using config version)
-        echo -n "Python Installation ($PYTHON_VERSION_DTU): "
+        echo "🔍 Testing Python Installation ($PYTHON_VERSION_DTU)..."
         if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
-            echo "PASS"
-            test_results="${test_results}Python Installation ($PYTHON_VERSION_DTU): PASS\n"
+            echo "✅ Python Installation ($PYTHON_VERSION_DTU): PASS"
+            test_results="${test_results}✅ Python Installation ($PYTHON_VERSION_DTU): PASS\n"
         else
-            echo "FAIL ($(python3 --version 2>/dev/null || echo 'Not found'))"
-            test_results="${test_results}Python Installation ($PYTHON_VERSION_DTU): FAIL\n"
+            actual_version=$(python3 --version 2>/dev/null || echo 'Not found')
+            echo "❌ Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
+            test_results="${test_results}❌ Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)\n"
             python_installation_failed=true
         fi
+        echo ""
         
         # Test Python Environment (using config packages)
-        echo -n "Python Environment (packages): "
+        echo "🔍 Testing Python Environment (packages)..."
         # Convert package array to import string
         package_imports=""
         for pkg in "${DTU_PACKAGES[@]}"; do
@@ -121,22 +124,23 @@ run_first_year_test() {
         done
         
         if python3 -c "import $package_imports" 2>/dev/null; then
-            echo "PASS"
-            test_results="${test_results}Python Environment (packages): PASS\n"
+            echo "✅ Python Environment (packages): PASS"
+            test_results="${test_results}✅ Python Environment (packages): PASS\n   All required packages installed: ${DTU_PACKAGES[*]}\n"
         else
-            echo "FAIL"
-            test_results="${test_results}Python Environment (packages): FAIL\n"
+            echo "❌ Python Environment (packages): FAIL"
+            test_results="${test_results}❌ Python Environment (packages): FAIL\n   Required packages: ${DTU_PACKAGES[*]}\n"
             python_environment_failed=true
         fi
+        echo ""
         
         # Test VS Code Setup (VS Code + extension)
-        echo -n "VS Code Setup (VS Code + extension): "
+        echo "🔍 Testing VS Code Setup..."
         if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-            echo "PASS"
-            test_results="${test_results}VS Code Setup (VS Code + extension): PASS\n"
+            echo "✅ VS Code Setup: PASS"
+            test_results="${test_results}✅ VS Code Setup: PASS\n   VS Code and Python extension are installed\n"
         else
-            echo "FAIL"
-            test_results="${test_results}VS Code Setup (VS Code + extension): FAIL\n"
+            echo "❌ VS Code Setup: FAIL"
+            test_results="${test_results}❌ VS Code Setup: FAIL\n   Missing VS Code or Python extension\n"
             vscode_setup_failed=true
         fi
         
@@ -159,24 +163,32 @@ run_first_year_test() {
             failure_count=$((failure_count + 1))
         fi
         
+        echo "════════════════════════════════════════"
         if [ $failure_count -eq 0 ]; then
-            echo "Overall Result: PASS - First year setup complete!"
+            echo "🎉 OVERALL RESULT: PASS"
+            echo "   First year setup is complete and working!"
+            test_results="${test_results}\n🎉 OVERALL RESULT: PASS\n   First year setup is complete and working!\n"
             return 0  # All tests passed
         elif [ $failure_count -eq 1 ]; then
             # Single category failure - return specific code
             if [ "$python_installation_failed" = true ]; then
-                echo "Overall Result: FAIL - Python Installation failed"
+                echo "⚠️  OVERALL RESULT: FAIL - Python Installation Issue"
+                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - Python Installation Issue\n"
                 return 1
             elif [ "$python_environment_failed" = true ]; then
-                echo "Overall Result: FAIL - Python Environment failed"
+                echo "⚠️  OVERALL RESULT: FAIL - Python Environment Issue"
+                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - Python Environment Issue\n"
                 return 2
             elif [ "$vscode_setup_failed" = true ]; then
-                echo "Overall Result: FAIL - VS Code Setup failed"
+                echo "⚠️  OVERALL RESULT: FAIL - VS Code Setup Issue"
+                test_results="${test_results}\n⚠️  OVERALL RESULT: FAIL - VS Code Setup Issue\n"
                 return 3
             fi
         else
             # Multiple failures
-            echo "Overall Result: FAIL - Multiple categories failed"
+            echo "❌ OVERALL RESULT: FAIL - Multiple Issues Found"
+            echo "   Please check the individual test results above."
+            test_results="${test_results}\n❌ OVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
             return 4
         fi
     fi
@@ -228,8 +240,25 @@ generate_html_report() {
         .total { color: #990000; }
         
         .download-section { text-align: center; padding: 15px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
-        .download-button { padding: 10px 20px; border: 2px solid #990000; background: #ffffff; color: #990000; text-decoration: none; font-weight: bold; }
-        .download-button:hover { background: #990000; color: #ffffff; }
+        .download-button { padding: 12px 24px; border: 2px solid #990000; background: #ffffff; color: #990000; text-decoration: none; font-weight: bold; border-radius: 4px; cursor: pointer; transition: all 0.3s; font-size: 1em; }
+        .download-button:hover { background: #990000; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 0; border: none; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { background: #990000; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .modal-header h2 { margin: 0; font-size: 1.4em; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .close:hover { opacity: 0.7; }
+        .modal-body { padding: 30px; }
+        .step { display: flex; align-items: flex-start; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #990000; }
+        .step-number { background: #990000; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; }
+        .step-content { flex: 1; }
+        .step-title { font-weight: bold; color: #333; margin-bottom: 8px; font-size: 1.1em; }
+        .step-description { color: #666; line-height: 1.5; }
+        .action-button { background: #990000; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: all 0.3s; }
+        .action-button:hover { background: #b30000; transform: translateY(-1px); }
         
         .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px; color: #856404; }
         .notice-title { font-weight: bold; margin-bottom: 5px; }
@@ -366,7 +395,35 @@ generate_html_report() {
         </div>
         
         <div class="download-section">
-            <a href="mailto:pythonsupport@dtu.dk?subject=Installation%20Support&body=Please%20find%20my%20installation%20report%20attached." class="download-button">Email Support</a>
+            <button onclick="showEmailModal()" class="download-button">📧 Email Support</button>
+        </div>
+        
+        <!-- Email Support Modal -->
+        <div id="emailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closeEmailModal()">&times;</span>
+                    <h2>📧 Email Support Instructions</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Download Report</div>
+                            <div class="step-description">Click the button below to download this diagnostic report to your computer. You'll need this file for the next step.</div>
+                            <button onclick="downloadReport()" class="action-button">📥 Download Report</button>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Send Email</div>
+                            <div class="step-description">Click below to open your email client with a pre-filled message to DTU Python Support. Attach the downloaded report file from Step 1.</div>
+                            <button onclick="openEmail()" class="action-button">✉️ Open Email Client</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="notice">
@@ -430,6 +487,47 @@ generate_html_report() {
         <script>
         function toggleCard(card) {
             card.classList.toggle('expanded');
+        }
+        
+        function showEmailModal() {
+            document.getElementById('emailModal').style.display = 'block';
+        }
+        
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+        
+        function downloadReport() {
+            const reportContent = document.documentElement.outerHTML;
+            const blob = new Blob([reportContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'DTU_Python_Installation_Report_' + new Date().toISOString().slice(0,10) + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function openEmail() {
+            const subject = encodeURIComponent('DTU Python Installation Support Request');
+            const body = encodeURIComponent('Hello DTU Python Support Team,\\n\\nI am having issues with my Python development environment setup. I have attached the diagnostic report generated by your installation tool.\\n\\nPlease help me resolve these issues:\\n\\n' + 
+                '• Python Installation: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ Python') ? 'Working' : 'Needs attention') + '\\n' +
+                '• Python Environment: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ Python Environment') ? 'Working' : 'Needs attention') + '\\n' +
+                '• VS Code Setup: ' + (document.querySelector('.diagnostic-log').textContent.includes('✅ VS Code') ? 'Working' : 'Needs attention') + '\\n\\n' +
+                'Thank you for your assistance.\\n\\nBest regards');
+            
+            window.location.href = 'mailto:pythonsupport@dtu.dk?subject=' + subject + '&body=' + body;
+            closeEmailModal();
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('emailModal');
+            if (event.target == modal) {
+                closeEmailModal();
+            }
         }
         </script>
         
