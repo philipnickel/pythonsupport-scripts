@@ -50,8 +50,4 @@ export PATH="$HOME/miniforge3/bin:$PATH"
 conda config --set anaconda_anon_usage off 2>/dev/null || true
 conda config --set channel_priority flexible
 
-# Verify installation
-python3 --version
-conda --version
-
 log_success "Miniforge installation completed successfully!"

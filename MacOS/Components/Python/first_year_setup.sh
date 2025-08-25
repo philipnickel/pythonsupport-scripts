@@ -33,24 +33,10 @@ if ! command -v conda >/dev/null 2>&1; then
   export PATH="$HOME/miniforge3/bin:$PATH"
 fi
 
-# Verify Python version and packages (should already be installed by main install script)
-log_info "Verifying Python ${PYTHON_VERSION_PS:-3.11} installation..."
-EXPECTED_VERSION="${PYTHON_VERSION_PS:-3.11}"
-INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-  log_warning "Python version ($INSTALLED_VERSION) may not match expected version ($EXPECTED_VERSION)"
-  log_info "Installing/updating Python version..."
-  conda install python=${PYTHON_VERSION_PS:-3.11} -y
-  check_exit_code "Failed to install Python version ${PYTHON_VERSION_PS:-3.11}"
-fi
-
-log_info "Verifying required packages..."
-python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages verified successfully')" 2>/dev/null
-if [ $? -ne 0 ]; then
-  log_info "Some packages missing, installing them..."
-  conda install dtumathtools pandas scipy statsmodels uncertainties -y
-  check_exit_code "Failed to install required packages"
-fi
+# Install required packages without verification (verification happens in post-install)
+log_info "Installing Python ${PYTHON_VERSION_PS:-3.11} and required packages..."
+conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
+check_exit_code "Failed to install Python and packages"
 
 clear -x
-log_success "Python environment verified for DTU 1st year students!"
+log_success "Python environment setup completed"

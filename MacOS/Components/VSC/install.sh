@@ -71,21 +71,6 @@ fi
 hash -r
 clear -x
 
-log_info "Verifying Visual Studio Code installation..."
-# Test if code command works
-if code --version > /dev/null 2>&1; then
-    log_success "Visual Studio Code installed and accessible via 'code' command"
-    code --version
-elif [ -d "/Applications/Visual Studio Code.app" ]; then
-    log_success "Visual Studio Code installed successfully"
-    log_info "Application is available in /Applications/Visual Studio Code.app"
-    # Try to access the binary directly
-    "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" --version 2>/dev/null || true
-else
-    log_error "Visual Studio Code installation verification failed"
-    exit_message
-fi
-
 log_success "Visual Studio Code installation completed!"
 
 # Install extensions immediately after VSCode installation
