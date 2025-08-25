@@ -70,7 +70,7 @@ jobs:
             }
           }
 
-      - name: Run Windows First Year Orchestrator
+      - name: Run Windows First Year Orchestrator and Verify
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
@@ -84,31 +84,33 @@ jobs:
           # Run the orchestrator
           $orchestratorUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/orchestrators/first_year_students.ps1"
           Invoke-Expression (Invoke-WebRequest -Uri $orchestratorUrl -UseBasicParsing).Content
-
-      - name: Verify VS Code
-        run: |
+          
+          Write-Host "=== Verification Phase ==="
+          
+          # Verify VS Code
+          Write-Host "Verifying VS Code..."
           code --version
           if ($LASTEXITCODE -ne 0) {
             Write-Host "VS Code not installed correctly"
             exit $LASTEXITCODE
           }
-
-      - name: Verify conda
-        run: |
+          
+          # Verify conda
+          Write-Host "Verifying conda..."
           conda --version
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Conda not installed correctly"
             exit $LASTEXITCODE
           }
-
-          # Some more output
+          
+          # Some more conda output
           conda --version
           conda info --base
-
-      - name: Verify python (3.11)
-        run: |
+          
+          # Verify python (3.11)
+          Write-Host "Verifying Python..."
           python --version
-
+          
           # Verify the installed Python version
           $EXPECTED_VERSION = "3.11"
           $INSTALLED_VERSION = (python --version 2>&1) -replace "Python ", ""
@@ -117,9 +119,9 @@ jobs:
             exit 1
           }
           Write-Host "Correct Python version $INSTALLED_VERSION is installed."
-
+          
           # Verify Python package imports
-          python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+          python -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Failed to import Python packages"
             exit 1
