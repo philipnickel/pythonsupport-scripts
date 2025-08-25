@@ -23,10 +23,10 @@ log_info "=================================================="
 # Run diagnostics and capture exit code
 log_info "Running diagnostic report..."
 if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/fix-html-diagnostic-report/MacOS/Components/Diagnostics/simple_report.sh)"; then
-    local exit_code=0
+    exit_code=0
     log_success "Diagnostic report completed successfully - All tests passed"
 else
-    local exit_code=$?
+    exit_code=$?
     log_info "Diagnostic report completed with exit code: $exit_code"
 fi
 
@@ -71,5 +71,12 @@ else
     log_info "Piwik logging not available"
 fi
 
-# Exit with the same code as the diagnostics script
-exit $exit_code
+# Always exit successfully - issues are reported in the diagnostic report
+# This ensures the installation process doesn't abort due to diagnostic failures
+if [ $exit_code -eq 0 ]; then
+    log_success "Post-installation diagnostics completed successfully"
+    exit 0
+else
+    log_warning "Post-installation diagnostics detected some issues - check the report"
+    exit 0
+fi
