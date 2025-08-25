@@ -12,7 +12,7 @@
 # @/doc
 
 # Load simple utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/simple_utils.sh")"
+eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/simple_utils.sh")"
 
 log_info "Python (Miniforge) installation"
 
