@@ -123,9 +123,16 @@ run_with_progress() {
     return $exit_code
 }
 
-# Set default repository and branch for direct oneliner usage
+# Set default repository and branch dynamically
 [ -z "$REMOTE_PS" ] && REMOTE_PS="philipnickel/pythonsupport-scripts"
-[ -z "$BRANCH_PS" ] && BRANCH_PS="Miniforge"
+if [ -z "$BRANCH_PS" ]; then
+    # Try to detect current branch if in git repo, otherwise default to main
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        BRANCH_PS=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+    else
+        BRANCH_PS="main"
+    fi
+fi
 
 # Load simple utilities directly
 if ! eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/common.sh")"; then
