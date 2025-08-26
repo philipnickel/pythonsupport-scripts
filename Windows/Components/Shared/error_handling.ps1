@@ -125,3 +125,206 @@ function Set-ExecutionPolicySafe {
         Exit-Message
     }
 }
+
+# Function to test network connectivity with retry logic
+function Test-NetworkConnectivity {
+    param(
+        [string]$Url = "https://github.com",
+        [int]$MaxRetries = 3,
+        [int]$DelaySeconds = 5
+    )
+    
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        try {
+            Write-LogDebug "Testing network connectivity (attempt $i/$MaxRetries)..."
+            $response = Invoke-WebRequest -Uri $Url -Method Head -TimeoutSec 10 -UseBasicParsing
+            if ($response.StatusCode -eq 200) {
+                Write-LogSuccess "Network connectivity confirmed"
+                return $true
+            }
+        }
+        catch {
+            Write-LogWarning "Network test failed (attempt $i/$MaxRetries): $($_.Exception.Message)"
+            if ($i -lt $MaxRetries) {
+                Write-LogInfo "Retrying in $DelaySeconds seconds..."
+                Start-Sleep -Seconds $DelaySeconds
+            }
+        }
+    }
+    
+    Write-LogError "Network connectivity test failed after $MaxRetries attempts"
+    Write-LogError "Please check your internet connection and firewall settings"
+    return $false
+}
+
+# Function to clean up temporary files
+function Clear-TempFiles {
+    param([string[]]$AdditionalPaths = @())
+    
+    $tempPaths = @(
+        "$env:TEMP\*.exe",
+        "$env:TEMP\*.msi",
+        "$env:TEMP\*.zip", 
+        "$env:TEMP\miniforge*.sh",
+        "$env:TEMP\VSCode*.zip"
+    ) + $AdditionalPaths
+    
+    foreach ($pattern in $tempPaths) {
+        try {
+            $files = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+            if ($files) {
+                Write-LogDebug "Cleaning up temporary files: $pattern"
+                $files | Remove-Item -Force -ErrorAction SilentlyContinue
+            }
+        }
+        catch {
+            Write-LogDebug "Failed to clean temp files $pattern : $($_.Exception.Message)"
+        }
+    }
+}
+
+# Function to check system requirements
+function Test-SystemRequirements {
+    param(
+        [Version]$MinPowerShellVersion = [Version]"5.1",
+        [string[]]$RequiredFeatures = @()
+    )
+    
+    $issues = @()
+    
+    # Check PowerShell version
+    if ($PSVersionTable.PSVersion -lt $MinPowerShellVersion) {
+        $issues += "PowerShell version $($PSVersionTable.PSVersion) is below minimum required version $MinPowerShellVersion"
+    }
+    
+    # Check Windows version
+    $osVersion = [Environment]::OSVersion.Version
+    if ($osVersion.Major -lt 10) {
+        $issues += "Windows version $($osVersion.Major).$($osVersion.Minor) is not supported. Windows 10 or later is required."
+    }
+    
+    # Check architecture
+    $arch = $env:PROCESSOR_ARCHITECTURE
+    if ($arch -ne "AMD64" -and $arch -ne "ARM64") {
+        $issues += "Processor architecture '$arch' may not be supported. AMD64 or ARM64 recommended."
+    }
+    
+    # Check available disk space (require at least 2GB)
+    try {
+        $drive = Get-PSDrive -Name ([System.IO.Path]::GetPathRoot($env:USERPROFILE).TrimEnd('\'))
+        $freeSpaceGB = [Math]::Round($drive.Free / 1GB, 2)
+        if ($freeSpaceGB -lt 2) {
+            $issues += "Insufficient disk space. Available: ${freeSpaceGB}GB, Required: 2GB minimum"
+        }
+    }
+    catch {
+        $issues += "Unable to check disk space: $($_.Exception.Message)"
+    }
+    
+    # Check for Windows Defender or antivirus interference
+    try {
+        $defenderStatus = Get-MpComputerStatus -ErrorAction SilentlyContinue
+        if ($defenderStatus -and $defenderStatus.RealTimeProtectionEnabled) {
+            Write-LogWarning "Windows Defender real-time protection is enabled - this may slow down installation"
+        }
+    }
+    catch {
+        Write-LogDebug "Unable to check Windows Defender status"
+    }
+    
+    if ($issues.Count -gt 0) {
+        Write-LogError "System requirements check failed:"
+        foreach ($issue in $issues) {
+            Write-LogError "  • $issue"
+        }
+        return $false
+    }
+    
+    Write-LogSuccess "System requirements check passed"
+    return $true
+}
+
+# Function to attempt recovery from common installation failures
+function Invoke-InstallationRecovery {
+    param(
+        [string]$ComponentName,
+        [string]$ErrorMessage,
+        [scriptblock]$RetryAction
+    )
+    
+    Write-LogWarning "$ComponentName installation failed: $ErrorMessage"
+    Write-LogInfo "Attempting recovery procedures..."
+    
+    # Clean up any partial installations
+    Clear-TempFiles
+    
+    # Check network connectivity
+    if (-not (Test-NetworkConnectivity)) {
+        Write-LogError "Recovery failed: Network connectivity issues detected"
+        return $false
+    }
+    
+    # Wait a moment before retry
+    Write-LogInfo "Waiting 5 seconds before retry..."
+    Start-Sleep -Seconds 5
+    
+    # Attempt retry
+    try {
+        Write-LogInfo "Retrying $ComponentName installation..."
+        & $RetryAction
+        Write-LogSuccess "$ComponentName installation recovery successful"
+        return $true
+    }
+    catch {
+        Write-LogError "Recovery attempt failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Function to create installation report
+function New-InstallationReport {
+    param(
+        [hashtable]$Results,
+        [string]$LogPath = "$env:TEMP\dtu_install_report.txt"
+    )
+    
+    $report = @"
+DTU Python Support Installation Report
+======================================
+Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+Computer: $env:COMPUTERNAME
+User: $env:USERNAME
+OS: $((Get-CimInstance -ClassName Win32_OperatingSystem).Caption)
+PowerShell: $($PSVersionTable.PSVersion)
+
+Installation Results:
+"@
+    
+    foreach ($component in $Results.Keys) {
+        $status = if ($Results[$component]) { "SUCCESS" } else { "FAILED" }
+        $report += "`n$component : $status"
+    }
+    
+    $report += @"
+
+System Information:
+Architecture: $env:PROCESSOR_ARCHITECTURE
+.NET Version: $($PSVersionTable.CLRVersion)
+Execution Policy: $(Get-ExecutionPolicy -Scope CurrentUser)
+
+Environment Variables:
+REMOTE_PS: $env:REMOTE_PS
+BRANCH_PS: $env:BRANCH_PS
+PYTHON_VERSION_PS: $env:PYTHON_VERSION_PS
+
+Report saved to: $LogPath
+"@
+    
+    try {
+        $report | Out-File -FilePath $LogPath -Encoding UTF8
+        Write-LogInfo "Installation report saved to: $LogPath"
+    }
+    catch {
+        Write-LogWarning "Failed to save installation report: $($_.Exception.Message)"
+    }
+}
