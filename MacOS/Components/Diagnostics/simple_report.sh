@@ -62,28 +62,41 @@ get_system_info() {
     code --list-extensions 2>/dev/null | head -10 || echo "No extensions found"
 }
 
-# Run first year test - simplified to match workflow verification
+# Run first year test - all 4 required verifications
 run_first_year_test() {
     echo "=== First Year Setup Test ==="
     echo ""
     
+    local miniforge_failed=false
     local python_failed=false
     local packages_failed=false
     local vscode_failed=false
+    local extensions_failed=false
     
-    # Test 1: Python Version (like workflow)
-    echo "Testing Python Installation..."
+    # Test 1: Miniforge Installation
+    echo "Testing Miniforge Installation..."
+    if [ -d "$HOME/miniforge3" ] && command -v conda >/dev/null 2>&1; then
+        echo "PASS: Miniforge installed at $HOME/miniforge3"
+    else
+        echo "FAIL: Miniforge not found or conda command not available"
+        miniforge_failed=true
+    fi
+    echo ""
+    
+    # Test 2: Python Version (from miniforge)
+    echo "Testing Python Version..."
     EXPECTED_VERSION="3.12"
     INSTALLED_VERSION=$(python3 --version 2>/dev/null | cut -d " " -f 2)
-    if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
-        echo "PASS: Python $INSTALLED_VERSION (expected $EXPECTED_VERSION)"
+    PYTHON_PATH=$(which python3 2>/dev/null)
+    if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]] && [[ "$PYTHON_PATH" == *"miniforge3"* ]]; then
+        echo "PASS: Python $INSTALLED_VERSION from miniforge"
     else
-        echo "FAIL: Python $INSTALLED_VERSION (expected $EXPECTED_VERSION)"
+        echo "FAIL: Expected Python $EXPECTED_VERSION from miniforge, found $INSTALLED_VERSION at $PYTHON_PATH"
         python_failed=true
     fi
     echo ""
     
-    # Test 2: DTU Packages (like workflow) 
+    # Test 3: DTU Packages
     echo "Testing DTU Packages..."
     if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>/dev/null; then
         echo "PASS: All DTU packages imported successfully"
@@ -93,7 +106,7 @@ run_first_year_test() {
     fi
     echo ""
     
-    # Test 3: VS Code (like workflow)
+    # Test 4: VS Code
     echo "Testing VS Code..."
     if code --version >/dev/null 2>&1; then
         echo "PASS: VS Code $(code --version 2>/dev/null | head -1)"
@@ -101,15 +114,33 @@ run_first_year_test() {
         echo "FAIL: VS Code not available"
         vscode_failed=true
     fi
+    echo ""
+    
+    # Test 5: VS Code Extensions
+    echo "Testing VS Code Extensions..."
+    if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
+        echo "PASS: Python extension installed"
+        if code --list-extensions 2>/dev/null | grep -q "ms-toolsai.jupyter"; then
+            echo "PASS: Jupyter extension installed"  
+        else
+            echo "FAIL: Jupyter extension missing"
+            extensions_failed=true
+        fi
+    else
+        echo "FAIL: Python extension missing"
+        extensions_failed=true
+    fi
     
     echo ""
     echo "════════════════════════════════════════"
     
     # Overall result
     local fail_count=0
+    if [ "$miniforge_failed" = true ]; then fail_count=$((fail_count + 1)); fi
     if [ "$python_failed" = true ]; then fail_count=$((fail_count + 1)); fi
     if [ "$packages_failed" = true ]; then fail_count=$((fail_count + 1)); fi  
     if [ "$vscode_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    if [ "$extensions_failed" = true ]; then fail_count=$((fail_count + 1)); fi
     
     if [ $fail_count -eq 0 ]; then
         echo "OVERALL RESULT: PASS - All components working"
