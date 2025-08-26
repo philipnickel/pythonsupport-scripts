@@ -12,13 +12,14 @@
 # Get system info
 get_system_info() {
     # Self-contained configuration - try external first, fall back to defaults
-    if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
-        CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-        CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
-        if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
-            source "$CONFIG_FILE" 2>/dev/null || true
-            rm -f "$CONFIG_FILE"
-        fi
+    REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
+    BRANCH_PS=${BRANCH_PS:-"main"}
+    
+    CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+    CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
+    if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE" 2>/dev/null || true
+        rm -f "$CONFIG_FILE"
     fi
     
     # Ensure we always have defaults
@@ -156,13 +157,13 @@ generate_html_report() {
     local output_file="/tmp/dtu_installation_report_$(date +%Y%m%d_%H%M%S).html"
     local timestamp=$(date)
     local system_info=$(get_system_info)
-    local test_results=$(run_first_year_test)
+    local test_results=$(run_first_year_test 2>&1)
     local test_exit_code=$?
     local install_log=""
     
     # Parse test results for summary counts (exclude header and overall result lines)
-    local pass_count=$(echo "$test_results" | grep ": PASS$" | wc -l)
-    local fail_count=$(echo "$test_results" | grep ": FAIL$" | wc -l)
+    local pass_count=$(echo "$test_results" | grep "^PASS:" | wc -l)
+    local fail_count=$(echo "$test_results" | grep "^FAIL:" | wc -l)
     local total_count=$((pass_count + fail_count))
     
     # Generate professional status message
@@ -542,7 +543,7 @@ main() {
     fi
     
     # Return the test exit code for Piwik logging
-    exit $exit_code
+    return $exit_code
 }
 
 # Only run main if script is executed directly (not sourced)  
