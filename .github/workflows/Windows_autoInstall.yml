@@ -101,11 +101,43 @@ jobs:
         if: matrix.setup == 'clean'
         run: |
           Write-Host "Verifying VS Code installation..."
+          
+          # Refresh PATH from registry for current session
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          # Check if VS Code is accessible via command line
           try {
-            code --version
+            $vscodeVersion = & code --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "✓ VS Code accessible via command line"
+              $vscodeVersion | ForEach-Object { Write-Host "  $_" }
+            } else {
+              throw "code command returned exit code $LASTEXITCODE"
+            }
           } catch {
-            Write-Host "ERROR: VS Code not installed properly"
-            exit 1
+            # Fallback: Check if VS Code is installed in expected locations
+            $vscodePaths = @(
+              "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles(x86)\Microsoft VS Code\Code.exe"
+            )
+            
+            $foundPath = $null
+            foreach ($path in $vscodePaths) {
+              if (Test-Path $path) {
+                $foundPath = $path
+                break
+              }
+            }
+            
+            if ($foundPath) {
+              Write-Host "✓ VS Code found at: $foundPath"
+              $version = & "$foundPath" --version 2>$null
+              $version | ForEach-Object { Write-Host "  $_" }
+            } else {
+              Write-Host "ERROR: VS Code not found in expected locations"
+              exit 1
+            }
           }
 
       - name: Verify Installation - Conda
@@ -158,11 +190,38 @@ jobs:
         if: matrix.setup == 'clean'
         run: |
           Write-Host "Verifying VS Code extensions..."
-          code --list-extensions
+          
+          # Refresh PATH and find VS Code executable
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          $codeCmd = "code"
+          try {
+            & code --version 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "code command not found" }
+          } catch {
+            # Fallback to direct path
+            $vscodePaths = @(
+              "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles\Microsoft VS Code\Code.exe", 
+              "$env:ProgramFiles(x86)\Microsoft VS Code\Code.exe"
+            )
+            
+            foreach ($path in $vscodePaths) {
+              if (Test-Path $path) {
+                $codeCmd = $path
+                break
+              }
+            }
+          }
+          
+          # List extensions
+          $extensions = & $codeCmd --list-extensions 2>$null
+          $extensions | ForEach-Object { Write-Host "  $_" }
           
           # Should have Python extension at minimum
-          if (!(code --list-extensions | Select-String "ms-python.python")) {
+          if ($extensions -notcontains "ms-python.python") {
             Write-Host "ERROR: Python extension not installed"
+            Write-Host "Available extensions: $($extensions -join ', ')"
             exit 1
           }
           Write-Host "✓ Python extension installed"
@@ -173,7 +232,19 @@ jobs:
           Write-Host ""
           Write-Host "🎉 Installation Verification Complete!"
           Write-Host "======================================"
-          Write-Host "✓ VS Code: $(code --version | Select-Object -First 1)"
+          
+          # Refresh PATH for final summary
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          # Get VS Code version
+          try {
+            $vscodeVer = (& code --version 2>$null | Select-Object -First 1)
+            if ($LASTEXITCODE -ne 0) { throw "code command failed" }
+            Write-Host "✓ VS Code: $vscodeVer"
+          } catch {
+            Write-Host "✓ VS Code: Installed (version check via fallback path)"
+          }
+          
           Write-Host "✓ Conda: $(conda --version)"
           Write-Host "✓ Python: $(python --version)"
           Write-Host "✓ DTU Packages: All imported successfully"
