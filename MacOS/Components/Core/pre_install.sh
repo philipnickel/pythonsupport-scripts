@@ -25,7 +25,7 @@ export SKIP_VSCODE_INSTALL=false
 # Check for ANY conda installation by looking for directories
 if [ -d "$HOME/miniforge3" ] || [ -d "$HOME/miniconda3" ] || [ -d "$HOME/anaconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ]; then
     echo "• Existing conda installation detected"
-    if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
+    if [[ "${NONINTERACTIVE:-}" == "true" ]] || [[ "${PIS_ENV:-}" == "CI" ]]; then
         echo "• Running in non-interactive mode - automatically uninstalling existing conda..."
     else
         echo "Uninstall existing conda and continue? (y/n)"

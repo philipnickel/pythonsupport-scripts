@@ -88,10 +88,11 @@ jobs:
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
           echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) from: $REMOTE_PS/$BRANCH_PS"
+          echo "PIS_ENV is set to: $PIS_ENV"
           if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            printf "%s\n" "${{ matrix.input }}" | PIS_ENV="$PIS_ENV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           else
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            PIS_ENV="$PIS_ENV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           fi
 
       - name: Verify Installation - VS Code

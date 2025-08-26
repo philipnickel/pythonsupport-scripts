@@ -70,7 +70,8 @@ if ! command -v code >/dev/null; then
   if [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
     CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
   else
-    exit_message
+    echo "ERROR: VS Code CLI not found"
+    exit 1
   fi
 else
   CODE_CLI="code"
