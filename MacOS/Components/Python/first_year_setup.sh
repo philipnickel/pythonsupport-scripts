@@ -8,8 +8,9 @@
 # @notes: This script now primarily verifies the installation since packages are installed directly in base environment
 # @/doc
 
-# Load configuration
-source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+# Set configuration defaults - no external config dependencies
+MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
+DTU_PACKAGES=${DTU_PACKAGES:-"dtumathtools pandas scipy statsmodels uncertainties"}
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -34,7 +35,7 @@ if ! command -v conda >/dev/null 2>&1; then
 fi
 
 # Install required packages without verification (verification happens in post-install)
-conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
+conda install python=${PYTHON_VERSION_PS:-3.12} dtumathtools pandas scipy statsmodels uncertainties -y
 if [ $? -ne 0 ]; then exit 1; fi
 
 clear -x

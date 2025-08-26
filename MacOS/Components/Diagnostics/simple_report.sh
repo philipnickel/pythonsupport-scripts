@@ -11,14 +11,21 @@
 
 # Get system info
 get_system_info() {
-    # Load configuration for system info display
-    if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
-        CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-        CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
-        if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
-            source "$CONFIG_FILE" 2>/dev/null || true
-            rm -f "$CONFIG_FILE"
-        fi
+    # Self-contained configuration - try external first, fall back to defaults
+    REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
+    BRANCH_PS=${BRANCH_PS:-"main"}
+    
+    CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
+    CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
+    if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE" 2>/dev/null || true
+        rm -f "$CONFIG_FILE"
+    fi
+    
+    # Ensure we always have defaults
+    PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
+    if [ -z "${DTU_PACKAGES[*]:-}" ]; then
+        DTU_PACKAGES=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
     fi
     
     echo "=== System Information ==="
@@ -56,144 +63,92 @@ get_system_info() {
     code --list-extensions 2>/dev/null | head -10 || echo "No extensions found"
 }
 
-# Run first year test and capture results
+# Run first year test - all 4 required verifications
 run_first_year_test() {
-    if [ -f "$(dirname "$0")/first_year_test.sh" ]; then
-        local test_output
-        test_output=$("$(dirname "$0")/first_year_test.sh" 2>&1)
-        local test_exit_code=$?
-        echo "$test_output"
-        return $test_exit_code
+    echo "=== First Year Setup Test ==="
+    echo ""
+    
+    local miniforge_failed=false
+    local python_failed=false
+    local packages_failed=false
+    local vscode_failed=false
+    local extensions_failed=false
+    
+    # Test 1: Miniforge Installation
+    echo "Testing Miniforge Installation..."
+    if [ -d "$HOME/miniforge3" ] && command -v conda >/dev/null 2>&1; then
+        echo "PASS: Miniforge installed at $HOME/miniforge3"
     else
-        # Inline test if external script not found
-        echo "=== First Year Setup Test ==="
-        echo ""
-        
-        local python_installation_failed=false
-        local python_environment_failed=false
-        local vscode_setup_failed=false
-        local test_results=""
-        
-        # Load configuration for consistent version/package testing
-        if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
-            CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-            CONFIG_FILE="/tmp/test_config_$$.sh"
-            if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
-                source "$CONFIG_FILE" 2>/dev/null || true
-                rm -f "$CONFIG_FILE"
-            fi
-        fi
-        
-        # Set defaults if config loading failed
-        PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.11"}
-        DTU_PACKAGES=${DTU_PACKAGES:-("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")}
-        
-        # Activate conda environment for tests and reload shell profiles
-        if [ -f "$HOME/miniforge3/bin/activate" ]; then
-            source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
-        fi
-        
-        # Reload shell profiles to ensure conda is in PATH
-        [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
-        [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
-        [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
-        
-        # Update PATH to include conda
-        export PATH="$HOME/miniforge3/bin:$PATH"
-        
-        # Test Python Installation (using config version)
-        echo "Testing Python Installation ($PYTHON_VERSION_DTU)..."
-        if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
-            echo "PASS: Python Installation ($PYTHON_VERSION_DTU): PASS"
-            test_results="${test_results}PASS: Python Installation ($PYTHON_VERSION_DTU): PASS\n"
+        echo "FAIL: Miniforge not found or conda command not available"
+        miniforge_failed=true
+    fi
+    echo ""
+    
+    # Test 2: Python Version (from miniforge)
+    echo "Testing Python Version..."
+    EXPECTED_VERSION="3.12"
+    INSTALLED_VERSION=$(python3 --version 2>/dev/null | cut -d " " -f 2)
+    PYTHON_PATH=$(which python3 2>/dev/null)
+    if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]] && [[ "$PYTHON_PATH" == *"miniforge3"* ]]; then
+        echo "PASS: Python $INSTALLED_VERSION from miniforge"
+    else
+        echo "FAIL: Expected Python $EXPECTED_VERSION from miniforge, found $INSTALLED_VERSION at $PYTHON_PATH"
+        python_failed=true
+    fi
+    echo ""
+    
+    # Test 3: DTU Packages
+    echo "Testing DTU Packages..."
+    if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>/dev/null; then
+        echo "PASS: All DTU packages imported successfully"
+    else
+        echo "FAIL: Some DTU packages failed to import"
+        packages_failed=true
+    fi
+    echo ""
+    
+    # Test 4: VS Code
+    echo "Testing VS Code..."
+    if code --version >/dev/null 2>&1; then
+        echo "PASS: VS Code $(code --version 2>/dev/null | head -1)"
+    else
+        echo "FAIL: VS Code not available"
+        vscode_failed=true
+    fi
+    echo ""
+    
+    # Test 5: VS Code Extensions
+    echo "Testing VS Code Extensions..."
+    if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
+        echo "PASS: Python extension installed"
+        if code --list-extensions 2>/dev/null | grep -q "ms-toolsai.jupyter"; then
+            echo "PASS: Jupyter extension installed"  
         else
-            actual_version=$(python3 --version 2>/dev/null || echo 'Not found')
-            echo "FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
-            test_results="${test_results}FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)\n"
-            python_installation_failed=true
+            echo "FAIL: Jupyter extension missing"
+            extensions_failed=true
         fi
-        echo ""
-        
-        # Test Python Environment (using config packages)
-        echo "Testing Python Environment (packages)..."
-        # Convert package array to import string
-        package_imports=""
-        for pkg in "${DTU_PACKAGES[@]}"; do
-            if [ -z "$package_imports" ]; then
-                package_imports="$pkg"
-            else
-                package_imports="$package_imports, $pkg"
-            fi
-        done
-        
-        if python3 -c "import $package_imports" 2>/dev/null; then
-            echo "PASS: Python Environment (packages): PASS"
-            test_results="${test_results}PASS: Python Environment (packages): PASS\n   All required packages installed: ${DTU_PACKAGES[*]}\n"
-        else
-            echo "FAIL: Python Environment (packages): FAIL"
-            test_results="${test_results}FAIL: Python Environment (packages): FAIL\n   Required packages: ${DTU_PACKAGES[*]}\n"
-            python_environment_failed=true
-        fi
-        echo ""
-        
-        # Test VS Code Setup (VS Code + extension)
-        echo "Testing VS Code Setup..."
-        if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-            echo "PASS: VS Code Setup: PASS"
-            test_results="${test_results}PASS: VS Code Setup: PASS\n   VS Code and Python extension are installed\n"
-        else
-            echo "FAIL: VS Code Setup: FAIL"
-            test_results="${test_results}FAIL: VS Code Setup: FAIL\n   Missing VS Code or Python extension\n"
-            vscode_setup_failed=true
-        fi
-        
-        echo ""
-        
-        # Export test results for post_install.sh to use
-        export PYTHON_INSTALLATION_PASSED=$([ "$python_installation_failed" = false ] && echo "true" || echo "false")
-        export PYTHON_ENVIRONMENT_PASSED=$([ "$python_environment_failed" = false ] && echo "true" || echo "false")
-        export VSCODE_SETUP_PASSED=$([ "$vscode_setup_failed" = false ] && echo "true" || echo "false")
-        
-        # Determine exit code based on failures
-        local failure_count=0
-        if [ "$python_installation_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        if [ "$python_environment_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        if [ "$vscode_setup_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        
-        echo "════════════════════════════════════════"
-        if [ $failure_count -eq 0 ]; then
-            echo "OVERALL RESULT: PASS"
-            echo "   First year setup is complete and working!"
-            test_results="${test_results}\nOVERALL RESULT: PASS\n   First year setup is complete and working!\n"
-            return 0  # All tests passed
-        elif [ $failure_count -eq 1 ]; then
-            # Single category failure - return specific code
-            if [ "$python_installation_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - Python Installation Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Installation Issue\n"
-                return 1
-            elif [ "$python_environment_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - Python Environment Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Environment Issue\n"
-                return 2
-            elif [ "$vscode_setup_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - VS Code Setup Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - VS Code Setup Issue\n"
-                return 3
-            fi
-        else
-            # Multiple failures
-            echo "OVERALL RESULT: FAIL - Multiple Issues Found"
-            echo "   Please check the individual test results above."
-            test_results="${test_results}\nOVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
-            return 4
-        fi
+    else
+        echo "FAIL: Python extension missing"
+        extensions_failed=true
+    fi
+    
+    echo ""
+    echo "════════════════════════════════════════"
+    
+    # Overall result
+    local fail_count=0
+    if [ "$miniforge_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    if [ "$python_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    if [ "$packages_failed" = true ]; then fail_count=$((fail_count + 1)); fi  
+    if [ "$vscode_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    if [ "$extensions_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    
+    if [ $fail_count -eq 0 ]; then
+        echo "OVERALL RESULT: PASS - All components working"
+        return 0
+    else
+        echo "OVERALL RESULT: FAIL - $fail_count component(s) failed"
+        return 1
     fi
 }
 
@@ -202,13 +157,13 @@ generate_html_report() {
     local output_file="/tmp/dtu_installation_report_$(date +%Y%m%d_%H%M%S).html"
     local timestamp=$(date)
     local system_info=$(get_system_info)
-    local test_results=$(run_first_year_test)
+    local test_results=$(run_first_year_test 2>&1)
     local test_exit_code=$?
     local install_log=""
     
     # Parse test results for summary counts (exclude header and overall result lines)
-    local pass_count=$(echo "$test_results" | grep ": PASS$" | wc -l)
-    local fail_count=$(echo "$test_results" | grep ": FAIL$" | wc -l)
+    local pass_count=$(echo "$test_results" | grep "^PASS:" | wc -l)
+    local fail_count=$(echo "$test_results" | grep "^FAIL:" | wc -l)
     local total_count=$((pass_count + fail_count))
     
     # Generate professional status message
@@ -588,7 +543,11 @@ main() {
     fi
     
     # Return the test exit code for Piwik logging
-    exit $exit_code
+    return $exit_code
 }
 
-main
+# Only run main if script is executed directly (not sourced)  
+# Also run if executed via bash -c (when BASH_SOURCE[0] is bash)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]] || [[ -z "${BASH_SOURCE[0]}" ]]; then
+    main
+fi

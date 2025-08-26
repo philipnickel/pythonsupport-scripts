@@ -1,148 +1,137 @@
 #!/bin/bash
-# @doc
-# @name: Conda Uninstall Script
-# @description: Completely removes conda/miniconda/miniforge installations
-# @category: Core
-# @usage: ./uninstall_conda.sh
-# @requirements: macOS system
-# @notes: Removes conda installations and cleans up shell configurations
-# @/doc
+# Robust conda uninstaller for DTU Python Support
+# Follows official Miniforge/Miniconda uninstall procedure
 
-# Load configuration
-source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
+echo "Starting conda uninstall process..."
 
-echo "DTU Conda Uninstall Script"
-echo "=========================="
-echo ""
+# Function to safely remove conda installation
+remove_conda_installation() {
+    local conda_path="$1"
+    local conda_type="$2"
+    
+    if [ -d "$conda_path" ]; then
+        echo "Found $conda_type installation at: $conda_path"
+        
+        # Check if this is a system installation (requires sudo)
+        local needs_sudo=false
+        if [[ "$conda_path" == /opt/* ]] || [[ "$conda_path" == /usr/local/* ]] || [[ "$conda_path" == /System/* ]]; then
+            needs_sudo=true
+        fi
+        
+        # In CI mode, only use sudo for system installations
+        if [[ "${PIS_ENV:-}" == "CI" ]] && [[ "$needs_sudo" == false ]]; then
+            needs_sudo=false
+        else
+            needs_sudo=true
+        fi
+        
+        # Try to use the official uninstaller script first
+        if [ -f "$conda_path/uninstall.sh" ]; then
+            echo "Using official $conda_type uninstaller script..."
+            if [ "$needs_sudo" = true ]; then
+                if sudo -E bash "$conda_path/uninstall.sh" --yes; then
+                    echo "$conda_type uninstaller completed successfully"
+                    return 0
+                else
+                    echo "Official uninstaller failed, falling back to manual removal..."
+                fi
+            else
+                if bash "$conda_path/uninstall.sh" --yes; then
+                    echo "$conda_type uninstaller completed successfully"
+                    return 0
+                else
+                    echo "Official uninstaller failed, falling back to manual removal..."
+                fi
+            fi
+        fi
+        
+        # Manual removal if no uninstaller or it failed
+        echo "Removing $conda_type manually..."
+        if [ "$needs_sudo" = true ]; then
+            sudo rm -rf "$conda_path"
+        else
+            rm -rf "$conda_path"
+        fi
+        echo "$conda_type removed"
+    fi
+}
 
-# Find conda installations
-CONDA_PATHS=()
-CONDA_TYPES=()
+# Check what conda installations exist
+echo "Checking for existing conda installations..."
 
-# Check common installation locations
+# Try to get conda info if conda is available
+if command -v conda >/dev/null 2>&1; then
+    echo "Conda command found, getting installation info..."
+    CONDA_BASE=$(conda info --base 2>/dev/null || echo "")
+    if [ -n "$CONDA_BASE" ]; then
+        echo "Conda base environment: $CONDA_BASE"
+        
+        # Determine conda type from base path
+        if echo "$CONDA_BASE" | grep -q "miniforge"; then
+            remove_conda_installation "$CONDA_BASE" "Miniforge"
+        elif echo "$CONDA_BASE" | grep -q "miniconda"; then
+            remove_conda_installation "$CONDA_BASE" "Miniconda"
+        elif echo "$CONDA_BASE" | grep -q "anaconda"; then
+            remove_conda_installation "$CONDA_BASE" "Anaconda"
+        else
+            remove_conda_installation "$CONDA_BASE" "Conda"
+        fi
+    fi
+fi
+
+# Check common installation locations if conda command not available
 if [ -d "$HOME/miniforge3" ]; then
-    CONDA_PATHS+=("$HOME/miniforge3")
-    CONDA_TYPES+=("Miniforge")
+    remove_conda_installation "$HOME/miniforge3" "Miniforge"
 fi
 
 if [ -d "$HOME/miniconda3" ]; then
-    CONDA_PATHS+=("$HOME/miniconda3")
-    CONDA_TYPES+=("Miniconda")
+    remove_conda_installation "$HOME/miniconda3" "Miniconda"
 fi
 
 if [ -d "$HOME/anaconda3" ]; then
-    CONDA_PATHS+=("$HOME/anaconda3")
-    CONDA_TYPES+=("Anaconda")
+    remove_conda_installation "$HOME/anaconda3" "Anaconda"
 fi
 
-if [ -d "/opt/miniconda3" ]; then
-    CONDA_PATHS+=("/opt/miniconda3")
-    CONDA_TYPES+=("Miniconda (system)")
+# Remove conda configuration files
+echo "Removing conda configuration files..."
+
+if [ -f "$HOME/.condarc" ]; then
+    echo "Removing $HOME/.condarc"
+    rm -f "$HOME/.condarc"
 fi
 
-if [ -d "/opt/anaconda3" ]; then
-    CONDA_PATHS+=("/opt/anaconda3")
-    CONDA_TYPES+=("Anaconda (system)")
-fi
-
-# Show what was found
-if [ ${#CONDA_PATHS[@]} -eq 0 ]; then
-    echo "No conda installations found to uninstall."
-    exit 0
-fi
-
-echo "Found conda installations:"
-for i in "${!CONDA_PATHS[@]}"; do
-    echo "• ${CONDA_TYPES[$i]}: ${CONDA_PATHS[$i]}"
-done
-echo ""
-
-# Confirm uninstall (skip prompt in non-interactive mode or CI)
-echo "This will completely remove all conda installations and clean up your shell configuration."
-echo "WARNING: This action cannot be undone!"
-
-# Always proceed with uninstall - no prompting
-echo "Running in non-interactive mode - proceeding with uninstall..."
-
-# 2. Remove installation directories
-for i in "${!CONDA_PATHS[@]}"; do
-    path="${CONDA_PATHS[$i]}"
-    type="${CONDA_TYPES[$i]}"
-    
-    if [ -d "$path" ]; then
-        echo "• Removing $type installation: $path"
-        
-        # Remove installation directory (skip system installations that require sudo)
-        if [[ "$path" == /opt/* ]]; then
-            echo "  ⚠  Skipping system installation $path (requires administrator privileges)"
-            echo "  ⚠  Please remove manually if needed: sudo rm -rf '$path'"
-        else
-            rm -rf "$path"
-        fi
-        
-        if [ $? -eq 0 ]; then
-            echo "  ✓ Successfully removed $path"
-        else
-            echo "  ✗ Failed to remove $path"
-        fi
-    fi
-done
-
-# 3. Clean up shell configuration files
-echo "• Cleaning up shell configuration files..."
-SHELL_FILES=(
-    "$HOME/.bashrc"
-    "$HOME/.bash_profile" 
-    "$HOME/.zshrc"
-    "$HOME/.profile"
-)
-
-for file in "${SHELL_FILES[@]}"; do
-    if [ -f "$file" ]; then
-        echo "  Cleaning $file"
-        
-        # Create backup
-        cp "$file" "${file}.backup-$(date +%Y%m%d_%H%M%S)"
-        
-        # Remove conda-related lines
-        sed -i '' '/# >>> conda initialize >>>/,/# <<< conda initialize <<</d' "$file" 2>/dev/null || true
-        sed -i '' '/miniforge3/d' "$file" 2>/dev/null || true
-        sed -i '' '/miniconda3/d' "$file" 2>/dev/null || true
-        sed -i '' '/anaconda3/d' "$file" 2>/dev/null || true
-        sed -i '' '/conda/d' "$file" 2>/dev/null || true
-    fi
-done
-
-# 4. Remove conda-related environment variables and aliases
-echo "• Cleaning up environment variables..."
-
-# Remove from current session
-unset CONDA_DEFAULT_ENV CONDA_EXE CONDA_PREFIX CONDA_PROMPT_MODIFIER CONDA_PYTHON_EXE CONDA_SHLVL
-unset _CE_CONDA _CE_M
-
-# 5. Clean up PATH
-echo "• Cleaning up PATH..."
-export PATH=$(echo "$PATH" | sed -e 's/:*[^:]*conda[^:]*:*/:/g' -e 's/^://' -e 's/:$//')
-
-# 6. Remove conda configuration directory
 if [ -d "$HOME/.conda" ]; then
-    echo "• Removing conda configuration directory: $HOME/.conda"
+    echo "Removing $HOME/.conda and underlying files"
     rm -rf "$HOME/.conda"
 fi
 
-# 7. Remove conda environments directory (if separate)
-if [ -d "$HOME/.conda-env" ]; then
-    echo "• Removing conda environments directory: $HOME/.conda-env"
-    rm -rf "$HOME/.conda-env"
+# Clean shell configs using conda init --reverse if available
+echo "Cleaning shell configuration files..."
+
+if command -v conda >/dev/null 2>&1; then
+    echo "Using conda init --reverse to clean shell configurations..."
+    # In CI mode, don't use sudo for user installations
+    if [[ "${PIS_ENV:-}" == "CI" ]]; then
+        conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+    else
+        sudo -E conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+    fi
 fi
 
-echo ""
-echo "✓ Conda uninstall completed!"
-echo ""
-echo "Important notes:"
-echo "• Shell configuration files have been cleaned up"  
-echo "• Backups of shell files were created with .backup-* suffix"
-echo "• You may need to restart your terminal or run 'source ~/.bashrc' (or ~/.zshrc)"
-echo "• The PATH has been cleaned up for this session"
-echo ""
-echo "You can now run the DTU installer to install Miniforge."# Updated Mon Aug 25 18:45:25 CEST 2025
+# Manual cleanup of shell configs
+for file in ~/.bashrc ~/.zshrc ~/.bash_profile; do
+    if [ -f "$file" ]; then
+        echo "Processing: $file"
+        if grep -q "# >>> conda initialize >>>" "$file"; then
+            echo "Found conda initialization block in $file, removing..."
+            sed -i.bak '/# >>> conda initialize >>>/,/# <<< conda initialize <<</d' "$file"
+            echo "Conda initialization block removed from $file"
+        else
+            echo "No conda initialization block found in $file"
+        fi
+    else
+        echo "File not found: $file"
+    fi
+done
+
+echo "Conda uninstall completed!"

@@ -11,39 +11,19 @@
 # @version: 2024-12-25
 # @/doc
 
-# Load configuration - set defaults if variables not provided
+# Set configuration defaults - no external config dependencies
 REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
-echo "Loading config with REMOTE_PS='$REMOTE_PS' BRANCH_PS='$BRANCH_PS'"
-CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-CONFIG_FILE="/tmp/config_$$.sh"
-echo "Downloading config from: $CONFIG_URL"
 
-curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE"
-curl_exit=$?
-if [ $curl_exit -eq 0 ] && [ -s "$CONFIG_FILE" ]; then
-    echo "Config downloaded successfully ($(wc -c < "$CONFIG_FILE") bytes)"
-    echo "Sourcing config..."
-    source "$CONFIG_FILE"
-    rm -f "$CONFIG_FILE"
-    
-    # Verify critical variables are set
-    if [ -z "$MINIFORGE_BASE_URL" ]; then
-        echo "ERROR: MINIFORGE_BASE_URL not set after loading config"
-        echo "Available environment variables:"
-        env | grep -E "(MINIFORGE|PYTHON)" | sort
-        exit 1
-    fi
-    
-    echo "Config loaded successfully:"
-    echo "  MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
-    echo "  MINIFORGE_PATH='$MINIFORGE_PATH'"
-else
-    echo "ERROR: Failed to download config from $CONFIG_URL (exit code: $curl_exit)"
-    [ -f "$CONFIG_FILE" ] && echo "File size: $(wc -c < "$CONFIG_FILE") bytes" || echo "File does not exist"
-    rm -f "$CONFIG_FILE"
-    exit 1
-fi
+# Set defaults for required variables
+PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
+MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
+MINIFORGE_BASE_URL=${MINIFORGE_BASE_URL:-"https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX"}
+
+echo "Python installation configuration:"
+echo "  PYTHON_VERSION_DTU='$PYTHON_VERSION_DTU'"
+echo "  MINIFORGE_PATH='$MINIFORGE_PATH'"
+echo "  MINIFORGE_BASE_URL='$MINIFORGE_BASE_URL'"
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"

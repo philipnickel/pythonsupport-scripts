@@ -17,5 +17,11 @@ Open Terminal (⌘ + Space, search "Terminal") and run:
 Check your Python environment installation:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
+REMOTE_PS="philipnickel/pythonsupport-scripts" BRANCH_PS="MacOS_DEV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/MacOS_DEV/MacOS/Components/Diagnostics/simple_report.sh)"
+```
+
+For testing with your development branch. The default version (using dtudk repo and main branch):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
 ```

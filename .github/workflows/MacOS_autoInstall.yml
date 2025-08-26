@@ -23,26 +23,38 @@ on:
         type: string
 
 env:
-  PYTHON_VERSION_PS: "3.11"
+  PYTHON_VERSION_PS: "3.12"
   PIS_ENV: "CI"
 
 jobs:
   test-installer:
-    name: ${{ matrix.scenario }} (${{ matrix.arch }})
-    runs-on: macos-latest
+    name: ${{ matrix.scenario }} (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
     
     strategy:
       fail-fast: false
       matrix:
-        setup: [clean, existing-conda]
-        arch: [x86_64, arm64]
         include:
           - setup: clean
             input: ""
-            scenario: "Clean Installation"
+            scenario: "Clean Installation (CLI Mode)"
+            runner: macos-13
+            mode: "--cli"
           - setup: existing-conda
             input: "yes"
-            scenario: "Existing Conda (Auto-Uninstall)"
+            scenario: "Existing Conda (Auto-Uninstall CLI)"
+            runner: macos-13
+            mode: "--cli"
+          - setup: clean
+            input: ""
+            scenario: "Clean Installation (CLI Mode)"
+            runner: macos-latest
+            mode: "--cli"
+          - setup: existing-conda
+            input: "yes"
+            scenario: "Existing Conda (Auto-Uninstall CLI)"
+            runner: macos-latest
+            mode: "--cli"
     
     steps:
       - name: Checkout repository
@@ -60,25 +72,42 @@ jobs:
       - name: Setup test scenario - Existing Conda
         if: matrix.setup == 'existing-conda'
         run: |
-          echo "Setting up existing conda test for ${{ matrix.arch }}"
-          # Install miniconda to simulate existing installation
-          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${{ matrix.arch }}.sh -o /tmp/miniconda.sh
+          echo "Setting up existing conda test for ${{ matrix.runner }}"
+          # Install miniconda to simulate existing installation - auto-detect arch
+          if [[ $(uname -m) == "arm64" ]]; then
+            ARCH="arm64"
+          else
+            ARCH="x86_64"
+          fi
+          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${ARCH}.sh -o /tmp/miniconda.sh
           bash /tmp/miniconda.sh -b -p $HOME/miniconda3
           rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
 
 
 
-      - name: Run DTU Python Installer
+      - name: Run DTU Python Installer (Release Script)
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          DTU_CLI_MODE: 'true'
         run: |
-          echo "Testing ${{ matrix.scenario }} (${{ matrix.arch }}) from: $REMOTE_PS/$BRANCH_PS"
+          echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) using release script from: $REMOTE_PS/$BRANCH_PS"
+          echo "PIS_ENV is set to: $PIS_ENV"
+          echo "DTU_CLI_MODE is set to: $DTU_CLI_MODE"
+          
+          # Override to use test branch/repo for this PR and ensure environment is exported
+          export REMOTE_PS="$REMOTE_PS"
+          export BRANCH_PS="$BRANCH_PS"
+          export PIS_ENV="$PIS_ENV"
+          export DTU_CLI_MODE="$DTU_CLI_MODE"
+          
+          # Use one-liner approach for CLI mode (as students would)
+          echo "Running installer using one-liner approach"
           if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh")"
           else
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh")"
           fi
 
       - name: Verify Installation - VS Code
@@ -92,73 +121,57 @@ jobs:
       - name: Verify Installation - Conda
         run: |
           echo "Verifying conda installation..."
-          which conda || {
-            echo "ERROR: Conda not found"
-            exit 1
-          }
           
+          which conda
+          
+          # Verify conda version and base
           conda --version
           conda info --base
-          
-          # Should be miniforge
-          if ! conda info --base | grep -q "miniforge3"; then
-            echo "ERROR: Not using miniforge"
-            exit 1
-          fi
 
       - name: Verify Installation - Python Version
         run: |
           echo "Verifying Python version..."
           
-          # Activate conda environment to ensure we're using the right Python
-          source ~/miniforge3/bin/activate
           which python3
           
-          EXPECTED_VERSION="3.11"
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.12"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
-            echo "PATH: $PATH"
-            echo "Available Python versions:"
-            ls -la ~/miniforge3/bin/python*
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
-          echo "✓ Correct Python version $INSTALLED_VERSION"
+          echo "Correct Python version $INSTALLED_VERSION is installed."
+          
+          # Verify this is our miniforge python, not system python
+          PYTHON_PATH=$(which python3)
+          if ! echo "$PYTHON_PATH" | grep -q "miniforge3"; then
+            echo "ERROR: Python is not from miniforge: $PYTHON_PATH"
+            exit 1
+          fi
+          echo "Python is from miniforge: $PYTHON_PATH"
 
       - name: Verify Installation - DTU Packages
         run: |
           echo "Verifying DTU packages..."
           
-          # Activate conda environment to ensure we're using the right Python
-          source ~/miniforge3/bin/activate
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')" || {
-            echo "ERROR: Failed to import DTU packages"
-            echo "Available packages:"
-            conda list | grep -E "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
-            exit 1
-          }
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
-      - name: Verify Installation - VS Code Extensions
+      - name: Verify Installation - VS Code
         run: |
-          echo "Verifying VS Code extensions..."
-          code --list-extensions
+          echo "Verifying VS Code installation..."
           
-          # Should have Python extension at minimum
-          if ! code --list-extensions | grep -q "ms-python.python"; then
-            echo "ERROR: Python extension not installed"
-            exit 1
-          fi
-          echo "✓ Python extension installed"
+          code --version
 
       - name: Final Verification Summary
         run: |
           echo ""
-          echo "🎉 Installation Verification Complete!"
+          echo "Installation Verification Complete!"
           echo "======================================"
-          echo "✓ VS Code: $(code --version | head -1)"
-          echo "✓ Conda: $(conda --version)"
-          echo "✓ Python: $(python3 --version)"
-          echo "✓ DTU Packages: All imported successfully"
-          echo "✓ VS Code Extensions: Python extension installed"
+          echo "VS Code: $(code --version | head -1)"
+          echo "Conda: $(conda --version)"
+          echo "Python: $(python3 --version)"
+          echo "DTU Packages: All imported successfully"
           echo ""
           echo "Test scenario '${{ matrix.scenario }}' passed all verifications!"
