@@ -8,6 +8,8 @@
 # @notes: Uses master utility system for consistent error handling and logging. Downloads and installs VSCode directly from Microsoft
 # @/doc
 
+# VS Code installation script - no external config dependencies
+
 # Set up install log for this script  
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
@@ -34,16 +36,11 @@ else
     # Detect architecture for proper download
     ARCH=$(uname -m)
     echo "Detected architecture: $ARCH"
-    
-    # Use a specific stable version known to work well in CI environments
-    # This avoids issues with the latest bleeding-edge VS Code versions
     if [[ "$ARCH" == "arm64" ]]; then
-        VSCODE_URL="https://update.code.visualstudio.com/1.95.1/darwin-arm64/stable"
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-arm64"
     else
-        VSCODE_URL="https://update.code.visualstudio.com/1.95.1/darwin/stable"
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin"
     fi
-    
-    echo "Using stable VS Code version 1.95.1 for better CI compatibility"
     
     echo "Downloading VS Code from: $VSCODE_URL"
     curl -fsSL "$VSCODE_URL" -o /tmp/VSCode.zip
