@@ -7,292 +7,300 @@
 # @notes: Main script that orchestrates the complete Windows installation process
 # @/doc
 
+[CmdletBinding()]
 param(
     [string]$RemoteRepo = "dtudk/pythonsupport-scripts",
     [string]$Branch = "main", 
     [string]$PythonVersion = "3.11",
-    [switch]$UseGUI = $true
+    [switch]$UseGUI = $false  # Default to false for better testing
 )
 
-# Set default values and export environment variables
+# Early error handling setup
+$ErrorActionPreference = "Stop"
+$VerbosePreference = "Continue"
+
+Write-Host "DTU Python Support - Windows Installation" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "Repository: $RemoteRepo" -ForegroundColor Gray
+Write-Host "Branch: $Branch" -ForegroundColor Gray
+Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Gray
+Write-Host ""
+
+# Set environment variables
 $env:REMOTE_PS = $RemoteRepo
 $env:BRANCH_PS = $Branch
 $env:PYTHON_VERSION_PS = $PythonVersion
 
-Write-Host "DTU Python Support - Automated Windows Installation" -ForegroundColor Cyan
-Write-Host "===================================================" -ForegroundColor Cyan
-Write-Host "Repository: $RemoteRepo" -ForegroundColor Gray
-Write-Host "Branch: $Branch" -ForegroundColor Gray
-Write-Host ""
+# Get script directory (outside try block to ensure it's always available)
+if ($PSScriptRoot) {
+    $ScriptDir = $PSScriptRoot
+} elseif ($MyInvocation.MyCommand.Path) {
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+} else {
+    $ScriptDir = Get-Location
+}
+
+Write-Host "Script directory: $ScriptDir" -ForegroundColor Gray
 
 # Set up logging
 if (-not $env:INSTALL_LOG) {
     $env:INSTALL_LOG = "$env:TEMP\dtu_install_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 }
 
-"=== DTU Python Support Installation Log ===" | Out-File -FilePath $env:INSTALL_LOG
-"Started: $(Get-Date)" | Out-File -FilePath $env:INSTALL_LOG -Append
-"Repository: $RemoteRepo" | Out-File -FilePath $env:INSTALL_LOG -Append
-"Branch: $Branch" | Out-File -FilePath $env:INSTALL_LOG -Append
-"" | Out-File -FilePath $env:INSTALL_LOG -Append
-
-# Load configuration and common utilities
-try {
-    Write-Host "Loading configuration..." -ForegroundColor Gray
-    
-    # Try to load locally first, then from remote
-    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $localConfigPath = Join-Path $scriptRoot "config.ps1"
-    $localCommonPath = Join-Path $scriptRoot "Components\Shared\common.ps1"
-    
-    if (Test-Path $localConfigPath) {
-        Write-Host "Loading local configuration..." -ForegroundColor Gray
-        . $localConfigPath
-    } else {
-        Write-Host "Loading remote configuration..." -ForegroundColor Gray
-        $configUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
-        $configScript = Invoke-WebRequest -Uri $configUrl -UseBasicParsing
-        Invoke-Expression $configScript.Content
-    }
-    
-    if (Test-Path $localCommonPath) {
-        Write-Host "Loading local common utilities..." -ForegroundColor Gray
-        . $localCommonPath
-    } else {
-        Write-Host "Loading remote common utilities..." -ForegroundColor Gray
-        $commonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"  
-        $commonScript = Invoke-WebRequest -Uri $commonUrl -UseBasicParsing
-        Invoke-Expression $commonScript.Content
-    }
+# Basic logging function (before loading common.ps1)
+function Write-InstallLog {
+    param([string]$Message, [string]$Level = "INFO")
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestamp] [$Level] $Message"
+    Write-Host "DTU: $Message" -ForegroundColor $(if($Level -eq "ERROR"){"Red"}elseif($Level -eq "SUCCESS"){"Green"}elseif($Level -eq "WARNING"){"Yellow"}else{"White"})
+    Add-Content -Path $env:INSTALL_LOG -Value $logEntry -ErrorAction SilentlyContinue
 }
-catch {
-    Write-Host "Failed to load configuration: $($_.Exception.Message)" -ForegroundColor Red
+
+Write-InstallLog "Starting DTU Python Support installation"
+Write-InstallLog "Log file: $env:INSTALL_LOG"
+
+# Load configuration and utilities
+Write-InstallLog "Loading configuration and utilities..."
+
+try {
+    # Try to load local config first
+    $LocalConfigPath = Join-Path $ScriptDir "config.ps1"
+    if (Test-Path $LocalConfigPath) {
+        Write-InstallLog "Loading local config: $LocalConfigPath"
+        . $LocalConfigPath
+        Write-InstallLog "Local config loaded successfully"
+    } else {
+        Write-InstallLog "Local config not found, loading remote config..."
+        $ConfigUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
+        $ConfigScript = Invoke-WebRequest -Uri $ConfigUrl -UseBasicParsing
+        Invoke-Expression $ConfigScript.Content
+        Write-InstallLog "Remote config loaded successfully"
+    }
+} catch {
+    Write-InstallLog "Failed to load configuration: $($_.Exception.Message)" -Level "ERROR"
+    Write-Host "Installation cannot continue without configuration" -ForegroundColor Red
     exit 1
 }
 
-# Load GUI dialogs if available and requested
-$useNativeDialogs = $false
+try {
+    # Try to load local common utilities
+    $LocalCommonPath = Join-Path $ScriptDir "Components\Shared\common.ps1"
+    if (Test-Path $LocalCommonPath) {
+        Write-InstallLog "Loading local utilities: $LocalCommonPath"
+        . $LocalCommonPath
+        Write-InstallLog "Local utilities loaded successfully"
+    } else {
+        Write-InstallLog "Local utilities not found, loading remote utilities..."
+        $CommonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"
+        $CommonScript = Invoke-WebRequest -Uri $CommonUrl -UseBasicParsing
+        Invoke-Expression $CommonScript.Content
+        Write-InstallLog "Remote utilities loaded successfully"
+    }
+} catch {
+    Write-InstallLog "Failed to load utilities: $($_.Exception.Message)" -Level "ERROR"
+    Write-Host "Installation cannot continue without utilities" -ForegroundColor Red
+    exit 1
+}
+
+# Test that core functions are available
+try {
+    if (Get-Command Write-LogInfo -ErrorAction SilentlyContinue) {
+        Write-LogInfo "Core utilities loaded successfully"
+    } else {
+        throw "Write-LogInfo function not available"
+    }
+    
+    if (Get-Command Test-SystemRequirements -ErrorAction SilentlyContinue) {
+        Write-LogInfo "System requirements function available"
+    } else {
+        throw "Test-SystemRequirements function not available"
+    }
+} catch {
+    Write-InstallLog "Core functions not available: $($_.Exception.Message)" -Level "ERROR"
+    exit 1
+}
+
+# Load GUI dialogs if requested
+$UseNativeDialogs = $false
 if ($UseGUI) {
     try {
-        $localDialogsPath = Join-Path $scriptRoot "Components\Shared\windows_dialogs.ps1"
-        
-        if (Test-Path $localDialogsPath) {
-            Write-Host "Loading local GUI dialogs..." -ForegroundColor Gray
-            . $localDialogsPath
-            $useNativeDialogs = $true
-            Write-LogInfo "Native GUI dialogs loaded locally"
+        $LocalDialogsPath = Join-Path $ScriptDir "Components\Shared\windows_dialogs.ps1"
+        if (Test-Path $LocalDialogsPath) {
+            Write-LogInfo "Loading local GUI dialogs: $LocalDialogsPath"
+            . $LocalDialogsPath
+            $UseNativeDialogs = $true
         } else {
-            Write-Host "Loading remote GUI dialogs..." -ForegroundColor Gray
-            $dialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
-            $dialogsScript = Invoke-WebRequest -Uri $dialogsUrl -UseBasicParsing
-            Invoke-Expression $dialogsScript.Content
-            $useNativeDialogs = $true
-            Write-LogInfo "Native GUI dialogs loaded remotely"
+            Write-LogInfo "Loading remote GUI dialogs..."
+            $DialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
+            $DialogsScript = Invoke-WebRequest -Uri $DialogsUrl -UseBasicParsing
+            Invoke-Expression $DialogsScript.Content
+            $UseNativeDialogs = $true
         }
-    }
-    catch {
+        Write-LogInfo "GUI dialogs loaded successfully"
+    } catch {
         Write-LogWarning "Failed to load GUI dialogs, using terminal interface: $($_.Exception.Message)"
-        $useNativeDialogs = $false
+        $UseNativeDialogs = $false
     }
 }
 
-# Helper function to run component scripts
+# Component loading helper function
 function Invoke-ComponentScript {
     param(
         [string]$ComponentPath,
-        [string]$Description = "Running component"
+        [string]$Description = "component"
     )
     
-    $localPath = Join-Path $scriptRoot $ComponentPath
+    Write-LogInfo "Running $Description..."
     
-    if (Test-Path $localPath) {
-        Write-Host "Running local component: $ComponentPath" -ForegroundColor Gray
-        . $localPath
+    $LocalPath = Join-Path $ScriptDir $ComponentPath
+    
+    if (Test-Path $LocalPath) {
+        Write-LogInfo "Using local $Description : $LocalPath"
+        try {
+            . $LocalPath
+            Write-LogSuccess "$Description completed successfully (local)"
+        } catch {
+            Write-LogError "Local $Description failed: $($_.Exception.Message)"
+            throw
+        }
     } else {
-        Write-Host "Running remote component: $ComponentPath" -ForegroundColor Gray
-        $remoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
-        $script = Invoke-WebRequest -Uri $remoteUrl -UseBasicParsing
-        Invoke-Expression $script.Content
+        Write-LogInfo "Using remote $Description : $ComponentPath"
+        try {
+            $RemoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
+            $Script = Invoke-WebRequest -Uri $RemoteUrl -UseBasicParsing
+            Invoke-Expression $Script.Content
+            Write-LogSuccess "$Description completed successfully (remote)"
+        } catch {
+            Write-LogError "Remote $Description failed: $($_.Exception.Message)"
+            throw
+        }
     }
 }
 
-# === PHASE 1: PRE-INSTALLATION CHECK ===
+# === PHASE 1: PRE-INSTALLATION CHECKS ===
 Write-Host ""
-Write-Host "Phase 1: Pre-Installation System Check" -ForegroundColor White
-Write-Host "=======================================" -ForegroundColor White
+Write-LogInfo "=== Phase 1: Pre-Installation System Check ==="
 
 # System requirements check
+Write-LogInfo "Checking system requirements..."
 if (-not (Test-SystemRequirements)) {
-    Exit-WithError "System requirements check failed"
+    Write-LogError "System requirements check failed"
+    exit 1
 }
 
-# Network connectivity check
+# Network connectivity check  
+Write-LogInfo "Checking network connectivity..."
 if (-not (Test-NetworkConnectivity)) {
-    Exit-WithError "Network connectivity check failed"
+    Write-LogError "Network connectivity check failed"
+    exit 1
 }
 
 # Set execution policy
-Set-ExecutionPolicySafe
-
-# Show installation plan and get confirmation
-if ($useNativeDialogs) {
-    $message = "This installer will set up your Python development environment with:`n`n" +
-               "• Python $PythonVersion (via Miniforge)`n" +
-               "• Visual Studio Code`n" +
-               "• Essential Python packages`n" +
-               "• VSCode extensions for Python development`n`n" +
-               "Repository: $RemoteRepo`n" +
-               "Branch: $Branch`n`n" +
-               "Do you want to continue?"
-    
-    $confirm = Show-ConfirmationDialog -Title "DTU Python Support - Windows Installation" -Message $message
-    if (-not $confirm) {
-        Show-InfoDialog -Title "Installation Cancelled" -Message "Installation has been cancelled by user."
-        exit 0
-    }
-} else {
-    Write-Host "This script will install:" -ForegroundColor White
-    Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  • Visual Studio Code" -ForegroundColor White
-    Write-Host "  • Essential Python packages" -ForegroundColor White
-    Write-Host "  • VSCode extensions for Python development" -ForegroundColor White
-    Write-Host ""
-    
-    $confirmation = Read-Host "Do you want to continue? (y/N)"
-    if ($confirmation -ne "y" -and $confirmation -ne "Y") {
-        Write-Host "Installation cancelled." -ForegroundColor Yellow
-        exit 0
-    }
+Write-LogInfo "Setting PowerShell execution policy..."
+try {
+    Set-ExecutionPolicySafe
+} catch {
+    Write-LogWarning "Could not set execution policy: $($_.Exception.Message)"
 }
 
-Write-LogInfo "Phase 1: Pre-installation checks completed"
+# Get user confirmation
+$Proceed = $true
+if ($UseNativeDialogs) {
+    $Message = "This installer will set up Python development environment with:`n`n" +
+               "• Python $PythonVersion (Miniforge)`n" +
+               "• Visual Studio Code`n" +
+               "• Essential packages and extensions`n`n" +
+               "Continue with installation?"
+    
+    $Proceed = Show-ConfirmationDialog -Title "DTU Python Support Installation" -Message $Message
+    if (-not $Proceed) {
+        Show-InfoDialog -Title "Cancelled" -Message "Installation cancelled by user."
+    }
+} else {
+    Write-Host ""
+    Write-Host "This installation will set up:" -ForegroundColor White
+    Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
+    Write-Host "  • Visual Studio Code" -ForegroundColor White  
+    Write-Host "  • Essential Python packages" -ForegroundColor White
+    Write-Host "  • VSCode extensions" -ForegroundColor White
+    Write-Host ""
+    
+    $Response = Read-Host "Continue? (y/N)"
+    $Proceed = ($Response -eq "y" -or $Response -eq "Y")
+}
 
-# === PHASE 2: MAIN INSTALLATION ===
+if (-not $Proceed) {
+    Write-LogInfo "Installation cancelled by user"
+    exit 0
+}
+
+Write-LogSuccess "Phase 1 completed - system ready for installation"
+
+# === PHASE 2: COMPONENT INSTALLATION ===
 Write-Host ""
-Write-Host "Phase 2: Main Installation Process" -ForegroundColor White
-Write-Host "==================================" -ForegroundColor White
+Write-LogInfo "=== Phase 2: Component Installation ==="
 
-$installResults = @{
+$InstallResults = @{
     Python = $false
     FirstYearSetup = $false
     VSCode = $false
 }
 
 try {
-    if ($useNativeDialogs) {
-        $installSuccess = Show-ProgressDialog -Title "DTU Python Support Installation" -InitialMessage "Starting installation process..." -InstallScript {
-            # Install Python with Miniforge
-            Update-ProgressDialog -Message "Installing Python (Miniforge)..."
-            Write-LogInfo "Installing Python with Miniforge..."
-            
-            try {
-                Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1"
-                $installResults.Python = $true
-                Write-LogSuccess "Python installation completed"
-            }
-            catch {
-                Write-LogError "Python installation failed: $($_.Exception.Message)"
-                throw
-            }
-            
-            # Setup Python environment and packages
-            Update-ProgressDialog -Message "Setting up Python environment and packages..."
-            Write-LogInfo "Setting up Python environment and packages..."
-            
-            try {
-                Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1"
-                $installResults.FirstYearSetup = $true
-                Write-LogSuccess "Python environment setup completed"
-            }
-            catch {
-                Write-LogError "Python environment setup failed: $($_.Exception.Message)"
-                throw
-            }
-            
-            # Install Visual Studio Code and extensions
-            Update-ProgressDialog -Message "Installing Visual Studio Code..."
-            Write-LogInfo "Installing Visual Studio Code..."
-            
-            try {
-                Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1"
-                $installResults.VSCode = $true
-                Write-LogSuccess "Visual Studio Code installation completed"
-            }
-            catch {
-                Write-LogError "Visual Studio Code installation failed: $($_.Exception.Message)"
-                throw
-            }
-            
-            Update-ProgressDialog -Message "Installation completed!"
-            Start-Sleep -Milliseconds 1000
-        }
-        
-        if (-not $installSuccess) {
-            Exit-WithError "Installation process failed"
-        }
-    } else {
-        # Terminal-based installation
-        Write-LogInfo "Installing Python with Miniforge..."
-        Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1"
-        $installResults.Python = $true
-        Write-LogSuccess "Python installation completed"
-        
-        Write-LogInfo "Setting up Python environment and packages..."
-        Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1"
-        $installResults.FirstYearSetup = $true
-        Write-LogSuccess "Python environment setup completed"
-        
-        Write-LogInfo "Installing Visual Studio Code..."
-        Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1"
-        $installResults.VSCode = $true
-        Write-LogSuccess "Visual Studio Code installation completed"
+    # Install Python
+    Write-LogInfo "Installing Python (Miniforge)..."
+    Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1" -Description "Python installer"
+    $InstallResults.Python = $true
+    
+    # Setup Python environment
+    Write-LogInfo "Setting up Python environment..."
+    Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1" -Description "Python environment setup"
+    $InstallResults.FirstYearSetup = $true
+    
+    # Install VSCode
+    Write-LogInfo "Installing Visual Studio Code..."
+    Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1" -Description "VSCode installer"
+    $InstallResults.VSCode = $true
+    
+    Write-LogSuccess "All components installed successfully!"
+    
+} catch {
+    Write-LogError "Component installation failed: $($_.Exception.Message)"
+    
+    if ($UseNativeDialogs) {
+        Show-ErrorDialog -Title "Installation Failed" -Message "Installation failed: $($_.Exception.Message)`n`nFor help, visit: https://pythonsupport.dtu.dk"
     }
-}
-catch {
-    Write-LogError "Installation failed: $($_.Exception.Message)"
-    if ($useNativeDialogs) {
-        Show-ErrorDialog -Title "Installation Failed" -Message "Installation failed: $($_.Exception.Message)`n`nFor help, visit: https://pythonsupport.dtu.dk/install/windows/automated-error.html`nOr contact: pythonsupport@dtu.dk"
-    }
-    Exit-WithError "Installation process failed"
+    exit 1
 }
 
-Write-LogInfo "Phase 2: Main installation process completed"
-
-# === PHASE 3: POST-INSTALLATION VERIFICATION ===
+# === PHASE 3: VERIFICATION AND SUMMARY ===
 Write-Host ""
-Write-Host "Phase 3: Post-Installation Verification" -ForegroundColor White
-Write-Host "========================================" -ForegroundColor White
+Write-LogInfo "=== Phase 3: Installation Summary ==="
 
-Write-LogInfo "Running post-installation verification..."
-
-# Show installation summary
-if ($useNativeDialogs) {
-    Show-InstallationSummary -Results $installResults
+# Show results
+if ($UseNativeDialogs) {
+    Show-InstallationSummary -Results $InstallResults
 } else {
     Write-Host ""
-    Write-Host "Installation Summary:" -ForegroundColor White
-    Write-Host "===================" -ForegroundColor White
-    foreach ($component in $installResults.Keys) {
-        $status = if ($installResults[$component]) { "✓" } else { "✗" }
-        $color = if ($installResults[$component]) { "Green" } else { "Red" }
-        Write-Host "$status $component" -ForegroundColor $color
+    Write-Host "Installation Summary:" -ForegroundColor Green
+    Write-Host "===================" -ForegroundColor Green
+    foreach ($Component in $InstallResults.Keys) {
+        $Status = if ($InstallResults[$Component]) { "✓" } else { "✗" }
+        $Color = if ($InstallResults[$Component]) { "Green" } else { "Red" }
+        Write-Host "$Status $Component" -ForegroundColor $Color
     }
-}
-
-Write-Host ""
-Write-Host "DTU Python Support Installation Complete!" -ForegroundColor Green
-Write-Host "=========================================" -ForegroundColor Green
-Write-Host ""
-
-if (-not $useNativeDialogs) {
-    Write-Host "Next steps:" -ForegroundColor White
-    Write-Host "1. Restart your terminal/PowerShell to ensure all PATH changes take effect" -ForegroundColor White
-    Write-Host "2. Open VSCode and start coding with Python!" -ForegroundColor White
-    Write-Host "3. Use 'conda activate first_year' to activate the Python environment" -ForegroundColor White
-    Write-Host "4. Visit https://pythonsupport.dtu.dk for additional resources" -ForegroundColor White
+    
     Write-Host ""
-    Write-Host "Installation log saved to: $env:INSTALL_LOG" -ForegroundColor Gray
+    Write-Host "Next steps:" -ForegroundColor Yellow
+    Write-Host "1. Restart your PowerShell/Terminal" -ForegroundColor White
+    Write-Host "2. Run: conda activate first_year" -ForegroundColor White
+    Write-Host "3. Open VSCode and start coding!" -ForegroundColor White
+    Write-Host "4. Visit https://pythonsupport.dtu.dk for help" -ForegroundColor White
 }
 
-Write-LogSuccess "Installation completed successfully!"
-Write-LogInfo "Installation log saved to: $env:INSTALL_LOG"
+Write-LogSuccess "DTU Python Support installation completed!"
+Write-LogInfo "Installation log: $env:INSTALL_LOG"
+
+Write-Host ""
+Write-Host "Installation completed successfully!" -ForegroundColor Green
+Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
