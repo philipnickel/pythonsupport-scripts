@@ -71,7 +71,6 @@ run_first_year_test() {
         local python_installation_failed=false
         local python_environment_failed=false
         local vscode_setup_failed=false
-        local test_results=""
         
         # Self-contained configuration - no external dependencies
         # Try to load from external config first, but always fall back to embedded defaults
@@ -103,22 +102,19 @@ run_first_year_test() {
         # Update PATH to include conda
         export PATH="$HOME/miniforge3/bin:$PATH"
         
-        # Test Python Installation (using config version)
+        # Test Python Installation
         echo "Testing Python Installation ($PYTHON_VERSION_DTU)..."
         if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
             echo "PASS: Python Installation ($PYTHON_VERSION_DTU): PASS"
-            test_results="${test_results}PASS: Python Installation ($PYTHON_VERSION_DTU): PASS\n"
         else
             actual_version=$(python3 --version 2>/dev/null || echo 'Not found')
             echo "FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
-            test_results="${test_results}FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)\n"
             python_installation_failed=true
         fi
         echo ""
         
-        # Test Python Environment (using config packages)
+        # Test Python Environment
         echo "Testing Python Environment (packages)..."
-        # Convert package array to import string
         package_imports=""
         for pkg in "${DTU_PACKAGES[@]}"; do
             if [ -z "$package_imports" ]; then
@@ -130,33 +126,29 @@ run_first_year_test() {
         
         if python3 -c "import $package_imports" 2>/dev/null; then
             echo "PASS: Python Environment (packages): PASS"
-            test_results="${test_results}PASS: Python Environment (packages): PASS\n   All required packages installed: ${DTU_PACKAGES[*]}\n"
+            echo "   All required packages installed: ${DTU_PACKAGES[*]}"
         else
             echo "FAIL: Python Environment (packages): FAIL"
-            test_results="${test_results}FAIL: Python Environment (packages): FAIL\n   Required packages: ${DTU_PACKAGES[*]}\n"
+            echo "   Required packages: ${DTU_PACKAGES[*]}"
             python_environment_failed=true
         fi
         echo ""
         
-        # Test VS Code Setup (VS Code + extension)
+        # Test VS Code Setup
         echo "Testing VS Code Setup..."
         if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
             echo "PASS: VS Code Setup: PASS"
-            test_results="${test_results}PASS: VS Code Setup: PASS\n   VS Code and Python extension are installed\n"
+            echo "   VS Code and Python extension are installed"
         else
             echo "FAIL: VS Code Setup: FAIL"
-            test_results="${test_results}FAIL: VS Code Setup: FAIL\n   Missing VS Code or Python extension\n"
+            echo "   Missing VS Code or Python extension"
             vscode_setup_failed=true
         fi
         
         echo ""
+        echo "════════════════════════════════════════"
         
-        # Export test results for post_install.sh to use
-        export PYTHON_INSTALLATION_PASSED=$([ "$python_installation_failed" = false ] && echo "true" || echo "false")
-        export PYTHON_ENVIRONMENT_PASSED=$([ "$python_environment_failed" = false ] && echo "true" || echo "false")
-        export VSCODE_SETUP_PASSED=$([ "$vscode_setup_failed" = false ] && echo "true" || echo "false")
-        
-        # Determine exit code based on failures
+        # Calculate failures
         local failure_count=0
         if [ "$python_installation_failed" = true ]; then
             failure_count=$((failure_count + 1))
@@ -168,32 +160,25 @@ run_first_year_test() {
             failure_count=$((failure_count + 1))
         fi
         
-        echo "════════════════════════════════════════"
+        # Show overall result
         if [ $failure_count -eq 0 ]; then
             echo "OVERALL RESULT: PASS"
             echo "   First year setup is complete and working!"
-            test_results="${test_results}\nOVERALL RESULT: PASS\n   First year setup is complete and working!\n"
-            return 0  # All tests passed
+            return 0
         elif [ $failure_count -eq 1 ]; then
-            # Single category failure - return specific code
             if [ "$python_installation_failed" = true ]; then
                 echo "OVERALL RESULT: FAIL - Python Installation Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Installation Issue\n"
                 return 1
             elif [ "$python_environment_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - Python Environment Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - Python Environment Issue\n"
+                echo "OVERALL RESULT: FAIL - Python Environment Issue" 
                 return 2
             elif [ "$vscode_setup_failed" = true ]; then
                 echo "OVERALL RESULT: FAIL - VS Code Setup Issue"
-                test_results="${test_results}\nOVERALL RESULT: FAIL - VS Code Setup Issue\n"
                 return 3
             fi
         else
-            # Multiple failures
             echo "OVERALL RESULT: FAIL - Multiple Issues Found"
             echo "   Please check the individual test results above."
-            test_results="${test_results}\nOVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
             return 4
         fi
 }
