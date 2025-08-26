@@ -12,6 +12,12 @@ Open Terminal (⌘ + Space, search "Terminal") and run:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
 ```
 
+### Windows
+Open PowerShell as Administrator (Windows + X, select "Windows PowerShell (Admin)") and run:
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
+```
+
 ## Diagnostics
 
 Check your Python environment installation:

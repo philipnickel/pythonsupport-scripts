@@ -21,26 +21,26 @@ catch {
     exit 1
 }
 
-# Set Python version (default to 3.11 if not specified)
+# Set Python version (default to 3.12 if not specified)
 if (-not $env:PYTHON_VERSION_PS) {
-    $env:PYTHON_VERSION_PS = "3.11"
+    $env:PYTHON_VERSION_PS = "3.12"
 }
 
 Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 
-# Install Python 3.11 and required packages in base environment
+# Install Python 3.12 and required packages in base environment
 Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in base environment..."
 
 try {
-    # Install Python 3.11 and all packages in one command for speed
-    Write-Host "Installing Python $env:PYTHON_VERSION_PS and all required packages..."
-    conda install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
+    # Install Python 3.12 and core packages in one command for speed
+    Write-Host "Installing Python $env:PYTHON_VERSION_PS and core packages..."
+    conda install -y "python=$env:PYTHON_VERSION_PS" dtumathtools pandas scipy statsmodels uncertainties
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
         exit 1
     }
     
-    Write-Host "All packages installed successfully in base environment"
+    Write-Host "Core packages installed successfully in base environment"
 }
 catch {
     Write-Host "Failed to install packages: $($_.Exception.Message)"

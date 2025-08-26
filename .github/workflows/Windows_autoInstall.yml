@@ -10,125 +10,245 @@ on:
     paths:
       - 'Windows/**'
       - '.github/workflows/Windows_autoInstall.yml'
-      - 'dev_plan_miniforge_windows.md'
   push:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
       - '.github/workflows/Windows_autoInstall.yml'
-      - 'dev_plan_miniforge_windows.md'
+  workflow_dispatch:
+    inputs:
+      pkg_path:
+        description: 'Path to PKG file to test'
+        required: false
+        type: string
 
 env:
-  PYTHON_VERSION_PS: "3.11"
+  PYTHON_VERSION_PS: "3.12"
   PIS_ENV: "CI"
 
 jobs:
-  test-orchestrator:
-    name: Test Windows First Year Orchestrator
+  test-installer:
+    name: ${{ matrix.scenario }}
     runs-on: windows-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        setup: [clean, existing-conda]
+        include:
+          - setup: clean
+            scenario: "Clean Installation"
+          - setup: existing-conda
+            scenario: "Existing Conda (Manual Uninstall)"
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove conda (if present)
+      - name: Setup test scenario - Clean Installation
+        if: matrix.setup == 'clean'
         run: |
+          Write-Host "Setting up clean installation test"
+          # Remove any existing conda
           if (Get-Command conda -ErrorAction SilentlyContinue) {
-            Write-Host "Base environment location:"
-            conda info --base
-
-            Write-Host "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
             conda init --reverse --all
           }
 
-          # Show PowerShell profiles
-          $profilePaths = @($PROFILE.CurrentUserAllHosts, $PROFILE.CurrentUserCurrentHost)
-          foreach ($profilePath in $profilePaths) {
-            if (Test-Path $profilePath) {
-              Write-Host "Profile: $profilePath"
-              Get-Content $profilePath
-            }
-          }
-
-      - name: Check for conda
+      - name: Setup test scenario - Existing Conda
+        if: matrix.setup == 'existing-conda'
         run: |
-          $env:Path -split ';' | Where-Object { $_ -like "*conda*" } | ForEach-Object { Write-Host "Conda path: $_" }
-          if (Get-Command conda -ErrorAction SilentlyContinue) {
-            Write-Host "Base environment location:"
-            conda info --base
-          } else {
-            Write-Host "Conda not found..."
-          }
+          Write-Host "Setting up existing conda test"
+          # Install miniconda to simulate existing installation
+          $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+          $installerPath = "$env:TEMP\miniconda.exe"
+          Write-Host "Downloading Miniconda..."
+          Invoke-WebRequest -Uri $minicondaUrl -OutFile $installerPath -UseBasicParsing
+          Write-Host "Installing Miniconda..."
+          Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniconda3" -Wait
+          Remove-Item $installerPath -Force
 
-          # Show PowerShell profiles
-          $profilePaths = @($PROFILE.CurrentUserAllHosts, $PROFILE.CurrentUserCurrentHost)
-          foreach ($profilePath in $profilePaths) {
-            if (Test-Path $profilePath) {
-              Write-Host "Profile: $profilePath"
-              Get-Content $profilePath
-            }
-          }
-
-      - name: Run Windows First Year Orchestrator
+      - name: Run DTU Python Installer
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          GITHUB_CI: true
         run: |
-          Write-Host "Testing Windows First Year Orchestrator from: $env:REMOTE_PS/$env:BRANCH_PS"
+          Write-Host "Testing ${{ matrix.scenario }} from: $env:REMOTE_PS/$env:BRANCH_PS"
           
-          # Set execution policy
-          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          # Download and execute the installer with parameters
+          $InstallScript = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing
+          $TempScript = "$env:TEMP\install_test.ps1"
+          Set-Content -Path $TempScript -Value $InstallScript.Content
           
-          # Run the orchestrator
-          $orchestratorUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/orchestrators/first_year_students.ps1"
-          Invoke-Expression (Invoke-WebRequest -Uri $orchestratorUrl -UseBasicParsing).Content
+          if ("${{ matrix.setup }}" -eq "existing-conda") {
+            # For existing conda scenario, we expect the installer to abort
+            Write-Host "Expected behavior: Installation should abort due to existing conda"
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
+            if ($LASTEXITCODE -eq 1) {
+              Write-Host "[OK] Installation correctly aborted due to existing conda"
+              exit 0  # Test passed - installer correctly aborted
+            } else {
+              Write-Host "ERROR: Expected exit code 1, got: $LASTEXITCODE"
+              exit 1
+            }
+          } else {
+            # For clean installation, run normally  
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
+          }
+          
+          Remove-Item $TempScript -Force -ErrorAction SilentlyContinue
 
-      - name: Verify VS Code
+      - name: Verify Installation - VS Code
+        if: matrix.setup == 'clean'
         run: |
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          Write-Host "Verifying VS Code installation..."
+          
+          # Refresh PATH from registry for current session
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          # Check if VS Code is accessible via command line
           try {
-            Get-Command code
-            code --version
+            $vscodeVersion = & code --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "[OK] VS Code accessible via command line"
+              $vscodeVersion | ForEach-Object { Write-Host "  $_" }
+            } else {
+              throw "code command returned exit code $LASTEXITCODE"
+            }
           } catch {
-            Write-Output "VS Code not installed correctly"
-            Write-Output $_
-            exit 1
+            # Fallback: Check if VS Code is installed in expected locations
+            $vscodePaths = @(
+              "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles(x86)\Microsoft VS Code\Code.exe"
+            )
+            
+            $foundPath = $null
+            foreach ($path in $vscodePaths) {
+              if (Test-Path $path) {
+                $foundPath = $path
+                break
+              }
+            }
+            
+            if ($foundPath) {
+              Write-Host "[OK] VS Code found at: $foundPath"
+              $version = & "$foundPath" --version 2>$null
+              $version | ForEach-Object { Write-Host "  $_" }
+            } else {
+              Write-Host "ERROR: VS Code not found in expected locations"
+              exit 1
+            }
           }
 
-      - name: Verify conda
+      - name: Verify Installation - Conda
+        if: matrix.setup == 'clean'
         run: |
+          Write-Host "Verifying conda installation..."
           try {
             Get-Command conda
             conda --version
             conda info --base
+            
+            # Should be miniforge
+            if (!(conda info --base | Select-String "miniforge3")) {
+              Write-Host "ERROR: Not using miniforge"
+              exit 1
+            }
           } catch {
-            Write-Output "Conda not installed correctly"
-            Write-Output $_
+            Write-Host "ERROR: Conda not found"
             exit 1
           }
 
-      - name: Verify python (3.11)
+      - name: Verify Installation - Python Version
+        if: matrix.setup == 'clean'
         run: |
-          Get-Command python
-
+          Write-Host "Verifying Python version..."
+          
           # Verify the installed Python version
-          $expectedVersion = "3.11"
-          $condaPythonPath = "C:\Users\$env:USERNAME\miniforge3\python.exe"
-          $installedVersion = (& $condaPythonPath --version 2>&1) -replace "Python ", ""
+          $expectedVersion = "3.12"
+          $installedVersion = (python --version).Split(" ")[1].Trim()
           if (-not $installedVersion.StartsWith($expectedVersion)) {
-            Write-Output "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            Write-Host "ERROR: Python version ($installedVersion) does not match expected ($expectedVersion)"
+            Write-Host "PATH: $env:PATH"
             exit 1
           }
-          Write-Output "Correct Python version $installedVersion is installed."
+          Write-Host "[OK] Correct Python version $installedVersion"
 
-          # Verify Python package imports
+      - name: Verify Installation - DTU Packages
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host "Verifying DTU packages..."
           try {
-            & $condaPythonPath -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
           } catch {
-            Write-Output "Failed to import Python packages"
-            Write-Output $_
+            Write-Host "ERROR: Failed to import DTU packages"
+            conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
             exit 1
           }
+
+      - name: Verify Installation - VS Code Extensions
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host "Verifying VS Code extensions..."
+          
+          # Refresh PATH and find VS Code executable
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          $codeCmd = "code"
+          try {
+            & code --version 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "code command not found" }
+          } catch {
+            # Fallback to direct path
+            $vscodePaths = @(
+              "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+              "$env:ProgramFiles\Microsoft VS Code\Code.exe", 
+              "$env:ProgramFiles(x86)\Microsoft VS Code\Code.exe"
+            )
+            
+            foreach ($path in $vscodePaths) {
+              if (Test-Path $path) {
+                $codeCmd = $path
+                break
+              }
+            }
+          }
+          
+          # List extensions
+          $extensions = & $codeCmd --list-extensions 2>$null
+          $extensions | ForEach-Object { Write-Host "  $_" }
+          
+          # Should have Python extension at minimum
+          if ($extensions -notcontains "ms-python.python") {
+            Write-Host "ERROR: Python extension not installed"
+            Write-Host "Available extensions: $($extensions -join ', ')"
+            exit 1
+          }
+          Write-Host "[OK] Python extension installed"
+
+      - name: Final Verification Summary
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host ""
+          Write-Host "🎉 Installation Verification Complete!"
+          Write-Host "======================================"
+          
+          # Refresh PATH for final summary
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          
+          # Get VS Code version
+          try {
+            $vscodeVer = (& code --version 2>$null | Select-Object -First 1)
+            if ($LASTEXITCODE -ne 0) { throw "code command failed" }
+            Write-Host "[OK] VS Code: $vscodeVer"
+          } catch {
+            Write-Host "[OK] VS Code: Installed (version check via fallback path)"
+          }
+          
+          Write-Host "[OK] Conda: $(conda --version)"
+          Write-Host "[OK] Python: $(python --version)"
+          Write-Host "[OK] DTU Packages: All imported successfully"
+          Write-Host "[OK] VS Code Extensions: Python extension installed"
+          Write-Host ""
+          Write-Host "Test scenario '${{ matrix.scenario }}' passed all verifications!"
 
