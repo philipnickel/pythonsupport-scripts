@@ -205,7 +205,19 @@ try {
 
 # Get user confirmation
 $Proceed = $true
-if ($UseNativeDialogs) {
+
+# In CI environments, auto-proceed without user input
+if ($env:GITHUB_CI -eq "true" -or $env:CI -eq "true") {
+    Write-LogInfo "Running in CI environment, auto-proceeding with installation"
+    Write-Host ""
+    Write-Host "This installation will set up:" -ForegroundColor White
+    Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
+    Write-Host "  • Visual Studio Code" -ForegroundColor White  
+    Write-Host "  • Essential Python packages" -ForegroundColor White
+    Write-Host "  • VSCode extensions" -ForegroundColor White
+    Write-Host ""
+    $Proceed = $true
+} elseif ($UseNativeDialogs) {
     $Message = "This installer will set up Python development environment with:`n`n" +
                "• Python $PythonVersion (Miniforge)`n" +
                "• Visual Studio Code`n" +
