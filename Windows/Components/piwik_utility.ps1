@@ -16,7 +16,7 @@
 $PIWIK_URL    = "https://pythonsupport.piwik.pro/ppms.php"
 $SITE_ID      = "0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 $GITHUB_REPO  = "dtudk/pythonsupport-page"
-$CATEGORY     = "Installations"
+$CATEGORY     = "AUTOINSTALLS"
 $EVENT_ACTION = "Event"
 $EVENT_NAME   = "Log"
 
@@ -113,10 +113,10 @@ function Get-URI {
     $sysinfo = Get-System-Info
     $commit_sha = Get-Commit-SHA
 
-    $os = $sysinfo.OS
+    # Simple URL encoding function for PowerShell compatibility
+    $os = $sysinfo.OS -replace ' ', '%20' -replace '\(', '%28' -replace '\)', '%29'
     $arch = $sysinfo.ARCH
-
-    # interpolating the variable directly doesnt work for some reason
+    
     return $PIWIK_URL + "?idsite=$SITE_ID&rec=1&e_c=$CATEGORY&e_a=$EVENT_ACTION&e_n=$EVENT_NAME&e_v=$value&dimension1=$os&dimension2=$arch&dimension3=$commit_sha"
 }
 
@@ -145,7 +145,9 @@ function Piwik-Log {
     $uri = Get-URI "$value"
 
     # Ignore failure to log.
-    try { curl "$uri" } catch {}
+    try { 
+        Invoke-WebRequest -Uri "$uri" -UseBasicParsing -TimeoutSec 10 | Out-Null
+    } catch {}
 }
 
 # === UTILITY FUNCTIONS ===
@@ -204,7 +206,7 @@ function Piwik-Test-Connection {
     $uri = Get-URI "test-con"
 
     try {
-        $response = curl $uri
+        $response = Invoke-WebRequest -Uri $uri -UseBasicParsing -TimeoutSec 10
         if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 202) {
             Write-Host "+ Piwik connection successful (HTTP $($response.StatusCode))"
             return 0
@@ -213,7 +215,7 @@ function Piwik-Test-Connection {
             return 1
         }
     } catch {
-        Write-Host "X Piwik connection failed (exception)"
+        Write-Host "X Piwik connection failed (exception: $($_.Exception.Message))"
         return 1
     }
 }
