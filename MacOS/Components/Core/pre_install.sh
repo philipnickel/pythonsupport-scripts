@@ -22,26 +22,9 @@ echo "Checking existing installations..."
 # Export flags for main installer
 export SKIP_VSCODE_INSTALL=false
 
-# Check for Miniforge specifically
-if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
-    echo "• Miniforge found"
-    echo "Everything appears to be already installed!"
-    if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
-        echo "• Running in non-interactive mode - continuing with installation..."
-    else
-        echo "Cancel installation? (y/n)"
-        read -r response
-        if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-            echo "Installation cancelled - Miniforge already present"
-            exit 0
-        fi
-        echo "• Continuing with installation anyway..."
-    fi
-
-# Check for other conda installations  
-elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
-    echo "• Other conda installation detected"
-    echo "DTU Python Support only works with Miniforge."
+# Check for ANY conda installation
+if [ -d "$HOME/miniforge3" ] || [ -d "$HOME/miniconda3" ] || [ -d "$HOME/anaconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
+    echo "• Existing conda installation detected"
     if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
         echo "• Running in non-interactive mode - automatically uninstalling existing conda..."
     else
