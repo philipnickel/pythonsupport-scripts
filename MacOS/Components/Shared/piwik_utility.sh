@@ -14,7 +14,7 @@
 # === CONFIGURATION ===
 PIWIK_URL="https://pythonsupport.piwik.pro/ppms.php"
 SITE_ID="0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
-GITHUB_REPO="dtudk/pythonsupport-page"
+GITHUB_REPO="philipnickel/pythonsupport-scripts"
 CATEGORY="AUTOINSTALLS"
 EVENT_ACTION="Event"
 EVENT_NAME="Log"
@@ -142,7 +142,7 @@ get_system_info() {
 get_commit_sha() {
     local response
     response=$(curl -s --connect-timeout 5 --max-time 10 \
-        "https://api.github.com/repos/$GITHUB_REPO/commits/main" 2>/dev/null)
+        "https://api.github.com/repos/philipnickel/pythonsupport-scripts/commits/main" 2>/dev/null)
     
     if [ $? -eq 0 ] && [ -n "$response" ]; then
         local sha=$(echo "$response" | sed -n 's/.*"sha": *"\([a-f0-9]*\)".*/\1/p' | head -c 7)
@@ -152,7 +152,7 @@ get_commit_sha() {
         fi
     fi
     
-    echo "unknown"
+    echo "test001"
 }
 
 get_uri() {
@@ -163,10 +163,10 @@ get_uri() {
     # URL encode the OS string to handle spaces and special characters
     local encoded_os=$(printf '%s' "$OS" | sed 's/ /%20/g' | sed 's/(/%28/g' | sed 's/)/%29/g')
     
-    # Add timestamp to make events more identifiable
-    local timestamp=$(date +%s)
+    # Generate consistent visitor ID based on system info
+    local visitor_id=$(echo "$ARCH$(uname -n)" | md5 | head -c 16)
     
-    echo "${PIWIK_URL}?idsite=${SITE_ID}&rec=1&e_c=${CATEGORY}&e_a=${EVENT_ACTION}&e_n=${EVENT_NAME}_${value}&e_v=${value}&dimension1=${encoded_os}&dimension2=${ARCH}&dimension3=${commit_sha}&cdt=${timestamp}"
+    echo "${PIWIK_URL}?idsite=${SITE_ID}&rec=1&cid=${visitor_id}&e_c=${CATEGORY}&e_a=${EVENT_ACTION}&e_n=${EVENT_NAME}&e_v=${value}&dimension1=${encoded_os}&dimension2=${ARCH}&dimension3=${commit_sha}"
 }
 
 # === LOGGING FUNCTIONS ===
