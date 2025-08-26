@@ -29,7 +29,7 @@ env:
 jobs:
   test-installer:
     name: ${{ matrix.scenario }} (${{ matrix.arch }})
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
     
     strategy:
       fail-fast: false
@@ -43,6 +43,10 @@ jobs:
           - setup: existing-conda
             input: "yes"
             scenario: "Existing Conda (Auto-Uninstall)"
+          - arch: x86_64
+            runner: macos-13
+          - arch: arm64
+            runner: macos-latest
     
     steps:
       - name: Checkout repository
