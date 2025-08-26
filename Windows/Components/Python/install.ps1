@@ -136,14 +136,23 @@ catch {
 
 
 
-# Disable conda error reporting to prevent interactive prompts
-Write-Host "Configuring conda to disable error reporting..."
+# Configure conda for optimal performance (like macOS)
+Write-Host "Configuring conda for optimal performance..."
 try {
+    # Disable error reporting to prevent interactive prompts
     conda config --set report_errors false
     Write-Host "Conda error reporting disabled"
+    
+    # Set flexible channel priority for faster solving (like macOS)
+    conda config --set channel_priority flexible
+    Write-Host "Conda channel priority set to flexible for faster solving"
+    
+    # Disable anonymous usage reporting
+    conda config --set anaconda_anon_usage off
+    Write-Host "Conda anonymous usage reporting disabled"
 }
 catch {
-    Write-Host "Failed to disable conda error reporting (non-critical)"
+    Write-Host "Failed to configure conda settings (non-critical): $($_.Exception.Message)"
 }
 
 # Skip redundant conda init - already initialized above
