@@ -37,20 +37,44 @@ jobs:
         include:
           - setup: clean
             input: ""
-            scenario: "Clean Installation"
+            scenario: "Clean Installation (CLI Mode)"
             runner: macos-13
+            mode: "--cli"
           - setup: existing-conda
             input: "yes"
-            scenario: "Existing Conda (Auto-Uninstall)"
+            scenario: "Existing Conda (Auto-Uninstall CLI)"
             runner: macos-13
+            mode: "--cli"
           - setup: clean
             input: ""
-            scenario: "Clean Installation"
-            runner: macos-latest
+            scenario: "Clean Installation (GUI Mode)"
+            runner: macos-13
+            mode: ""
           - setup: existing-conda
             input: "yes"
-            scenario: "Existing Conda (Auto-Uninstall)"
+            scenario: "Existing Conda (Auto-Uninstall GUI)"
+            runner: macos-13
+            mode: ""
+          - setup: clean
+            input: ""
+            scenario: "Clean Installation (CLI Mode)"
             runner: macos-latest
+            mode: "--cli"
+          - setup: existing-conda
+            input: "yes"
+            scenario: "Existing Conda (Auto-Uninstall CLI)"
+            runner: macos-latest
+            mode: "--cli"
+          - setup: clean
+            input: ""
+            scenario: "Clean Installation (GUI Mode)"
+            runner: macos-latest
+            mode: ""
+          - setup: existing-conda
+            input: "yes"
+            scenario: "Existing Conda (Auto-Uninstall GUI)"
+            runner: macos-latest
+            mode: ""
     
     steps:
       - name: Checkout repository
@@ -86,24 +110,24 @@ jobs:
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          DTU_CLI_MODE: ${{ matrix.mode == '--cli' && 'true' || 'false' }}
         run: |
           echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) using release script from: $REMOTE_PS/$BRANCH_PS"
           echo "PIS_ENV is set to: $PIS_ENV"
+          echo "DTU_CLI_MODE is set to: $DTU_CLI_MODE"
           
-          # Download the release script for CI testing
-          curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/releases/dtu-python-installer-macos.sh" -o /tmp/dtu-installer.sh
-          chmod +x /tmp/dtu-installer.sh
-          
-          # Override to use test branch/repo for this PR and ensure PIS_ENV is exported
+          # Override to use test branch/repo for this PR and ensure environment is exported
           export REMOTE_PS="$REMOTE_PS"
           export BRANCH_PS="$BRANCH_PS"
           export PIS_ENV="$PIS_ENV"
+          export DTU_CLI_MODE="$DTU_CLI_MODE"
           
-          # Run the installer
+          # Use one-liner approach for both CLI and GUI modes (as students would)
+          echo "Running installer using one-liner approach"
           if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | /tmp/dtu-installer.sh
+            printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh")"
           else
-            /tmp/dtu-installer.sh
+            /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh")"
           fi
 
       - name: Verify Installation - VS Code

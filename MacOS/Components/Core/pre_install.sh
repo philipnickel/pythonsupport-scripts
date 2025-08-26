@@ -37,7 +37,7 @@ fi
 # Check for other conda installations if miniforge not found
 if [ "$CONDA_FOUND" = false ]; then
     # Check various conda installation locations
-    local conda_paths=(
+    conda_paths=(
         "$HOME/miniconda3"
         "$HOME/anaconda3"
         "/opt/miniconda3"
