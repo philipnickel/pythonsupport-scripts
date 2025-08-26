@@ -206,6 +206,9 @@ try {
 # Get user confirmation
 $Proceed = $true
 
+# Debug environment variables
+Write-LogInfo "Environment check - GITHUB_CI: '$env:GITHUB_CI', CI: '$env:CI'"
+
 # In CI environments, auto-proceed without user input
 if ($env:GITHUB_CI -eq "true" -or $env:CI -eq "true") {
     Write-LogInfo "Running in CI environment, auto-proceeding with installation"
