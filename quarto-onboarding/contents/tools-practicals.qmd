@@ -1,0 +1,129 @@
+---
+title: "Tools & Practicals"
+author: "Python Support Team"
+date: today
+---
+
+
+## Primary Tools
+
+| Tool | Purpose | Access |
+|------|---------|--------|
+| **RT Ticketing** | Ticket management | [RT System](https://pythonsupport-rt.dtu.dk/rt/){target="_blank"} |
+| **Discord** | Internal communication | [Discord Server](https://discord.gg/CSp6xS22){target="_blank"} |
+| **Support Website** | Main support portal | [Support Website](https://pythonsupport.dtu.dk/){target="_blank"} |
+| **Website GitHub** | Documentation | [GitHub Repository](https://github.com/dtudk/pythonsupport-page/){target="_blank"} |
+| **Scripts GitHub** | Scripts for auto installation ect. | [GitHub Repository](https://github.com/dtudk/pythonsupport-scripts/){target="_blank"} |
+| **Teams/SharePoint** | Documents & Personal hour registration| [Students documents](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=eEhaCK){target="_blank"} |
+| **Course Reference** | Programming materials | [Course Materials](https://02002.compute.dtu.dk/){target="_blank"} |
+| **DTU FUSION** | Time registration system | [DTU FUSION](https://www.fusion.dtu.dk){target="_blank"} |
+
+## Registering Working Hours
+
+To simplify the process, we have provided two options for registering hours: the official method, via Fusion, and the unofficial method, via an Excel sheet on Teams (Student Documents). In the Excel sheet, the actual hours are recorded, ensuring that the semester's total number of hours balances when the semester is over.
+
+## DTU FUSION 
+
+:::{.callout-tip}
+## About DTU FUSION
+DTU FUSION serves as the central time tracking platform for all workers at the university. This system is mandatory for recording work hours and ensures compliance with labor regulations.
+:::
+
+### How to Register Your Hours
+
+Follow these steps to record your working hours in FUSION:
+
+1. **Log into FUSION**
+   - Navigate to: <https://https://www.fusion.dtu.dk>
+   
+
+2. **Access Time Sheet**
+   - Go to **'Time and Absence'** to edit your current time sheet
+   
+   ![Step 2: Access time Sheet](fusion_steps/step1.png)
+
+3. **Register Working Hours**
+   - Pick a day to register your total working hours for the month
+   - Calculate total hours: Number of working days × 1.8 hours (for normal contracts) or 2.0 hours (exchange students)
+   
+   ![Step 3.1: Add Entry](fusion_steps/step2.png)
+
+   ![Step 3.2: Register Hours](fusion_steps/step3.png)
+
+4. **Register Free Days**
+   - Register two free days with 1.8 hours each (or 2.0 hours for exchange students): Chose absence under *Task*)
+
+5. **Submit Timesheet**
+   - Review and submit your completed timesheet
+   
+   ![Step 4: Submit Timesheet](fusion_steps/step4.png)
+
+### Getting Help with FUSION
+
+If you need assistance with FUSION, contact:
+- Your colleagues during shifts
+- Your direct supervisor
+- HR support for technical issues
+
+
+:::{.callout-important}
+## IMPORTANT: Monthly Deadline
+You must register your hours before the end of the month. Otherwise you will get a warning from HR requiring you to do it.
+:::
+
+:::{.callout-tip}
+## Quick Reference
+You can check the number of working days for any month at: <https://ugenr.dk/arbejdsdage>
+
+**Remember:** Subtract 2 from the total to account for your two free days per month.
+
+**Please note:** Working days between Christmas and New Year's are mandatory vacation days, as well as the Friday after Ascension Day.
+:::
+
+## SharePoint
+
+Monthly tasks also include:
+
+- **Register personal working hours** on [SharePoint](https://dtudk.sharepoint.com/:f:/r/sites/PythonInstallationSupport/Delte%20dokumenter/Students%20documents?csf=1&web=1&e=eEhaCK){target="_blank"}
+- This is in addition to the DTU FUSION registration
+
+## Daily, Weekly and Monthly Tasks 
+
+### Daily Tasks
+
+:::{.callout-note}
+## Every Shift
+- **Check RT Ticketing System** for new support requests
+- **Monitor Discord channels** for team communications, updates and questions from students
+- **Follow the 4-step support workflow** for all user interactions
+- **Document solutions** as you resolve repeated issues (and notify the rest of the team on discord)
+:::
+
+### Weekly Tasks
+
+:::{.callout-note}
+## Every Week
+- **Review shift schedules** on Discord for any changes and updates
+:::
+
+### Monthly Tasks
+
+:::{.callout-important}
+## Before Month End
+- **Register hours in DTU FUSION** 
+- **Register personal working hours** on SharePoint
+
+**Needs to be done before last team meeting in current month!**
+:::
+
+## Getting Help & Support
+
+### Where to Get Help
+
+| Contact | Purpose | When to Use |
+|---------|---------|-------------|
+| **The Team** | Support & collaboration | During your shift |
+| **Team Lead** | Daily questions & priorities | Regular guidance |
+| **Discord Channel** | Quick team-wide help | Immediate assistance |
+| **Knowledge Base** | Self-service resources | Research & learning |
+

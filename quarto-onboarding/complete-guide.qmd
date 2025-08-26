@@ -1,0 +1,42 @@
+---
+title: "Python Installation Support - Complete Onboarding Guide"
+subtitle: "Team Onboarding Guide"
+author: "Python Support Team"
+date: today
+format: 
+  pdf:
+    documentclass: scrreprt
+    toc: true
+    toc-depth: 3
+---
+
+# Welcome to Python Installation Support!
+
+We're excited to have you on board. This guide is designed to help you get started smoothly, understand our support philosophy, tools, workflows, and key expectations.
+
+## How to Use This Guide
+
+This complete onboarding guide covers three main sections:
+
+**Your Role in the Team**  
+Learn about your responsibilities, support workflow, documentation practices, and team values.
+
+**Introduction Process**  
+Get set up with essential accounts, information about key introduction meetings, and complete required training.
+
+**Tools & Practicals**  
+Access daily tools, time registration systems, practical guidelines, and operational procedures.
+
+**Welcome to the team!**
+
+\newpage
+
+{{< include contents/your-role.qmd >}}
+
+\newpage
+
+{{< include contents/introduction-process.qmd >}}
+
+\newpage
+
+{{< include contents/tools-practicals.qmd >}}

@@ -1,0 +1,107 @@
+[
+  {
+    "objectID": "contents/introduction-process.html#getting-started",
+    "href": "contents/introduction-process.html#getting-started",
+    "title": "Introduction Process",
+    "section": "Getting Started",
+    "text": "Getting Started\n\nAccounts & Access\nYou’ll need access to these essential systems:\n\n\n\nSystem\nPurpose\nLink\n\n\n\n\nDiscord\nInternal communication\nDiscord Server\n\n\nRT Ticketing\nTicket management\nRT System\n\n\nSharePoint\nDocuments & personal time registration\nStudents documents\n\n\nDTU FUSION\nOfficial time registration\nDTU Fusion\n\n\n\n\n\nKey Meetings\n\n\n\n\n\n\nImportant Schedule\n\n\n\n\nTeam kick-off approx. a month before the semester starts\nOne-on-one with your direct manager\nTeam introductions with all members\nDuring semester weekly status meeting with all members (approx. 30 min)\n\n\n\n\n\nRequired before you start\nSelfstudy\n\nGetting familiar with the Python Installation Support site and subsites\n\nYou’ll complete training on:\n\nProduct walkthrough (internal tools, user-facing systems)\nUsing the ticketing system and Discord\nDTU FUSION time registration system setup and usage"
+  },
+  {
+    "objectID": "contents/introduction-process.html#success-milestones",
+    "href": "contents/introduction-process.html#success-milestones",
+    "title": "Introduction Process",
+    "section": "Success Milestones",
+    "text": "Success Milestones\n\nAfter 30 Days…\nBy the end of your first month, you should be able to:\n\nConfidently use all core tools\nIndependently manage and resolve tickets\nBe familiar with team workflows\nFeel comfortable asking for help when needed"
+  },
+  {
+    "objectID": "contents/your-role.html",
+    "href": "contents/your-role.html",
+    "title": "Your Role in the Team",
+    "section": "",
+    "text": "Our Mission\n\n\n\nWe aim to provide prompt, dependable, and compassionate support to our users."
+  },
+  {
+    "objectID": "contents/your-role.html#our-mission-your-responsibilities",
+    "href": "contents/your-role.html#our-mission-your-responsibilities",
+    "title": "Your Role in the Team",
+    "section": "",
+    "text": "Our Mission\n\n\n\nWe aim to provide prompt, dependable, and compassionate support to our users."
+  },
+  {
+    "objectID": "contents/your-role.html#team-values",
+    "href": "contents/your-role.html#team-values",
+    "title": "Your Role in the Team",
+    "section": "Team Values",
+    "text": "Team Values\n\n\n\n\n\n\nOur Core Principles\n\n\n\n\nEmpathy first: Every interaction matters\nBe curious: Ask questions, seek clarity\nCollaborate: Work openly with team members\nOwn it: Take initiative, follow through\nImprove constantly: Be proactive, suggest better processes and tools"
+  },
+  {
+    "objectID": "contents/your-role.html#support-workflow",
+    "href": "contents/your-role.html#support-workflow",
+    "title": "Your Role in the Team",
+    "section": "Support Workflow",
+    "text": "Support Workflow\n\nThe 4-Step Process\n\nTicket Intake\n\nRegularly check for new requests\nAssign and acknowledge them within your shift\n\nTriage & Troubleshoot\n\nIdentify the root issue\nCheck the documentation before escalating\n\nResolution\n\nProvide solutions or workarounds\nFollow up to confirm resolution\n\nStudent Hands-on\n\nGuide the user in solving the issue(s)\nLet the user do the work\n\n\n\n\nYour Responsibilities\nAs a Python Installation Support team member, you will:\n\nRespond to requests, inquiries or tickets via physical presence/chat/support portal\nTroubleshoot technical or operational issues\nDocument solutions and processes\nReport your findings in Discord\nCollaborate with team members to resolve issues\nHelp maintain and improve our support knowledge base\nParticipate in teamwork on various projects\nSuggest edits to existing articles\nCreate internal guides when gaps are identified\n\n\n\n\n\n\n\nGolden Rule\n\n\n\nIf you solve a problem more than twice, document it in GitHub."
+  },
+  {
+    "objectID": "contents/tools-practicals.html",
+    "href": "contents/tools-practicals.html",
+    "title": "Tools & Practicals",
+    "section": "",
+    "text": "Tool\nPurpose\nAccess\n\n\n\n\nRT Ticketing\nTicket management\nRT System\n\n\nDiscord\nInternal communication\nDiscord Server\n\n\nSupport Website\nMain support portal\nSupport Website\n\n\nWebsite GitHub\nDocumentation\nGitHub Repository\n\n\nScripts GitHub\nScripts for auto installation ect.\nGitHub Repository\n\n\nTeams/SharePoint\nDocuments & Personal hour registration\nStudents documents\n\n\nCourse Reference\nProgramming materials\nCourse Materials\n\n\nDTU FUSION\nTime registration system\nDTU FUSION"
+  },
+  {
+    "objectID": "contents/tools-practicals.html#primary-tools",
+    "href": "contents/tools-practicals.html#primary-tools",
+    "title": "Tools & Practicals",
+    "section": "",
+    "text": "Tool\nPurpose\nAccess\n\n\n\n\nRT Ticketing\nTicket management\nRT System\n\n\nDiscord\nInternal communication\nDiscord Server\n\n\nSupport Website\nMain support portal\nSupport Website\n\n\nWebsite GitHub\nDocumentation\nGitHub Repository\n\n\nScripts GitHub\nScripts for auto installation ect.\nGitHub Repository\n\n\nTeams/SharePoint\nDocuments & Personal hour registration\nStudents documents\n\n\nCourse Reference\nProgramming materials\nCourse Materials\n\n\nDTU FUSION\nTime registration system\nDTU FUSION"
+  },
+  {
+    "objectID": "contents/tools-practicals.html#registering-working-hours",
+    "href": "contents/tools-practicals.html#registering-working-hours",
+    "title": "Tools & Practicals",
+    "section": "Registering Working Hours",
+    "text": "Registering Working Hours\nTo simplify the process, we have provided two options for registering hours: the official method, via Fusion, and the unofficial method, via an Excel sheet on Teams (Student Documents). In the Excel sheet, the actual hours are recorded, ensuring that the semester’s total number of hours balances when the semester is over."
+  },
+  {
+    "objectID": "contents/tools-practicals.html#dtu-fusion",
+    "href": "contents/tools-practicals.html#dtu-fusion",
+    "title": "Tools & Practicals",
+    "section": "DTU FUSION",
+    "text": "DTU FUSION\n\n\n\n\n\n\nAbout DTU FUSION\n\n\n\nDTU FUSION serves as the central time tracking platform for all workers at the university. This system is mandatory for recording work hours and ensures compliance with labor regulations.\n\n\n\nHow to Register Your Hours\nFollow these steps to record your working hours in FUSION:\n\nLog into FUSION\n\nNavigate to: https://https://www.fusion.dtu.dk\n\nAccess Time Sheet\n\nGo to ‘Time and Absence’ to edit your current time sheet\n\n\n\n\nStep 2: Access time Sheet\n\n\nRegister Working Hours\n\nPick a day to register your total working hours for the month\nCalculate total hours: Number of working days × 1.8 hours (for normal contracts) or 2.0 hours (exchange students)\n\n\n\n\nStep 3.1: Add Entry\n\n\n\n\n\nStep 3.2: Register Hours\n\n\nRegister Free Days\n\nRegister two free days with 1.8 hours each (or 2.0 hours for exchange students): Chose absence under Task)\n\nSubmit Timesheet\n\nReview and submit your completed timesheet\n\n\n\n\nStep 4: Submit Timesheet\n\n\n\n\n\nGetting Help with FUSION\nIf you need assistance with FUSION, contact: - Your colleagues during shifts - Your direct supervisor - HR support for technical issues\n\n\n\n\n\n\nIMPORTANT: Monthly Deadline\n\n\n\nYou must register your hours before the end of the month. Otherwise you will get a warning from HR requiring you to do it.\n\n\n\n\n\n\n\n\nQuick Reference\n\n\n\nYou can check the number of working days for any month at: https://ugenr.dk/arbejdsdage\nRemember: Subtract 2 from the total to account for your two free days per month.\nPlease note: Working days between Christmas and New Year’s are mandatory vacation days, as well as the Friday after Ascension Day."
+  },
+  {
+    "objectID": "contents/tools-practicals.html#sharepoint",
+    "href": "contents/tools-practicals.html#sharepoint",
+    "title": "Tools & Practicals",
+    "section": "SharePoint",
+    "text": "SharePoint\nMonthly tasks also include:\n\nRegister personal working hours on SharePoint\nThis is in addition to the DTU FUSION registration"
+  },
+  {
+    "objectID": "contents/tools-practicals.html#daily-weekly-and-monthly-tasks",
+    "href": "contents/tools-practicals.html#daily-weekly-and-monthly-tasks",
+    "title": "Tools & Practicals",
+    "section": "Daily, Weekly and Monthly Tasks",
+    "text": "Daily, Weekly and Monthly Tasks\n\nDaily Tasks\n\n\n\n\n\n\nEvery Shift\n\n\n\n\nCheck RT Ticketing System for new support requests\nMonitor Discord channels for team communications, updates and questions from students\nFollow the 4-step support workflow for all user interactions\nDocument solutions as you resolve repeated issues (and notify the rest of the team on discord)\n\n\n\n\n\nWeekly Tasks\n\n\n\n\n\n\nEvery Week\n\n\n\n\nReview shift schedules on Discord for any changes and updates\n\n\n\n\n\nMonthly Tasks\n\n\n\n\n\n\nBefore Month End\n\n\n\n\nRegister hours in DTU FUSION\nRegister personal working hours on SharePoint\n\nNeeds to be done before last team meeting in current month!"
+  },
+  {
+    "objectID": "contents/tools-practicals.html#getting-help-support",
+    "href": "contents/tools-practicals.html#getting-help-support",
+    "title": "Tools & Practicals",
+    "section": "Getting Help & Support",
+    "text": "Getting Help & Support\n\nWhere to Get Help\n\n\n\nContact\nPurpose\nWhen to Use\n\n\n\n\nThe Team\nSupport & collaboration\nDuring your shift\n\n\nTeam Lead\nDaily questions & priorities\nRegular guidance\n\n\nDiscord Channel\nQuick team-wide help\nImmediate assistance\n\n\nKnowledge Base\nSelf-service resources\nResearch & learning"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Welcome to Python Installation Support!",
+    "section": "",
+    "text": "We’re excited to have you on board. This guide is designed to help you get started smoothly, understand our support philosophy, tools, workflows, and key expectations."
+  },
+  {
+    "objectID": "index.html#how-to-use-this-guide",
+    "href": "index.html#how-to-use-this-guide",
+    "title": "Welcome to Python Installation Support!",
+    "section": "How to Use This Guide",
+    "text": "How to Use This Guide\nUse the top navigation bar to explore the three main sections of this onboarding guide:\nYour Role in the Team\nLearn about your responsibilities, support workflow, documentation practices, and team values.\nIntroduction Process\nGet set up with essential accounts, information about key introduction meetings, and complete required training.\nTools & Practicals\nAccess daily tools, time registration systems, practical guidelines, and operational procedures.\n\n\n\n\n\n\nQuick Tip\n\n\n\nEach section can be downloaded as a complete PDF for later reference using the “Other formats” option in the top-right corner of any page.\n\n\nWant the complete guide in a single pdf? 📄 Download PDF\nWelcome to the team!"
+  }
+]

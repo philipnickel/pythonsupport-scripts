@@ -23,6 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Ma
 ```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
 ```
+
 ## Utilities
 
 ### macOS Diagnostics
@@ -33,4 +34,5 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtu
 ### macOS Conda Uninstaller
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Core/uninstall_conda.sh)"
+```
 ```
