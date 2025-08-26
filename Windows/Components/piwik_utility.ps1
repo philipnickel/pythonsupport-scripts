@@ -205,14 +205,14 @@ function piwik_test_connection {
     try {
         $response = curl $uri
         if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 202) {
-            Write-Host "✅ Piwik connection successful (HTTP $($response.StatusCode))"
+            Write-Host "+ Piwik connection successful (HTTP $($response.StatusCode))"
             return 0
         } else {
-            Write-Host "❌ Piwik connection failed (HTTP $($response.StatusCode))"
+            Write-Host "X Piwik connection failed (HTTP $($response.StatusCode))"
             return 1
         }
     } catch {
-        Write-Host "❌ Piwik connection failed (exception)"
+        Write-Host "X Piwik connection failed (exception)"
         return 1
     }
 }
