@@ -179,7 +179,7 @@ jobs:
         run: |
           Write-Host "Verifying DTU packages..."
           try {
-            python -c "import sys, io; sys.stdout = io.StringIO(); import dtumathtools; sys.stdout = sys.__stdout__; import pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
+            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
           } catch {
             Write-Host "ERROR: Failed to import DTU packages"
             conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
