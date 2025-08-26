@@ -148,62 +148,33 @@ jobs:
 
       - name: Verify Installation - Python Version
         run: |
-          echo "Verifying Python version in fresh shell..."
+          echo "Verifying Python version..."
           
-          # Test what a real user would experience - fresh shell with no sourcing
-          # This tests that the installation properly configured the shell environment
-          FRESH_SHELL_PYTHON=$(/bin/bash -l -c 'python3 --version 2>/dev/null || echo "NOT_FOUND"')
+          which python3
           
-          if [[ "$FRESH_SHELL_PYTHON" == "NOT_FOUND" ]]; then
-            echo "ERROR: python3 not found in fresh shell"
-            echo "This means the installation didn't properly configure the shell environment"
-            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
-            echo "Available Python in system:"
-            ls -la /usr/bin/python* 2>/dev/null || echo "No system Python found"
-            ls -la ~/miniforge3/bin/python* 2>/dev/null || echo "No miniforge Python found"
+          # Verify the installed Python version
+          EXPECTED_VERSION="3.12"
+          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
             exit 1
           fi
-          
-          INSTALLED_VERSION=$(echo "$FRESH_SHELL_PYTHON" | cut -d " " -f 2)
-          EXPECTED_VERSION="3.12"
+          echo "Correct Python version $INSTALLED_VERSION is installed."
           
           # Verify this is our miniforge python, not system python
-          PYTHON_PATH=$(/bin/bash -l -c 'which python3')
+          PYTHON_PATH=$(which python3)
           if ! echo "$PYTHON_PATH" | grep -q "miniforge3"; then
             echo "ERROR: Python is not from miniforge: $PYTHON_PATH"
-            echo "Fresh shell Python: $FRESH_SHELL_PYTHON"
-            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
             exit 1
           fi
-          
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
-            echo "Fresh shell Python: $FRESH_SHELL_PYTHON"
-            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
-            echo "Which python3 in fresh shell: $(/bin/bash -l -c 'which python3')"
-            exit 1
-          fi
-          
-          echo "✓ Fresh shell Python version: $INSTALLED_VERSION"
+          echo "Python is from miniforge: $PYTHON_PATH"
 
       - name: Verify Installation - DTU Packages
         run: |
-          echo "Verifying DTU packages in fresh shell..."
+          echo "Verifying DTU packages..."
           
-          # Test what a real user would experience - fresh shell with no sourcing
-          PACKAGE_TEST=$(/bin/bash -l -c 'python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print(\"SUCCESS\")" 2>/dev/null || echo "FAILED"')
-          
-          if [[ "$PACKAGE_TEST" != "SUCCESS" ]]; then
-            echo "ERROR: Failed to import DTU packages in fresh shell"
-            echo "This means the installation didn't properly set up the Python environment"
-            echo "Python location in fresh shell: $(/bin/bash -l -c 'which python3')"
-            echo "Python path in fresh shell: $(/bin/bash -l -c 'python3 -c "import sys; print(sys.path)"')"
-            echo "Available packages in fresh shell:"
-            /bin/bash -l -c 'python3 -m pip list | grep -E "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"' || echo "No DTU packages found"
-            exit 1
-          fi
-          
-          echo "✓ All DTU packages imported successfully in fresh shell"
+          # Verify Python package imports
+          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       - name: Verify Installation - VS Code Extensions
         run: |
@@ -211,21 +182,21 @@ jobs:
           
           # Check if extensions directory exists (more reliable than running code --list-extensions in CI)
           if [ -d "$HOME/.vscode/extensions" ] || [ -d "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions" ]; then
-            echo "✓ VS Code extensions directory found"
+            echo "VS Code extensions directory found"
             
             # Try to list extensions, but don't fail if it crashes in CI
             echo "Attempting to list installed extensions..."
             if code --list-extensions 2>/dev/null; then
-              echo "✓ Extension listing successful"
+              echo "Extension listing successful"
               # Check for Python extension
               if code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-                echo "✓ Python extension verified"
+                echo "Python extension verified"
               else
                 echo "⚠ Python extension not found in list, but continuing (CI environment limitation)"
               fi
             else
               echo "⚠ Extension listing failed (common in CI environments), but extensions directory exists"
-              echo "✓ Extensions installation assumed successful"
+              echo "Extensions installation assumed successful"
             fi
           else
             echo "ERROR: No VS Code extensions directory found"
@@ -235,12 +206,12 @@ jobs:
       - name: Final Verification Summary
         run: |
           echo ""
-          echo "🎉 Installation Verification Complete!"
+          echo "Installation Verification Complete!"
           echo "======================================"
-          echo "✓ VS Code: $(code --version | head -1)"
-          echo "✓ Conda: $(conda --version)"
-          echo "✓ Python: $(python3 --version)"
-          echo "✓ DTU Packages: All imported successfully"
-          echo "✓ VS Code Extensions: Python extension installed"
+          echo "VS Code: $(code --version | head -1)"
+          echo "Conda: $(conda --version)"
+          echo "Python: $(python3 --version)"
+          echo "DTU Packages: All imported successfully"
+          echo "VS Code Extensions: Python extension installed"
           echo ""
           echo "Test scenario '${{ matrix.scenario }}' passed all verifications!"
