@@ -41,33 +41,39 @@ echo.
 echo Downloading and starting installation...
 echo.
 
-powershell -Command "& { ^
-    $ErrorActionPreference = 'Stop'; ^
-    try { ^
-        $installerUrl = 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1'; ^
-        Write-Host 'Downloading installer from: ' -NoNewline; ^
-        Write-Host $installerUrl -ForegroundColor Cyan; ^
-        $tempScript = Join-Path $env:TEMP 'dtu_install_first_year.ps1'; ^
-        Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing; ^
-        Write-Host 'Starting installation with first year configuration...' -ForegroundColor Green; ^
-        Write-Host ''; ^
-        & $tempScript -RemoteRepo 'dtudk/pythonsupport-scripts' -Branch 'main' -PythonVersion '3.11' -UseGUI:$false -Force; ^
-    } catch { ^
-        Write-Host 'Installation failed: ' -ForegroundColor Red -NoNewline; ^
-        Write-Host $_.Exception.Message -ForegroundColor Red; ^
-        Write-Host ''; ^
-        Write-Host 'For help, visit: https://pythonsupport.dtu.dk' -ForegroundColor Yellow; ^
-        exit 1; ^
-    } ^
-}"
+REM Create temporary PowerShell script for installation
+set TEMP_PS_SCRIPT=%TEMP%\dtu_install_wrapper.ps1
 
-if %errorlevel% neq 0 (
+echo $ErrorActionPreference = "Stop" > "%TEMP_PS_SCRIPT%"
+echo try { >> "%TEMP_PS_SCRIPT%"
+echo     $installerUrl = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1" >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "Downloading installer from: $installerUrl" -ForegroundColor Cyan >> "%TEMP_PS_SCRIPT%"
+echo     $tempScript = Join-Path $env:TEMP "dtu_install_first_year.ps1" >> "%TEMP_PS_SCRIPT%"
+echo     Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "Starting installation with first year configuration..." -ForegroundColor Green >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "" >> "%TEMP_PS_SCRIPT%"
+echo     ^& $tempScript -RemoteRepo "dtudk/pythonsupport-scripts" -Branch "main" -PythonVersion "3.11" -UseGUI:$false -Force >> "%TEMP_PS_SCRIPT%"
+echo } catch { >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "Installation failed: $($_.Exception.Message)" -ForegroundColor Red >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "" >> "%TEMP_PS_SCRIPT%"
+echo     Write-Host "For help, visit: https://pythonsupport.dtu.dk" -ForegroundColor Yellow >> "%TEMP_PS_SCRIPT%"
+echo     exit 1 >> "%TEMP_PS_SCRIPT%"
+echo } >> "%TEMP_PS_SCRIPT%"
+
+REM Execute the PowerShell script
+powershell -ExecutionPolicy RemoteSigned -File "%TEMP_PS_SCRIPT%"
+set INSTALL_EXIT_CODE=%errorlevel%
+
+REM Clean up temporary script
+del "%TEMP_PS_SCRIPT%" >nul 2>&1
+
+if %INSTALL_EXIT_CODE% neq 0 (
     echo.
     echo Installation failed. Check the error messages above.
     echo For help, visit: https://pythonsupport.dtu.dk
     echo.
     pause
-    exit /b %errorlevel%
+    exit /b %INSTALL_EXIT_CODE%
 )
 
 echo.
