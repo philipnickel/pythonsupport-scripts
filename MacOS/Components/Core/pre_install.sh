@@ -22,8 +22,8 @@ echo "Checking existing installations..."
 # Export flags for main installer
 export SKIP_VSCODE_INSTALL=false
 
-# Check for ANY conda installation
-if [ -d "$HOME/miniforge3" ] || [ -d "$HOME/miniconda3" ] || [ -d "$HOME/anaconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
+# Check for ANY conda installation by looking for directories
+if [ -d "$HOME/miniforge3" ] || [ -d "$HOME/miniconda3" ] || [ -d "$HOME/anaconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ]; then
     echo "• Existing conda installation detected"
     if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
         echo "• Running in non-interactive mode - automatically uninstalling existing conda..."
