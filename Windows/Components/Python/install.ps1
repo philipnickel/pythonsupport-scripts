@@ -157,6 +157,19 @@ catch {
     exit 1
 }
 
+# Install mamba for faster package management
+Write-Host "Installing mamba (faster package manager)..."
+try {
+    conda install mamba -y -c conda-forge
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Mamba installed successfully"
+    } else {
+        Write-Host "Failed to install mamba (non-critical, will use conda)"
+    }
+} catch {
+    Write-Host "Failed to install mamba (non-critical, will use conda): $($_.Exception.Message)"
+}
+
 # Skip conda update for performance - not needed for fresh installs
 Write-Host "Skipping conda update for performance (not needed for fresh installs)..."
 
