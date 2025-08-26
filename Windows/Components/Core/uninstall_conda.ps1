@@ -145,10 +145,10 @@ if ($useNativeDialogs) {
                     
                     if (Test-Path $path) {
                         Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
-                        Write-Host "  ✓ Successfully removed $path" -ForegroundColor Green
+                        Write-Host "  [OK] Successfully removed $path" -ForegroundColor Green
                     }
                 } catch {
-                    Write-Host "  ✗ Failed to remove $path : $($_.Exception.Message)" -ForegroundColor Red
+                    Write-Host "  [ERROR] Failed to remove $path : $($_.Exception.Message)" -ForegroundColor Red
                 }
             }
             $uninstallResults.CondaRemoval = $true
@@ -180,11 +180,11 @@ if ($useNativeDialogs) {
                     Remove-Item -Path $userDataPath -Recurse -Force -ErrorAction SilentlyContinue
                 }
                 
-                Write-Host "  ✓ Successfully removed Visual Studio Code" -ForegroundColor Green
+                Write-Host "  [OK] Successfully removed Visual Studio Code" -ForegroundColor Green
                 $uninstallResults.VSCodeRemoval = $true
                 
             } catch {
-                Write-Host "  ✗ Failed to remove VSCode: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "  [ERROR] Failed to remove VSCode: $($_.Exception.Message)" -ForegroundColor Red
             }
         }
 
@@ -222,13 +222,13 @@ if ($useNativeDialogs) {
                     # Write cleaned content back
                     $cleanLines -join "`r`n" | Set-Content $profilePath -Force
                     
-                    Write-Host "  ✓ Profile cleaned (backup: $backupPath)" -ForegroundColor Green
+                    Write-Host "  [OK] Profile cleaned (backup: $backupPath)" -ForegroundColor Green
                 }
             }
             $uninstallResults.ProfileCleanup = $true
             
         } catch {
-            Write-Host "  ✗ Failed to clean profiles: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "  [ERROR] Failed to clean profiles: $($_.Exception.Message)" -ForegroundColor Red
         }
 
         # Clean up environment variables and PATH
@@ -247,7 +247,7 @@ if ($useNativeDialogs) {
                     $_ -notmatch 'conda|miniforge|miniconda|anaconda|Microsoft VS Code'
                 }) -join ';'
                 [Environment]::SetEnvironmentVariable("PATH", $cleanUserPath, "User")
-                Write-Host "  ✓ User PATH cleaned" -ForegroundColor Green
+                Write-Host "  [OK] User PATH cleaned" -ForegroundColor Green
             }
             
             # Note: We don't modify machine PATH as it may require admin privileges
@@ -262,14 +262,14 @@ if ($useNativeDialogs) {
             foreach ($var in $condaVars) {
                 if ([Environment]::GetEnvironmentVariable($var, "User")) {
                     [Environment]::SetEnvironmentVariable($var, $null, "User")
-                    Write-Host "  ✓ Removed environment variable: $var" -ForegroundColor Green
+                    Write-Host "  [OK] Removed environment variable: $var" -ForegroundColor Green
                 }
             }
             
             $uninstallResults.ConfigCleanup = $true
             
         } catch {
-            Write-Host "  ✗ Failed to clean environment variables: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "  [ERROR] Failed to clean environment variables: $($_.Exception.Message)" -ForegroundColor Red
         }
 
         # Clean up conda configuration directories
@@ -286,9 +286,9 @@ if ($useNativeDialogs) {
                 try {
                     Write-Host "• Removing configuration: $dir"
                     Remove-Item -Path $dir -Recurse -Force -ErrorAction Stop
-                    Write-Host "  ✓ Successfully removed $dir" -ForegroundColor Green
+                    Write-Host "  [OK] Successfully removed $dir" -ForegroundColor Green
                 } catch {
-                    Write-Host "  ✗ Failed to remove $dir : $($_.Exception.Message)" -ForegroundColor Red
+                    Write-Host "  [ERROR] Failed to remove $dir : $($_.Exception.Message)" -ForegroundColor Red
                 }
             }
         }
@@ -308,13 +308,13 @@ if ($useNativeDialogs) {
     # [Implementation would be similar but without the GUI progress updates]
     
     Write-Host ""
-    Write-Host "✓ DTU Python Support uninstall completed!" -ForegroundColor Green
+    Write-Host "[OK] DTU Python Support uninstall completed!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Summary:" -ForegroundColor White
-    Write-Host "• Conda installations: $(if ($uninstallResults.CondaRemoval) { '✓ Removed' } else { '✗ Failed' })" -ForegroundColor $(if ($uninstallResults.CondaRemoval) { 'Green' } else { 'Red' })
-    Write-Host "• Visual Studio Code: $(if ($uninstallResults.VSCodeRemoval) { '✓ Removed' } else { '✗ Failed' })" -ForegroundColor $(if ($uninstallResults.VSCodeRemoval) { 'Green' } else { 'Red' })
-    Write-Host "• Profile cleanup: $(if ($uninstallResults.ProfileCleanup) { '✓ Completed' } else { '✗ Failed' })" -ForegroundColor $(if ($uninstallResults.ProfileCleanup) { 'Green' } else { 'Red' })
-    Write-Host "• Configuration cleanup: $(if ($uninstallResults.ConfigCleanup) { '✓ Completed' } else { '✗ Failed' })" -ForegroundColor $(if ($uninstallResults.ConfigCleanup) { 'Green' } else { 'Red' })
+    Write-Host "• Conda installations: $(if ($uninstallResults.CondaRemoval) { '[OK] Removed' } else { '[FAIL] Failed' })" -ForegroundColor $(if ($uninstallResults.CondaRemoval) { 'Green' } else { 'Red' })
+    Write-Host "• Visual Studio Code: $(if ($uninstallResults.VSCodeRemoval) { '[OK] Removed' } else { '[FAIL] Failed' })" -ForegroundColor $(if ($uninstallResults.VSCodeRemoval) { 'Green' } else { 'Red' })
+    Write-Host "• Profile cleanup: $(if ($uninstallResults.ProfileCleanup) { '[OK] Completed' } else { '[FAIL] Failed' })" -ForegroundColor $(if ($uninstallResults.ProfileCleanup) { 'Green' } else { 'Red' })
+    Write-Host "• Configuration cleanup: $(if ($uninstallResults.ConfigCleanup) { '[OK] Completed' } else { '[FAIL] Failed' })" -ForegroundColor $(if ($uninstallResults.ConfigCleanup) { 'Green' } else { 'Red' })
     Write-Host ""
     Write-Host "Important notes:" -ForegroundColor Yellow
     Write-Host "• PowerShell profile backups were created with .backup-* suffix"

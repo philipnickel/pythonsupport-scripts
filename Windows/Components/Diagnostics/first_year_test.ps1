@@ -81,14 +81,14 @@ function Test-Component {
     try {
         $result = & $TestScript
         if ($result) {
-            Write-Host "  ✓ $ComponentName: PASS" -ForegroundColor Green
+            Write-Host "  [PASS] $ComponentName: PASS" -ForegroundColor Green
         } else {
-            Write-Host "  ✗ $ComponentName: FAIL" -ForegroundColor Red
+            Write-Host "  [FAIL] $ComponentName: FAIL" -ForegroundColor Red
         }
         return $result
     }
     catch {
-        Write-Host "  ✗ $ComponentName: ERROR - $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  [ERROR] $ComponentName: ERROR - $($_.Exception.Message)" -ForegroundColor Red
         return $false
     }
 }
@@ -393,7 +393,7 @@ Write-Host "Overall Status: $statusText" -ForegroundColor $statusColor
 Write-Host ""
 foreach ($componentName in $verificationResults.Components.Keys) {
     $component = $verificationResults.Components[$componentName]
-    $status = if ($component.Status) { "✓" } else { "✗" }
+    $status = if ($component.Status) { "[PASS]" } else { "[FAIL]" }
     $color = if ($component.Status) { "Green" } else { "Red" }
     
     Write-Host "$status $componentName" -ForegroundColor $color
@@ -424,10 +424,10 @@ if ($FixIssues -and -not $verificationResults.OverallStatus) {
         try {
             Write-Host "Initializing conda in PowerShell profile..."
             conda init powershell
-            Write-Host "  ✓ Conda initialization completed" -ForegroundColor Green
+            Write-Host "  [OK] Conda initialization completed" -ForegroundColor Green
         }
         catch {
-            Write-Host "  ✗ Failed to initialize conda: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "  [ERROR] Failed to initialize conda: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
     
@@ -437,10 +437,10 @@ if ($FixIssues -and -not $verificationResults.OverallStatus) {
             $missingList = $verificationResults.Components.Packages.Details.Missing -join ' '
             Write-Host "Installing missing packages in first_year environment: $missingList"
             conda install -n first_year -y $missingList
-            Write-Host "  ✓ Packages installation completed" -ForegroundColor Green
+            Write-Host "  [OK] Packages installation completed" -ForegroundColor Green
         }
         catch {
-            Write-Host "  ✗ Failed to install packages: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "  [ERROR] Failed to install packages: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
 }
@@ -482,7 +482,7 @@ if ($OutputPath -and $OutputFormat) {
             foreach ($componentName in $verificationResults.Components.Keys) {
                 $component = $verificationResults.Components[$componentName]
                 $statusClass = if ($component.Status) { "pass" } else { "fail" }
-                $statusSymbol = if ($component.Status) { "✓" } else { "✗" }
+                $statusSymbol = if ($component.Status) { "[PASS]" } else { "[FAIL]" }
                 $issues = if ($component.Issues.Count -gt 0) { $component.Issues -join "; " } else { "None" }
                 
                 $html += "<tr><td>$componentName</td><td class='$statusClass'>$statusSymbol</td><td>$($component.Version)</td><td>$issues</td></tr>"

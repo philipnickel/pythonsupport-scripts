@@ -153,7 +153,7 @@ function Show-InstallationSummary {
     $summary = "Installation Summary:`n`n"
     
     foreach ($component in $Results.Keys) {
-        $status = if ($Results[$component]) { "✓ Success" } else { "✗ Failed" }
+        $status = if ($Results[$component]) { "[OK] Success" } else { "[FAIL] Failed" }
         $summary += "$component : $status`n"
     }
     

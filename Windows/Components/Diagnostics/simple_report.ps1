@@ -33,9 +33,9 @@ function Test-HealthItem {
     try {
         $result = & $Test
         if ($result) {
-            Write-Host "✓ OK" -ForegroundColor Green
+            Write-Host "[OK] OK" -ForegroundColor Green
         } else {
-            Write-Host "✗ FAIL" -ForegroundColor Red
+            Write-Host "[FAIL] FAIL" -ForegroundColor Red
             $script:healthIssues += "$Name : $FailureMessage"
             $script:healthStatus = $false
             
@@ -43,9 +43,9 @@ function Test-HealthItem {
                 Write-Host "  Attempting fix..." -ForegroundColor Yellow
                 try {
                     & $Fix
-                    Write-Host "  ✓ Fixed" -ForegroundColor Green
+                    Write-Host "  [FIXED] Fixed" -ForegroundColor Green
                 } catch {
-                    Write-Host "  ✗ Fix failed: $($_.Exception.Message)" -ForegroundColor Red
+                    Write-Host "  [ERROR] Fix failed: $($_.Exception.Message)" -ForegroundColor Red
                 }
             }
         }
@@ -153,10 +153,10 @@ Write-Host "Health Check Summary" -ForegroundColor White
 Write-Host "===================" -ForegroundColor White
 
 if ($healthStatus) {
-    Write-Host "✓ All health checks passed!" -ForegroundColor Green
+    Write-Host "[OK] All health checks passed!" -ForegroundColor Green
     Write-Host "Your DTU Python Support installation is healthy." -ForegroundColor Green
 } else {
-    Write-Host "✗ Health check failed with $($healthIssues.Count) issue(s):" -ForegroundColor Red
+    Write-Host "[FAIL] Health check failed with $($healthIssues.Count) issue(s):" -ForegroundColor Red
     foreach ($issue in $healthIssues) {
         Write-Host "  • $issue" -ForegroundColor Yellow
     }
