@@ -168,17 +168,17 @@ if ($Force) {
     Write-LogInfo "Force parameter specified, proceeding without confirmation"
     Write-Host ""
     Write-Host "This installation will set up:" -ForegroundColor White
-    Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  • Visual Studio Code" -ForegroundColor White  
-    Write-Host "  • Essential Python packages" -ForegroundColor White
-    Write-Host "  • VSCode extensions" -ForegroundColor White
+    Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
+    Write-Host "  - Visual Studio Code" -ForegroundColor White  
+    Write-Host "  - Essential Python packages" -ForegroundColor White
+    Write-Host "  - VSCode extensions" -ForegroundColor White
     Write-Host ""
     $Proceed = $true
 } elseif ($UseNativeDialogs) {
     $Message = "This installer will set up Python development environment with:`n`n" +
-               "• Python $PythonVersion (Miniforge)`n" +
-               "• Visual Studio Code`n" +
-               "• Essential packages and extensions`n`n" +
+               "- Python $PythonVersion (Miniforge)`n" +
+               "- Visual Studio Code`n" +
+               "- Essential packages and extensions`n`n" +
                "Continue with installation?"
     
     $Proceed = Show-ConfirmationDialog -Title "DTU Python Support Installation" -Message $Message
@@ -188,10 +188,10 @@ if ($Force) {
 } else {
     Write-Host ""
     Write-Host "This installation will set up:" -ForegroundColor White
-    Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  • Visual Studio Code" -ForegroundColor White  
-    Write-Host "  • Essential Python packages" -ForegroundColor White
-    Write-Host "  • VSCode extensions" -ForegroundColor White
+    Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
+    Write-Host "  - Visual Studio Code" -ForegroundColor White  
+    Write-Host "  - Essential Python packages" -ForegroundColor White
+    Write-Host "  - VSCode extensions" -ForegroundColor White
     Write-Host ""
     
     $Response = Read-Host "Continue? (y/N)"

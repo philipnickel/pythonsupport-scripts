@@ -132,6 +132,12 @@ function Test-NetworkConnectivity {
 # Set execution policy safely
 function Set-ExecutionPolicySafe {
     try {
+        # Skip execution policy checking in CI environments where PowerShell Security module may not load
+        if ($env:GITHUB_CI -eq "true" -or $env:PIS_ENV -eq "CI") {
+            Write-LogInfo "Skipping execution policy check in CI environment"
+            return
+        }
+        
         $currentPolicy = Get-ExecutionPolicy -Scope CurrentUser -ErrorAction SilentlyContinue
         if ($currentPolicy -eq "Restricted") {
             Write-LogInfo "Setting PowerShell execution policy to RemoteSigned..."
