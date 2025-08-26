@@ -45,15 +45,15 @@ jobs:
         Write-Host "Testing component downloads..."
         
         $components = @(
-          "Windows/AutoInstall.ps1",
-          "Windows/Components/Shared/windows_dialogs.ps1",
-          "Windows/Components/orchestrators/first_year_students.ps1",
+          "Windows/install.ps1",
+          "Windows/config.ps1",
+          "Windows/Components/Shared/common.ps1",
+          "Windows/Components/Shared/windows_dialogs.ps1", 
           "Windows/Components/Python/install.ps1",
           "Windows/Components/Python/first_year_setup.ps1",
           "Windows/Components/VSC/install.ps1",
-          "Windows/Components/Shared/error_handling.ps1",
           "Windows/Components/Core/uninstall_conda.ps1",
-          "Windows/Components/Diagnostics/verify_installation.ps1",
+          "Windows/Components/Diagnostics/first_year_test.ps1",
           "Windows/Components/Diagnostics/simple_report.ps1"
         )
         
@@ -105,9 +105,9 @@ jobs:
       run: |
         Write-Host "Testing error handling utilities..."
         
-        # Load error handling script
-        $errorScript = Get-Content "Windows/Components/Shared/error_handling.ps1" -Raw
-        Invoke-Expression $errorScript
+        # Load common utilities script
+        $commonScript = Get-Content "Windows/Components/Shared/common.ps1" -Raw
+        Invoke-Expression $commonScript
         
         # Test core functions
         $functions = @("Write-LogInfo", "Write-LogError", "Write-LogSuccess", "Write-LogWarning", "Test-NetworkConnectivity", "Test-SystemRequirements")
@@ -159,7 +159,7 @@ jobs:
         
         # Run verification script (should fail since nothing is installed)
         try {
-          & "Windows/Components/Diagnostics/verify_installation.ps1" -OutputFormat Json -OutputPath "verification_results.json"
+          & "Windows/Components/Diagnostics/first_year_test.ps1" -OutputFormat Json -OutputPath "verification_results.json"
         } catch {
           Write-Host "Verification script ran (expected to fail on clean system)" -ForegroundColor Yellow
         }
@@ -216,29 +216,29 @@ jobs:
         $env:BRANCH_PS = $env:GITHUB_REF_NAME
         $env:PYTHON_VERSION_PS = "3.11"
         
-        Write-Host "Testing AutoInstall.ps1 script loading..."
+        Write-Host "Testing install.ps1 script loading..."
         
         # Load the main script to test syntax
         try {
-          $autoInstallContent = Get-Content "Windows/AutoInstall.ps1" -Raw
-          $ast = [System.Management.Automation.Language.Parser]::ParseInput($autoInstallContent, [ref]$null, [ref]$null)
+          $installContent = Get-Content "Windows/install.ps1" -Raw
+          $ast = [System.Management.Automation.Language.Parser]::ParseInput($installContent, [ref]$null, [ref]$null)
           if ($ast) {
-            Write-Host "✓ AutoInstall.ps1 syntax is valid" -ForegroundColor Green
+            Write-Host "✓ install.ps1 syntax is valid" -ForegroundColor Green
           }
         } catch {
-          Write-Host "✗ AutoInstall.ps1 syntax error: $($_.Exception.Message)" -ForegroundColor Red
+          Write-Host "✗ install.ps1 syntax error: $($_.Exception.Message)" -ForegroundColor Red
           exit 1
         }
         
-        Write-Host "Testing orchestrator script loading..."
+        Write-Host "Testing config.ps1 script loading..."
         try {
-          $orchestratorContent = Get-Content "Windows/Components/orchestrators/first_year_students.ps1" -Raw
-          $ast = [System.Management.Automation.Language.Parser]::ParseInput($orchestratorContent, [ref]$null, [ref]$null)
+          $configContent = Get-Content "Windows/config.ps1" -Raw
+          $ast = [System.Management.Automation.Language.Parser]::ParseInput($configContent, [ref]$null, [ref]$null)
           if ($ast) {
-            Write-Host "✓ Orchestrator syntax is valid" -ForegroundColor Green
+            Write-Host "✓ config.ps1 syntax is valid" -ForegroundColor Green
           }
         } catch {
-          Write-Host "✗ Orchestrator syntax error: $($_.Exception.Message)" -ForegroundColor Red
+          Write-Host "✗ config.ps1 syntax error: $($_.Exception.Message)" -ForegroundColor Red
           exit 1
         }
 
@@ -263,12 +263,12 @@ jobs:
         
         try {
           # Run installer with GUI disabled
-          & "Windows/AutoInstall.ps1" -UseGUI:$false
+          & "Windows/install.ps1" -UseGUI:$false
           
           Write-Host "Installation completed, running verification..."
           
           # Run verification
-          & "Windows/Components/Diagnostics/verify_installation.ps1" -Detailed -OutputFormat Json -OutputPath "integration_results.json"
+          & "Windows/Components/Diagnostics/first_year_test.ps1" -Detailed -OutputFormat Json -OutputPath "integration_results.json"
           
           # Check results
           if (Test-Path "integration_results.json") {
