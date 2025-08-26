@@ -58,7 +58,7 @@ try {
     Write-InstallLog "Analytics utility loaded successfully"
     
     # Log installation start
-    Piwik-Log "installation_start"
+    Piwik-Log "1"
 } catch {
     Write-InstallLog "Could not load analytics utility: $($_.Exception.Message)" "WARNING"
 }
@@ -238,7 +238,7 @@ try {
     # Log Python installation success
     try {
         if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "python_install_success"
+            Piwik-Log "10"
         }
     } catch { }
     
@@ -250,7 +250,7 @@ try {
     # Log environment setup success
     try {
         if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "environment_setup_success"
+            Piwik-Log "20"
         }
     } catch { }
     
@@ -262,7 +262,7 @@ try {
     # Log VSCode installation success
     try {
         if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "vscode_install_success"
+            Piwik-Log "30"
         }
     } catch { }
     
@@ -271,10 +271,19 @@ try {
 } catch {
     Write-LogError "Component installation failed: $($_.Exception.Message)"
     
-    # Log installation failure
+    # Log specific component failure based on what failed
     try {
         if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "installation_failure"
+            $errorMessage = $_.Exception.Message
+            if ($errorMessage -like "*Python*" -and -not $InstallResults.Python) {
+                Piwik-Log "11"  # Python installation failed
+            } elseif ($errorMessage -like "*environment*" -and -not $InstallResults.FirstYearSetup) {
+                Piwik-Log "21"  # First year setup failed  
+            } elseif ($errorMessage -like "*VSCode*" -and -not $InstallResults.VSCode) {
+                Piwik-Log "31"  # VS Code installation failed
+            } else {
+                Piwik-Log "99"  # General failure
+            }
         }
     } catch {
         # Ignore Piwik logging errors
@@ -317,7 +326,7 @@ Write-LogInfo "Installation log: $env:INSTALL_LOG"
 # Log successful installation completion
 try {
     if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-        Piwik-Log "installation_success"
+        Piwik-Log "99"
     }
 } catch {
     # Ignore Piwik logging errors
