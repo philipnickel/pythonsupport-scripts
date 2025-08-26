@@ -92,7 +92,7 @@ jobs:
           
           # Modify the .bat file to use the current PR branch instead of main
           $batContent = Get-Content $tempBat -Raw
-          $modifiedBat = $batContent -replace 'dtudk/pythonsupport-scripts', $env:REMOTE_PS -replace '"main"', "`"$env:BRANCH_PS`""
+          $modifiedBat = $batContent -replace 'dtudk/pythonsupport-scripts/main', "$env:REMOTE_PS/$env:BRANCH_PS" -replace '"main"', "`"$env:BRANCH_PS`""
           Set-Content -Path $tempBat -Value $modifiedBat
           
           Write-Host "Modified .bat file to use repository: $env:REMOTE_PS and branch: $env:BRANCH_PS"
