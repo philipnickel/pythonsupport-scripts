@@ -42,7 +42,7 @@ else
     ANALYTICS_ENABLED=false
 fi
 
-echo "🍎 DTU Python Support - macOS Installer"
+echo "DTU Python Support - macOS Installer"
 echo "========================================"
 echo "This will install Python and VS Code for DTU coursework"
 echo "Repository: $REMOTE_PS"
