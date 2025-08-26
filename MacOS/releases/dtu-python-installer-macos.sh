@@ -23,7 +23,7 @@ export DTU_INSTALLER_VERSION="1.0.0"
 # DTU Python installer configuration
 export PYTHON_VERSION_DTU="3.12"
 export DTU_PACKAGES="dtumathtools pandas scipy statsmodels uncertainties"
-export VSCODE_EXTENSIONS="ms-python.python ms-toolsai.jupyter tomoki1207.pdf"
+# VSCODE_EXTENSIONS removed - extensions now hardcoded in VSC install script
 export MINIFORGE_PATH="$HOME/miniforge3"
 export MINIFORGE_BASE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX"
 
@@ -45,7 +45,7 @@ export BRANCH_PS
 export PIS_ENV
 export PYTHON_VERSION_DTU
 export DTU_PACKAGES
-export VSCODE_EXTENSIONS
+# VSCODE_EXTENSIONS export removed
 export MINIFORGE_PATH
 export MINIFORGE_BASE_URL
 export INSTALL_LOG
