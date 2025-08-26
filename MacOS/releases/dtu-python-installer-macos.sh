@@ -42,7 +42,7 @@ else
     ANALYTICS_ENABLED=false
 fi
 
-echo "🍎 DTU Python Support - macOS Installer"
+echo "DTU Python Support - macOS Installer"
 echo "========================================"
 echo "This will install Python and VS Code for DTU coursework"
 echo "Repository: $REMOTE_PS"
@@ -140,6 +140,19 @@ show_terms_acceptance() {
         echo "   • macOS 10.15 or later"
         echo "   • Administrator privileges required for installation"
         echo ""
+        
+        # Check if we're running in a pipe (curl | bash)
+        if [ ! -t 0 ]; then
+            echo "WARNING: Running in pipe mode (curl | bash). Terms acceptance may not work properly."
+            echo "To accept terms, please run the installer directly:"
+            echo "  curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/releases/dtu-python-installer-macos.sh -o installer.sh"
+            echo "  chmod +x installer.sh"
+            echo "  ./installer.sh --cli"
+            echo ""
+            echo "Installation aborted. Please run the installer directly to accept terms."
+            exit 1
+        fi
+        
         echo "Do you accept these terms and conditions? (y/N)"
         read -r response
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
