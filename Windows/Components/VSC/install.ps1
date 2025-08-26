@@ -9,8 +9,6 @@
 
 Write-Host "Installing Visual Studio Code"
 
-# Set execution policy to allow script execution
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Check if VSCode is already installed
 Write-Host "Checking for existing VSCode installation..."
