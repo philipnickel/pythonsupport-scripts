@@ -191,27 +191,36 @@ jobs:
             Write-Host "✗ 'python3' command not available in fresh shell" -ForegroundColor Red
           }
           
-          # Test conda environment activation in fresh shell
-          Write-Host "Testing conda environment in fresh shell..."
-          $condaEnvTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { conda activate first_year; python --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "conda_python_version.txt"
+          # Test conda base environment python in fresh shell
+          Write-Host "Testing conda base environment python in fresh shell..."
+          $condaEnvTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "conda_python_version.txt"
           
           if ($condaEnvTest.ExitCode -eq 0 -and (Test-Path "conda_python_version.txt")) {
             $condaPythonVersion = Get-Content "conda_python_version.txt" -Raw
-            Write-Host "✓ Conda environment 'first_year' python version: $condaPythonVersion" -ForegroundColor Green
+            Write-Host "✓ Conda base environment python version: $condaPythonVersion" -ForegroundColor Green
             Remove-Item "conda_python_version.txt" -ErrorAction SilentlyContinue
           } else {
-            Write-Host "⚠ Could not test conda environment activation in fresh shell" -ForegroundColor Yellow
+            Write-Host "⚠ Could not test conda base environment python in fresh shell" -ForegroundColor Yellow
           }
           
           Write-Host "" 
           Write-Host "Fresh shell testing completed - this shows what users will actually get!" -ForegroundColor Cyan
 
-          # Verify Python package imports
-          try {
-            & $condaPythonPath -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
-          } catch {
-            Write-Output "Failed to import Python packages"
-            Write-Output $_
+          # Verify Python package imports from fresh shell
+          Write-Host "Testing Python package imports from fresh shell..."
+          $packageTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python -c `"import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')`" 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "package_test.txt"
+          
+          if ($packageTest.ExitCode -eq 0 -and (Test-Path "package_test.txt")) {
+            $packageResult = Get-Content "package_test.txt" -Raw
+            Write-Host "✓ Python packages imported successfully: $packageResult" -ForegroundColor Green
+            Remove-Item "package_test.txt" -ErrorAction SilentlyContinue
+          } else {
+            Write-Host "✗ Failed to import Python packages in fresh shell" -ForegroundColor Red
+            if (Test-Path "package_test.txt") {
+              $errorOutput = Get-Content "package_test.txt" -Raw
+              Write-Host "Error output: $errorOutput" -ForegroundColor Red
+              Remove-Item "package_test.txt" -ErrorAction SilentlyContinue
+            }
             exit 1
           }
 
