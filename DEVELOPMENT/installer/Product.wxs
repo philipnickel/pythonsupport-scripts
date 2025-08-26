@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix
+  xmlns="http://wixtoolset.org/schemas/v4/wxs"
+  xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+  xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package
+    Id="DtuPythonInstallation"
+    Name="DTU Python Installation"
+    Manufacturer="DTU Python Installation Support"
+    Version="1.0.0"
+    UpgradeCode="73eccc80-25d0-455a-ba0d-504dd15a826c">
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <ComponentGroup Id="MainComponents">
+      <Component Guid="bb557ca9-97e9-4ba8-8c9d-a70dfbcf1069">
+        <!-- Files to install -->
+        <File Id="InstallPs1" Source="install.ps1" />
+        <File Id="LicenseRtf" Source="license.rtf" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="MainFeature" Title="DTU Python Installation" Level="1">
+      <ComponentGroupRef Id="MainComponents" />
+    </Feature>
+
+    <!-- Set the installation directory to something cleaner -->
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLFOLDER" Name="DTU Python Installation"></Directory>
+    </StandardDirectory>
+
+    <ui:WixUI Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+    <!-- Run the installation script -->
+    <!-- The command opens a terminal which executes the script and waits -->
+    <!-- The script should wait for user input, or the terminal will close immediately -->
+    <CustomAction
+      Id="Install"
+      Directory="INSTALLFOLDER"
+      Execute="deferred"
+      Impersonate="no"
+      Return="check"
+      ExeCommand="cmd.exe /c powershell -NoLogo -ExecutionPolicy Bypass -InputFormat None -NoProfile -File &quot;C:\Program Files (x86)\DTU Python Installation\install.ps1&quot;" />
+
+    <InstallExecuteSequence>
+      <!-- Only on first-time install, and after files exist -->
+      <Custom Action="Install" After="InstallFiles" Condition="NOT Installed" />
+    </InstallExecuteSequence>
+  </Package>
+</Wix>

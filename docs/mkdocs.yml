@@ -1,0 +1,51 @@
+site_name: Python Support Scripts Documentation
+site_description: Documentation for DTU Python Support installation scripts
+site_url: https://philipnickel.github.io/pythonsupport-scripts
+
+docs_dir: content
+site_dir: ../site
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - MacOS:
+    - Diagnostics: generated/diagnostics.md
+    - Homebrew: generated/homebrew.md
+    - LaTeX: generated/latex.md
+    - Python: generated/python.md
+    - VSCode: generated/vsc.md
+    - Utilities: generated/utilities.md
+    - Orchestrators: generated/orchestrators.md
+  - Windows:
+    - Components: windows/components/index.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
