@@ -9,12 +9,14 @@ on:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
+      - 'windows_releases/**'
       - '.github/workflows/Windows_autoInstall.yml'
       - 'dev_plan_miniforge_windows.md'
   push:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
+      - 'windows_releases/**'
       - '.github/workflows/Windows_autoInstall.yml'
       - 'dev_plan_miniforge_windows.md'
 
@@ -23,8 +25,8 @@ env:
   PIS_ENV: "CI"
 
 jobs:
-  test-installer:
-    name: Test Windows Installer
+  test-release-installer:
+    name: Test Windows Release .bat Installer
     runs-on: windows-latest
     
     steps:
@@ -70,26 +72,33 @@ jobs:
             }
           }
 
-      - name: Run Windows Installer
+      - name: Test Windows Release .bat Installer
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           GITHUB_CI: true
         run: |
-          Write-Host "Testing Windows installer from: $env:REMOTE_PS/$env:BRANCH_PS"
+          Write-Host "Testing Windows .bat release installer from: $env:REMOTE_PS/$env:BRANCH_PS"
           
           # Set execution policy
           Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
           
-          # Download and run the installer with correct repo/branch parameters
-          $installerUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1"
-          $tempScript = "$env:TEMP\install_temp.ps1"
+          # Download the .bat installer
+          $batUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/windows_releases/install_first_year.bat"
+          $tempBat = "$env:TEMP\install_first_year_test.bat"
           
-          # Download the installer script
-          Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing
+          Write-Host "Downloading .bat installer from: $batUrl"
+          Invoke-WebRequest -Uri $batUrl -OutFile $tempBat -UseBasicParsing
           
-          # Run the installer with the correct parameters and force non-interactive mode
-          & $tempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.11" -UseGUI:$false -Force
+          # Modify the .bat file to use the current PR branch instead of main
+          $batContent = Get-Content $tempBat -Raw
+          $modifiedBat = $batContent -replace 'dtudk/pythonsupport-scripts', $env:REMOTE_PS -replace "'main'", "'$env:BRANCH_PS'"
+          Set-Content -Path $tempBat -Value $modifiedBat
+          
+          Write-Host "Running .bat installer (modified for CI testing)..."
+          
+          # Execute the .bat file in a way that captures output
+          cmd.exe /c "$tempBat"
 
       - name: Verify VS Code
         run: |
