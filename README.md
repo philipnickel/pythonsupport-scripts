@@ -3,7 +3,9 @@
 
 ### macOS
 
-**Option 1: Download and Run (Recommended)** - See [latest release](https://github.com/dtudk/pythonsupport-scripts/releases/latest) for GUI installer.
+**Option 1: Download and Run (Recommended)** - Download the GUI installer:
+- [Download macOS GUI Installer](https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos-gui.sh)
+- Download the file, then double-click to run
 
 **Option 2: GUI Mode** - Uses native macOS authentication dialogs:
 ```bash
@@ -17,7 +19,9 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Ma
 
 ### Windows
 
-**Option 1: Download and Run (Recommended)** - See [latest release](https://github.com/dtudk/pythonsupport-scripts/releases/latest) for Windows GUI installer.
+**Option 1: Download and Run (Recommended)** - Download the Windows GUI installer:
+- [Download Windows GUI Installer](https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/releases/dtu-python-installer-windows-gui.bat)
+- Download the file, then double-click to run
 
 **Option 2: PowerShell** - Uses native Windows UAC authentication:
 ```powershell
