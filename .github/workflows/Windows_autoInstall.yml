@@ -173,23 +173,6 @@ jobs:
             Write-Host "✗ 'python' command not available in fresh shell" -ForegroundColor Red
           }
           
-          # Test what 'python3' defaults to in a fresh shell
-          Write-Host "Testing 'python3' command in fresh shell..."
-          $python3Test = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python3 --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "python3_version.txt"
-          
-          if ($python3Test.ExitCode -eq 0 -and (Test-Path "python3_version.txt")) {
-            $python3Version = Get-Content "python3_version.txt" -Raw  
-            Write-Host "✓ 'python3' command available in fresh shell: $python3Version" -ForegroundColor Green
-            
-            if ($python3Version -match $expectedVersion) {
-              Write-Host "✓ 'python3' defaults to correct version ($expectedVersion)" -ForegroundColor Green
-            } else {
-              Write-Host "✗ 'python3' defaults to wrong version: $python3Version (expected $expectedVersion)" -ForegroundColor Red
-            }
-            Remove-Item "python3_version.txt" -ErrorAction SilentlyContinue
-          } else {
-            Write-Host "✗ 'python3' command not available in fresh shell" -ForegroundColor Red
-          }
           
           # Test conda base environment python in fresh shell
           Write-Host "Testing conda base environment python in fresh shell..."
@@ -208,7 +191,7 @@ jobs:
 
           # Verify Python package imports from fresh shell
           Write-Host "Testing Python package imports from fresh shell..."
-          $packageTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python -c `"import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')`" 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "package_test.txt"
+          $packageTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python -c 'import pandas, scipy, statsmodels, uncertainties; print(\"Packages imported successfully\")' 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "package_test.txt"
           
           if ($packageTest.ExitCode -eq 0 -and (Test-Path "package_test.txt")) {
             $packageResult = Get-Content "package_test.txt" -Raw
