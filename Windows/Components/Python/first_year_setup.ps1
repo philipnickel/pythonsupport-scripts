@@ -32,15 +32,15 @@ Write-Host "Configuring Python $env:PYTHON_VERSION_PS environment..."
 Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in base environment..."
 
 try {
-    # Install Python 3.11 and all packages in one command for speed
-    Write-Host "Installing Python $env:PYTHON_VERSION_PS and all required packages..."
-    conda install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties jupyter ipykernel matplotlib seaborn numpy
+    # Install Python 3.11 and core packages in one command for speed
+    Write-Host "Installing Python $env:PYTHON_VERSION_PS and core packages..."
+    conda install -y "python=$env:PYTHON_VERSION_PS" pandas scipy statsmodels uncertainties
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
         exit 1
     }
     
-    Write-Host "All packages installed successfully in base environment"
+    Write-Host "Core packages installed successfully in base environment"
 }
 catch {
     Write-Host "Failed to install packages: $($_.Exception.Message)"

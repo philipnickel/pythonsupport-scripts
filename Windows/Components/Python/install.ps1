@@ -157,15 +157,7 @@ catch {
     exit 1
 }
 
-# Update conda first to fix any issues
-Write-Host "Updating conda..."
-try {
-    conda update conda -y
-    Write-Host "Conda updated successfully"
-}
-catch {
-    Write-Host "Failed to update conda: $($_.Exception.Message)"
-    exit 1
-}
+# Skip conda update for performance - not needed for fresh installs
+Write-Host "Skipping conda update for performance (not needed for fresh installs)..."
 
 Write-Host "Python (Miniforge) installation completed successfully!"
