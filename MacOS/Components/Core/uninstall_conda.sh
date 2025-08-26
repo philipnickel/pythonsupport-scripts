@@ -12,20 +12,46 @@ remove_conda_installation() {
     if [ -d "$conda_path" ]; then
         echo "Found $conda_type installation at: $conda_path"
         
+        # Check if this is a system installation (requires sudo)
+        local needs_sudo=false
+        if [[ "$conda_path" == /opt/* ]] || [[ "$conda_path" == /usr/local/* ]] || [[ "$conda_path" == /System/* ]]; then
+            needs_sudo=true
+        fi
+        
+        # In CI mode, only use sudo for system installations
+        if [[ "${PIS_ENV:-}" == "CI" ]] && [[ "$needs_sudo" == false ]]; then
+            needs_sudo=false
+        else
+            needs_sudo=true
+        fi
+        
         # Try to use the official uninstaller script first
         if [ -f "$conda_path/uninstall.sh" ]; then
             echo "Using official $conda_type uninstaller script..."
-            if sudo -E bash "$conda_path/uninstall.sh" --yes; then
-                echo "$conda_type uninstaller completed successfully"
-                return 0
+            if [ "$needs_sudo" = true ]; then
+                if sudo -E bash "$conda_path/uninstall.sh" --yes; then
+                    echo "$conda_type uninstaller completed successfully"
+                    return 0
+                else
+                    echo "Official uninstaller failed, falling back to manual removal..."
+                fi
             else
-                echo "Official uninstaller failed, falling back to manual removal..."
+                if bash "$conda_path/uninstall.sh" --yes; then
+                    echo "$conda_type uninstaller completed successfully"
+                    return 0
+                else
+                    echo "Official uninstaller failed, falling back to manual removal..."
+                fi
             fi
         fi
         
         # Manual removal if no uninstaller or it failed
         echo "Removing $conda_type manually..."
-        sudo rm -rf "$conda_path"
+        if [ "$needs_sudo" = true ]; then
+            sudo rm -rf "$conda_path"
+        else
+            rm -rf "$conda_path"
+        fi
         echo "$conda_type removed"
     fi
 }
@@ -84,7 +110,12 @@ echo "Cleaning shell configuration files..."
 
 if command -v conda >/dev/null 2>&1; then
     echo "Using conda init --reverse to clean shell configurations..."
-    sudo -E conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+    # In CI mode, don't use sudo for user installations
+    if [[ "${PIS_ENV:-}" == "CI" ]]; then
+        conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+    else
+        sudo -E conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+    fi
 fi
 
 # Manual cleanup of shell configs

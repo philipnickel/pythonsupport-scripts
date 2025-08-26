@@ -22,34 +22,72 @@ echo "Checking existing installations..."
 # Export flags for main installer
 export SKIP_VSCODE_INSTALL=false
 
+# Check for existing conda installations
+CONDA_FOUND=false
+CONDA_TYPE=""
+CONDA_PATH=""
+
 # Check for Miniforge specifically
 if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
-    echo "Miniforge found"
-    echo "Everything appears to be already installed!"
-    echo "Cancel installation? (y/n)"
-    if [[ "${PIS_ENV:-}" == "CI" ]]; then
-        echo "Running in automated mode - continuing with installation"
-        response="n"
-    else
-        read -r response
-    fi
-    if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-        echo "Installation cancelled - Miniforge already present"
-        exit 0
-    fi
-# Check for other conda installations  
-elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
-    echo "Existing conda installation detected"
+    CONDA_FOUND=true
+    CONDA_TYPE="Miniforge"
+    CONDA_PATH="$MINIFORGE_PATH"
+fi
+
+# Check for other conda installations if miniforge not found
+if [ "$CONDA_FOUND" = false ]; then
+    # Check various conda installation locations
+    local conda_paths=(
+        "$HOME/miniconda3"
+        "$HOME/anaconda3"
+        "/opt/miniconda3"
+        "/opt/anaconda3"
+        "/usr/local/miniconda3"
+        "/usr/local/anaconda3"
+    )
+    
+    for conda_path in "${conda_paths[@]}"; do
+        if [ -d "$conda_path" ] && [ -x "$conda_path/bin/conda" ]; then
+            CONDA_FOUND=true
+            CONDA_PATH="$conda_path"
+            if echo "$conda_path" | grep -q "miniconda"; then
+                CONDA_TYPE="Miniconda"
+            elif echo "$conda_path" | grep -q "anaconda"; then
+                CONDA_TYPE="Anaconda"
+            else
+                CONDA_TYPE="Conda"
+            fi
+            break
+        fi
+    done
+fi
+
+# Also check if conda command is in PATH
+if [ "$CONDA_FOUND" = false ] && command -v conda >/dev/null 2>&1; then
+    CONDA_FOUND=true
+    CONDA_TYPE="Conda (in PATH)"
+    CONDA_PATH=$(which conda)
+fi
+
+# Handle conda detection results
+if [ "$CONDA_FOUND" = true ]; then
+    echo "Existing conda installation detected: $CONDA_TYPE at $CONDA_PATH"
+    
     if [[ "${PIS_ENV:-}" == "CI" ]]; then
         echo "Running in automated mode - automatically uninstalling existing conda..."
+        response="yes"
     else
         echo "DTU Python Support only works with Miniforge."
-        echo "Uninstall existing conda and continue? (y/n)"
-        read -r response
-        if [[ ! "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-            echo "Installation aborted."
+        echo "Uninstall existing conda and continue?"
+        
+        # Use macOS native dialog for user interaction
+        response=$(osascript -e 'tell app "System Events" to display dialog "DTU Python Support detected an existing conda installation.\n\nDTU Python Support only works with Miniforge.\n\nDo you want to uninstall the existing conda and continue with the installation?" buttons {"Cancel", "Uninstall & Continue"} default button "Uninstall & Continue" with icon caution')
+        
+        if [[ "$response" == *"Cancel"* ]]; then
+            echo "Installation aborted by user."
             exit 1
         fi
+        response="yes"
     fi
     
     echo "Uninstalling existing conda..."
