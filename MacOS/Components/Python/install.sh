@@ -44,18 +44,26 @@ else
     exit 1
   fi
   
-  curl -fsSL "$MINIFORGE_URL" -o /tmp/miniforge.sh
+  # Create secure temporary directory
+  temp_dir=$(mktemp -d)
+  temp_installer="$temp_dir/miniforge.sh"
+  
+  curl -fsSL "$MINIFORGE_URL" -o "$temp_installer"
   if [ $? -ne 0 ]; then
     echo "ERROR: Failed to download Miniforge installer"
+    rm -rf "$temp_dir"
     exit 1
   fi
   
-  echo "Miniforge installer downloaded successfully ($(wc -c < /tmp/miniforge.sh) bytes)"
+  echo "Miniforge installer downloaded successfully ($(wc -c < "$temp_installer") bytes)"
   
-  bash /tmp/miniforge.sh -b -p "$MINIFORGE_PATH"
-  if [ $? -ne 0 ]; then exit 1; fi
+  bash "$temp_installer" -b -p "$MINIFORGE_PATH"
+  if [ $? -ne 0 ]; then 
+    rm -rf "$temp_dir"
+    exit 1
+  fi
   
-  rm -f /tmp/miniforge.sh
+  rm -rf "$temp_dir"
   
   # Initialize conda for shells
   "$HOME/miniforge3/bin/conda" init bash zsh

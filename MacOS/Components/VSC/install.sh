@@ -118,25 +118,34 @@ fi
 # Install essential extensions
 echo "Installing VS Code extensions..."
 
-echo "Installing ms-python.python..."
-"$CODE_CLI" --install-extension ms-python.python --force
-if [ $? -ne 0 ]; then 
-    echo "ERROR: Failed to install Python extension"
-    exit 1
-fi
+# Define extensions to install
+extensions=(
+    "ms-python.python"
+    "ms-toolsai.jupyter" 
+    "tomoki1207.pdf"
+)
 
-echo "Installing ms-toolsai.jupyter..."
-"$CODE_CLI" --install-extension ms-toolsai.jupyter --force
-if [ $? -ne 0 ]; then 
-    echo "ERROR: Failed to install Jupyter extension"
-    exit 1
-fi
+# Install extensions one by one with error handling
+failed_extensions=()
+for extension in "${extensions[@]}"; do
+    echo "Installing $extension..."
+    if "$CODE_CLI" --install-extension "$extension" --force; then
+        echo "Successfully installed $extension"
+    else
+        echo "Failed to install $extension"
+        failed_extensions+=("$extension")
+    fi
+done
 
-echo "Installing tomoki1207.pdf..." 
-"$CODE_CLI" --install-extension tomoki1207.pdf --force
-if [ $? -ne 0 ]; then 
-    echo "ERROR: Failed to install PDF extension"
+# Report results
+if [ ${#failed_extensions[@]} -eq 0 ]; then
+    echo "All VS Code extensions installed successfully"
+elif [ ${#failed_extensions[@]} -eq ${#extensions[@]} ]; then
+    echo "All extension installations failed"
     exit 1
+else
+    echo "Some extensions failed to install: ${failed_extensions[*]}"
+    echo "Installation will continue (extensions can be installed manually later)"
 fi
 
 echo "VS Code extensions installation complete"
