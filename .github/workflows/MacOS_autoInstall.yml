@@ -28,7 +28,7 @@ env:
 
 jobs:
   test-installer:
-    name: MacOS Autoinstall - ${{ matrix.scenario }} (${{ matrix.arch }})
+    name: ${{ matrix.scenario }} (${{ matrix.arch }})
     runs-on: macos-latest
     
     strategy:
