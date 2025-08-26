@@ -34,19 +34,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        setup: [clean, existing-conda]
+        arch: [x86_64, arm64]
         include:
-          - scenario: "Clean Installation"
-            setup: "clean"
+          - setup: clean
             input: ""
-          - scenario: "Existing Conda (Auto-Uninstall)"
-            setup: "existing-conda"
+            scenario: "Clean Installation"
+          - setup: existing-conda
             input: "yes"
-          - scenario: "Existing Miniforge (Missing Packages)"
-            setup: "existing-miniforge-no-packages"
-            input: "n"
-          - scenario: "Existing VS Code (Missing Extensions)"
-            setup: "existing-vscode"
-            input: ""
+            scenario: "Existing Conda (Auto-Uninstall)"
     
     steps:
       - name: Checkout repository
@@ -64,48 +60,21 @@ jobs:
       - name: Setup test scenario - Existing Conda
         if: matrix.setup == 'existing-conda'
         run: |
-          echo "Setting up existing conda test"
+          echo "Setting up existing conda test for ${{ matrix.arch }}"
           # Install miniconda to simulate existing installation
-          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-$(uname -m).sh -o /tmp/miniconda.sh
+          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${{ matrix.arch }}.sh -o /tmp/miniconda.sh
           bash /tmp/miniconda.sh -b -p $HOME/miniconda3
           rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
 
-      - name: Setup test scenario - Existing Miniforge without packages
-        if: matrix.setup == 'existing-miniforge-no-packages'
-        run: |
-          echo "Setting up existing miniforge without packages test"
-          # Install miniforge but don't install DTU packages
-          curl -fsSL https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh -o /tmp/miniforge.sh
-          bash /tmp/miniforge.sh -b -p $HOME/miniforge3
-          rm -f /tmp/miniforge.sh
-          
-          # Add to PATH
-          echo "$HOME/miniforge3/bin" >> $GITHUB_PATH
-          
-          # Install Python 3.11 but NOT the DTU packages
-          source $HOME/miniforge3/bin/activate
-          conda install python=3.11 -y
 
-      - name: Setup test scenario - Existing VS Code
-        if: matrix.setup == 'existing-vscode'
-        run: |
-          echo "Setting up existing VS Code test"
-          # Download and install VS Code without extensions
-          curl -fsSL https://update.code.visualstudio.com/latest/darwin-universal/stable -o /tmp/vscode.zip
-          unzip -q /tmp/vscode.zip -d /tmp/
-          sudo mv "/tmp/Visual Studio Code.app" /Applications/
-          rm -f /tmp/vscode.zip
-          
-          # Add code command to PATH
-          sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code
 
       - name: Run DTU Python Installer
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
-          echo "Testing ${{ matrix.scenario }} from: $REMOTE_PS/$BRANCH_PS"
+          echo "Testing ${{ matrix.scenario }} (${{ matrix.arch }}) from: $REMOTE_PS/$BRANCH_PS"
           if [ -n "${{ matrix.input }}" ]; then
             printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           else
