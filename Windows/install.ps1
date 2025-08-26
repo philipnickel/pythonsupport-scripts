@@ -32,16 +32,6 @@ $env:REMOTE_PS = $RemoteRepo
 $env:BRANCH_PS = $Branch
 $env:PYTHON_VERSION_PS = $PythonVersion
 
-# Get script directory (outside try block to ensure it's always available)
-if ($PSScriptRoot) {
-    $ScriptDir = $PSScriptRoot
-} elseif ($MyInvocation.MyCommand.Path) {
-    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-} else {
-    $ScriptDir = Get-Location
-}
-
-Write-Host "Script directory: $ScriptDir" -ForegroundColor Gray
 
 # Set up logging
 if (-not $env:INSTALL_LOG) {
@@ -64,19 +54,12 @@ Write-InstallLog "Log file: $env:INSTALL_LOG"
 Write-InstallLog "Loading configuration and utilities..."
 
 try {
-    # Try to load local config first
-    $LocalConfigPath = Join-Path $ScriptDir "config.ps1"
-    if (Test-Path $LocalConfigPath) {
-        Write-InstallLog "Loading local config: $LocalConfigPath"
-        . $LocalConfigPath
-        Write-InstallLog "Local config loaded successfully"
-    } else {
-        Write-InstallLog "Local config not found, loading remote config..."
-        $ConfigUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
-        $ConfigScript = Invoke-WebRequest -Uri $ConfigUrl -UseBasicParsing
-        Invoke-Expression $ConfigScript.Content
-        Write-InstallLog "Remote config loaded successfully"
-    }
+    # Load remote config
+    Write-InstallLog "Loading remote configuration..."
+    $ConfigUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
+    $ConfigScript = Invoke-WebRequest -Uri $ConfigUrl -UseBasicParsing
+    Invoke-Expression $ConfigScript.Content
+    Write-InstallLog "Remote config loaded successfully"
 } catch {
     Write-InstallLog "Failed to load configuration: $($_.Exception.Message)" -Level "ERROR"
     Write-Host "Installation cannot continue without configuration" -ForegroundColor Red
@@ -84,19 +67,12 @@ try {
 }
 
 try {
-    # Try to load local common utilities
-    $LocalCommonPath = Join-Path $ScriptDir "Components\Shared\common.ps1"
-    if (Test-Path $LocalCommonPath) {
-        Write-InstallLog "Loading local utilities: $LocalCommonPath"
-        . $LocalCommonPath
-        Write-InstallLog "Local utilities loaded successfully"
-    } else {
-        Write-InstallLog "Local utilities not found, loading remote utilities..."
-        $CommonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"
-        $CommonScript = Invoke-WebRequest -Uri $CommonUrl -UseBasicParsing
-        Invoke-Expression $CommonScript.Content
-        Write-InstallLog "Remote utilities loaded successfully"
-    }
+    # Load remote utilities
+    Write-InstallLog "Loading remote utilities..."
+    $CommonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"
+    $CommonScript = Invoke-WebRequest -Uri $CommonUrl -UseBasicParsing
+    Invoke-Expression $CommonScript.Content
+    Write-InstallLog "Remote utilities loaded successfully"
 } catch {
     Write-InstallLog "Failed to load utilities: $($_.Exception.Message)" -Level "ERROR"
     Write-Host "Installation cannot continue without utilities" -ForegroundColor Red
@@ -125,18 +101,11 @@ try {
 $UseNativeDialogs = $false
 if ($UseGUI) {
     try {
-        $LocalDialogsPath = Join-Path $ScriptDir "Components\Shared\windows_dialogs.ps1"
-        if (Test-Path $LocalDialogsPath) {
-            Write-LogInfo "Loading local GUI dialogs: $LocalDialogsPath"
-            . $LocalDialogsPath
-            $UseNativeDialogs = $true
-        } else {
-            Write-LogInfo "Loading remote GUI dialogs..."
-            $DialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
-            $DialogsScript = Invoke-WebRequest -Uri $DialogsUrl -UseBasicParsing
-            Invoke-Expression $DialogsScript.Content
-            $UseNativeDialogs = $true
-        }
+        Write-LogInfo "Loading remote GUI dialogs..."
+        $DialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
+        $DialogsScript = Invoke-WebRequest -Uri $DialogsUrl -UseBasicParsing
+        Invoke-Expression $DialogsScript.Content
+        $UseNativeDialogs = $true
         Write-LogInfo "GUI dialogs loaded successfully"
     } catch {
         Write-LogWarning "Failed to load GUI dialogs, using terminal interface: $($_.Exception.Message)"
@@ -152,29 +121,16 @@ function Invoke-ComponentScript {
     )
     
     Write-LogInfo "Running $Description..."
+    Write-LogInfo "Using remote $Description : $ComponentPath"
     
-    $LocalPath = Join-Path $ScriptDir $ComponentPath
-    
-    if (Test-Path $LocalPath) {
-        Write-LogInfo "Using local $Description : $LocalPath"
-        try {
-            . $LocalPath
-            Write-LogSuccess "$Description completed successfully (local)"
-        } catch {
-            Write-LogError "Local $Description failed: $($_.Exception.Message)"
-            throw
-        }
-    } else {
-        Write-LogInfo "Using remote $Description : $ComponentPath"
-        try {
-            $RemoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
-            $Script = Invoke-WebRequest -Uri $RemoteUrl -UseBasicParsing
-            Invoke-Expression $Script.Content
-            Write-LogSuccess "$Description completed successfully (remote)"
-        } catch {
-            Write-LogError "Remote $Description failed: $($_.Exception.Message)"
-            throw
-        }
+    try {
+        $RemoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
+        $Script = Invoke-WebRequest -Uri $RemoteUrl -UseBasicParsing
+        Invoke-Expression $Script.Content
+        Write-LogSuccess "$Description completed successfully"
+    } catch {
+        Write-LogError "$Description failed: $($_.Exception.Message)"
+        throw
     }
 }
 
