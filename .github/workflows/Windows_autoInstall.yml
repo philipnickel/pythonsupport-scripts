@@ -84,7 +84,7 @@ jobs:
             Write-Host "Expected behavior: Installation should abort due to existing conda"
             & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
             if ($LASTEXITCODE -eq 1) {
-              Write-Host "✓ Installation correctly aborted due to existing conda"
+              Write-Host "[OK] Installation correctly aborted due to existing conda"
               exit 0  # Test passed - installer correctly aborted
             } else {
               Write-Host "ERROR: Expected exit code 1, got: $LASTEXITCODE"
@@ -109,7 +109,7 @@ jobs:
           try {
             $vscodeVersion = & code --version 2>$null
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "✓ VS Code accessible via command line"
+              Write-Host "[OK] VS Code accessible via command line"
               $vscodeVersion | ForEach-Object { Write-Host "  $_" }
             } else {
               throw "code command returned exit code $LASTEXITCODE"
@@ -131,7 +131,7 @@ jobs:
             }
             
             if ($foundPath) {
-              Write-Host "✓ VS Code found at: $foundPath"
+              Write-Host "[OK] VS Code found at: $foundPath"
               $version = & "$foundPath" --version 2>$null
               $version | ForEach-Object { Write-Host "  $_" }
             } else {
@@ -172,14 +172,14 @@ jobs:
             Write-Host "PATH: $env:PATH"
             exit 1
           }
-          Write-Host "✓ Correct Python version $installedVersion"
+          Write-Host "[OK] Correct Python version $installedVersion"
 
       - name: Verify Installation - DTU Packages
         if: matrix.setup == 'clean'
         run: |
           Write-Host "Verifying DTU packages..."
           try {
-            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')"
+            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
           } catch {
             Write-Host "ERROR: Failed to import DTU packages"
             conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
@@ -224,7 +224,7 @@ jobs:
             Write-Host "Available extensions: $($extensions -join ', ')"
             exit 1
           }
-          Write-Host "✓ Python extension installed"
+          Write-Host "[OK] Python extension installed"
 
       - name: Final Verification Summary
         if: matrix.setup == 'clean'
@@ -240,15 +240,15 @@ jobs:
           try {
             $vscodeVer = (& code --version 2>$null | Select-Object -First 1)
             if ($LASTEXITCODE -ne 0) { throw "code command failed" }
-            Write-Host "✓ VS Code: $vscodeVer"
+            Write-Host "[OK] VS Code: $vscodeVer"
           } catch {
-            Write-Host "✓ VS Code: Installed (version check via fallback path)"
+            Write-Host "[OK] VS Code: Installed (version check via fallback path)"
           }
           
-          Write-Host "✓ Conda: $(conda --version)"
-          Write-Host "✓ Python: $(python --version)"
-          Write-Host "✓ DTU Packages: All imported successfully"
-          Write-Host "✓ VS Code Extensions: Python extension installed"
+          Write-Host "[OK] Conda: $(conda --version)"
+          Write-Host "[OK] Python: $(python --version)"
+          Write-Host "[OK] DTU Packages: All imported successfully"
+          Write-Host "[OK] VS Code Extensions: Python extension installed"
           Write-Host ""
           Write-Host "Test scenario '${{ matrix.scenario }}' passed all verifications!"
 
