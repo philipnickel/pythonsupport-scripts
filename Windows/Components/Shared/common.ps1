@@ -132,18 +132,18 @@ function Test-NetworkConnectivity {
 # Set execution policy safely
 function Set-ExecutionPolicySafe {
     try {
-        $currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+        $currentPolicy = Get-ExecutionPolicy -Scope CurrentUser -ErrorAction SilentlyContinue
         if ($currentPolicy -eq "Restricted") {
             Write-LogInfo "Setting PowerShell execution policy to RemoteSigned..."
-            Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+            Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
             Write-LogSuccess "Execution policy updated"
         } else {
             Write-LogInfo "Execution policy is already set to: $currentPolicy"
         }
     }
     catch {
-        Write-LogError "Failed to set execution policy: $($_.Exception.Message)"
-        throw
+        Write-LogWarning "Could not set execution policy (restricted environment): $($_.Exception.Message)"
+        # Don't throw - execution can continue in most cases
     }
 }
 
