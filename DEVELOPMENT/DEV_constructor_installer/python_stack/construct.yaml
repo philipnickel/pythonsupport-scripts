@@ -1,0 +1,51 @@
+# Constructor configuration for DTU Python Stack
+# Uses Miniforge-compatible settings to avoid Anaconda commercial licensing
+
+name: dtu-python-stack
+version: 1.0.0
+
+# Use only conda-forge channel (Miniforge approach)
+channels:
+  - conda-forge
+
+# Miniforge compatibility settings
+write_condarc: true
+condarc:
+  channels:
+    - conda-forge
+  channel_priority: strict
+
+specs:
+  # Core Python environment
+  - python=3.11
+  - conda
+  - pip
+  
+  # Essential scientific computing packages
+  - pandas
+  - scipy
+  - statsmodels
+  - uncertainties
+  - dtumathtools
+
+# macOS PKG installer configuration
+installer_type: pkg
+installer_filename: DTU-Python-Stack-1.0.0.pkg
+
+# Package metadata
+pkg_name: DTU-Python-Stack
+
+# Installation behavior
+initialize_conda: true
+initialize_by_default: true
+register_python: true
+post_install: scripts/post_install.sh
+post_install_desc: "Setting up Python environment, downloading VS Code, and configuring development tools..."
+
+# macOS specific settings
+keep_pkgs: false
+
+# Code signing configuration (requires Apple Developer certificate)
+# Uncomment and configure when signing certificate is available:
+# signing_identity_name: "Developer ID Installer: Your Name (XXXXXXXXXX)"
+# notarization_identity_name: "Developer ID Installer: Your Name (XXXXXXXXXX)"

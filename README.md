@@ -1,35 +1,36 @@
-# Autoinstalling python 
-## MacOS
-Open a terminal and run the following command:
+# DTU Python Support Scripts
+## Installation
 
-```{bash}
-TODO
+### macOS
+
+**Option 1: Download and Run (Recommended)** - See [latest release](https://github.com/philipnickel/pythonsupport-scripts/releases/latest) for GUI installer.
+
+**Option 2: GUI Mode** - Uses native macOS authentication dialogs:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
 ```
 
-
-# Checking for multiple versions of VsCode
-Run the following command in a terminal 
-
-```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/Scipts/main/multipleVersionsMac.sh)"
+**Option 3: CLI Mode** - Uses terminal prompts for authentication:
+```bash
+curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh | bash -s -- --cli
 ```
 
-# Installing dependancies for converting Jupyter notebooks to PDFs.
-## MacOS
-Open a terminal and run the following command:
+### Windows
 
-```{bash}
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/Scipts/main/script_VsCode_PDF-fix_MacOS.sh)"
+**Option 1: Download and Run (Recommended)** - See [latest release](https://github.com/philipnickel/pythonsupport-scripts/releases/latest) for Windows GUI installer.
+
+**Option 2: PowerShell** - Uses native Windows UAC authentication:
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
 ```
-## Windows
+## Utilities
 
-Open powershell in administrator mode. Search for powershell -> right click -> Run as administrator 
-
-Run the following command: 
-
-```{powershell}
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/philipnickel/Scipts/main/windows_pdf_fix.ps1' -UseBasicParsing).Content}"
+### macOS Diagnostics
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
 ```
 
-
-
+### macOS Conda Uninstaller
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/Components/Core/uninstall_conda.sh)"
+```
