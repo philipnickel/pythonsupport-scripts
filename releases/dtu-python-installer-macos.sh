@@ -11,7 +11,7 @@ export DTU_INSTALLER_VERSION="1.0.0"
 # DTU Python installer configuration
 
 # Configuration (inline instead of external config.sh)
-export PYTHON_VERSION_DTU="3.11"
+export PYTHON_VERSION_DTU="3.12"
 export DTU_PACKAGES="dtumathtools pandas scipy statsmodels uncertainties"
 export VSCODE_EXTENSIONS="ms-python.python ms-python.pylint ms-toolsai.jupyter tomoki1207.pdf"
 export MINIFORGE_PATH="$HOME/miniforge3"

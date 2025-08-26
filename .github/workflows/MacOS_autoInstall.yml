@@ -23,7 +23,7 @@ on:
         type: string
 
 env:
-  PYTHON_VERSION_PS: "3.11"
+  PYTHON_VERSION_PS: "3.12"
   PIS_ENV: "CI"
 
 jobs:
@@ -116,52 +116,94 @@ jobs:
 
       - name: Verify Installation - Conda
         run: |
-          echo "Verifying conda installation..."
-          which conda || {
-            echo "ERROR: Conda not found"
-            exit 1
-          }
+          echo "Verifying conda installation in fresh shell..."
           
-          conda --version
-          conda info --base
+          # Test what a real user would experience - fresh shell with no sourcing
+          CONDA_VERSION=$(/bin/bash -l -c 'conda --version 2>/dev/null || echo "NOT_FOUND"')
           
-          # Should be miniforge
-          if ! conda info --base | grep -q "miniforge3"; then
-            echo "ERROR: Not using miniforge"
+          if [[ "$CONDA_VERSION" == "NOT_FOUND" ]]; then
+            echo "ERROR: Conda not found in fresh shell"
+            echo "This means the installation didn't properly configure conda in shell environment"
+            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
+            echo "Checking for conda in expected locations:"
+            ls -la ~/miniforge3/bin/conda 2>/dev/null || echo "No miniforge conda found"
             exit 1
           fi
+          
+          echo "✓ Conda version in fresh shell: $CONDA_VERSION"
+          
+          CONDA_BASE=$(/bin/bash -l -c 'conda info --base 2>/dev/null || echo "FAILED"')
+          if [[ "$CONDA_BASE" == "FAILED" ]]; then
+            echo "ERROR: Could not get conda info in fresh shell"
+            exit 1
+          fi
+          
+          # Should be miniforge
+          if ! echo "$CONDA_BASE" | grep -q "miniforge3"; then
+            echo "ERROR: Not using miniforge. Base: $CONDA_BASE"
+            exit 1
+          fi
+          
+          echo "✓ Using miniforge at: $CONDA_BASE"
 
       - name: Verify Installation - Python Version
         run: |
-          echo "Verifying Python version..."
+          echo "Verifying Python version in fresh shell..."
           
-          # Activate conda environment to ensure we're using the right Python
-          source ~/miniforge3/bin/activate
-          which python3
+          # Test what a real user would experience - fresh shell with no sourcing
+          # This tests that the installation properly configured the shell environment
+          FRESH_SHELL_PYTHON=$(/bin/bash -l -c 'python3 --version 2>/dev/null || echo "NOT_FOUND"')
           
-          EXPECTED_VERSION="3.11"
-          INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
-          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
-            echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
-            echo "PATH: $PATH"
-            echo "Available Python versions:"
-            ls -la ~/miniforge3/bin/python*
+          if [[ "$FRESH_SHELL_PYTHON" == "NOT_FOUND" ]]; then
+            echo "ERROR: python3 not found in fresh shell"
+            echo "This means the installation didn't properly configure the shell environment"
+            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
+            echo "Available Python in system:"
+            ls -la /usr/bin/python* 2>/dev/null || echo "No system Python found"
+            ls -la ~/miniforge3/bin/python* 2>/dev/null || echo "No miniforge Python found"
             exit 1
           fi
-          echo "✓ Correct Python version $INSTALLED_VERSION"
+          
+          INSTALLED_VERSION=$(echo "$FRESH_SHELL_PYTHON" | cut -d " " -f 2)
+          EXPECTED_VERSION="3.12"
+          
+          # Verify this is our miniforge python, not system python
+          PYTHON_PATH=$(/bin/bash -l -c 'which python3')
+          if ! echo "$PYTHON_PATH" | grep -q "miniforge3"; then
+            echo "ERROR: Python is not from miniforge: $PYTHON_PATH"
+            echo "Fresh shell Python: $FRESH_SHELL_PYTHON"
+            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
+            exit 1
+          fi
+          
+          if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
+            echo "ERROR: Python version ($INSTALLED_VERSION) does not match expected ($EXPECTED_VERSION)"
+            echo "Fresh shell Python: $FRESH_SHELL_PYTHON"
+            echo "PATH in fresh shell: $(/bin/bash -l -c 'echo $PATH')"
+            echo "Which python3 in fresh shell: $(/bin/bash -l -c 'which python3')"
+            exit 1
+          fi
+          
+          echo "✓ Fresh shell Python version: $INSTALLED_VERSION"
 
       - name: Verify Installation - DTU Packages
         run: |
-          echo "Verifying DTU packages..."
+          echo "Verifying DTU packages in fresh shell..."
           
-          # Activate conda environment to ensure we're using the right Python
-          source ~/miniforge3/bin/activate
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')" || {
-            echo "ERROR: Failed to import DTU packages"
-            echo "Available packages:"
-            conda list | grep -E "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
+          # Test what a real user would experience - fresh shell with no sourcing
+          PACKAGE_TEST=$(/bin/bash -l -c 'python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print(\"SUCCESS\")" 2>/dev/null || echo "FAILED"')
+          
+          if [[ "$PACKAGE_TEST" != "SUCCESS" ]]; then
+            echo "ERROR: Failed to import DTU packages in fresh shell"
+            echo "This means the installation didn't properly set up the Python environment"
+            echo "Python location in fresh shell: $(/bin/bash -l -c 'which python3')"
+            echo "Python path in fresh shell: $(/bin/bash -l -c 'python3 -c "import sys; print(sys.path)"')"
+            echo "Available packages in fresh shell:"
+            /bin/bash -l -c 'python3 -m pip list | grep -E "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"' || echo "No DTU packages found"
             exit 1
-          }
+          fi
+          
+          echo "✓ All DTU packages imported successfully in fresh shell"
 
       - name: Verify Installation - VS Code Extensions
         run: |

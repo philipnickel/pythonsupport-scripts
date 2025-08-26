@@ -35,7 +35,7 @@ if ! command -v conda >/dev/null 2>&1; then
 fi
 
 # Install required packages without verification (verification happens in post-install)
-conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
+conda install python=${PYTHON_VERSION_PS:-3.12} dtumathtools pandas scipy statsmodels uncertainties -y
 if [ $? -ne 0 ]; then exit 1; fi
 
 clear -x

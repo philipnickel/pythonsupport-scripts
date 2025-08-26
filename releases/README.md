@@ -12,7 +12,7 @@ This folder contains ready-to-use installer files for local testing and future d
 
 ## Features
 - Automatic conda detection and uninstall prompts
-- Python 3.11 installation via Miniforge
+- Python 3.12 installation via Miniforge
 - VS Code installation with Python extensions
 - DTU-specific packages: dtumathtools, pandas, scipy, statsmodels, uncertainties
 - Full verbose output for debugging

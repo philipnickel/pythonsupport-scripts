@@ -16,7 +16,7 @@ REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 
 # Set defaults for required variables
-PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.11"}
+PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
 MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
 MINIFORGE_BASE_URL=${MINIFORGE_BASE_URL:-"https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX"}
 
