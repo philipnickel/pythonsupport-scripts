@@ -74,11 +74,16 @@ jobs:
         run: |
           Write-Host "Testing ${{ matrix.scenario }} from: $env:REMOTE_PS/$env:BRANCH_PS"
           
+          # Download and execute the installer with parameters
+          $InstallScript = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing
+          $TempScript = "$env:TEMP\install_test.ps1"
+          Set-Content -Path $TempScript -Value $InstallScript.Content
+          
           if ("${{ matrix.setup }}" -eq "existing-conda") {
             # For existing conda scenario, we expect the installer to abort
             Write-Host "Expected behavior: Installation should abort due to existing conda"
             try {
-              Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing).Content
+              & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
               Write-Host "ERROR: Installation should have aborted but continued"
               exit 1
             } catch {
@@ -90,9 +95,11 @@ jobs:
               }
             }
           } else {
-            # For clean installation, run normally
-            Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing).Content
+            # For clean installation, run normally  
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
           }
+          
+          Remove-Item $TempScript -Force -ErrorAction SilentlyContinue
 
       - name: Verify Installation - VS Code
         if: matrix.setup == 'clean'
