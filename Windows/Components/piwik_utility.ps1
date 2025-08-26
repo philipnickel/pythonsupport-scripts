@@ -2,13 +2,13 @@
 .SYNOPSIS
   Piwik Analytics Utility (Windows PowerShell port)
 .DESCRIPTION
-  Enhanced analytics tracking utility for monitoring installation script usage
+  Analytics tracking utility for monitoring installation script usage
   and success rates with GDPR compliance.
   Tracks installation events to Piwik PRO for usage analytics and error
   monitoring with enhanced features and GDPR opt-out support.
 .NOTES
   Requirements: Invoke-WebRequest, internet connection, Windows
-  Usage: . .\piwik_utility_win.ps1; piwik_log "event_name" { <command> <args> }
+  Usage: . .\piwik_utility.ps1; Piwik-Log <code>
 #>
 
 # === CONFIGURATION ===
@@ -108,7 +108,7 @@ function Get-Commit-SHA {
 }
 
 function Get-URI {
-    param ([string]$value)
+    param ([int]$value)
 
     $sysinfo = Get-System-Info
     $commit_sha = Get-Commit-SHA
