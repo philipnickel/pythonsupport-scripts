@@ -88,8 +88,8 @@ jobs:
           # Download the installer script
           Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing
           
-          # Run the installer with the correct parameters
-          & $tempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.11" -UseGUI:$false
+          # Run the installer with the correct parameters and force non-interactive mode
+          & $tempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.11" -UseGUI:$false -Force
 
       - name: Verify VS Code
         run: |

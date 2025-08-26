@@ -12,7 +12,8 @@ param(
     [string]$RemoteRepo = "dtudk/pythonsupport-scripts",
     [string]$Branch = "main", 
     [string]$PythonVersion = "3.11",
-    [switch]$UseGUI = $false  # Default to false for better testing
+    [switch]$UseGUI = $false,  # Default to false for better testing
+    [switch]$Force = $false     # Skip user confirmation when true
 )
 
 # Early error handling setup
@@ -206,12 +207,9 @@ try {
 # Get user confirmation
 $Proceed = $true
 
-# Debug environment variables
-Write-LogInfo "Environment check - GITHUB_CI: '$env:GITHUB_CI', CI: '$env:CI'"
-
-# In CI environments, auto-proceed without user input
-if ($env:GITHUB_CI -eq "true" -or $env:CI -eq "true") {
-    Write-LogInfo "Running in CI environment, auto-proceeding with installation"
+# Check if we should skip user confirmation
+if ($Force) {
+    Write-LogInfo "Force parameter specified, proceeding without confirmation"
     Write-Host ""
     Write-Host "This installation will set up:" -ForegroundColor White
     Write-Host "  • Python $PythonVersion (via Miniforge)" -ForegroundColor White
