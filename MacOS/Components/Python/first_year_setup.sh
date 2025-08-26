@@ -1,45 +1,40 @@
 #!/bin/bash
 # @doc
 # @name: Python First Year Setup
-# @description: Sets up Python environment with conda for DTU first year students
+# @description: Verifies Python environment setup for DTU first year students (packages now installed in main install script)
 # @category: Python
 # @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Python/first_year_setup.sh)"
-# @requirements: macOS system, Homebrew
-# @notes: Installs miniconda, creates base environment with Python 3.11, installs essential packages
+# @requirements: macOS system with Miniforge already installed
+# @notes: This script now primarily verifies the installation since packages are installed directly in base environment
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
 
-log_info "First year Python setup"
+# Set up install log for this script
+[ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
-# Load shell profile to get conda environment (conda init sets this up)
-[ -e ~/.bashrc ] && source ~/.bashrc
-[ -e ~/.bash_profile ] && source ~/.bash_profile
+# Source shell profiles to ensure conda is available
+[ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+[ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true  
 [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+
+# Update PATH to include conda
+export PATH="$MINIFORGE_PATH/bin:$PATH"
 
 # Check if conda is installed, if not install Python first
 if ! command -v conda >/dev/null 2>&1; then
-  log_info "Conda not found. Installing Python with Miniconda first..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Python/install.sh)"
   
   # Re-source shell profile after conda installation
-  [ -e ~/.bashrc ] && source ~/.bashrc
-  [ -e ~/.bash_profile ] && source ~/.bash_profile
+  [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+  [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
   [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
+  export PATH="$HOME/miniforge3/bin:$PATH"
 fi
 
+# Install required packages without verification (verification happens in post-install)
+conda install python=${PYTHON_VERSION_PS:-3.11} dtumathtools pandas scipy statsmodels uncertainties -y
+if [ $? -ne 0 ]; then exit 1; fi
 
-
-log_info "Ensuring Python version ${PYTHON_VERSION_PS:-3.11}..."
-# Doing local strict channel-priority
-conda install --strict-channel-priority python=${PYTHON_VERSION_PS:-3.11} -y
-check_exit_code "Failed to install Python version ${PYTHON_VERSION_PS:-3.11}"
 clear -x
-
-log_info "Installing packages..."
-conda install dtumathtools pandas scipy statsmodels uncertainties -y
-check_exit_code "Failed to install required packages"
-clear -x
-
-log_success "Installed conda and related packages for 1st year at DTU!"

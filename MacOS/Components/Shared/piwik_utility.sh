@@ -583,3 +583,36 @@ piwik_reset_choice() {
     rm -f "/tmp/piwik_analytics_choice"
     echo "Analytics choice reset. You will be prompted again on next use."
 }
+
+# Simple analytics logging without command execution
+piwik_log_simple() {
+    # Check analytics choice if needed
+    check_analytics_choice
+    
+    local event_name="$1"
+    local event_action="${2:-Event}"
+    local event_value="${3:-1}"
+    
+    # Check if analytics are disabled
+    if is_analytics_disabled; then
+        return 0
+    fi
+    
+    get_system_info
+    local commit_sha=$(get_commit_sha)
+    local event_category=$(get_environment_category)
+    
+    # Send to Piwik (no command execution, just analytics)
+    curl -s -o /dev/null -G "$PIWIK_URL" \
+        --max-time 10 \
+        --connect-timeout 5 \
+        --data-urlencode "idsite=$SITE_ID" \
+        --data-urlencode "rec=1" \
+        --data-urlencode "e_c=$event_category" \
+        --data-urlencode "e_a=$event_action" \
+        --data-urlencode "e_n=$event_name" \
+        --data-urlencode "e_v=$event_value" \
+        --data-urlencode "dimension1=$OS" \
+        --data-urlencode "dimension2=$ARCH" \
+        --data-urlencode "dimension3=$commit_sha" 2>/dev/null
+}

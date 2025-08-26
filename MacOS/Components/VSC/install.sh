@@ -1,54 +1,88 @@
 #!/bin/bash
 # @doc
-# @name: VSCode Installation
-# @description: Installs Visual Studio Code on macOS with Python extension setup
+# @name: VSCode Installation (Direct Download)
+# @description: Installs Visual Studio Code on macOS without Homebrew dependency
 # @category: IDE
 # @usage: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/install.sh)"
-# @requirements: macOS system, Homebrew (for cask installation)
-# @notes: Uses master utility system for consistent error handling and logging. Configures remote repository settings and installs via Homebrew cask
+# @requirements: macOS system, internet connection
+# @notes: Uses master utility system for consistent error handling and logging. Downloads and installs VSCode directly from Microsoft
 # @/doc
 
-# Load master utilities
-eval "$(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS:-dtudk/pythonsupport-scripts}/${BRANCH_PS:-main}/MacOS/Components/Shared/master_utils.sh")"
+# Load configuration
+source <(curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh")
 
-log_info "Installing Visual Studio Code"
+# Set up install log for this script
+[ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
-# Check for homebrew and install if needed
-ensure_homebrew
-
-# check if vs code is installed
-log_info "Installing Visual Studio Code if not already installed..."
-# if output is empty, then install vs code
 # Check if VSCode is already installed
 if command -v code > /dev/null 2>&1; then
-    vspath=$(which code)
+    vscode_path=$(which code)
 elif [ -d "/Applications/Visual Studio Code.app" ]; then
-    vspath="/Applications/Visual Studio Code.app"
+    vscode_path="/Applications/Visual Studio Code.app"
+    # Add to PATH if not already there
+    if ! command -v code > /dev/null 2>&1; then
+        sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
+    fi
 else
-    vspath=""
+    
+    # Detect architecture for proper download
+    if [[ $(uname -m) == "arm64" ]]; then
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-arm64"
+        ARCH="arm64"
+    else
+        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin"
+        ARCH="x64"
+    fi
+    
+    curl -fsSL "$VSCODE_URL" -o /tmp/VSCode.zip
+    if [ $? -ne 0 ]; then exit 1; fi
+    
+    unzip -qq /tmp/VSCode.zip -d /tmp/
+    if [ $? -ne 0 ]; then exit 1; fi
+    
+    if [ -d "/Applications/Visual Studio Code.app" ]; then
+        rm -rf "/Applications/Visual Studio Code.app"
+    fi
+    
+    mv "/tmp/Visual Studio Code.app" "/Applications/"
+    if [ $? -ne 0 ]; then exit 1; fi
+    
+    # Clean up
+    rm -f /tmp/VSCode.zip
+    
+    # Create symlink for 'code' command
+    sudo mkdir -p /usr/local/bin 2>/dev/null || true
+    sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
+    
+    # Add to PATH for this session
+    export PATH="/usr/local/bin:$PATH"
 fi
-check_exit_code "Failed to check VSCode installation status"
 
-if [ -n "$vspath" ]  ; then
-    log_success "Visual Studio Code is already installed"
-else
-    log_info "Installing Visual Studio Code"
-    brew install --cask visual-studio-code
-    check_exit_code "Failed to install Visual Studio Code"
-fi
-
+# Update PATH and refresh
 hash -r
 clear -x
 
-log_info "Setting up Visual Studio Code environment..."
-eval "$(brew shellenv)"
 
-# Test if code is installed correctly
-if code --version > /dev/null; then
-    log_success "Visual Studio Code installed successfully"
-else
-    log_error "Visual Studio Code installation failed"
+# Install extensions immediately after VSCode installation
+
+# Check if code CLI is available, use bundled path if needed
+if ! command -v code >/dev/null; then
+  if [ -x "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then
+    CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+  else
     exit_message
+  fi
+else
+  CODE_CLI="code"
 fi
 
-log_success "Visual Studio Code installation completed!"
+# Install essential extensions
+"$CODE_CLI" --install-extension ms-python.python
+if [ $? -ne 0 ]; then exit 1; fi
+
+"$CODE_CLI" --install-extension ms-toolsai.jupyter
+if [ $? -ne 0 ]; then exit 1; fi
+
+"$CODE_CLI" --install-extension tomoki1207.pdf
+if [ $? -ne 0 ]; then exit 1; fi
+
