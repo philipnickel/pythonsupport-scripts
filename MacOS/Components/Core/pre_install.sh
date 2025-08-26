@@ -98,6 +98,11 @@ if [ "$CONDA_FOUND" = true ]; then
             echo "Installation aborted by user."
             exit 1
         fi
+        
+        # Set response to "yes" if user clicked "Uninstall & Continue"
+        if [[ "$response" == *"Uninstall & Continue"* ]]; then
+            response="yes"
+        fi
     fi
     
     # Execute uninstall script for all modes when user agrees
