@@ -547,6 +547,7 @@ main() {
 }
 
 # Only run main if script is executed directly (not sourced)  
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+# Also run if executed via bash -c (when BASH_SOURCE[0] is bash)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]] || [[ "${BASH_SOURCE[0]}" == "bash" ]] || [[ -z "${BASH_SOURCE[0]}" ]]; then
     main
 fi
