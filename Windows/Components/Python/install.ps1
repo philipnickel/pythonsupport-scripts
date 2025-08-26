@@ -26,13 +26,32 @@ $condaPaths = @(
 )
 
 $condaFound = $false
+$existingCondaPath = $null
 foreach ($path in $condaPaths) {
     if (Test-Path $path) {
         Write-Host "Found existing conda installation at: $path"
-        $env:PATH = "$(Split-Path $path -Parent);$env:PATH"
+        $existingCondaPath = $path
         $condaFound = $true
         break
     }
+}
+
+if ($condaFound) {
+    Write-Host "Existing conda installation detected at: $existingCondaPath"
+    
+    # Show native Windows popup asking for manual uninstall (skip in CI)
+    if ($env:PIS_ENV -ne "CI") {
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show(
+            "An existing conda installation was found at:`n$existingCondaPath`n`nPlease uninstall it manually through Windows Settings (Add or Remove Programs) and run this installer again.`n`nInstallation will now exit.",
+            "DTU Python Setup - Manual Action Required",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        )
+    }
+    
+    Write-Host "Installation aborted. Please uninstall existing conda manually and try again."
+    exit 1
 }
 
 if (-not $condaFound) {

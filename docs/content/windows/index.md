@@ -7,17 +7,22 @@ Python development environment setup for Windows systems.
 For first-year DTU students:
 
 ```powershell
-# Windows installation command coming soon
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
 ```
+
+**Note**: Run in PowerShell as Administrator. If you have an existing conda installation, you'll be prompted to uninstall it manually first.
 
 ---
 
 ## Current Status
 
-Windows support is under development. Currently available:
+Windows support is fully functional with modular component system:
 
-- Legacy installation scripts
-- Planning for modular component system similar to macOS
+- ✅ Python (Miniforge) installation
+- ✅ Visual Studio Code with Python extension
+- ✅ Automated package installation (dtumathtools, pandas, scipy, statsmodels, uncertainties)
+- ✅ One-liner installation approach
+- ✅ Native Windows dialogs for user interaction
 
 ---
 
@@ -31,32 +36,32 @@ Windows support is under development. Currently available:
 
 ---
 
-## Planned Components
+## Components
 
-Similar to macOS structure:
+Windows uses a modular component system:
 
-- **Python**: Miniconda/Anaconda installation
-- **VSCode**: Visual Studio Code with extensions
-- **Git**: Version control system
-- **Package Management**: Chocolatey or winget integration
+- **Python**: Miniforge installation with Python 3.12
+- **VSCode**: Visual Studio Code with Python extension
+- **Packages**: DTU-specific packages (dtumathtools, pandas, scipy, statsmodels, uncertainties)
 
 ---
 
-## Legacy Scripts
+## Features
 
-Currently available in the repository:
-
-- Windows installation scripts (legacy format)
-- Will be migrated to component-based system
+- **One-liner installation**: No need to download .bat files
+- **Existing conda detection**: Automatically detects and prompts for manual removal
+- **Native Windows UI**: Uses Windows.Forms dialogs for user interaction
+- **CI/CD testing**: Comprehensive GitHub Actions testing with matrix scenarios
+- **Security conscious**: Avoids .bat files that trigger Windows security warnings
 
 ---
 
 ## Development Status
 
-- ⏳ **In Progress**: Converting to modular component system
-- ⏳ **Planned**: Windows-specific orchestrators
-- ⏳ **Planned**: GitHub Actions testing for Windows
-- ⏳ **Planned**: Documentation completion
+- ✅ **Complete**: Modular component system
+- ✅ **Complete**: Windows-specific orchestrators
+- ✅ **Complete**: GitHub Actions testing for Windows
+- ✅ **Complete**: One-liner installation approach
 
 ---
 

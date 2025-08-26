@@ -9,142 +9,172 @@ on:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
-      - 'windows_releases/**'
       - '.github/workflows/Windows_autoInstall.yml'
-      - 'dev_plan_miniforge_windows.md'
   push:
     branches: [ "main" ]
     paths:
       - 'Windows/**'
-      - 'windows_releases/**'
       - '.github/workflows/Windows_autoInstall.yml'
-      - 'dev_plan_miniforge_windows.md'
+  workflow_dispatch:
+    inputs:
+      pkg_path:
+        description: 'Path to PKG file to test'
+        required: false
+        type: string
 
 env:
   PYTHON_VERSION_PS: "3.12"
   PIS_ENV: "CI"
 
 jobs:
-  test-release-installer:
-    name: Test Windows Release .bat Installer
+  test-installer:
+    name: ${{ matrix.scenario }}
     runs-on: windows-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        setup: [clean, existing-conda]
+        include:
+          - setup: clean
+            scenario: "Clean Installation"
+          - setup: existing-conda
+            scenario: "Existing Conda (Manual Uninstall)"
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove conda (if present)
+      - name: Setup test scenario - Clean Installation
+        if: matrix.setup == 'clean'
         run: |
+          Write-Host "Setting up clean installation test"
+          # Remove any existing conda
           if (Get-Command conda -ErrorAction SilentlyContinue) {
-            Write-Host "Base environment location:"
-            conda info --base
-
-            Write-Host "Removing conda from the environment..."
-            # try and disable things in the boot-up scripts
             conda init --reverse --all
           }
 
-          # Show PowerShell profiles
-          $profilePaths = @($PROFILE.CurrentUserAllHosts, $PROFILE.CurrentUserCurrentHost)
-          foreach ($profilePath in $profilePaths) {
-            if (Test-Path $profilePath) {
-              Write-Host "Profile: $profilePath"
-              Get-Content $profilePath
-            }
-          }
-
-      - name: Check for conda
+      - name: Setup test scenario - Existing Conda
+        if: matrix.setup == 'existing-conda'
         run: |
-          $env:Path -split ';' | Where-Object { $_ -like "*conda*" } | ForEach-Object { Write-Host "Conda path: $_" }
-          if (Get-Command conda -ErrorAction SilentlyContinue) {
-            Write-Host "Base environment location:"
-            conda info --base
-          } else {
-            Write-Host "Conda not found..."
-          }
+          Write-Host "Setting up existing conda test"
+          # Install miniconda to simulate existing installation
+          $minicondaUrl = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+          $installerPath = "$env:TEMP\miniconda.exe"
+          Write-Host "Downloading Miniconda..."
+          Invoke-WebRequest -Uri $minicondaUrl -OutFile $installerPath -UseBasicParsing
+          Write-Host "Installing Miniconda..."
+          Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniconda3" -Wait
+          Remove-Item $installerPath -Force
 
-          # Show PowerShell profiles
-          $profilePaths = @($PROFILE.CurrentUserAllHosts, $PROFILE.CurrentUserCurrentHost)
-          foreach ($profilePath in $profilePaths) {
-            if (Test-Path $profilePath) {
-              Write-Host "Profile: $profilePath"
-              Get-Content $profilePath
-            }
-          }
-
-      - name: Test Windows Release .bat Installer
+      - name: Run DTU Python Installer
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          GITHUB_CI: true
         run: |
-          Write-Host "Testing Windows .bat release installer from: $env:REMOTE_PS/$env:BRANCH_PS"
+          Write-Host "Testing ${{ matrix.scenario }} from: $env:REMOTE_PS/$env:BRANCH_PS"
           
-          # Set execution policy
-          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-          
-          # Download the .bat installer
-          $batUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/windows_releases/install_first_year.bat"
-          $tempBat = "$env:TEMP\install_first_year_test.bat"
-          
-          Write-Host "Downloading .bat installer from: $batUrl"
-          Invoke-WebRequest -Uri $batUrl -OutFile $tempBat -UseBasicParsing
-          
-          # Modify the .bat file to use the current PR branch instead of main
-          $batContent = Get-Content $tempBat -Raw
-          $modifiedBat = $batContent -replace 'dtudk/pythonsupport-scripts/main', "$env:REMOTE_PS/$env:BRANCH_PS" -replace '"dtudk/pythonsupport-scripts"', "`"$env:REMOTE_PS`"" -replace '"main"', "`"$env:BRANCH_PS`""
-          Set-Content -Path $tempBat -Value $modifiedBat
-          
-          Write-Host "Modified .bat file to use repository: $env:REMOTE_PS and branch: $env:BRANCH_PS"
-          
-          Write-Host "Running .bat installer (modified for CI testing)..."
-          
-          # Execute the .bat file in a way that captures output
-          cmd.exe /c "$tempBat"
+          if ("${{ matrix.setup }}" -eq "existing-conda") {
+            # For existing conda scenario, we expect the installer to abort
+            Write-Host "Expected behavior: Installation should abort due to existing conda"
+            try {
+              Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing).Content
+              Write-Host "ERROR: Installation should have aborted but continued"
+              exit 1
+            } catch {
+              if ($LASTEXITCODE -eq 1) {
+                Write-Host "✓ Installation correctly aborted due to existing conda"
+              } else {
+                Write-Host "ERROR: Unexpected exit code: $LASTEXITCODE"
+                exit 1
+              }
+            }
+          } else {
+            # For clean installation, run normally
+            Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing).Content
+          }
 
-      - name: Verify VS Code
+      - name: Verify Installation - VS Code
+        if: matrix.setup == 'clean'
         run: |
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          Write-Host "Verifying VS Code installation..."
           try {
-            Get-Command code
             code --version
           } catch {
-            Write-Output "VS Code not installed correctly"
-            Write-Output $_
+            Write-Host "ERROR: VS Code not installed properly"
             exit 1
           }
 
-      - name: Verify conda
+      - name: Verify Installation - Conda
+        if: matrix.setup == 'clean'
         run: |
+          Write-Host "Verifying conda installation..."
           try {
             Get-Command conda
             conda --version
             conda info --base
+            
+            # Should be miniforge
+            if (!(conda info --base | Select-String "miniforge3")) {
+              Write-Host "ERROR: Not using miniforge"
+              exit 1
+            }
           } catch {
-            Write-Output "Conda not installed correctly"
-            Write-Output $_
+            Write-Host "ERROR: Conda not found"
             exit 1
           }
 
-      - name: Verify python (3.12)
+      - name: Verify Installation - Python Version
+        if: matrix.setup == 'clean'
         run: |
-          Get-Command python
-
+          Write-Host "Verifying Python version..."
+          
           # Verify the installed Python version
           $expectedVersion = "3.12"
           $installedVersion = (python --version).Split(" ")[1].Trim()
           if (-not $installedVersion.StartsWith($expectedVersion)) {
-            Write-Output "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            Write-Host "ERROR: Python version ($installedVersion) does not match expected ($expectedVersion)"
+            Write-Host "PATH: $env:PATH"
             exit 1
           }
-          Write-Output "Correct Python version $installedVersion is installed."
+          Write-Host "✓ Correct Python version $installedVersion"
 
-          # Verify Python package imports
+      - name: Verify Installation - DTU Packages
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host "Verifying DTU packages..."
           try {
-            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('✓ All DTU packages imported successfully')"
           } catch {
-            Write-Output "Failed to import Python packages"
-            Write-Output $_
+            Write-Host "ERROR: Failed to import DTU packages"
+            conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
             exit 1
           }
+
+      - name: Verify Installation - VS Code Extensions
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host "Verifying VS Code extensions..."
+          code --list-extensions
+          
+          # Should have Python extension at minimum
+          if (!(code --list-extensions | Select-String "ms-python.python")) {
+            Write-Host "ERROR: Python extension not installed"
+            exit 1
+          }
+          Write-Host "✓ Python extension installed"
+
+      - name: Final Verification Summary
+        if: matrix.setup == 'clean'
+        run: |
+          Write-Host ""
+          Write-Host "🎉 Installation Verification Complete!"
+          Write-Host "======================================"
+          Write-Host "✓ VS Code: $(code --version | Select-Object -First 1)"
+          Write-Host "✓ Conda: $(conda --version)"
+          Write-Host "✓ Python: $(python --version)"
+          Write-Host "✓ DTU Packages: All imported successfully"
+          Write-Host "✓ VS Code Extensions: Python extension installed"
+          Write-Host ""
+          Write-Host "Test scenario '${{ matrix.scenario }}' passed all verifications!"
 
