@@ -30,42 +30,40 @@ foreach ($path in $vscodePaths) {
 if (-not $vscodeFound) {
     Write-Host "No existing VSCode installation found, installing VSCode..."
     
-    # Download VSCode zip package (faster than installer)
-    $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive"
-    $zipPath = Join-Path $env:TEMP "VSCode-win32-x64.zip"
-    $extractPath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code"
+    # Download VSCode installer
+    $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user"
+    $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-x64.exe"
     
-    Write-Host "Downloading VSCode zip package..."
+    Write-Host "Downloading VSCode installer..."
     try {
-        Invoke-WebRequest -Uri $vscodeUrl -OutFile $zipPath -UseBasicParsing
-        Write-Host "VSCode zip downloaded successfully"
+        Invoke-WebRequest -Uri $vscodeUrl -OutFile $installerPath -UseBasicParsing
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to download VSCode installer"
+            exit 1
+        }
     }
     catch {
         Write-Host "Failed to download VSCode: $($_.Exception.Message)"
         exit 1
     }
     
-    # Extract VSCode
-    Write-Host "Extracting VSCode..."
+    # Install VSCode silently
+    Write-Host "Installing VSCode..."
     try {
-        # Remove existing installation if present
-        if (Test-Path $extractPath) {
-            Remove-Item $extractPath -Recurse -Force
+        $process = Start-Process -FilePath $installerPath -ArgumentList "/VERYSILENT /NORESTART /TASKS=addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath" -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            Write-Host "VSCode installation failed with exit code: $($process.ExitCode)"
+            exit 1
         }
-        
-        # Create directory and extract
-        New-Item -Path $extractPath -ItemType Directory -Force | Out-Null
-        Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-        Write-Host "VSCode extracted successfully"
     }
     catch {
-        Write-Host "Failed to extract VSCode: $($_.Exception.Message)"
+        Write-Host "Failed to install VSCode: $($_.Exception.Message)"
         exit 1
     }
     
-    # Clean up zip file
-    if (Test-Path $zipPath) {
-        Remove-Item $zipPath -Force
+    # Clean up installer
+    if (Test-Path $installerPath) {
+        Remove-Item $installerPath -Force
     }
     
     Write-Host "VSCode installed successfully"
@@ -74,36 +72,22 @@ else {
     Write-Host "Using existing VSCode installation"
 }
 
-# Add VSCode to PATH for current session
-$vscodeInstallPath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code"
-$vscodeBinPath = "$vscodeInstallPath\bin"
-$vscodeExePath = "$vscodeInstallPath\Code.exe"
+# Add VSCode to PATH for current session (like macOS approach)
+$vscodeBinPath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin"
+$vscodeExePath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
 
-# Add to current session PATH
+# Simple direct PATH export for current session
 if (Test-Path $vscodeBinPath) {
     $env:PATH = "$vscodeBinPath;$env:PATH"
-    Write-Host "Added VSCode bin to current session PATH: $vscodeBinPath"
-} elseif (Test-Path $vscodeExePath) {
-    $env:PATH = "$vscodeInstallPath;$env:PATH"
-    Write-Host "Added VSCode to current session PATH: $vscodeInstallPath"
-} else {
-    Write-Host "VSCode not found in expected locations"
+    Write-Host "Added VSCode to current session PATH: $vscodeBinPath"
 }
-
-# Add VSCode to user PATH permanently
-try {
-    $currentUserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-    if (Test-Path $vscodeBinPath -and $currentUserPath -notlike "*$vscodeBinPath*") {
-        $newUserPath = "$currentUserPath;$vscodeBinPath"
-        [Environment]::SetEnvironmentVariable("PATH", $newUserPath, "User")
-        Write-Host "Added VSCode bin to user PATH permanently"
-    } elseif (Test-Path $vscodeExePath -and $currentUserPath -notlike "*$vscodeInstallPath*") {
-        $newUserPath = "$currentUserPath;$vscodeInstallPath"
-        [Environment]::SetEnvironmentVariable("PATH", $newUserPath, "User")
-        Write-Host "Added VSCode to user PATH permanently"
-    }
-} catch {
-    Write-Host "Warning: Could not add VSCode to permanent PATH: $($_.Exception.Message)"
+elseif (Test-Path $vscodeExePath) {
+    $vscodeDir = Split-Path $vscodeExePath -Parent
+    $env:PATH = "$vscodeDir;$env:PATH"
+    Write-Host "Added VSCode to current session PATH: $vscodeDir"
+}
+else {
+    Write-Host "VSCode not found in expected locations"
 }
 
 

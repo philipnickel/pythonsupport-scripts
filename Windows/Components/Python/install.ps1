@@ -146,7 +146,16 @@ catch {
     Write-Host "Failed to disable conda error reporting (non-critical)"
 }
 
-# Skip redundant conda init - already initialized above
+# Initialize conda for PowerShell
+Write-Host "Initializing conda for PowerShell..."
+try {
+    conda init powershell
+    Write-Host "Conda initialized for PowerShell successfully"
+}
+catch {
+    Write-Host "Failed to initialize conda for PowerShell: $($_.Exception.Message)"
+    exit 1
+}
 
 # Skip conda update for performance - not needed for fresh installs
 Write-Host "Skipping conda update for performance (not needed for fresh installs)..."
