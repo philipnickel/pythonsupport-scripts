@@ -41,8 +41,17 @@ get_system_info() {
     echo ""
     
     echo "=== Python Environment ==="
+    # Try multiple ways to load conda environment
     if [ -f "$HOME/miniforge3/bin/activate" ]; then
         source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
+    fi
+    
+    # Also try sourcing shell profiles to ensure conda is in PATH
+    source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
+    
+    # Try to initialize conda if not already done
+    if [ -f "$HOME/miniforge3/etc/profile.d/conda.sh" ]; then
+        source "$HOME/miniforge3/etc/profile.d/conda.sh" 2>/dev/null || true
     fi
     echo "Python Location: $(which python3 2>/dev/null || echo 'Not found')"
     echo "Python Version: $(python3 --version 2>/dev/null || echo 'Not found')"
@@ -170,7 +179,7 @@ run_first_year_test() {
         
         case "$CURRENT_SHELL" in
             "zsh")
-                if "$CURRENT_SHELL" -c "conda --version" 2>/dev/null; then
+                if "$CURRENT_SHELL" -c "source ~/.zshrc 2>/dev/null; conda --version" 2>/dev/null; then
                     echo "PASS: Conda is available in new zsh sessions (shell profile loaded)"
                 else
                     echo "FAIL: Conda not available in new zsh sessions"
@@ -178,7 +187,7 @@ run_first_year_test() {
                 fi
                 ;;
             "bash")
-                if "$CURRENT_SHELL" -c "conda --version" 2>/dev/null; then
+                if "$CURRENT_SHELL" -c "source ~/.bash_profile 2>/dev/null; conda --version" 2>/dev/null; then
                     echo "PASS: Conda is available in new bash sessions (shell profile loaded)"
                 else
                     echo "FAIL: Conda not available in new bash sessions"
@@ -186,7 +195,7 @@ run_first_year_test() {
                 fi
                 ;;
             *)
-                if "$CURRENT_SHELL" -c "conda --version" 2>/dev/null; then
+                if "$CURRENT_SHELL" -c "source ~/.bash_profile 2>/dev/null; conda --version" 2>/dev/null; then
                     echo "PASS: Conda is available in new $CURRENT_SHELL sessions (shell profile loaded)"
                 else
                     echo "FAIL: Conda not available in new $CURRENT_SHELL sessions"
