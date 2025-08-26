@@ -16,7 +16,7 @@ param(
 $useNativeDialogs = $false
 if ($UseGUI) {
     try {
-        $dialogsUrl = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Shared/gui_dialogs.ps1"
+        $dialogsUrl = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Shared/windows_dialogs.ps1"
         $dialogsScript = Invoke-WebRequest -Uri $dialogsUrl -UseBasicParsing
         Invoke-Expression $dialogsScript.Content
         $useNativeDialogs = $true

@@ -101,22 +101,40 @@ $pythonResult = Test-Component "Python" {
     
     foreach ($cmd in $pythonCommands) {
         try {
-            $pythonVersion = & $cmd --version 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                $verificationResults.Components.Python.Status = $true
-                $verificationResults.Components.Python.Version = $pythonVersion.ToString().Trim()
-                $verificationResults.Components.Python.Location = (Get-Command $cmd).Source
-                $pythonFound = $true
-                break
+            # Test in a fresh PowerShell process to simulate what a user would see
+            $pythonTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { $cmd --version; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\python_test.txt" -RedirectStandardError "$env:TEMP\python_error.txt"
+            
+            if ($pythonTest.ExitCode -eq 0) {
+                $pythonVersion = Get-Content "$env:TEMP\python_test.txt" -Raw -ErrorAction SilentlyContinue
+                if ($pythonVersion) {
+                    $verificationResults.Components.Python.Status = $true
+                    $verificationResults.Components.Python.Version = $pythonVersion.Trim()
+                    
+                    # Get location in fresh shell too
+                    $locationTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { (Get-Command $cmd -ErrorAction SilentlyContinue).Source }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\python_location.txt"
+                    $pythonLocation = Get-Content "$env:TEMP\python_location.txt" -Raw -ErrorAction SilentlyContinue
+                    if ($pythonLocation) {
+                        $verificationResults.Components.Python.Location = $pythonLocation.Trim()
+                    }
+                    
+                    $pythonFound = $true
+                    break
+                }
             }
         }
         catch {
             continue
         }
+        finally {
+            # Clean up temp files
+            Remove-Item "$env:TEMP\python_test.txt" -ErrorAction SilentlyContinue
+            Remove-Item "$env:TEMP\python_error.txt" -ErrorAction SilentlyContinue
+            Remove-Item "$env:TEMP\python_location.txt" -ErrorAction SilentlyContinue
+        }
     }
     
     if (-not $pythonFound) {
-        $verificationResults.Components.Python.Issues += "Python command not found in PATH"
+        $verificationResults.Components.Python.Issues += "Python command not found in fresh shell PATH"
     }
     
     return $pythonFound
@@ -126,25 +144,44 @@ $pythonResult = Test-Component "Python" {
 Write-Host "2. Verifying Conda Installation" -ForegroundColor White
 $condaResult = Test-Component "Conda" {
     try {
-        $condaInfo = conda info --json 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            $condaData = $condaInfo | ConvertFrom-Json
-            $verificationResults.Components.Conda.Status = $true
-            $verificationResults.Components.Conda.Version = $condaData.conda_version
-            $verificationResults.Components.Conda.Location = $condaData.conda_prefix
-            $verificationResults.Components.Conda.Details = @{
-                DefaultEnvironment = $condaData.default_prefix
-                EnvironmentsDir = $condaData.envs_dirs
-                PlatformArch = $condaData.platform
+        # Test in a fresh PowerShell process
+        $condaTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { conda info --json; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\conda_test.txt" -RedirectStandardError "$env:TEMP\conda_error.txt"
+        
+        if ($condaTest.ExitCode -eq 0) {
+            $condaInfo = Get-Content "$env:TEMP\conda_test.txt" -Raw -ErrorAction SilentlyContinue
+            if ($condaInfo) {
+                try {
+                    $condaData = $condaInfo | ConvertFrom-Json
+                    $verificationResults.Components.Conda.Status = $true
+                    $verificationResults.Components.Conda.Version = $condaData.conda_version
+                    $verificationResults.Components.Conda.Location = $condaData.conda_prefix
+                    $verificationResults.Components.Conda.Details = @{
+                        DefaultEnvironment = $condaData.default_prefix
+                        EnvironmentsDir = $condaData.envs_dirs
+                        PlatformArch = $condaData.platform
+                    }
+                    return $true
+                }
+                catch {
+                    $verificationResults.Components.Conda.Issues += "Failed to parse conda info JSON: $($_.Exception.Message)"
+                }
             }
-            return $true
+        }
+        else {
+            $errorOutput = Get-Content "$env:TEMP\conda_error.txt" -Raw -ErrorAction SilentlyContinue
+            $verificationResults.Components.Conda.Issues += "Conda command failed in fresh shell: $errorOutput"
         }
     }
     catch {
-        $verificationResults.Components.Conda.Issues += "Conda command failed: $($_.Exception.Message)"
+        $verificationResults.Components.Conda.Issues += "Conda test error: $($_.Exception.Message)"
+    }
+    finally {
+        # Clean up temp files
+        Remove-Item "$env:TEMP\conda_test.txt" -ErrorAction SilentlyContinue
+        Remove-Item "$env:TEMP\conda_error.txt" -ErrorAction SilentlyContinue
     }
     
-    $verificationResults.Components.Conda.Issues += "Conda not found or not working properly"
+    $verificationResults.Components.Conda.Issues += "Conda not found or not working properly in fresh shell"
     return $false
 }
 
@@ -152,34 +189,55 @@ $condaResult = Test-Component "Conda" {
 Write-Host "3. Verifying Visual Studio Code Installation" -ForegroundColor White
 $vscodeResult = Test-Component "VSCode" {
     try {
-        $codeVersion = code --version 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            $versionLines = $codeVersion -split "`n"
-            $verificationResults.Components.VSCode.Status = $true
-            $verificationResults.Components.VSCode.Version = $versionLines[0].Trim()
-            $verificationResults.Components.VSCode.Location = (Get-Command code).Source
-            return $true
-        }
-    }
-    catch {
-        # VSCode command might not be in PATH, check installation directories
-        $vscodeLocations = @(
-            "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd",
-            "${env:ProgramFiles}\Microsoft VS Code\bin\code.cmd",
-            "${env:ProgramFiles(x86)}\Microsoft VS Code\bin\code.cmd"
-        )
+        # Test in a fresh PowerShell process
+        $codeTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { code --version; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\vscode_test.txt" -RedirectStandardError "$env:TEMP\vscode_error.txt"
         
-        foreach ($location in $vscodeLocations) {
-            if (Test-Path $location) {
+        if ($codeTest.ExitCode -eq 0) {
+            $codeVersion = Get-Content "$env:TEMP\vscode_test.txt" -Raw -ErrorAction SilentlyContinue
+            if ($codeVersion) {
+                $versionLines = $codeVersion.Trim() -split "`n"
                 $verificationResults.Components.VSCode.Status = $true
-                $verificationResults.Components.VSCode.Location = $location
-                $verificationResults.Components.VSCode.Issues += "VSCode found but not in PATH"
+                $verificationResults.Components.VSCode.Version = $versionLines[0].Trim()
+                
+                # Get location in fresh shell
+                $locationTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { (Get-Command code -ErrorAction SilentlyContinue).Source }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\vscode_location.txt"
+                $codeLocation = Get-Content "$env:TEMP\vscode_location.txt" -Raw -ErrorAction SilentlyContinue
+                if ($codeLocation) {
+                    $verificationResults.Components.VSCode.Location = $codeLocation.Trim()
+                }
+                
                 return $true
             }
         }
+        else {
+            # VSCode command might not be in PATH, check installation directories
+            $vscodeLocations = @(
+                "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd",
+                "${env:ProgramFiles}\Microsoft VS Code\bin\code.cmd",
+                "${env:ProgramFiles(x86)}\Microsoft VS Code\bin\code.cmd"
+            )
+            
+            foreach ($location in $vscodeLocations) {
+                if (Test-Path $location) {
+                    $verificationResults.Components.VSCode.Status = $true
+                    $verificationResults.Components.VSCode.Location = $location
+                    $verificationResults.Components.VSCode.Issues += "VSCode found but not accessible in fresh shell PATH"
+                    return $true
+                }
+            }
+        }
+    }
+    catch {
+        $verificationResults.Components.VSCode.Issues += "VSCode test error: $($_.Exception.Message)"
+    }
+    finally {
+        # Clean up temp files
+        Remove-Item "$env:TEMP\vscode_test.txt" -ErrorAction SilentlyContinue
+        Remove-Item "$env:TEMP\vscode_error.txt" -ErrorAction SilentlyContinue
+        Remove-Item "$env:TEMP\vscode_location.txt" -ErrorAction SilentlyContinue
     }
     
-    $verificationResults.Components.VSCode.Issues += "Visual Studio Code not found"
+    $verificationResults.Components.VSCode.Issues += "Visual Studio Code not found in fresh shell"
     return $false
 }
 
@@ -222,15 +280,25 @@ $envResult = Test-Component "Environment" {
     
     # Check first_year environment
     try {
-        $condaEnvs = conda env list 2>&1
-        if ($condaEnvs -like "*first_year*") {
-            $verificationResults.Components.Environment.Details.FirstYearEnv = $true
+        $envTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { conda env list; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\conda_envs.txt" -RedirectStandardError "$env:TEMP\conda_envs_error.txt"
+        
+        if ($envTest.ExitCode -eq 0) {
+            $condaEnvs = Get-Content "$env:TEMP\conda_envs.txt" -Raw -ErrorAction SilentlyContinue
+            if ($condaEnvs -and ($condaEnvs -like "*first_year*")) {
+                $verificationResults.Components.Environment.Details.FirstYearEnv = $true
+            } else {
+                $issues += "first_year conda environment not found in fresh shell"
+            }
         } else {
-            $issues += "first_year conda environment not found"
+            $issues += "Could not check conda environments in fresh shell"
         }
+        
+        # Clean up temp files
+        Remove-Item "$env:TEMP\conda_envs.txt" -ErrorAction SilentlyContinue
+        Remove-Item "$env:TEMP\conda_envs_error.txt" -ErrorAction SilentlyContinue
     }
     catch {
-        $issues += "Could not check conda environments"
+        $issues += "Could not check conda environments: $($_.Exception.Message)"
     }
     
     $verificationResults.Components.Environment.Issues = $issues
@@ -257,21 +325,32 @@ $packagesResult = Test-Component "Packages" {
     $installedPackages = @()
     
     try {
-        # Try to activate first_year environment and check packages
-        $condaList = conda list -n first_year 2>&1
+        # Try to activate first_year environment and check packages in fresh shell
+        $packagesTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { conda list -n first_year; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\conda_packages.txt" -RedirectStandardError "$env:TEMP\conda_packages_error.txt"
         
-        if ($LASTEXITCODE -eq 0) {
-            foreach ($package in $requiredPackages) {
-                if ($condaList -like "*$package*") {
-                    $installedPackages += $package
-                } else {
-                    $missingPackages += $package
+        if ($packagesTest.ExitCode -eq 0) {
+            $condaList = Get-Content "$env:TEMP\conda_packages.txt" -Raw -ErrorAction SilentlyContinue
+            if ($condaList) {
+                foreach ($package in $requiredPackages) {
+                    if ($condaList -like "*$package*") {
+                        $installedPackages += $package
+                    } else {
+                        $missingPackages += $package
+                    }
                 }
+            } else {
+                $verificationResults.Components.Packages.Issues += "Could not read conda package list from fresh shell"
+                return $false
             }
         } else {
-            $verificationResults.Components.Packages.Issues += "Could not access first_year environment"
+            $errorOutput = Get-Content "$env:TEMP\conda_packages_error.txt" -Raw -ErrorAction SilentlyContinue
+            $verificationResults.Components.Packages.Issues += "Could not access first_year environment in fresh shell: $errorOutput"
             return $false
         }
+        
+        # Clean up temp files
+        Remove-Item "$env:TEMP\conda_packages.txt" -ErrorAction SilentlyContinue
+        Remove-Item "$env:TEMP\conda_packages_error.txt" -ErrorAction SilentlyContinue
     }
     catch {
         $verificationResults.Components.Packages.Issues += "Failed to check packages: $($_.Exception.Message)"

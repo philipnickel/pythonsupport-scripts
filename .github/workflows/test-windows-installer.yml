@@ -46,15 +46,15 @@ jobs:
         
         $components = @(
           "Windows/AutoInstall.ps1",
-          "Windows/Components/Shared/gui_dialogs.ps1",
+          "Windows/Components/Shared/windows_dialogs.ps1",
           "Windows/Components/orchestrators/first_year_students.ps1",
           "Windows/Components/Python/install.ps1",
           "Windows/Components/Python/first_year_setup.ps1",
           "Windows/Components/VSC/install.ps1",
           "Windows/Components/Shared/error_handling.ps1",
-          "Windows/Components/Core/uninstall.ps1",
+          "Windows/Components/Core/uninstall_conda.ps1",
           "Windows/Components/Diagnostics/verify_installation.ps1",
-          "Windows/Components/Diagnostics/health_check.ps1"
+          "Windows/Components/Diagnostics/simple_report.ps1"
         )
         
         $failed = @()
@@ -86,7 +86,7 @@ jobs:
         Write-Host "Testing GUI dialogs functionality..."
         
         # Load GUI dialogs script
-        $dialogsScript = Get-Content "Windows/Components/Shared/gui_dialogs.ps1" -Raw
+        $dialogsScript = Get-Content "Windows/Components/Shared/windows_dialogs.ps1" -Raw
         Invoke-Expression $dialogsScript
         
         # Test function availability
@@ -178,7 +178,7 @@ jobs:
         
         # Run health check (should fail since nothing is installed)
         try {
-          & "Windows/Components/Diagnostics/health_check.ps1"
+          & "Windows/Components/Diagnostics/simple_report.ps1"
         } catch {
           Write-Host "Health check ran (expected to fail on clean system)" -ForegroundColor Yellow
         }
@@ -310,7 +310,7 @@ jobs:
         
         try {
           # Run uninstaller
-          & "Windows/Components/Core/uninstall.ps1" -UseGUI:$false -Force
+          & "Windows/Components/Core/uninstall_conda.ps1" -UseGUI:$false -Force
           
           Write-Host "Uninstall completed, verifying removal..."
           

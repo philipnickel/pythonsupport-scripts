@@ -59,24 +59,24 @@ function Test-HealthItem {
 # Health checks
 Test-HealthItem "Python Command" {
     try {
-        python --version | Out-Null
-        return $LASTEXITCODE -eq 0
+        $pythonTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "python --version" -Wait -PassThru -WindowStyle Hidden
+        return $pythonTest.ExitCode -eq 0
     } catch { return $false }
-} "Python not found in PATH"
+} "Python not found in fresh shell PATH"
 
 Test-HealthItem "Conda Command" {
     try {
-        conda --version | Out-Null
-        return $LASTEXITCODE -eq 0
+        $condaTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda --version" -Wait -PassThru -WindowStyle Hidden
+        return $condaTest.ExitCode -eq 0
     } catch { return $false }
-} "Conda not found in PATH"
+} "Conda not found in fresh shell PATH"
 
 Test-HealthItem "VSCode Command" {
     try {
-        code --version | Out-Null
-        return $LASTEXITCODE -eq 0
+        $codeTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "code --version" -Wait -PassThru -WindowStyle Hidden
+        return $codeTest.ExitCode -eq 0
     } catch { return $false }
-} "VSCode not found in PATH" -Fix {
+} "VSCode not found in fresh shell PATH" -Fix {
     # Try to add VSCode to PATH
     $vscodeLocations = @(
         "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin",
@@ -98,19 +98,29 @@ Test-HealthItem "VSCode Command" {
 
 Test-HealthItem "First Year Environment" {
     try {
-        $envs = conda env list 2>&1
-        return $envs -like "*first_year*"
+        $envTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda env list" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\health_envs.txt"
+        if ($envTest.ExitCode -eq 0) {
+            $envs = Get-Content "$env:TEMP\health_envs.txt" -Raw -ErrorAction SilentlyContinue
+            Remove-Item "$env:TEMP\health_envs.txt" -ErrorAction SilentlyContinue
+            return $envs -like "*first_year*"
+        }
+        return $false
     } catch { return $false }
-} "first_year conda environment not found" -Fix {
+} "first_year conda environment not found in fresh shell" -Fix {
     conda create -n first_year python=3.11 -y
 }
 
 Test-HealthItem "Essential Packages" {
     try {
-        $packages = conda list -n first_year numpy pandas matplotlib 2>&1
-        return ($packages -like "*numpy*") -and ($packages -like "*pandas*") -and ($packages -like "*matplotlib*")
+        $packagesTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda list -n first_year numpy pandas matplotlib" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\health_packages.txt"
+        if ($packagesTest.ExitCode -eq 0) {
+            $packages = Get-Content "$env:TEMP\health_packages.txt" -Raw -ErrorAction SilentlyContinue
+            Remove-Item "$env:TEMP\health_packages.txt" -ErrorAction SilentlyContinue
+            return ($packages -like "*numpy*") -and ($packages -like "*pandas*") -and ($packages -like "*matplotlib*")
+        }
+        return $false
     } catch { return $false }
-} "Essential packages missing from first_year environment" -Fix {
+} "Essential packages missing from first_year environment in fresh shell" -Fix {
     conda install -n first_year -y numpy pandas matplotlib scipy scikit-learn jupyter ipython requests seaborn
 }
 
