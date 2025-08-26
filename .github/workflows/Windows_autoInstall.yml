@@ -85,6 +85,7 @@ jobs:
             & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
             if ($LASTEXITCODE -eq 1) {
               Write-Host "✓ Installation correctly aborted due to existing conda"
+              exit 0  # Test passed - installer correctly aborted
             } else {
               Write-Host "ERROR: Expected exit code 1, got: $LASTEXITCODE"
               exit 1
