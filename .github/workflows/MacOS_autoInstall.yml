@@ -82,17 +82,28 @@ jobs:
 
 
 
-      - name: Run DTU Python Installer
+      - name: Run DTU Python Installer (Release Script)
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
-          echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) from: $REMOTE_PS/$BRANCH_PS"
+          echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) using release script from: $REMOTE_PS/$BRANCH_PS"
           echo "PIS_ENV is set to: $PIS_ENV"
+          
+          # Download the release script for CI testing
+          curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/releases/dtu-python-installer-macos.sh" -o /tmp/dtu-installer.sh
+          chmod +x /tmp/dtu-installer.sh
+          
+          # Override to use test branch/repo for this PR and ensure PIS_ENV is exported
+          export REMOTE_PS="$REMOTE_PS"
+          export BRANCH_PS="$BRANCH_PS"
+          export PIS_ENV="$PIS_ENV"
+          
+          # Run the installer
           if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | PIS_ENV="$PIS_ENV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            printf "%s\n" "${{ matrix.input }}" | /tmp/dtu-installer.sh
           else
-            PIS_ENV="$PIS_ENV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
+            /tmp/dtu-installer.sh
           fi
 
       - name: Verify Installation - VS Code
