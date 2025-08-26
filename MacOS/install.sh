@@ -38,7 +38,7 @@ echo "======================================="
 PRE_INSTALL_SCRIPT="/tmp/pre_install_$$.sh"
 curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/pre_install.sh" -o "$PRE_INSTALL_SCRIPT"
 if [ -f "$PRE_INSTALL_SCRIPT" ]; then
-    NONINTERACTIVE=true bash "$PRE_INSTALL_SCRIPT"
+    bash "$PRE_INSTALL_SCRIPT"
     rm -f "$PRE_INSTALL_SCRIPT"
 else
     echo "ERROR: Failed to download pre_install.sh"
