@@ -13,8 +13,8 @@ BRANCH_PS=${BRANCH_PS:-"main"}
 MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
 
 # Start piwik logging if available
-if command -v piwik_log_event >/dev/null 2>&1; then
-    piwik_log_event "installation" "start" "DTU Python installation started"
+if command -v piwik_log >/dev/null 2>&1; then
+    piwik_log 1  # Installation Started
 fi
 
 echo "Checking existing installations..."

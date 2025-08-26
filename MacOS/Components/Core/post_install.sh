@@ -20,33 +20,9 @@ else
     exit_code=$?
 fi
 
-# Log to Piwik if piwik_utility is available
-if command -v piwik_log_event >/dev/null 2>&1; then
-    # Log individual test results
-    if [ "${PYTHON_INSTALLATION_PASSED:-false}" = "true" ]; then
-        piwik_log_event "test_result" "pass" "Python Installation test passed"
-    else
-        piwik_log_event "test_result" "fail" "Python Installation test failed"
-    fi
-    
-    if [ "${PYTHON_ENVIRONMENT_PASSED:-false}" = "true" ]; then
-        piwik_log_event "test_result" "pass" "Python Environment test passed"
-    else
-        piwik_log_event "test_result" "fail" "Python Environment test failed"
-    fi
-    
-    if [ "${VSCODE_SETUP_PASSED:-false}" = "true" ]; then
-        piwik_log_event "test_result" "pass" "VS Code Setup test passed"
-    else
-        piwik_log_event "test_result" "fail" "VS Code Setup test failed"
-    fi
-    
-    # Log final overall result
-    if [ $exit_code -eq 0 ]; then
-        piwik_log_event "post_install_diagnostics" "success" "All tests passed"
-    else
-        piwik_log_event "post_install_diagnostics" "fail" "Some tests failed"
-    fi
+# Log script completion to Piwik if available
+if command -v piwik_log >/dev/null 2>&1; then
+    piwik_log 99  # Script Finished
 fi
 
 # Always exit successfully - issues are reported in the diagnostic report

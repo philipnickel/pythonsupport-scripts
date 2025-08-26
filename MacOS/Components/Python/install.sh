@@ -59,9 +59,12 @@ else
   
   bash "$temp_installer" -b -p "$MINIFORGE_PATH"
   if [ $? -ne 0 ]; then 
+    command -v piwik_log >/dev/null 2>&1 && piwik_log 11  # Python Installation fail
     rm -rf "$temp_dir"
     exit 1
   fi
+  
+  command -v piwik_log >/dev/null 2>&1 && piwik_log 10  # Python Installation success
   
   rm -rf "$temp_dir"
   

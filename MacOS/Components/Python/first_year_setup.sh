@@ -36,6 +36,11 @@ fi
 
 # Install required packages without verification (verification happens in post-install)
 conda install python=${PYTHON_VERSION_PS:-3.12} dtumathtools pandas scipy statsmodels uncertainties -y
-if [ $? -ne 0 ]; then exit 1; fi
+if [ $? -ne 0 ]; then 
+  command -v piwik_log >/dev/null 2>&1 && piwik_log 21  # First Year Setup fail
+  exit 1
+fi
+
+command -v piwik_log >/dev/null 2>&1 && piwik_log 20  # First Year Setup success
 
 clear -x

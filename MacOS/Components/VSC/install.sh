@@ -65,8 +65,11 @@ else
     mv "/tmp/Visual Studio Code.app" "/Applications/"
     if [ $? -ne 0 ]; then 
         echo "ERROR: Failed to move VS Code to Applications"
+        command -v piwik_log >/dev/null 2>&1 && piwik_log 31  # VS Code Installation fail
         exit 1
     fi
+    
+    command -v piwik_log >/dev/null 2>&1 && piwik_log 30  # VS Code Installation success
     
     # Clean up
     rm -f /tmp/VSCode.zip
@@ -140,12 +143,15 @@ done
 # Report results
 if [ ${#failed_extensions[@]} -eq 0 ]; then
     echo "All VS Code extensions installed successfully"
+    command -v piwik_log >/dev/null 2>&1 && piwik_log 40  # VS Code Extensions success
 elif [ ${#failed_extensions[@]} -eq ${#extensions[@]} ]; then
     echo "All extension installations failed"
+    command -v piwik_log >/dev/null 2>&1 && piwik_log 41  # VS Code Extensions fail
     exit 1
 else
     echo "Some extensions failed to install: ${failed_extensions[*]}"
     echo "Installation will continue (extensions can be installed manually later)"
+    command -v piwik_log >/dev/null 2>&1 && piwik_log 40  # VS Code Extensions success (partial)
 fi
 
 echo "VS Code extensions installation complete"
