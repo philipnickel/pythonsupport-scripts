@@ -11,7 +11,7 @@
 
 # Get system info
 get_system_info() {
-    # Load configuration for system info display
+    # Self-contained configuration - try external first, fall back to defaults
     if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
         CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
         CONFIG_FILE="/tmp/sysinfo_config_$$.sh"
@@ -19,6 +19,12 @@ get_system_info() {
             source "$CONFIG_FILE" 2>/dev/null || true
             rm -f "$CONFIG_FILE"
         fi
+    fi
+    
+    # Ensure we always have defaults
+    PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
+    if [ -z "${DTU_PACKAGES[*]:-}" ]; then
+        DTU_PACKAGES=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
     fi
     
     echo "=== System Information ==="
@@ -74,7 +80,8 @@ run_first_year_test() {
         local vscode_setup_failed=false
         local test_results=""
         
-        # Load configuration for consistent version/package testing
+        # Self-contained configuration - no external dependencies
+        # Try to load from external config first, but always fall back to embedded defaults
         if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
             CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
             CONFIG_FILE="/tmp/test_config_$$.sh"
@@ -84,9 +91,11 @@ run_first_year_test() {
             fi
         fi
         
-        # Set defaults if config loading failed
-        PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.11"}
-        DTU_PACKAGES=${DTU_PACKAGES:-("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")}
+        # Self-contained defaults - always set these for reliable testing
+        PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
+        if [ -z "${DTU_PACKAGES[*]:-}" ]; then
+            DTU_PACKAGES=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
+        fi
         
         # Activate conda environment for tests and reload shell profiles
         if [ -f "$HOME/miniforge3/bin/activate" ]; then
