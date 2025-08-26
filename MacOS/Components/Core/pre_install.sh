@@ -26,29 +26,36 @@ export SKIP_VSCODE_INSTALL=false
 if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
     echo "• Miniforge found"
     echo "Everything appears to be already installed!"
-    echo "Cancel installation? (y/n)"
-    read -r response
-    if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-        echo "Installation cancelled - Miniforge already present"
-        exit 0
+    if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
+        echo "• Running in non-interactive mode - continuing with installation..."
+    else
+        echo "Cancel installation? (y/n)"
+        read -r response
+        if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+            echo "Installation cancelled - Miniforge already present"
+            exit 0
+        fi
+        echo "• Continuing with installation anyway..."
     fi
-    echo "• Continuing with installation anyway..."
 
 # Check for other conda installations  
 elif [ -d "$HOME/anaconda3" ] || [ -d "$HOME/miniconda3" ] || [ -d "/opt/anaconda3" ] || [ -d "/opt/miniconda3" ] || command -v conda >/dev/null 2>&1; then
     echo "• Other conda installation detected"
     echo "DTU Python Support only works with Miniforge."
-    echo "Uninstall existing conda and continue? (y/n)"
-    read -r response
-    
-    if [[ "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-        echo "• Uninstalling existing conda..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
-        echo "• Continuing with Miniforge installation..."
+    if [[ "${NONINTERACTIVE:-}" == "true" ]]; then
+        echo "• Running in non-interactive mode - automatically uninstalling existing conda..."
     else
-        echo "Installation aborted."
-        exit 1
+        echo "Uninstall existing conda and continue? (y/n)"
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+            echo "Installation aborted."
+            exit 1
+        fi
+        echo "• Uninstalling existing conda..."
     fi
+    
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh)"
+    echo "• Continuing with Miniforge installation..."
 fi
 
 # Check for VS Code
