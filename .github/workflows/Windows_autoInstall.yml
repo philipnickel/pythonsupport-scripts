@@ -81,10 +81,15 @@ jobs:
           # Set execution policy
           Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
           
-          # Run the installer with non-interactive mode
+          # Download and run the installer with correct repo/branch parameters
           $installerUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1"
-          $installerScript = Invoke-WebRequest -Uri $installerUrl -UseBasicParsing
-          Invoke-Expression $installerScript.Content
+          $tempScript = "$env:TEMP\install_temp.ps1"
+          
+          # Download the installer script
+          Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing
+          
+          # Run the installer with the correct parameters
+          & $tempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.11" -UseGUI:$false
 
       - name: Verify VS Code
         run: |
