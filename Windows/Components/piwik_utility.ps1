@@ -16,7 +16,7 @@
 $PIWIK_URL    = "https://pythonsupport.piwik.pro/ppms.php"
 $SITE_ID      = "0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 $GITHUB_REPO  = "dtudk/pythonsupport-page"
-$CATEGORY     = "Installations"
+$CATEGORY     = "AUTOINSTALLS"
 $EVENT_ACTION = "Event"
 $EVENT_NAME   = "Log"
 
@@ -135,14 +135,14 @@ function Categorize-Error {
 # === LOGGING FUNCTIONS ===
 
 function Piwik-Log {
-    param([string]$value)
+    param([int]$value)
 
     Check-Analytics-Choice
     if (Is-Analytics-Disabled) {
         return
     }
 
-    $uri = Get-URI "$value"
+    $uri = Get-URI $value
 
     # Ignore failure to log.
     try { curl "$uri" } catch {}

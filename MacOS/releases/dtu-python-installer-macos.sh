@@ -30,6 +30,18 @@ export MINIFORGE_BASE_URL="https://github.com/conda-forge/miniforge/releases/lat
 # Set up logging
 INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
+# Load Piwik utility for analytics
+echo "Loading analytics utility..."
+if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+    echo "Analytics loaded successfully"
+    ANALYTICS_ENABLED=true
+else
+    # Define dummy piwik_log function if loading fails
+    piwik_log() { :; }  # No-op function
+    echo "Analytics disabled (could not load utility)"
+    ANALYTICS_ENABLED=false
+fi
+
 echo "🍎 DTU Python Support - macOS Installer"
 echo "========================================"
 echo "This will install Python and VS Code for DTU coursework"
