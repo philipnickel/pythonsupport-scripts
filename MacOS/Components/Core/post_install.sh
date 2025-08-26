@@ -20,6 +20,10 @@ else
     PIWIK_LOADED=false
 fi
 
+# Source shell profile to ensure conda is available in PATH for diagnostics
+echo "Refreshing shell environment for diagnostics..."
+source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
+
 # Run diagnostics and capture exit code
 if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
     exit_code=0
