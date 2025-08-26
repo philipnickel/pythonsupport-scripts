@@ -34,7 +34,29 @@ Write-Host "Installing Python $env:PYTHON_VERSION_PS and required packages in ba
 try {
     # Install Python 3.12 and core packages in one command for speed
     Write-Host "Installing Python $env:PYTHON_VERSION_PS and core packages..."
-    conda install -y "python=$env:PYTHON_VERSION_PS" dtumathtools pandas scipy statsmodels uncertainties
+    # Try mamba first (much faster), fallback to conda if not available
+    Write-Host "Attempting to use mamba (faster) for package installation..."
+    $useMamba = $true
+    try {
+        $mambaVersion = mamba --version 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Mamba not available, falling back to conda"
+            $useMamba = $false
+        } else {
+            Write-Host "Mamba available: $mambaVersion"
+        }
+    } catch {
+        Write-Host "Mamba not available, falling back to conda"
+        $useMamba = $false
+    }
+    
+    if ($useMamba) {
+        Write-Host "Installing packages with mamba (fast parallel solver)..."
+        mamba install -y "python=$env:PYTHON_VERSION_PS" dtumathtools pandas scipy statsmodels uncertainties
+    } else {
+        Write-Host "Installing packages with conda..."
+        conda install -y "python=$env:PYTHON_VERSION_PS" dtumathtools pandas scipy statsmodels uncertainties
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
         exit 1
