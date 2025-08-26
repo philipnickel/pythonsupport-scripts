@@ -62,125 +62,62 @@ get_system_info() {
     code --list-extensions 2>/dev/null | head -10 || echo "No extensions found"
 }
 
-# Run first year test and capture results
+# Run first year test - simplified to match workflow verification
 run_first_year_test() {
-        # Self-contained inline tests
-        echo "=== First Year Setup Test ==="
-        echo ""
-        
-        local python_installation_failed=false
-        local python_environment_failed=false
-        local vscode_setup_failed=false
-        
-        # Self-contained configuration - no external dependencies
-        # Try to load from external config first, but always fall back to embedded defaults
-        if [ -n "${REMOTE_PS:-}" ] && [ -n "${BRANCH_PS:-}" ]; then
-            CONFIG_URL="https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/config.sh"
-            CONFIG_FILE="/tmp/test_config_$$.sh"
-            if curl -fsSL "$CONFIG_URL" -o "$CONFIG_FILE" 2>/dev/null && [ -s "$CONFIG_FILE" ]; then
-                source "$CONFIG_FILE" 2>/dev/null || true
-                rm -f "$CONFIG_FILE"
-            fi
-        fi
-        
-        # Self-contained defaults - always set these for reliable testing
-        PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
-        if [ -z "${DTU_PACKAGES[*]:-}" ]; then
-            DTU_PACKAGES=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
-        fi
-        
-        # Activate conda environment for tests and reload shell profiles
-        if [ -f "$HOME/miniforge3/bin/activate" ]; then
-            source "$HOME/miniforge3/bin/activate" 2>/dev/null || true
-        fi
-        
-        # Reload shell profiles to ensure conda is in PATH
-        [ -e ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
-        [ -e ~/.bash_profile ] && source ~/.bash_profile 2>/dev/null || true
-        [ -e ~/.zshrc ] && source ~/.zshrc 2>/dev/null || true
-        
-        # Update PATH to include conda
-        export PATH="$HOME/miniforge3/bin:$PATH"
-        
-        # Test Python Installation
-        echo "Testing Python Installation ($PYTHON_VERSION_DTU)..."
-        if python3 --version 2>/dev/null | grep -q "$PYTHON_VERSION_DTU"; then
-            echo "PASS: Python Installation ($PYTHON_VERSION_DTU): PASS"
-        else
-            actual_version=$(python3 --version 2>/dev/null || echo 'Not found')
-            echo "FAIL: Python Installation ($PYTHON_VERSION_DTU): FAIL (Found: $actual_version)"
-            python_installation_failed=true
-        fi
-        echo ""
-        
-        # Test Python Environment
-        echo "Testing Python Environment (packages)..."
-        package_imports=""
-        for pkg in "${DTU_PACKAGES[@]}"; do
-            if [ -z "$package_imports" ]; then
-                package_imports="$pkg"
-            else
-                package_imports="$package_imports, $pkg"
-            fi
-        done
-        
-        if python3 -c "import $package_imports" 2>/dev/null; then
-            echo "PASS: Python Environment (packages): PASS"
-            echo "   All required packages installed: ${DTU_PACKAGES[*]}"
-        else
-            echo "FAIL: Python Environment (packages): FAIL"
-            echo "   Required packages: ${DTU_PACKAGES[*]}"
-            python_environment_failed=true
-        fi
-        echo ""
-        
-        # Test VS Code Setup
-        echo "Testing VS Code Setup..."
-        if command -v code >/dev/null 2>&1 && code --version >/dev/null 2>&1 && code --list-extensions 2>/dev/null | grep -q "ms-python.python"; then
-            echo "PASS: VS Code Setup: PASS"
-            echo "   VS Code and Python extension are installed"
-        else
-            echo "FAIL: VS Code Setup: FAIL"
-            echo "   Missing VS Code or Python extension"
-            vscode_setup_failed=true
-        fi
-        
-        echo ""
-        echo "════════════════════════════════════════"
-        
-        # Calculate failures
-        local failure_count=0
-        if [ "$python_installation_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        if [ "$python_environment_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        if [ "$vscode_setup_failed" = true ]; then
-            failure_count=$((failure_count + 1))
-        fi
-        
-        # Show overall result
-        if [ $failure_count -eq 0 ]; then
-            echo "OVERALL RESULT: PASS"
-            echo "   First year setup is complete and working!"
-            return 0
-        elif [ $failure_count -eq 1 ]; then
-            if [ "$python_installation_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - Python Installation Issue"
-                return 1
-            elif [ "$python_environment_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - Python Environment Issue" 
-                return 2
-            elif [ "$vscode_setup_failed" = true ]; then
-                echo "OVERALL RESULT: FAIL - VS Code Setup Issue"
-                return 3
-            fi
-        else
-            echo "OVERALL RESULT: FAIL - Multiple Issues Found"
-            echo "   Please check the individual test results above."
-            return 4
-        fi
+    echo "=== First Year Setup Test ==="
+    echo ""
+    
+    local python_failed=false
+    local packages_failed=false
+    local vscode_failed=false
+    
+    # Test 1: Python Version (like workflow)
+    echo "Testing Python Installation..."
+    EXPECTED_VERSION="3.12"
+    INSTALLED_VERSION=$(python3 --version 2>/dev/null | cut -d " " -f 2)
+    if [[ "$INSTALLED_VERSION" == "$EXPECTED_VERSION"* ]]; then
+        echo "PASS: Python $INSTALLED_VERSION (expected $EXPECTED_VERSION)"
+    else
+        echo "FAIL: Python $INSTALLED_VERSION (expected $EXPECTED_VERSION)"
+        python_failed=true
+    fi
+    echo ""
+    
+    # Test 2: DTU Packages (like workflow) 
+    echo "Testing DTU Packages..."
+    if python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>/dev/null; then
+        echo "PASS: All DTU packages imported successfully"
+    else
+        echo "FAIL: Some DTU packages failed to import"
+        packages_failed=true
+    fi
+    echo ""
+    
+    # Test 3: VS Code (like workflow)
+    echo "Testing VS Code..."
+    if code --version >/dev/null 2>&1; then
+        echo "PASS: VS Code $(code --version 2>/dev/null | head -1)"
+    else
+        echo "FAIL: VS Code not available"
+        vscode_failed=true
+    fi
+    
+    echo ""
+    echo "════════════════════════════════════════"
+    
+    # Overall result
+    local fail_count=0
+    if [ "$python_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    if [ "$packages_failed" = true ]; then fail_count=$((fail_count + 1)); fi  
+    if [ "$vscode_failed" = true ]; then fail_count=$((fail_count + 1)); fi
+    
+    if [ $fail_count -eq 0 ]; then
+        echo "OVERALL RESULT: PASS - All components working"
+        return 0
+    else
+        echo "OVERALL RESULT: FAIL - $fail_count component(s) failed"
+        return 1
+    fi
 }
 
 # Generate HTML report
