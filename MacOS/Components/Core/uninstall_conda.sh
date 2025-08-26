@@ -1,42 +1,93 @@
 #!/bin/bash
-# Simple conda uninstaller for DTU Python Support
+# Robust conda uninstaller for DTU Python Support
+# Follows official Miniforge/Miniconda uninstall procedure
 
 echo "Starting conda uninstall process..."
+
+# Function to safely remove conda installation
+remove_conda_installation() {
+    local conda_path="$1"
+    local conda_type="$2"
+    
+    if [ -d "$conda_path" ]; then
+        echo "Found $conda_type installation at: $conda_path"
+        
+        # Try to use the official uninstaller script first
+        if [ -f "$conda_path/uninstall.sh" ]; then
+            echo "Using official $conda_type uninstaller script..."
+            if sudo -E bash "$conda_path/uninstall.sh" --yes; then
+                echo "$conda_type uninstaller completed successfully"
+                return 0
+            else
+                echo "Official uninstaller failed, falling back to manual removal..."
+            fi
+        fi
+        
+        # Manual removal if no uninstaller or it failed
+        echo "Removing $conda_type manually..."
+        sudo rm -rf "$conda_path"
+        echo "$conda_type removed"
+    fi
+}
 
 # Check what conda installations exist
 echo "Checking for existing conda installations..."
 
+# Try to get conda info if conda is available
+if command -v conda >/dev/null 2>&1; then
+    echo "Conda command found, getting installation info..."
+    CONDA_BASE=$(conda info --base 2>/dev/null || echo "")
+    if [ -n "$CONDA_BASE" ]; then
+        echo "Conda base environment: $CONDA_BASE"
+        
+        # Determine conda type from base path
+        if echo "$CONDA_BASE" | grep -q "miniforge"; then
+            remove_conda_installation "$CONDA_BASE" "Miniforge"
+        elif echo "$CONDA_BASE" | grep -q "miniconda"; then
+            remove_conda_installation "$CONDA_BASE" "Miniconda"
+        elif echo "$CONDA_BASE" | grep -q "anaconda"; then
+            remove_conda_installation "$CONDA_BASE" "Anaconda"
+        else
+            remove_conda_installation "$CONDA_BASE" "Conda"
+        fi
+    fi
+fi
+
+# Check common installation locations if conda command not available
 if [ -d "$HOME/miniforge3" ]; then
-    echo "Found miniforge3 installation at: $HOME/miniforge3"
-    echo "Removing miniforge3..."
-    rm -rf "$HOME/miniforge3"
-    echo "Miniforge3 removed"
+    remove_conda_installation "$HOME/miniforge3" "Miniforge"
 fi
 
 if [ -d "$HOME/miniconda3" ]; then
-    echo "Found miniconda3 installation at: $HOME/miniconda3"
-    echo "Removing miniconda3..."
-    rm -rf "$HOME/miniconda3"
-    echo "Miniconda3 removed"
+    remove_conda_installation "$HOME/miniconda3" "Miniconda"
 fi
 
 if [ -d "$HOME/anaconda3" ]; then
-    echo "Found anaconda3 installation at: $HOME/anaconda3"
-    echo "Removing anaconda3..."
-    rm -rf "$HOME/anaconda3"
-    echo "Anaconda3 removed"
+    remove_conda_installation "$HOME/anaconda3" "Anaconda"
+fi
+
+# Remove conda configuration files
+echo "Removing conda configuration files..."
+
+if [ -f "$HOME/.condarc" ]; then
+    echo "Removing $HOME/.condarc"
+    rm -f "$HOME/.condarc"
 fi
 
 if [ -d "$HOME/.conda" ]; then
-    echo "Found conda configuration at: $HOME/.conda"
-    echo "Removing conda configuration..."
+    echo "Removing $HOME/.conda and underlying files"
     rm -rf "$HOME/.conda"
-    echo "Conda configuration removed"
 fi
 
-# Clean shell configs - only remove conda initialization blocks
+# Clean shell configs using conda init --reverse if available
 echo "Cleaning shell configuration files..."
 
+if command -v conda >/dev/null 2>&1; then
+    echo "Using conda init --reverse to clean shell configurations..."
+    sudo -E conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
+fi
+
+# Manual cleanup of shell configs
 for file in ~/.bashrc ~/.zshrc ~/.bash_profile; do
     if [ -f "$file" ]; then
         echo "Processing: $file"
