@@ -82,17 +82,12 @@ jobs:
           if ("${{ matrix.setup }}" -eq "existing-conda") {
             # For existing conda scenario, we expect the installer to abort
             Write-Host "Expected behavior: Installation should abort due to existing conda"
-            try {
-              & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
-              Write-Host "ERROR: Installation should have aborted but continued"
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
+            if ($LASTEXITCODE -eq 1) {
+              Write-Host "✓ Installation correctly aborted due to existing conda"
+            } else {
+              Write-Host "ERROR: Expected exit code 1, got: $LASTEXITCODE"
               exit 1
-            } catch {
-              if ($LASTEXITCODE -eq 1) {
-                Write-Host "✓ Installation correctly aborted due to existing conda"
-              } else {
-                Write-Host "ERROR: Unexpected exit code: $LASTEXITCODE"
-                exit 1
-              }
             }
           } else {
             # For clean installation, run normally  
