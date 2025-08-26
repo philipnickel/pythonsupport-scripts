@@ -22,7 +22,18 @@ echo "========================================"
 echo "This will install Python and VS Code for DTU coursework"
 echo "Repository: $REMOTE_PS"
 echo "Branch: $BRANCH_PS"
+echo "PIS_ENV: ${PIS_ENV:-not set}"
 echo ""
 
+# Export all variables so they're available to child processes
+export REMOTE_PS
+export BRANCH_PS  
+export PIS_ENV
+export PYTHON_VERSION_DTU
+export DTU_PACKAGES
+export VSCODE_EXTENSIONS
+export MINIFORGE_PATH
+export MINIFORGE_BASE_URL
+
 # Execute main installer with environment variables passed through
-PIS_ENV="$PIS_ENV" REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/install.sh)"
