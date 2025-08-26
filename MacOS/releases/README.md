@@ -6,7 +6,7 @@ This folder contains ready-to-use installer files for local testing and future d
 
 ### macOS
 - **`dtu-python-installer-macos.sh`** - Complete installer for macOS systems
-  - **Current setup**: Configured for `philipnickel/pythonsupport-scripts` + `MacOS_DEV` branch  
+  - **Current setup**: Configured for `dtudk/pythonsupport-scripts` + `main` branch  
   - **Local testing**: Double-click to run, or `bash dtu-python-installer-macos.sh`
   - **Production**: Will be updated to use `dtudk/pythonsupport-scripts` + `main` when released
 

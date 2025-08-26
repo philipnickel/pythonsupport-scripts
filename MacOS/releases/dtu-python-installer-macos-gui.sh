@@ -10,7 +10,7 @@
 #   Or run: bash dtu-python-installer-macos-gui.sh
 
 # Set the repository and branch for the main installer
-REMOTE_PS="philipnickel/pythonsupport-scripts"
+REMOTE_PS="dtudk/pythonsupport-scripts"
 BRANCH_PS="main"
 
 # Set environment variable to ensure GUI mode

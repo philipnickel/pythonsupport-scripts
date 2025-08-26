@@ -14,7 +14,7 @@
 # === CONFIGURATION ===
 PIWIK_URL="https://pythonsupport.piwik.pro/ppms.php"
 SITE_ID="0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
-GITHUB_REPO="philipnickel/pythonsupport-scripts"
+GITHUB_REPO="dtudk/pythonsupport-scripts"
 CATEGORY="AUTOINSTALLS"
 EVENT_ACTION="Event"
 EVENT_NAME="Log"
@@ -156,7 +156,7 @@ get_commit_sha() {
     # Fallback to GitHub API
     local response
     response=$(curl -s --connect-timeout 5 --max-time 10 \
-        "https://api.github.com/repos/philipnickel/pythonsupport-scripts/commits/main" 2>/dev/null)
+        "https://api.github.com/repos/dtudk/pythonsupport-scripts/commits/main" 2>/dev/null)
     
     if [ $? -eq 0 ] && [ -n "$response" ]; then
         local sha=$(echo "$response" | sed -n 's/.*"sha": *"\([a-f0-9]*\)".*/\1/p' | head -c 7)

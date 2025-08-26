@@ -16,7 +16,7 @@ if [[ "$1" == "--cli" ]] || [[ "${DTU_CLI_MODE:-}" == "true" ]]; then
 fi
 
 # Set release configuration for local testing (configured for current fork/branch)
-export REMOTE_PS="${REMOTE_PS:-philipnickel/pythonsupport-scripts}"
+export REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}"
 export BRANCH_PS="${BRANCH_PS:-main}"
 export DTU_INSTALLER_VERSION="1.0.0"
 

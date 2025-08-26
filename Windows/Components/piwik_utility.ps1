@@ -15,7 +15,7 @@
 
 $PIWIK_URL    = "https://pythonsupport.piwik.pro/ppms.php"
 $SITE_ID      = "0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
-$GITHUB_REPO  = "philipnickel/pythonsupport-scripts"
+$GITHUB_REPO  = "dtudk/pythonsupport-scripts"
 $CATEGORY     = "AUTOINSTALLS"
 $EVENT_ACTION = "Event"
 $EVENT_NAME   = "Log"

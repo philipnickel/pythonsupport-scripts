@@ -15,7 +15,7 @@ echo Downloading and starting the installation process...
 echo.
 
 REM Download and execute the main installer
-powershell -Command "Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/Windows/install.ps1' -UseBasicParsing).Content"
+powershell -Command "Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1' -UseBasicParsing).Content"
 
 REM The script will exit with the same code as the main installer
 exit /b %ERRORLEVEL%
