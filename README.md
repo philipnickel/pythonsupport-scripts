@@ -9,7 +9,7 @@ This repository contains automated installation scripts for Python development e
 ### macOS
 Open Terminal (⌘ + Space, search "Terminal") and run:
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
 ```
 
 ## Diagnostics

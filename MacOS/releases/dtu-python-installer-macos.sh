@@ -17,7 +17,7 @@ fi
 
 # Set release configuration for local testing (configured for current fork/branch)
 export REMOTE_PS="${REMOTE_PS:-philipnickel/pythonsupport-scripts}"
-export BRANCH_PS="${BRANCH_PS:-MacOS_DEV}"
+export BRANCH_PS="${BRANCH_PS:-main}"
 export DTU_INSTALLER_VERSION="1.0.0"
 
 # DTU Python installer configuration
