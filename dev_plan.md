@@ -61,14 +61,10 @@ Priority:
 - Create centralized configuration management for handling pythonversion and packages installed
 both windows and macos install scripts load from that 
 
-## Priority Order
-1. Fix uninstall feature (critical)
-2. Ensure no user-terminal interaction (high)
-3. Workflow cleanup (high)
-4. Global installation config (medium)
-5. Add Piwik analytics (medium)
-6. Advanced diagnostics capabilities (medium)
-7. Documentation update (low - ongoing)
+### 8. Windows: 
+- Ensure windows has a setup that works similarily to macos. 
+- Follows same pattern, logic and structure as macos
+
 
 ## Notes
 - all code should follow best practices, be easily readable and maintainable
