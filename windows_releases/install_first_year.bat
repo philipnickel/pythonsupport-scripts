@@ -1,6 +1,6 @@
 @echo off
 REM DTU Python Support - First Year Students Installation
-REM This batch file installs Python 3.11 with first year packages
+REM This batch file installs Python 3.12 with first year packages
 REM
 REM Usage: Double-click to run or execute from command line
 REM
@@ -12,7 +12,7 @@ echo DTU Python Support - First Year Setup
 echo ========================================
 echo.
 echo This installer will set up:
-echo   - Python 3.11 (Miniforge distribution)
+echo   - Python 3.12 (Miniforge distribution)
 echo   - Visual Studio Code
 echo   - First year packages:
 echo     * dtumathtools
@@ -52,7 +52,7 @@ echo     $tempScript = Join-Path $env:TEMP "dtu_install_first_year.ps1" >> "%TEM
 echo     Invoke-WebRequest -Uri $installerUrl -OutFile $tempScript -UseBasicParsing >> "%TEMP_PS_SCRIPT%"
 echo     Write-Host "Starting installation with first year configuration..." -ForegroundColor Green >> "%TEMP_PS_SCRIPT%"
 echo     Write-Host "" >> "%TEMP_PS_SCRIPT%"
-echo     ^& $tempScript -RemoteRepo "dtudk/pythonsupport-scripts" -Branch "main" -PythonVersion "3.11" -UseGUI:$false -Force >> "%TEMP_PS_SCRIPT%"
+echo     ^& $tempScript -RemoteRepo "dtudk/pythonsupport-scripts" -Branch "main" -PythonVersion "3.12" -UseGUI:$false -Force >> "%TEMP_PS_SCRIPT%"
 echo } catch { >> "%TEMP_PS_SCRIPT%"
 echo     Write-Host "Installation failed: $($_.Exception.Message)" -ForegroundColor Red >> "%TEMP_PS_SCRIPT%"
 echo     Write-Host "" >> "%TEMP_PS_SCRIPT%"

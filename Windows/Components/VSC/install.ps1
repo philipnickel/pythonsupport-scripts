@@ -9,12 +9,6 @@
 
 Write-Host "Installing Visual Studio Code"
 
-# Set execution policy to allow script execution (if not already set)
-try {
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
-} catch {
-    Write-Host "Note: Could not set execution policy (already configured or restricted environment)" -ForegroundColor Yellow
-}
 
 # Check if VSCode is already installed
 Write-Host "Checking for existing VSCode installation..."

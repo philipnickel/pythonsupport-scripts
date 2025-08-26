@@ -13,12 +13,6 @@
 Write-Host "Python (Miniforge) installation"
 Write-Host "Starting installation process..."
 
-# Set execution policy to allow script execution (if not already set)
-try {
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
-} catch {
-    Write-Host "Note: Could not set execution policy (already configured or restricted environment)" -ForegroundColor Yellow
-}
 
 # Check if conda is already installed
 Write-Host "Checking for existing conda installation..."
@@ -163,15 +157,7 @@ catch {
     exit 1
 }
 
-# Update conda first to fix any issues
-Write-Host "Updating conda..."
-try {
-    conda update conda -y
-    Write-Host "Conda updated successfully"
-}
-catch {
-    Write-Host "Failed to update conda: $($_.Exception.Message)"
-    exit 1
-}
+# Skip conda update - unnecessary and slow
+Write-Host "Skipping conda update for performance..."
 
 Write-Host "Python (Miniforge) installation completed successfully!"
