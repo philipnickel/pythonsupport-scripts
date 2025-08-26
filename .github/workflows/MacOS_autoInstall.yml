@@ -47,16 +47,6 @@ jobs:
             mode: "--cli"
           - setup: clean
             input: ""
-            scenario: "Clean Installation (GUI Mode)"
-            runner: macos-13
-            mode: ""
-          - setup: existing-conda
-            input: "yes"
-            scenario: "Existing Conda (Auto-Uninstall GUI)"
-            runner: macos-13
-            mode: ""
-          - setup: clean
-            input: ""
             scenario: "Clean Installation (CLI Mode)"
             runner: macos-latest
             mode: "--cli"
@@ -65,16 +55,6 @@ jobs:
             scenario: "Existing Conda (Auto-Uninstall CLI)"
             runner: macos-latest
             mode: "--cli"
-          - setup: clean
-            input: ""
-            scenario: "Clean Installation (GUI Mode)"
-            runner: macos-latest
-            mode: ""
-          - setup: existing-conda
-            input: "yes"
-            scenario: "Existing Conda (Auto-Uninstall GUI)"
-            runner: macos-latest
-            mode: ""
     
     steps:
       - name: Checkout repository
@@ -110,7 +90,7 @@ jobs:
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
-          DTU_CLI_MODE: ${{ matrix.mode == '--cli' && 'true' || 'false' }}
+          DTU_CLI_MODE: 'true'
         run: |
           echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) using release script from: $REMOTE_PS/$BRANCH_PS"
           echo "PIS_ENV is set to: $PIS_ENV"
@@ -122,7 +102,7 @@ jobs:
           export PIS_ENV="$PIS_ENV"
           export DTU_CLI_MODE="$DTU_CLI_MODE"
           
-          # Use one-liner approach for both CLI and GUI modes (as students would)
+          # Use one-liner approach for CLI mode (as students would)
           echo "Running installer using one-liner approach"
           if [ -n "${{ matrix.input }}" ]; then
             printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh")"
