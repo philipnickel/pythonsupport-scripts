@@ -33,7 +33,7 @@ function Write-LogError {
 function Write-LogSuccess {
     param([string]$Message)
     $logMessage = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') [SUCCESS] $Message"
-    Write-Host "$Prefix ✓ $Message" -ForegroundColor Green
+    Write-Host "$Prefix [OK] $Message" -ForegroundColor Green
     Add-Content -Path $env:INSTALL_LOG -Value $logMessage
 }
 

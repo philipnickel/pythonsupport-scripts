@@ -298,7 +298,7 @@ if ($UseNativeDialogs) {
     Write-Host "Installation Summary:" -ForegroundColor Green
     Write-Host "===================" -ForegroundColor Green
     foreach ($Component in $InstallResults.Keys) {
-        $Status = if ($InstallResults[$Component]) { "✓" } else { "✗" }
+        $Status = if ($InstallResults[$Component]) { "[OK]" } else { "[FAIL]" }
         $Color = if ($InstallResults[$Component]) { "Green" } else { "Red" }
         Write-Host "$Status $Component" -ForegroundColor $Color
     }
