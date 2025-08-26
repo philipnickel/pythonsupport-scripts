@@ -311,7 +311,7 @@ if ($UseNativeDialogs) {
     Write-Host "4. Visit https://pythonsupport.dtu.dk for help" -ForegroundColor White
 }
 
-Write-LogSuccess "DTU Python Support installation completed!"
+Write-LogSuccess "DTU Python Support installation completed successfully!"
 Write-LogInfo "Installation log: $env:INSTALL_LOG"
 
 Write-Host ""
