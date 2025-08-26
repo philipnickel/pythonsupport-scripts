@@ -12,6 +12,7 @@
 #>
 
 # === CONFIGURATION ===
+
 $PIWIK_URL    = "https://pythonsupport.piwik.pro/ppms.php"
 $SITE_ID      = "0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 $GITHUB_REPO  = "dtudk/pythonsupport-page"
@@ -21,7 +22,7 @@ $EVENT_NAME   = "Log"
 
 # === GDPR COMPLIANCE ===
 
-function Is-AnalyticsDisabled {
+function Is-Analytics-Disabled {
     # In CI mode, always enable analytics
     if ($env:PIS_ENV -eq "CI") { return $false }
 
@@ -34,7 +35,7 @@ function Is-AnalyticsDisabled {
     return $false  # Default to enabled
 }
 
-function Show-AnalyticsChoiceDialog {
+function Show-Analytics-Choice-Dialog {
     $optOutFile = "$env:TEMP\piwik_analytics_choice"
     if (Test-Path $optOutFile) { return }
 
@@ -54,11 +55,11 @@ function Show-AnalyticsChoiceDialog {
     }
 }
 
-function Check-AnalyticsChoice {
+function Check-Analytics-Choice {
     if ($env:PIS_ENV -eq "CI") { return }
     $optOutFile = "$env:TEMP\piwik_analytics_choice"
     if (-not (Test-Path $optOutFile)) {
-        Show-AnalyticsChoiceDialog
+        Show-Analytics-Choice-Dialog
     }
 }
 
@@ -82,7 +83,7 @@ function Detect-Environment {
 
 # === HELPER FUNCTIONS ===
 
-function Get-SystemInfo {
+function Get-System-Info {
     $osName   = "Windows"
     $osVer    = (Get-CimInstance Win32_OperatingSystem).Version
     $osCode   = (Get-CimInstance Win32_OperatingSystem).Caption
@@ -97,7 +98,7 @@ function Get-SystemInfo {
     }
 }
 
-function Get-CommitSHA {
+function Get-Commit-SHA {
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri "https://api.github.com/repos/$GITHUB_REPO/commits/main" -TimeoutSec 10
         $json = $response.Content | ConvertFrom-Json
@@ -109,8 +110,8 @@ function Get-CommitSHA {
 function Get-URI {
     param ([string]$value)
 
-    $sysinfo = Get-SystemInfo
-    $commit_sha = Get-CommitSHA
+    $sysinfo = Get-System-Info
+    $commit_sha = Get-Commit-SHA
 
     $os = $sysinfo.OS
     $arch = $sysinfo.ARCH
@@ -133,11 +134,11 @@ function Categorize-Error {
 
 # === LOGGING FUNCTIONS ===
 
-function piwik_log {
+function Piwik-Log {
     param([string]$value)
 
-    Check-AnalyticsChoice
-    if (Is-AnalyticsDisabled) {
+    Check-Analytics-Choice
+    if (Is-Analytics-Disabled) {
         return
     }
 
@@ -149,19 +150,19 @@ function piwik_log {
 
 # === UTILITY FUNCTIONS ===
 
-function piwik_get_environment_info {
+function Piwik-Get-Environment-Info {
     Write-Host "=== Piwik Environment Information ==="
     $envType = Detect-Environment
     Write-Host "Detected Environment: $envType"
     Write-Host "Piwik Category: $CATEGORY"
 
-    $sysinfo = Get-SystemInfo
+    $sysinfo = Get-System-Info
     Write-Host "Operating System: $($sysinfo.OS_NAME)"
     Write-Host "OS Version: $($sysinfo.OS_VERSION)"
     if ($sysinfo.OS_CODENAME) { Write-Host "OS Codename: $($sysinfo.OS_CODENAME)" }
     Write-Host "Architecture: $($sysinfo.ARCH)"
     Write-Host "Full OS String: $($sysinfo.OS)"
-    Write-Host "Commit SHA: $(Get-CommitSHA)"
+    Write-Host "Commit SHA: $(Get-Commit-SHA)"
 
     Write-Host "Analytics Choice:"
     if ($env:PIS_ENV -eq "CI") {
@@ -190,9 +191,9 @@ function piwik_get_environment_info {
     Write-Host "================================"
 }
 
-function piwik_test_connection {
-    Check-AnalyticsChoice
-    if (Is-AnalyticsDisabled) {
+function Piwik-Test-Connection {
+    Check-Analytics-Choice
+    if (Is-Analytics-Disabled) {
         Write-Host "Analytics disabled - cannot test connection"
         return 1
     }
@@ -217,17 +218,17 @@ function piwik_test_connection {
     }
 }
 
-function piwik_opt_out {
+function Piwik-Opt-Out {
     "opt-out" | Set-Content "$env:TEMP\piwik_analytics_choice"
     Write-Host "Analytics disabled. No data will be collected."
 }
 
-function piwik_opt_in {
+function Piwik-Opt-In {
     "opt-in" | Set-Content "$env:TEMP\piwik_analytics_choice"
     Write-Host "Analytics enabled. Thank you for helping improve the installation process!"
 }
 
-function piwik_reset_choice {
+function Piwik-Reset-Choice {
     Remove-Item "$env:TEMP\piwik_analytics_choice" -ErrorAction SilentlyContinue
     Write-Host "Analytics choice reset. You will be prompted again on next use."
 }
