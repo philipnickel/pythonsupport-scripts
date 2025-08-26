@@ -16,7 +16,7 @@ BRANCH_PS="main"
 # Set environment variable to ensure GUI mode
 export DTU_CLI_MODE="false"
 
-echo "🍎 DTU Python Support - macOS GUI Installer"
+echo "DTU Python Support - macOS GUI Installer"
 echo "==========================================="
 echo "Downloading and starting the installation process..."
 echo ""
