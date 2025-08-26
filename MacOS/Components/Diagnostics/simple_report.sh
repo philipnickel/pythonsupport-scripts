@@ -64,14 +64,7 @@ get_system_info() {
 
 # Run first year test and capture results
 run_first_year_test() {
-    if [ -f "$(dirname "$0")/first_year_test.sh" ]; then
-        local test_output
-        test_output=$("$(dirname "$0")/first_year_test.sh" 2>&1)
-        local test_exit_code=$?
-        echo "$test_output"
-        return $test_exit_code
-    else
-        # Inline test if external script not found
+        # Self-contained inline tests
         echo "=== First Year Setup Test ==="
         echo ""
         
@@ -203,7 +196,6 @@ run_first_year_test() {
             test_results="${test_results}\nOVERALL RESULT: FAIL - Multiple Issues Found\n   Please check the individual test results above.\n"
             return 4
         fi
-    fi
 }
 
 # Generate HTML report
