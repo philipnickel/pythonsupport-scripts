@@ -15,6 +15,9 @@
 $PIWIK_URL    = "https://pythonsupport.piwik.pro/ppms.php"
 $SITE_ID      = "0bc7bce7-fb4d-4159-a809-e6bab2b3a431"
 $GITHUB_REPO  = "dtudk/pythonsupport-page"
+$CATEGORY     = "Installations"
+$EVENT_ACTION = "Event"
+$EVENT_NAME   = "Log"
 
 # === GDPR COMPLIANCE ===
 
@@ -77,16 +80,6 @@ function Detect-Environment {
     return "PROD"
 }
 
-function Get-EnvironmentCategory {
-    switch (Detect-Environment) {
-        "CI"      { return "Installer_CI_win" }
-        "DEV"     { return "Installer_DEV_win" }
-        "STAGING" { return "Installer_STAGING_win" }
-        "PROD"    { return "Installer_PROD_win" }
-        default   { return "Installer_UNKNOWN_win" }
-    }
-}
-
 # === HELPER FUNCTIONS ===
 
 function Get-SystemInfo {
@@ -96,11 +89,11 @@ function Get-SystemInfo {
     $arch     = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
     $os       = "$osName $osVer ($osCode)"
     return @{
-        OS        = $os
-        OS_NAME   = $osName
-        OS_VERSION= $osVer
-        OS_CODENAME= $osCode
-        ARCH      = $arch
+        OS          = $os
+        OS_NAME     = $osName
+        OS_VERSION  = $osVer
+        OS_CODENAME = $osCode
+        ARCH        = $arch
     }
 }
 
@@ -111,6 +104,19 @@ function Get-CommitSHA {
         if ($json.sha) { return $json.sha.Substring(0,7) }
     } catch {}
     return "unknown"
+}
+
+function Get-URI {
+    param ([string]$value)
+
+    $sysinfo = Get-SystemInfo
+    $commit_sha = Get-CommitSHA
+
+    $os = $sysinfo.OS
+    $arch = $sysinfo.ARCH
+
+    # interpolating the variable directly doesnt work for some reason
+    return $PIWIK_URL + "?idsite=$SITE_ID&rec=1&e_c=$CATEGORY&e_a=$EVENT_ACTION&e_n=$EVENT_NAME&e_v=$value&dimension1=$os&dimension2=$arch&dimension3=$commit_sha"
 }
 
 function Categorize-Error {
@@ -125,83 +131,20 @@ function Categorize-Error {
     else { return "_unknown_error" }
 }
 
-# === ENHANCED TRACKING FUNCTIONS ===
-
-function piwik_log_enhanced {
-    param(
-        [string]$event_name,
-        [scriptblock]$block
-    )
-    Check-AnalyticsChoice
-    if (Is-AnalyticsDisabled) {
-        & $block
-        return $LASTEXITCODE
-    }
-    $start_time = Get-Date
-    $output = $block 2>&1
-    $exit_code = $LASTEXITCODE
-    $duration = ((Get-Date) - $start_time).TotalSeconds
-    Write-Host $output
-
-    $error_suffix = Categorize-Error $output $exit_code
-    if ($error_suffix) { $event_name += $error_suffix }
-
-    $sysinfo = Get-SystemInfo
-    $commit_sha = Get-CommitSHA
-    $event_category = Get-EnvironmentCategory
-
-    $result = if ($exit_code -eq 0) { "success" } else { "failure" }
-    $event_value = if ($exit_code -eq 0) { 1 } else { 0 }
-    $os = $sysinfo.OS
-    $arch = $sysinfo.ARCH
-
-    $uri = $PIWIK_URL + "?idsite=$SITE_ID&rec=1&e_c=$event_category&e_a=Event&e_n=$event_name&e_v=$event_value&dimension1=$os&dimension2=$arch&dimension3=$commit_sha"
-
-    try {
-        $response = curl "$uri"
-    } catch {}
-
-    return $exit_code
-}
+# === LOGGING FUNCTIONS ===
 
 function piwik_log {
-    param(
-        [string]$event_name,
-        [scriptblock]$block
-    )
+    param([string]$value)
+
     Check-AnalyticsChoice
     if (Is-AnalyticsDisabled) {
-        & $block
-        return $LASTEXITCODE
+        return
     }
-    $output = & $block 2>&1
-    $exit_code = $LASTEXITCODE
-    Write-Host $output
 
-    $sysinfo = Get-SystemInfo
-    $commit_sha = Get-CommitSHA
-    $event_category = Get-EnvironmentCategory
+    $uri = Get-URI "$value"
 
-    $result = if ($exit_code -eq 0) { "success" } else { "failure" }
-    $event_value = if ($exit_code -eq 0) { 1 } else { 0 }
-    $os = $sysinfo.OS
-    $arch = $sysinfo.ARCH
-
-    # interpolating the variable directly doesnt work for some reason
-    $uri = $PIWIK_URL + "?idsite=$SITE_ID&rec=1&e_c=$event_category&e_a=Event&e_n=$event_name&e_v=$event_value&dimension1=$os&dimension2=$arch&dimension3=$commit_sha"
-
-    try {
-        $response = curl "$uri"
-    } catch {}
-    return $exit_code
-}
-
-function piwik_log_timed {
-    param(
-        [string]$event_name,
-        [scriptblock]$block
-    )
-    piwik_log_enhanced $event_name $block
+    # Ignore failure to log.
+    try { curl "$uri" } catch {}
 }
 
 # === UTILITY FUNCTIONS ===
@@ -210,7 +153,7 @@ function piwik_get_environment_info {
     Write-Host "=== Piwik Environment Information ==="
     $envType = Detect-Environment
     Write-Host "Detected Environment: $envType"
-    Write-Host "Piwik Category: $(Get-EnvironmentCategory)"
+    Write-Host "Piwik Category: $CATEGORY"
 
     $sysinfo = Get-SystemInfo
     Write-Host "Operating System: $($sysinfo.OS_NAME)"
@@ -257,7 +200,7 @@ function piwik_test_connection {
 
     $event_value = if ($exit_code -eq 0) { 1 } else { 0 }
 
-    $uri = $PIWIK_URL + "?idsite=$SITE_ID&rec=1&e_c=$event_category&e_a=Event&e_n=$event_name&e_v=$event_value&dimension1=$os&dimension2=$arch&dimension3=$commit_sha"
+    $uri = Get-URI "test-con"
 
     try {
         $response = curl $uri
