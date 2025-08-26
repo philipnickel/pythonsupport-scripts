@@ -28,24 +28,28 @@ env:
 
 jobs:
   test-installer:
-    name: ${{ matrix.scenario }} (${{ matrix.arch }})
+    name: ${{ matrix.scenario }} (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     
     strategy:
       fail-fast: false
       matrix:
-        setup: [clean, existing-conda]
-        arch: [x86_64, arm64]
         include:
           - setup: clean
             input: ""
             scenario: "Clean Installation"
+            runner: macos-13
           - setup: existing-conda
             input: "yes"
             scenario: "Existing Conda (Auto-Uninstall)"
-          - arch: x86_64
             runner: macos-13
-          - arch: arm64
+          - setup: clean
+            input: ""
+            scenario: "Clean Installation"
+            runner: macos-latest
+          - setup: existing-conda
+            input: "yes"
+            scenario: "Existing Conda (Auto-Uninstall)"
             runner: macos-latest
     
     steps:
@@ -64,9 +68,14 @@ jobs:
       - name: Setup test scenario - Existing Conda
         if: matrix.setup == 'existing-conda'
         run: |
-          echo "Setting up existing conda test for ${{ matrix.arch }}"
-          # Install miniconda to simulate existing installation
-          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${{ matrix.arch }}.sh -o /tmp/miniconda.sh
+          echo "Setting up existing conda test for ${{ matrix.runner }}"
+          # Install miniconda to simulate existing installation - auto-detect arch
+          if [[ $(uname -m) == "arm64" ]]; then
+            ARCH="arm64"
+          else
+            ARCH="x86_64"
+          fi
+          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${ARCH}.sh -o /tmp/miniconda.sh
           bash /tmp/miniconda.sh -b -p $HOME/miniconda3
           rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
@@ -78,7 +87,7 @@ jobs:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           BRANCH_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
         run: |
-          echo "Testing ${{ matrix.scenario }} (${{ matrix.arch }}) from: $REMOTE_PS/$BRANCH_PS"
+          echo "Testing ${{ matrix.scenario }} (${{ matrix.runner }}) from: $REMOTE_PS/$BRANCH_PS"
           if [ -n "${{ matrix.input }}" ]; then
             printf "%s\n" "${{ matrix.input }}" | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/install.sh)"
           else
