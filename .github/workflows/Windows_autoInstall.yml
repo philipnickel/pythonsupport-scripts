@@ -102,108 +102,49 @@ jobs:
           # Execute the .bat file in a way that captures output
           cmd.exe /c "$tempBat"
 
-      - name: Verify VS Code (fresh shell test)
+      - name: Verify VS Code
         run: |
-          Write-Host "Testing VS Code from fresh PowerShell session..."
-          
-          # Test VS Code command availability in fresh shell (the real test)
-          $vscodeTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { Get-Command code -ErrorAction SilentlyContinue; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden
-          
-          if ($vscodeTest.ExitCode -eq 0) {
-            Write-Host "✓ VS Code 'code' command available in fresh shell" -ForegroundColor Green
-            
-            # Get version from fresh shell
-            $versionTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { code --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "vscode_version.txt"
-            if (Test-Path "vscode_version.txt") {
-              $version = Get-Content "vscode_version.txt" -Raw
-              Write-Host "VS Code version from fresh shell: $version" -ForegroundColor Gray
-              Remove-Item "vscode_version.txt" -ErrorAction SilentlyContinue
-            }
-          } else {
-            Write-Host "✗ VS Code 'code' command not available in fresh shell" -ForegroundColor Red
-            Write-Host "This means VS Code is not properly configured for command-line access" -ForegroundColor Red
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+          try {
+            Get-Command code
+            code --version
+          } catch {
+            Write-Output "VS Code not installed correctly"
+            Write-Output $_
             exit 1
           }
 
-      - name: Verify conda (fresh shell test)
+      - name: Verify conda
         run: |
-          Write-Host "Testing conda from fresh PowerShell session..."
-          
-          # Test conda command availability in fresh shell (the real test)
-          $condaTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { Get-Command conda -ErrorAction SilentlyContinue; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden
-          
-          if ($condaTest.ExitCode -eq 0) {
-            Write-Host "✓ conda command available in fresh shell" -ForegroundColor Green
-            
-            # Get conda info from fresh shell
-            $infoTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { conda --version; conda info --base; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "conda_info.txt"
-            if (Test-Path "conda_info.txt") {
-              $info = Get-Content "conda_info.txt" -Raw
-              Write-Host "Conda info from fresh shell:" -ForegroundColor Gray
-              Write-Host $info -ForegroundColor Gray
-              Remove-Item "conda_info.txt" -ErrorAction SilentlyContinue
-            }
-          } else {
-            Write-Host "✗ conda command not available in fresh shell" -ForegroundColor Red
-            Write-Host "This means conda is not properly added to PATH" -ForegroundColor Red
+          try {
+            Get-Command conda
+            conda --version
+            conda info --base
+          } catch {
+            Write-Output "Conda not installed correctly"
+            Write-Output $_
             exit 1
           }
 
-      - name: Verify python (3.11) - THE REAL TEST
+      - name: Verify python (3.11)
         run: |
-          Write-Host "Testing Python from fresh PowerShell session - the REAL test..." -ForegroundColor Yellow
-          
+          Get-Command python
+
+          # Verify the installed Python version
           $expectedVersion = "3.11"
-          
-          # Test what 'python' defaults to in a fresh shell (the real test!)
-          Write-Host "Testing 'python' command in fresh shell..."
-          $pythonTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "python_version.txt"
-          
-          if ($pythonTest.ExitCode -eq 0 -and (Test-Path "python_version.txt")) {
-            $pythonVersion = Get-Content "python_version.txt" -Raw
-            Write-Host "✓ 'python' command available in fresh shell: $pythonVersion" -ForegroundColor Green
-            
-            if ($pythonVersion -match $expectedVersion) {
-              Write-Host "✓ 'python' defaults to correct version ($expectedVersion)" -ForegroundColor Green
-            } else {
-              Write-Host "✗ 'python' defaults to wrong version: $pythonVersion (expected $expectedVersion)" -ForegroundColor Red
-            }
-            Remove-Item "python_version.txt" -ErrorAction SilentlyContinue
-          } else {
-            Write-Host "✗ 'python' command not available in fresh shell" -ForegroundColor Red
+          $installedVersion = (python --version).Split(" ")[1].Trim()
+          if (-not $installedVersion.StartsWith($expectedVersion)) {
+            Write-Output "Installed Python version ($installedVersion) does not match expected version ($expectedVersion)"
+            exit 1
           }
-          
-          
-          # Test conda base environment python in fresh shell
-          Write-Host "Testing conda base environment python in fresh shell..."
-          $condaEnvTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python --version 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "conda_python_version.txt"
-          
-          if ($condaEnvTest.ExitCode -eq 0 -and (Test-Path "conda_python_version.txt")) {
-            $condaPythonVersion = Get-Content "conda_python_version.txt" -Raw
-            Write-Host "✓ Conda base environment python version: $condaPythonVersion" -ForegroundColor Green
-            Remove-Item "conda_python_version.txt" -ErrorAction SilentlyContinue
-          } else {
-            Write-Host "⚠ Could not test conda base environment python in fresh shell" -ForegroundColor Yellow
-          }
-          
-          Write-Host "" 
-          Write-Host "Fresh shell testing completed - this shows what users will actually get!" -ForegroundColor Cyan
+          Write-Output "Correct Python version $installedVersion is installed."
 
-          # Verify Python package imports from fresh shell
-          Write-Host "Testing Python package imports from fresh shell..."
-          $packageTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "& { python -c 'import pandas, scipy, statsmodels, uncertainties; print(\"Packages imported successfully\")' 2>&1; exit `$LASTEXITCODE }" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "package_test.txt"
-          
-          if ($packageTest.ExitCode -eq 0 -and (Test-Path "package_test.txt")) {
-            $packageResult = Get-Content "package_test.txt" -Raw
-            Write-Host "✓ Python packages imported successfully: $packageResult" -ForegroundColor Green
-            Remove-Item "package_test.txt" -ErrorAction SilentlyContinue
-          } else {
-            Write-Host "✗ Failed to import Python packages in fresh shell" -ForegroundColor Red
-            if (Test-Path "package_test.txt") {
-              $errorOutput = Get-Content "package_test.txt" -Raw
-              Write-Host "Error output: $errorOutput" -ForegroundColor Red
-              Remove-Item "package_test.txt" -ErrorAction SilentlyContinue
-            }
+          # Verify Python package imports
+          try {
+            python -c "import pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')"
+          } catch {
+            Write-Output "Failed to import Python packages"
+            Write-Output $_
             exit 1
           }
 
