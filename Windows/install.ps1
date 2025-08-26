@@ -39,13 +39,31 @@ if (-not $env:INSTALL_LOG) {
 # Load configuration and common utilities
 try {
     Write-Host "Loading configuration..." -ForegroundColor Gray
-    $configUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
-    $configScript = Invoke-WebRequest -Uri $configUrl -UseBasicParsing
-    Invoke-Expression $configScript.Content
     
-    $commonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"  
-    $commonScript = Invoke-WebRequest -Uri $commonUrl -UseBasicParsing
-    Invoke-Expression $commonScript.Content
+    # Try to load locally first, then from remote
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $localConfigPath = Join-Path $scriptRoot "config.ps1"
+    $localCommonPath = Join-Path $scriptRoot "Components\Shared\common.ps1"
+    
+    if (Test-Path $localConfigPath) {
+        Write-Host "Loading local configuration..." -ForegroundColor Gray
+        . $localConfigPath
+    } else {
+        Write-Host "Loading remote configuration..." -ForegroundColor Gray
+        $configUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/config.ps1"
+        $configScript = Invoke-WebRequest -Uri $configUrl -UseBasicParsing
+        Invoke-Expression $configScript.Content
+    }
+    
+    if (Test-Path $localCommonPath) {
+        Write-Host "Loading local common utilities..." -ForegroundColor Gray
+        . $localCommonPath
+    } else {
+        Write-Host "Loading remote common utilities..." -ForegroundColor Gray
+        $commonUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/common.ps1"  
+        $commonScript = Invoke-WebRequest -Uri $commonUrl -UseBasicParsing
+        Invoke-Expression $commonScript.Content
+    }
 }
 catch {
     Write-Host "Failed to load configuration: $($_.Exception.Message)" -ForegroundColor Red
@@ -56,15 +74,45 @@ catch {
 $useNativeDialogs = $false
 if ($UseGUI) {
     try {
-        $dialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
-        $dialogsScript = Invoke-WebRequest -Uri $dialogsUrl -UseBasicParsing
-        Invoke-Expression $dialogsScript.Content
-        $useNativeDialogs = $true
-        Write-LogInfo "Native GUI dialogs loaded"
+        $localDialogsPath = Join-Path $scriptRoot "Components\Shared\windows_dialogs.ps1"
+        
+        if (Test-Path $localDialogsPath) {
+            Write-Host "Loading local GUI dialogs..." -ForegroundColor Gray
+            . $localDialogsPath
+            $useNativeDialogs = $true
+            Write-LogInfo "Native GUI dialogs loaded locally"
+        } else {
+            Write-Host "Loading remote GUI dialogs..." -ForegroundColor Gray
+            $dialogsUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Shared/windows_dialogs.ps1"
+            $dialogsScript = Invoke-WebRequest -Uri $dialogsUrl -UseBasicParsing
+            Invoke-Expression $dialogsScript.Content
+            $useNativeDialogs = $true
+            Write-LogInfo "Native GUI dialogs loaded remotely"
+        }
     }
     catch {
-        Write-LogWarning "Failed to load GUI dialogs, using terminal interface"
+        Write-LogWarning "Failed to load GUI dialogs, using terminal interface: $($_.Exception.Message)"
         $useNativeDialogs = $false
+    }
+}
+
+# Helper function to run component scripts
+function Invoke-ComponentScript {
+    param(
+        [string]$ComponentPath,
+        [string]$Description = "Running component"
+    )
+    
+    $localPath = Join-Path $scriptRoot $ComponentPath
+    
+    if (Test-Path $localPath) {
+        Write-Host "Running local component: $ComponentPath" -ForegroundColor Gray
+        . $localPath
+    } else {
+        Write-Host "Running remote component: $ComponentPath" -ForegroundColor Gray
+        $remoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
+        $script = Invoke-WebRequest -Uri $remoteUrl -UseBasicParsing
+        Invoke-Expression $script.Content
     }
 }
 
@@ -138,9 +186,7 @@ try {
             Write-LogInfo "Installing Python with Miniforge..."
             
             try {
-                $pythonUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Python/install.ps1"
-                $pythonScript = Invoke-WebRequest -Uri $pythonUrl -UseBasicParsing
-                Invoke-Expression $pythonScript.Content
+                Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1"
                 $installResults.Python = $true
                 Write-LogSuccess "Python installation completed"
             }
@@ -154,9 +200,7 @@ try {
             Write-LogInfo "Setting up Python environment and packages..."
             
             try {
-                $setupUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Python/first_year_setup.ps1"
-                $setupScript = Invoke-WebRequest -Uri $setupUrl -UseBasicParsing
-                Invoke-Expression $setupScript.Content
+                Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1"
                 $installResults.FirstYearSetup = $true
                 Write-LogSuccess "Python environment setup completed"
             }
@@ -170,9 +214,7 @@ try {
             Write-LogInfo "Installing Visual Studio Code..."
             
             try {
-                $vscodeUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/VSC/install.ps1"
-                $vscodeScript = Invoke-WebRequest -Uri $vscodeUrl -UseBasicParsing
-                Invoke-Expression $vscodeScript.Content
+                Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1"
                 $installResults.VSCode = $true
                 Write-LogSuccess "Visual Studio Code installation completed"
             }
@@ -191,23 +233,17 @@ try {
     } else {
         # Terminal-based installation
         Write-LogInfo "Installing Python with Miniforge..."
-        $pythonUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Python/install.ps1"
-        $pythonScript = Invoke-WebRequest -Uri $pythonUrl -UseBasicParsing
-        Invoke-Expression $pythonScript.Content
+        Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1"
         $installResults.Python = $true
         Write-LogSuccess "Python installation completed"
         
         Write-LogInfo "Setting up Python environment and packages..."
-        $setupUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/Python/first_year_setup.ps1"
-        $setupScript = Invoke-WebRequest -Uri $setupUrl -UseBasicParsing
-        Invoke-Expression $setupScript.Content
+        Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1"
         $installResults.FirstYearSetup = $true
         Write-LogSuccess "Python environment setup completed"
         
         Write-LogInfo "Installing Visual Studio Code..."
-        $vscodeUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/VSC/install.ps1"
-        $vscodeScript = Invoke-WebRequest -Uri $vscodeUrl -UseBasicParsing
-        Invoke-Expression $vscodeScript.Content
+        Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1"
         $installResults.VSCode = $true
         Write-LogSuccess "Visual Studio Code installation completed"
     }
