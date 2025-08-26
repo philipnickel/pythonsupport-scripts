@@ -12,7 +12,7 @@
 
 **Option 3: CLI Mode** - Uses terminal prompts for authentication:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh | bash -s -- --cli
+curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh -o installer.sh && chmod +x installer.sh && ./installer.sh --cli
 ```
 
 ### Windows
