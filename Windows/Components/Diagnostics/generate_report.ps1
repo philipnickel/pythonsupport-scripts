@@ -979,7 +979,9 @@ function Main {
             PythonVersionDTU = "3.12"
             DTUPackages = @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties")
         }
-        $formattedSystemInfo = "=== System Information ===`nError collecting system information: $($_.Exception.Message)`n"
+        Write-Host "DEBUG: Created fallback system info hashtable" -ForegroundColor Yellow
+        $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
+        Write-Host "DEBUG: Fallback system info formatted" -ForegroundColor Yellow
     }
     
     try {
