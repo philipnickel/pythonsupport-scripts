@@ -1028,6 +1028,34 @@ function Main {
 
 # Only run main if script is executed directly
 if ($MyInvocation.InvocationName -ne '.') {
-    $exitCode = Main
+    # Set error action preference to continue so we can catch errors
+    $ErrorActionPreference = "Continue"
+    
+    try {
+        Write-Host "Starting DTU Python Support Diagnostics..." -ForegroundColor Green
+        $exitCode = Main
+    } catch {
+        Write-Host ""
+        Write-Host "FATAL ERROR: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Stack trace: $($_.ScriptStackTrace)" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "This error occurred during script execution." -ForegroundColor Yellow
+        Write-Host "Please report this issue to DTU Python Support." -ForegroundColor Yellow
+        $exitCode = 1
+    }
+    
+    Write-Host ""
+    Write-Host "Script completed with exit code: $exitCode" -ForegroundColor Cyan
+    Write-Host "Press any key to continue..." -ForegroundColor Yellow
+    
+    # Use a more reliable way to pause
+    try {
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    } catch {
+        # Fallback if ReadKey fails
+        Write-Host "Press Enter to continue..."
+        Read-Host
+    }
+    
     exit $exitCode
 }
