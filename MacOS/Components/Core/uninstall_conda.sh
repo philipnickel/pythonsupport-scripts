@@ -36,6 +36,7 @@ remove_conda_installation() {
             if [ "$needs_sudo" = true ]; then
                 if [[ "${CLI_MODE:-}" == "true" ]]; then
                     # CLI mode - use sudo directly
+                    echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
                     if sudo -E bash "$conda_path/uninstall.sh" --yes; then
                         echo "$conda_type uninstaller completed successfully"
                         return 0
@@ -68,6 +69,7 @@ remove_conda_installation() {
         if [ "$needs_sudo" = true ]; then
             if [[ "${CLI_MODE:-}" == "true" ]]; then
                 # CLI mode - use sudo directly
+                echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
                 sudo rm -rf "$conda_path"
             else
                 # GUI mode - use osascript for native authentication
@@ -145,6 +147,7 @@ if command -v conda >/dev/null 2>&1; then
         conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
     elif [[ "${CLI_MODE:-}" == "true" ]]; then
         # CLI mode - use sudo directly
+        echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
         sudo -E conda init --reverse --all 2>/dev/null || echo "conda init --reverse failed, using manual cleanup"
     else
         # GUI mode - use osascript for native authentication
