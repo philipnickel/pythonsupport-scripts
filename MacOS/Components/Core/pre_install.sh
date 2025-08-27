@@ -143,9 +143,10 @@ if [ "$CONDA_FOUND" = true ]; then
         
         # Use macOS native dialog for user interaction with authentication
         response=$(osascript -e 'tell app "System Events" to display dialog "DTU Python Support detected existing conda installation(s).\n\nYou have existing Anaconda/miniconda/miniforge installation(s).\n\nThe uninstaller will scan for and remove ALL conda installations found on your system.\n\nDo you want to uninstall all existing conda installations and continue with the installation?\n\nYou will be prompted for administrator privileges to complete the uninstallation.\n\nNote: A native macOS popup will appear asking for your password." buttons {"Cancel", "Uninstall All & Continue"} default button "Uninstall All & Continue" with icon caution')
+        osascript_exit_code=$?
         
         # Check if user cancelled or closed the dialog
-        if [[ $? -ne 0 ]] || [[ -z "$response" ]] || [[ "$response" == *"Cancel"* ]]; then
+        if [[ $osascript_exit_code -ne 0 ]] || [[ -z "$response" ]] || [[ "$response" == *"Cancel"* ]]; then
             echo "Installation aborted by user."
             exit 1
         fi
