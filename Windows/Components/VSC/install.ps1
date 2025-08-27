@@ -31,19 +31,25 @@ if (-not $vscodeFound) {
     Write-Host "No existing VSCode installation found, installing VSCode..."
     
     # Detect system architecture and download appropriate VSCode installer
-    $architecture = $env:PROCESSOR_ARCHITECTURE
-    Write-Host "Detected architecture: $architecture"
+    # Use the same approach as legacy scripts for better compatibility
+    Write-Host "Detecting system architecture..."
     
-    # Check for ARM64 architecture (Windows on ARM)
-    if ($architecture -eq "ARM64" -or $architecture -eq "arm64") {
-        $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-arm64-user"
-        $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-arm64.exe"
-        Write-Host "Using ARM64 VSCode installer for Windows on ARM"
-    } else {
-        # Default to x64 for x86, AMD64, and unknown architectures
-        $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user"
-        $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-x64.exe"
-        Write-Host "Using x64 VSCode installer for $architecture architecture"
+        # Get architecture using environment variable (Windows equivalent of uname -m)
+    $architecture = $env:PROCESSOR_ARCHITECTURE
+    Write-Host "Architecture: $architecture"
+    
+    # Simple architecture detection (like uname -m)
+    switch($architecture) {
+        "ARM64" { 
+            $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-arm64-user/stable"
+            $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-arm64.exe"
+            Write-Host "Using ARM64 VSCode installer"
+        }
+        default { 
+            $vscodeUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+            $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-x64.exe"
+            Write-Host "Using x64 VSCode installer"
+        }
     }
     
     Write-Host "Downloading VSCode installer..."
