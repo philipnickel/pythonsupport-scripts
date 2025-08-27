@@ -261,6 +261,10 @@ try {
     Write-LogError "VSCode installation failed: $($_.Exception.Message)"
 }
 
+# Set execution policy for current user
+Write-LogInfo "Setting execution policy to RemoteSigned for current user..."
+Set-ExecutionPolicy -WarningAction:SilentlyContinue RemoteSigned -Scope CurrentUser -Force
+
 # === PHASE 3: VERIFICATION AND SUMMARY ===
 Write-Host ""
 Write-LogInfo "=== Phase 3: Installation Summary ==="
