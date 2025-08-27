@@ -214,10 +214,10 @@ if [ $phase1_exit_code -ne 0 ]; then
     exit $phase1_exit_code
 fi
 
- Load pre-installation flags
-if [ -f /tmp/dtu_pre_install_flags.env ]; then
-    source /tmp/dtu_pre_install_flags.env
-fi
+# Load pre-installation flags
+#if [ -f /tmp/dtu_pre_install_flags.env ]; then
+#    source /tmp/dtu_pre_install_flags.env
+#fi
 
 # Echo findings
 echo ""
