@@ -461,7 +461,7 @@ function New-HTMLReport {
     Write-Host "DEBUG: Timestamp: $timestamp" -ForegroundColor Yellow
     
     # Use the passed parameters instead of re-running functions
-    $systemInfo = $FormattedSystemInfo
+    $formattedSystemInfo = $FormattedSystemInfo
     $testResults = $TestResults
     $testExitCode = $LASTEXITCODE
     Write-Host "DEBUG: Using passed system info and test results" -ForegroundColor Yellow
@@ -780,7 +780,7 @@ function New-HTMLReport {
                             </div>
                         </div>
                         <div class="diagnostic-details">
-                            <div class="diagnostic-log">$($systemInfo -replace '"', '\"')</div>
+                            <div class="diagnostic-log">$($formattedSystemInfo -replace '"', '\"')</div>
                             <button onclick="copyOutput(this, 'System Details')" class="copy-button">Copy Output</button>
                         </div>
                     </div>
