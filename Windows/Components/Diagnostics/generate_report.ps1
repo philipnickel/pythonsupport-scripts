@@ -17,9 +17,10 @@ param(
 function Get-SystemInfo {
     Write-Host "DEBUG: Starting Get-SystemInfo function" -ForegroundColor Yellow
     
-    # Refresh environment variables to pick up any PATH changes from installation
-    Write-Host "DEBUG: Refreshing environment variables..." -ForegroundColor Yellow
-    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    try {
+        # Refresh environment variables to pick up any PATH changes from installation
+        Write-Host "DEBUG: Refreshing environment variables..." -ForegroundColor Yellow
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
     
     # Add common installation paths that might not be in PATH yet
     Write-Host "DEBUG: Adding common installation paths to PATH..." -ForegroundColor Yellow
@@ -240,6 +241,10 @@ function Get-SystemInfo {
     }
     
     return $systemInfo
+    } catch {
+        Write-Host "DEBUG: Error in Get-SystemInfo: $($_.Exception.Message)" -ForegroundColor Yellow
+        throw
+    }
 }
 
 # Generate formatted system information output
@@ -942,21 +947,52 @@ function Main {
     Write-Host "DEBUG: Starting Main function" -ForegroundColor Yellow
     Write-Host "Generating installation report..." -ForegroundColor Cyan
     
-    Write-Host "DEBUG: Collecting system information..." -ForegroundColor Yellow
-    # Collect all system information once
-    $systemInfo = Get-SystemInfo
-    Write-Host "DEBUG: System information collected" -ForegroundColor Yellow
+    try {
+        Write-Host "DEBUG: Collecting system information..." -ForegroundColor Yellow
+        # Collect all system information once
+        $systemInfo = Get-SystemInfo
+        Write-Host "DEBUG: System information collected" -ForegroundColor Yellow
+        
+        Write-Host "DEBUG: Formatting system information..." -ForegroundColor Yellow
+        # Generate formatted system info output
+        $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
+        Write-Host "DEBUG: System information formatted" -ForegroundColor Yellow
+    } catch {
+        Write-Host "DEBUG: Error collecting system information: $($_.Exception.Message)" -ForegroundColor Yellow
+        # Create minimal system info if collection fails
+        $systemInfo = @{
+            OS = "Unknown"
+            PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+            Architecture = "Unknown"
+            ComputerModel = "Unknown"
+            Processor = "Unknown"
+            Memory = "Unknown"
+            PythonPath = $null
+            PythonVersion = $null
+            CondaPath = $null
+            CondaVersion = $null
+            CondaBase = $null
+            MiniforgePython = "$env:USERPROFILE\miniforge3\python.exe"
+            VSCodePath = $null
+            VSCodeVersion = $null
+            VSCodeExtensions = @()
+            PythonVersionDTU = "3.12"
+            DTUPackages = @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties")
+        }
+        $formattedSystemInfo = "=== System Information ===`nError collecting system information: $($_.Exception.Message)`n"
+    }
     
-    Write-Host "DEBUG: Formatting system information..." -ForegroundColor Yellow
-    # Generate formatted system info output
-    $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
-    Write-Host "DEBUG: System information formatted" -ForegroundColor Yellow
-    
-    Write-Host "DEBUG: Running tests..." -ForegroundColor Yellow
-    # Run tests using the collected system info
-    $testResults = Test-FirstYearSetup -SystemInfo $systemInfo 2>&1 | Out-String
-    $testExitCode = $LASTEXITCODE
-    Write-Host "DEBUG: Tests completed with exit code: $testExitCode" -ForegroundColor Yellow
+    try {
+        Write-Host "DEBUG: Running tests..." -ForegroundColor Yellow
+        # Run tests using the collected system info
+        $testResults = Test-FirstYearSetup -SystemInfo $systemInfo 2>&1 | Out-String
+        $testExitCode = $LASTEXITCODE
+        Write-Host "DEBUG: Tests completed with exit code: $testExitCode" -ForegroundColor Yellow
+    } catch {
+        Write-Host "DEBUG: Error running tests: $($_.Exception.Message)" -ForegroundColor Yellow
+        $testResults = "=== First Year Setup Test ===`nError running tests: $($_.Exception.Message)`n"
+        $testExitCode = 1
+    }
     
     # Display results in console
     Write-Host ""
@@ -964,18 +1000,25 @@ function Main {
     Write-Host $testResults
     Write-Host ""
     
-    Write-Host "DEBUG: About to generate HTML report..." -ForegroundColor Yellow
-    # Generate HTML report
-    $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults
-    Write-Host "DEBUG: HTML report generation completed" -ForegroundColor Yellow
-    
-    Write-Host "Report generated: $reportFile" -ForegroundColor Green
-    
-    # Open report in browser
-    if (-not $NoBrowser) {
-        Write-Host "DEBUG: Opening report in browser..." -ForegroundColor Yellow
-        Start-Process $reportFile
-        Write-Host "Report opened in browser" -ForegroundColor Green
+    try {
+        Write-Host "DEBUG: About to generate HTML report..." -ForegroundColor Yellow
+        # Generate HTML report
+        $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults
+        Write-Host "DEBUG: HTML report generation completed" -ForegroundColor Yellow
+        
+        Write-Host "Report generated: $reportFile" -ForegroundColor Green
+        
+        # Open report in browser
+        if (-not $NoBrowser) {
+            Write-Host "DEBUG: Opening report in browser..." -ForegroundColor Yellow
+            Start-Process $reportFile
+            Write-Host "Report opened in browser" -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "DEBUG: Error generating HTML report: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "Failed to generate HTML report: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "You can still view the console output above for diagnostic information." -ForegroundColor Yellow
+        return 1
     }
     
     Write-Host "DEBUG: Main function completed" -ForegroundColor Yellow

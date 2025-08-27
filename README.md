@@ -35,10 +35,5 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtu
 
 ### Windows Diagnostics
 ```powershell
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Diagnostics/simple_report.ps1" -UseBasicParsing).Content
-```
-
-### Windows Comprehensive Report Generator
-```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Diagnostics/generate_report.ps1" -UseBasicParsing).Content
 ```
