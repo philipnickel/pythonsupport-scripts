@@ -13,7 +13,7 @@ param(
     [string]$InstallLog = ""
 )
 
-# Get system info
+# Collect all system information and detected components
 function Get-SystemInfo {
     Write-Host "DEBUG: Starting Get-SystemInfo function" -ForegroundColor Yellow
     
@@ -208,10 +208,84 @@ function Get-SystemInfo {
     } else {
         Write-Output "  No extensions found"
     }
+    
+    # Return comprehensive system info object
+    $systemInfo = @{
+        # System information
+        OS = "$($PSVersionTable.OS) ($([System.Environment]::OSVersion.VersionString))"
+        PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+        Architecture = [System.Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE')
+        
+        # Hardware information
+        ComputerModel = $computerSystem.Model
+        Processor = $computerSystem.Name
+        Memory = "$([math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)) GB"
+        
+        # Python environment
+        PythonPath = $pythonPath
+        PythonVersion = $pythonVersion
+        CondaPath = $condaPath
+        CondaVersion = $condaVersion
+        CondaBase = $condaBase
+        MiniforgePython = "$env:USERPROFILE\miniforge3\python.exe"
+        
+        # VS Code environment
+        VSCodePath = $codePath
+        VSCodeVersion = $codeVersion
+        VSCodeExtensions = $extensions
+        
+        # Configuration
+        PythonVersionDTU = $PythonVersionDTU
+        DTUPackages = $DTUPackages
+    }
+    
+    return $systemInfo
+}
+
+# Generate formatted system information output
+function Format-SystemInfo {
+    param([hashtable]$SystemInfo)
+    
+    Write-Output "=== System Information ==="
+    Write-Output "Operating System: $($SystemInfo.OS)"
+    Write-Output "PowerShell Version: $($SystemInfo.PowerShellVersion)"
+    Write-Output "Architecture: $($SystemInfo.Architecture)"
+    Write-Output ""
+    
+    Write-Output "=== Hardware Information ==="
+    Write-Output "Model: $($SystemInfo.ComputerModel)"
+    Write-Output "Processor: $($SystemInfo.Processor)"
+    Write-Output "Memory: $($SystemInfo.Memory)"
+    Write-Output ""
+    
+    Write-Output "=== Python Environment ==="
+    Write-Output "Python Location: $(if ($SystemInfo.PythonPath) { $SystemInfo.PythonPath } else { 'Not found' })"
+    Write-Output "Python Version: $(if ($SystemInfo.PythonVersion) { $SystemInfo.PythonVersion } else { 'Not found' })"
+    Write-Output "Conda Location: $(if ($SystemInfo.CondaPath) { $SystemInfo.CondaPath } else { 'Not found' })"
+    Write-Output "Conda Version: $(if ($SystemInfo.CondaVersion) { $SystemInfo.CondaVersion } else { 'Not found' })"
+    Write-Output "Conda Base: $(if ($SystemInfo.CondaBase) { $SystemInfo.CondaBase } else { 'Not found' })"
+    Write-Output ""
+    
+    Write-Output "=== DTU Configuration ==="
+    Write-Output "Expected Python Version: $($SystemInfo.PythonVersionDTU)"
+    Write-Output "Required DTU Packages: $($SystemInfo.DTUPackages -join ', ')"
+    Write-Output ""
+    
+    Write-Output "=== VS Code Environment ==="
+    Write-Output "VS Code Location: $(if ($SystemInfo.VSCodePath) { $SystemInfo.VSCodePath } else { 'Not found' })"
+    Write-Output "VS Code Version: $(if ($SystemInfo.VSCodeVersion) { $SystemInfo.VSCodeVersion } else { 'Not found' })"
+    Write-Output "Installed Extensions:"
+    if ($SystemInfo.VSCodeExtensions) {
+        $SystemInfo.VSCodeExtensions | ForEach-Object { Write-Output "  $_" }
+    } else {
+        Write-Output "  No extensions found"
+    }
 }
 
 # Run first year test - all required verifications
 function Test-FirstYearSetup {
+    param([hashtable]$SystemInfo)
+    
     Write-Host "DEBUG: Starting Test-FirstYearSetup function" -ForegroundColor Yellow
     Write-Output "=== First Year Setup Test ==="
     Write-Output ""
@@ -229,8 +303,8 @@ function Test-FirstYearSetup {
     $miniforgePath = "$env:USERPROFILE\miniforge3"
     Write-Host "DEBUG: Miniforge path: $miniforgePath" -ForegroundColor Yellow
     Write-Host "DEBUG: Miniforge path exists: $(Test-Path $miniforgePath)" -ForegroundColor Yellow
-    Write-Host "DEBUG: Conda command available: $(if (Get-Command conda -ErrorAction SilentlyContinue) { 'Yes' } else { 'No' })" -ForegroundColor Yellow
-    if ((Test-Path $miniforgePath) -and (Get-Command conda -ErrorAction SilentlyContinue)) {
+    Write-Host "DEBUG: Conda command available: $(if ($SystemInfo.CondaPath) { 'Yes' } else { 'No' })" -ForegroundColor Yellow
+    if ((Test-Path $miniforgePath) -and $SystemInfo.CondaPath) {
         Write-Output "PASS: Miniforge installed at $miniforgePath"
     } else {
         Write-Output "FAIL: Miniforge not found or conda command not available"
@@ -242,16 +316,9 @@ function Test-FirstYearSetup {
     Write-Output "Testing Python Version..."
     $ExpectedVersion = "3.12"
     
-    # Try to get Python version from miniforge directly
-    $MiniforgePython = "$miniforgePath\python.exe"
-    if (Test-Path $MiniforgePython) {
-        $InstalledVersion = & $MiniforgePython --version 2>$null | ForEach-Object { $_.Split(' ')[1] }
-        $PythonPath = $MiniforgePython
-    } else {
-        # Fallback to system python
-        $InstalledVersion = python --version 2>$null | ForEach-Object { $_.Split(' ')[1] }
-        $PythonPath = (Get-Command python -ErrorAction SilentlyContinue).Source
-    }
+    # Use the Python info we already detected
+    $InstalledVersion = $SystemInfo.PythonVersion
+    $PythonPath = $SystemInfo.PythonPath
     
     if ($InstalledVersion -like "$ExpectedVersion*" -and $PythonPath -like "*miniforge3*") {
         Write-Output "PASS: Python $InstalledVersion from miniforge"
@@ -265,24 +332,8 @@ function Test-FirstYearSetup {
     Write-Host "DEBUG: Testing DTU Packages..." -ForegroundColor Yellow
     Write-Output "Testing DTU Packages..."
     
-    # Determine which Python to use for package testing
-    $PythonCmd = $null
-    
-    # Priority 1: Use miniforge Python if available
-    if (Test-Path $MiniforgePython) {
-        $PythonCmd = $MiniforgePython
-        Write-Host "DEBUG: Using miniforge Python for package testing: $PythonCmd" -ForegroundColor Yellow
-    }
-    # Priority 2: Use system python if available
-    elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        $PythonCmd = "python"
-        Write-Host "DEBUG: Using system Python for package testing: $PythonCmd" -ForegroundColor Yellow
-    }
-    # Priority 3: Use the Python path we found earlier
-    elseif ($pythonPath) {
-        $PythonCmd = $pythonPath
-        Write-Host "DEBUG: Using found Python path for package testing: $PythonCmd" -ForegroundColor Yellow
-    }
+    # Use the Python path we already detected
+    $PythonCmd = $SystemInfo.PythonPath
     
     if ($PythonCmd) {
         Write-Host "DEBUG: Attempting to import DTU packages using: $PythonCmd" -ForegroundColor Yellow
@@ -305,9 +356,9 @@ function Test-FirstYearSetup {
     Write-Output "Testing VS Code..."
     $codeTest = $null
     
-    # Try using the VS Code path we found earlier
-    if ($codePath) {
-        $codeTest = & $codePath --version 2>$null
+    # Use the VS Code path we already detected
+    if ($SystemInfo.VSCodePath) {
+        $codeTest = & $SystemInfo.VSCodePath --version 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Output "PASS: VS Code $($codeTest | Select-Object -First 1)"
         } else {
@@ -322,11 +373,11 @@ function Test-FirstYearSetup {
     
     # Test 5: VS Code Extensions
     Write-Output "Testing VS Code Extensions..."
-    if ($codePath) {
-        $pythonExtension = & $codePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-python.python" }
+    if ($SystemInfo.VSCodePath) {
+        $pythonExtension = & $SystemInfo.VSCodePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-python.python" }
         if ($pythonExtension) {
             Write-Output "PASS: Python extension installed"
-            $jupyterExtension = & $codePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-toolsai.jupyter" }
+            $jupyterExtension = & $SystemInfo.VSCodePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-toolsai.jupyter" }
             if ($jupyterExtension) {
                 Write-Output "PASS: Jupyter extension installed"
             } else {
@@ -392,20 +443,23 @@ function Test-FirstYearSetup {
 
 # Generate HTML report
 function New-HTMLReport {
+    param(
+        [hashtable]$SystemInfo,
+        [string]$FormattedSystemInfo,
+        [string]$TestResults
+    )
+    
     Write-Host "DEBUG: Starting New-HTMLReport function" -ForegroundColor Yellow
     $outputFile = "$env:TEMP\dtu_installation_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
     Write-Host "DEBUG: Output file: $outputFile" -ForegroundColor Yellow
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Write-Host "DEBUG: Timestamp: $timestamp" -ForegroundColor Yellow
     
-    Write-Host "DEBUG: Getting system info..." -ForegroundColor Yellow
-    $systemInfo = Get-SystemInfo | Out-String
-    Write-Host "DEBUG: System info collected" -ForegroundColor Yellow
-    
-    Write-Host "DEBUG: Getting test results..." -ForegroundColor Yellow
-    $testResults = Test-FirstYearSetup 2>&1 | Out-String
+    # Use the passed parameters instead of re-running functions
+    $systemInfo = $FormattedSystemInfo
+    $testResults = $TestResults
     $testExitCode = $LASTEXITCODE
-    Write-Host "DEBUG: Test results collected, exit code: $testExitCode" -ForegroundColor Yellow
+    Write-Host "DEBUG: Using passed system info and test results" -ForegroundColor Yellow
     
     # Parse test results for summary counts (exclude header and overall result lines)
     $passCount = ($testResults -split "`n" | Where-Object { $_ -like "PASS:*" }).Count
@@ -888,20 +942,31 @@ function Main {
     Write-Host "DEBUG: Starting Main function" -ForegroundColor Yellow
     Write-Host "Generating installation report..." -ForegroundColor Cyan
     
-    Write-Host "DEBUG: About to run Test-FirstYearSetup..." -ForegroundColor Yellow
-    # Run tests and capture output
-    $testResults = Test-FirstYearSetup 2>&1 | Out-String
-    $testExitCode = $LASTEXITCODE
-    Write-Host "DEBUG: Test-FirstYearSetup completed with exit code: $testExitCode" -ForegroundColor Yellow
+    Write-Host "DEBUG: Collecting system information..." -ForegroundColor Yellow
+    # Collect all system information once
+    $systemInfo = Get-SystemInfo
+    Write-Host "DEBUG: System information collected" -ForegroundColor Yellow
     
-    # Display test results in console
+    Write-Host "DEBUG: Formatting system information..." -ForegroundColor Yellow
+    # Generate formatted system info output
+    $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
+    Write-Host "DEBUG: System information formatted" -ForegroundColor Yellow
+    
+    Write-Host "DEBUG: Running tests..." -ForegroundColor Yellow
+    # Run tests using the collected system info
+    $testResults = Test-FirstYearSetup -SystemInfo $systemInfo 2>&1 | Out-String
+    $testExitCode = $LASTEXITCODE
+    Write-Host "DEBUG: Tests completed with exit code: $testExitCode" -ForegroundColor Yellow
+    
+    # Display results in console
     Write-Host ""
+    Write-Host $formattedSystemInfo
     Write-Host $testResults
     Write-Host ""
     
     Write-Host "DEBUG: About to generate HTML report..." -ForegroundColor Yellow
     # Generate HTML report
-    $reportFile, $exitCode = New-HTMLReport
+    $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults
     Write-Host "DEBUG: HTML report generation completed" -ForegroundColor Yellow
     
     Write-Host "Report generated: $reportFile" -ForegroundColor Green
