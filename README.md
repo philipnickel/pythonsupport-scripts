@@ -33,4 +33,7 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtu
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/uninstall_vscode.sh)"
 ```
 
-
+### Windows Diagnostics
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Diagnostics/simple_report.ps1" -UseBasicParsing).Content
+```

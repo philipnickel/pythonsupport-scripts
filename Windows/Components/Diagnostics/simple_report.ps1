@@ -1,172 +1,691 @@
 # @doc
-# @name: DTU Python Support Health Check
-# @description: Quick health check for DTU Python Support installation
+# @name: DTU Python Support - Simple Installation Report Generator
+# @description: Comprehensive installation report generator for DTU Python Support
 # @category: Diagnostics
-# @usage: . .\health_check.ps1
+# @usage: .\simple_report.ps1
 # @requirements: Windows 10/11, PowerShell 5.1+
-# @notes: Fast verification of core components and common issues
+# @notes: Generates detailed HTML report with system info and test results
 # @/doc
 
 param(
     [switch]$Verbose = $false,
-    [switch]$AutoFix = $false
+    [switch]$NoBrowser = $false
 )
 
-Write-Host "DTU Python Support - Health Check" -ForegroundColor Cyan
-Write-Host "================================" -ForegroundColor Cyan
-Write-Host ""
-
-$healthIssues = @()
-$healthStatus = $true
-
-# Quick function to test and report
-function Test-HealthItem {
-    param(
-        [string]$Name,
-        [scriptblock]$Test,
-        [string]$FailureMessage,
-        [scriptblock]$Fix = $null
-    )
+# Get system info
+function Get-SystemInfo {
+    # Self-contained configuration - try external first, fall back to defaults
+    $RemotePS = if ($env:REMOTE_PS) { $env:REMOTE_PS } else { "dtudk/pythonsupport-scripts" }
+    $BranchPS = if ($env:BRANCH_PS) { $env:BRANCH_PS } else { "main" }
     
-    Write-Host "Checking $Name... " -NoNewline
+    $ConfigURL = "https://raw.githubusercontent.com/$RemotePS/$BranchPS/Windows/config.ps1"
+    $ConfigFile = "$env:TEMP\sysinfo_config_$PID.ps1"
     
     try {
-        $result = & $Test
-        if ($result) {
-            Write-Host "[OK] OK" -ForegroundColor Green
-        } else {
-            Write-Host "[FAIL] FAIL" -ForegroundColor Red
-            $script:healthIssues += "$Name : $FailureMessage"
-            $script:healthStatus = $false
-            
-            if ($AutoFix -and $Fix) {
-                Write-Host "  Attempting fix..." -ForegroundColor Yellow
-                try {
-                    & $Fix
-                    Write-Host "  [FIXED] Fixed" -ForegroundColor Green
-                } catch {
-                    Write-Host "  [ERROR] Fix failed: $($_.Exception.Message)" -ForegroundColor Red
-                }
-            }
+        Invoke-WebRequest -Uri $ConfigURL -OutFile $ConfigFile -UseBasicParsing | Out-Null
+        if (Test-Path $ConfigFile) {
+            . $ConfigFile
+            Remove-Item $ConfigFile -Force
         }
     } catch {
-        Write-Host "✗ ERROR" -ForegroundColor Red
-        $script:healthIssues += "$Name : $($_.Exception.Message)"
-        $script:healthStatus = $false
+        # Continue with defaults
+    }
+    
+    # Ensure we always have defaults
+    $PythonVersionDTU = if ($env:PYTHON_VERSION_DTU) { $env:PYTHON_VERSION_DTU } else { "3.12" }
+    $DTUPackages = if ($env:DTU_PACKAGES) { $env:DTU_PACKAGES -split ',' } else { @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties") }
+    
+    Write-Output "=== System Information ==="
+    Write-Output "Operating System: $($PSVersionTable.OS) ($([System.Environment]::OSVersion.VersionString))"
+    Write-Output "PowerShell Version: $($PSVersionTable.PSVersion)"
+    Write-Output "Architecture: $([System.Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE'))"
+    Write-Output ""
+    
+    Write-Output "=== Hardware Information ==="
+    $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
+    Write-Output "Model: $($computerSystem.Model)"
+    Write-Output "Processor: $($computerSystem.Name)"
+    Write-Output "Memory: $([math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)) GB"
+    Write-Output ""
+    
+    Write-Output "=== Python Environment ==="
+    $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    $pythonVersion = python --version 2>$null
+    $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    $condaVersion = conda --version 2>$null
+    $condaBase = conda info --base 2>$null
+    
+    Write-Output "Python Location: $($pythonPath ?? 'Not found')"
+    Write-Output "Python Version: $($pythonVersion ?? 'Not found')"
+    Write-Output "Conda Location: $($condaPath ?? 'Not found')"
+    Write-Output "Conda Version: $($condaVersion ?? 'Not found')"
+    Write-Output "Conda Base: $($condaBase ?? 'Not found')"
+    Write-Output ""
+    
+    Write-Output "=== DTU Configuration ==="
+    Write-Output "Expected Python Version: $PythonVersionDTU"
+    Write-Output "Required DTU Packages: $($DTUPackages -join ', ')"
+    Write-Output ""
+    
+    Write-Output "=== VS Code Environment ==="
+    $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    $codeVersion = code --version 2>$null | Select-Object -First 1
+    Write-Output "VS Code Location: $($codePath ?? 'Not found')"
+    Write-Output "VS Code Version: $($codeVersion ?? 'Not found')"
+    Write-Output "Installed Extensions:"
+    $extensions = code --list-extensions 2>$null | Select-Object -First 10
+    if ($extensions) {
+        $extensions | ForEach-Object { Write-Output "  $_" }
+    } else {
+        Write-Output "  No extensions found"
     }
 }
 
-# Health checks
-Test-HealthItem "Python Command" {
-    try {
-        $pythonTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "python --version" -Wait -PassThru -WindowStyle Hidden
-        return $pythonTest.ExitCode -eq 0
-    } catch { return $false }
-} "Python not found in fresh shell PATH"
-
-Test-HealthItem "Conda Command" {
-    try {
-        $condaTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda --version" -Wait -PassThru -WindowStyle Hidden
-        return $condaTest.ExitCode -eq 0
-    } catch { return $false }
-} "Conda not found in fresh shell PATH"
-
-Test-HealthItem "VSCode Command" {
-    try {
-        $codeTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "code --version" -Wait -PassThru -WindowStyle Hidden
-        return $codeTest.ExitCode -eq 0
-    } catch { return $false }
-} "VSCode not found in fresh shell PATH" -Fix {
-    # Try to add VSCode to PATH
-    $vscodeLocations = @(
-        "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin",
-        "${env:ProgramFiles}\Microsoft VS Code\bin",
-        "${env:ProgramFiles(x86)}\Microsoft VS Code\bin"
-    )
+# Run first year test - all required verifications
+function Test-FirstYearSetup {
+    Write-Output "=== First Year Setup Test ==="
+    Write-Output ""
     
-    foreach ($location in $vscodeLocations) {
-        if (Test-Path $location) {
-            $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-            if ($currentPath -notlike "*$location*") {
-                [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$location", "User")
-                $env:PATH = "$env:PATH;$location"
+    $miniforgeFailed = $false
+    $pythonFailed = $false
+    $packagesFailed = $false
+    $vscodeFailed = $false
+    $extensionsFailed = $false
+    $condaInitFailed = $false
+    
+    # Test 1: Miniforge Installation
+    Write-Output "Testing Miniforge Installation..."
+    $miniforgePath = "$env:USERPROFILE\miniforge3"
+    if ((Test-Path $miniforgePath) -and (Get-Command conda -ErrorAction SilentlyContinue)) {
+        Write-Output "PASS: Miniforge installed at $miniforgePath"
+    } else {
+        Write-Output "FAIL: Miniforge not found or conda command not available"
+        $miniforgeFailed = $true
+    }
+    Write-Output ""
+    
+    # Test 2: Python Version (from miniforge)
+    Write-Output "Testing Python Version..."
+    $ExpectedVersion = "3.12"
+    
+    # Try to get Python version from miniforge directly
+    $MiniforgePython = "$miniforgePath\python.exe"
+    if (Test-Path $MiniforgePython) {
+        $InstalledVersion = & $MiniforgePython --version 2>$null | ForEach-Object { $_.Split(' ')[1] }
+        $PythonPath = $MiniforgePython
+    } else {
+        # Fallback to system python
+        $InstalledVersion = python --version 2>$null | ForEach-Object { $_.Split(' ')[1] }
+        $PythonPath = (Get-Command python -ErrorAction SilentlyContinue).Source
+    }
+    
+    if ($InstalledVersion -like "$ExpectedVersion*" -and $PythonPath -like "*miniforge3*") {
+        Write-Output "PASS: Python $InstalledVersion from miniforge"
+    } else {
+        Write-Output "FAIL: Expected Python $ExpectedVersion from miniforge, found $InstalledVersion at $PythonPath"
+        $pythonFailed = $true
+    }
+    Write-Output ""
+    
+    # Test 3: DTU Packages
+    Write-Output "Testing DTU Packages..."
+    $PythonCmd = "python"
+    if (Test-Path $MiniforgePython) {
+        $PythonCmd = $MiniforgePython
+    }
+    
+    $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Output "PASS: All DTU packages imported successfully"
+    } else {
+        Write-Output "FAIL: Some DTU packages failed to import"
+        $packagesFailed = $true
+    }
+    Write-Output ""
+    
+    # Test 4: VS Code
+    Write-Output "Testing VS Code..."
+    $codeTest = code --version 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Output "PASS: VS Code $($codeTest | Select-Object -First 1)"
+    } else {
+        Write-Output "FAIL: VS Code not available"
+        $vscodeFailed = $true
+    }
+    Write-Output ""
+    
+    # Test 5: VS Code Extensions
+    Write-Output "Testing VS Code Extensions..."
+    $pythonExtension = code --list-extensions 2>$null | Where-Object { $_ -eq "ms-python.python" }
+    if ($pythonExtension) {
+        Write-Output "PASS: Python extension installed"
+        $jupyterExtension = code --list-extensions 2>$null | Where-Object { $_ -eq "ms-toolsai.jupyter" }
+        if ($jupyterExtension) {
+            Write-Output "PASS: Jupyter extension installed"
+        } else {
+            Write-Output "FAIL: Jupyter extension missing"
+            $extensionsFailed = $true
+        }
+    } else {
+        Write-Output "FAIL: Python extension missing"
+        $extensionsFailed = $true
+    }
+    Write-Output ""
+    
+    # Test 6: Conda Base Environment Activation
+    Write-Output "Testing Conda Base Environment Activation..."
+    
+    if (Get-Command conda -ErrorAction SilentlyContinue) {
+        Write-Output "PASS: Conda command is available"
+        
+        # Check if we're in base environment
+        if ($env:CONDA_DEFAULT_ENV -eq "base" -or $env:CONDA_PROMPT_MODIFIER -like "(base)*") {
+            Write-Output "PASS: Conda base environment is active"
+        } else {
+            Write-Output "WARNING: Conda base environment not active (this may be normal in fresh shell)"
+        }
+        
+        # Test conda availability in a fresh PowerShell session
+        $condaTest = powershell.exe -Command "conda --version" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Output "PASS: Conda is available in new PowerShell sessions"
+        } else {
+            Write-Output "FAIL: Conda not available in new PowerShell sessions"
+            $condaInitFailed = $true
+        }
+    } else {
+        Write-Output "FAIL: Conda command not available"
+        $condaInitFailed = $true
+    }
+    
+    Write-Output ""
+    Write-Output "════════════════════════════════════════"
+    
+    # Overall result
+    $failCount = 0
+    if ($miniforgeFailed) { $failCount++ }
+    if ($pythonFailed) { $failCount++ }
+    if ($packagesFailed) { $failCount++ }
+    if ($vscodeFailed) { $failCount++ }
+    if ($extensionsFailed) { $failCount++ }
+    if ($condaInitFailed) { $failCount++ }
+    
+    if ($failCount -eq 0) {
+        Write-Output "OVERALL RESULT: PASS - All components working"
+        return 0
+    } else {
+        Write-Output "OVERALL RESULT: FAIL - $failCount component(s) failed"
+        return 1
+    }
+}
+
+# Generate HTML report
+function New-HTMLReport {
+    $outputFile = "$env:TEMP\dtu_installation_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $systemInfo = Get-SystemInfo | Out-String
+    $testResults = Test-FirstYearSetup 2>&1 | Out-String
+    $testExitCode = $LASTEXITCODE
+    
+    # Parse test results for summary counts
+    $passCount = ($testResults -split "`n" | Where-Object { $_ -like "PASS:*" }).Count
+    $failCount = ($testResults -split "`n" | Where-Object { $_ -like "FAIL:*" }).Count
+    $totalCount = $passCount + $failCount
+    
+    # Generate professional status message
+    if ($failCount -eq 0 -and $totalCount -gt 0) {
+        $statusMessage = "Everything is set up and working correctly"
+        $statusClass = "status-success"
+    } elseif ($failCount -eq 1) {
+        $statusMessage = "Setup is mostly complete with one issue to resolve"
+        $statusClass = "status-warning"
+    } elseif ($failCount -gt 1) {
+        $statusMessage = "Several setup issues need to be resolved"
+        $statusClass = "status-error"
+    } else {
+        $statusMessage = "No tests completed"
+        $statusClass = "status-unknown"
+    }
+    
+    $htmlContent = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTU Python Installation Support - First Year</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 20px; margin: 0; }
+        .container { max-width: 1000px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; }
+        
+        header { background: #990000; color: #ffffff; padding: 30px 20px; display: flex; align-items: center; gap: 25px; }
+        .header-left { flex-shrink: 0; }
+        .header-content { flex: 1; }
+        .dtu-logo { height: 50px; filter: brightness(0) invert(1); }
+        h1 { font-size: 1.9em; margin: 0; line-height: 1.2; font-weight: bold; }
+        .subtitle { font-size: 1.2em; margin-top: 8px; opacity: 0.9; font-weight: normal; }
+        .timestamp { font-size: 0.9em; margin-top: 12px; opacity: 0.8; }
+        
+        .summary { display: flex; justify-content: center; padding: 30px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
+        .status-message { text-align: center; }
+        .status-text { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        .status-details { font-size: 0.9em; color: #666; }
+        .status-success .status-text { color: #008835; }
+        .status-warning .status-text { color: #f57c00; }
+        .status-error .status-text { color: #E83F48; }
+        .status-unknown .status-text { color: #666; }
+        .passed { color: #008835; }
+        .failed { color: #E83F48; }
+        .total { color: #990000; }
+        
+        .download-section { text-align: center; padding: 15px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
+        .download-button { padding: 12px 24px; border: 2px solid #990000; background: #ffffff; color: #990000; text-decoration: none; font-weight: bold; border-radius: 4px; cursor: pointer; transition: all 0.3s; font-size: 1em; }
+        .download-button:hover { background: #990000; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 0; border: none; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { background: #990000; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .modal-header h2 { margin: 0; font-size: 1.4em; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .close:hover { opacity: 0.7; }
+        .modal-body { padding: 30px; }
+        .step { display: flex; align-items: flex-start; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #990000; }
+        .step-number { background: #990000; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; }
+        .step-content { flex: 1; }
+        .step-title { font-weight: bold; color: #333; margin-bottom: 8px; font-size: 1.1em; }
+        .step-description { color: #666; line-height: 1.5; }
+        .action-button { background: #990000; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: all 0.3s; }
+        .action-button:hover { background: #b30000; transform: translateY(-1px); }
+        
+        .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px; color: #856404; }
+        .notice-title { font-weight: bold; margin-bottom: 5px; }
+        
+        .category-section { 
+            margin: 20px 0; 
+            padding: 0 20px;
+        }
+        
+        .category-header { 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            color: #990000; 
+            padding: 15px 0; 
+            border-bottom: 2px solid #990000; 
+            margin-bottom: 15px;
+        }
+        
+        .category-container { 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .diagnostic-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .diagnostic-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .diagnostic-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            background: #f8f9fa;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diagnostic-header:hover {
+            background: #e9ecef;
+        }
+        
+        .diagnostic-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .diagnostic-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .diagnostic-expand-hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .diagnostic-details {
+            display: none;
+            background: #f8f9fa;
+            padding: 16px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .diagnostic-card.expanded .diagnostic-details {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .diagnostic-log {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 0.9em;
+            color: #333;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .copy-button {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .copy-button:hover {
+            background: #555;
+            transform: translateY(-1px);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
             }
-            break
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-    }
-}
-
-Test-HealthItem "First Year Environment" {
-    try {
-        $envTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda env list" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\health_envs.txt"
-        if ($envTest.ExitCode -eq 0) {
-            $envs = Get-Content "$env:TEMP\health_envs.txt" -Raw -ErrorAction SilentlyContinue
-            Remove-Item "$env:TEMP\health_envs.txt" -ErrorAction SilentlyContinue
-            return $envs -like "*first_year*"
+        
+        footer { text-align: center; padding: 20px; background: #990000; color: #ffffff; }
+        footer p { margin: 5px 0; }
+        .footer-logo { height: 30px; margin: 10px 0; filter: brightness(0) invert(1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
+                     alt="DTU Logo" class="dtu-logo" onerror="this.style.display='none'">
+            </div>
+            <div class="header-content">
+                <h1>DTU Python Installation Support</h1>
+                <div class="subtitle">Installation Summary</div>
+                <div class="timestamp">Generated on: $timestamp</div>
+            </div>
+        </header>
+        
+        <div class="summary">
+            <div class="status-message $statusClass">
+                <div class="status-text">$statusMessage</div>
+                <div class="status-details">$passCount of $totalCount components working properly</div>
+            </div>
+        </div>
+        
+        <div class="download-section">
+            <button onclick="showEmailModal()" class="download-button">Email Support</button>
+        </div>
+        
+        <!-- Email Support Modal -->
+        <div id="emailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closeEmailModal()">&times;</span>
+                    <h2>Email Support Instructions</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Download Report</div>
+                            <div class="step-description">Click the button below to download this diagnostic report to your computer. You'll need this file for the next step.</div>
+                            <button onclick="downloadReport()" class="action-button">Download Report</button>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Send Email</div>
+                            <div class="step-description">Click below to open your email client with a pre-filled message to DTU Python Support. Attach the downloaded report file from Step 1.</div>
+                            <button onclick="openEmail()" class="action-button">Open Email Client</button>
+                            <button onclick="copyEmail()" class="action-button" style="margin-left: 10px; background: #666;">Copy Email Address</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="notice">
+            <div class="notice-title">First Year Installation Diagnostics</div>
+            This report shows the validation results for your DTU first year Python installation.
+        </div>
+        
+        <div class="diagnostics">
+            <div class="category-section">
+                <div class="category-header">First Year Setup Validation</div>
+                <div class="category-container">
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">Test Results</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$($testResults -replace '"', '\"')</div>
+                            <button onclick="copyOutput(this, 'Test Results')" class="copy-button">Copy Output</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-section">
+                <div class="category-header">System Information</div>
+                <div class="category-container">
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">System Details</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$($systemInfo -replace '"', '\"')</div>
+                            <button onclick="copyOutput(this, 'System Details')" class="copy-button">Copy Output</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        function toggleCard(card) {
+            card.classList.toggle('expanded');
         }
-        return $false
-    } catch { return $false }
-} "first_year conda environment not found in fresh shell" -Fix {
-    conda create -n first_year python=3.11 -y
-}
-
-Test-HealthItem "Essential Packages" {
-    try {
-        $packagesTest = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", "conda list -n first_year numpy pandas matplotlib" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput "$env:TEMP\health_packages.txt"
-        if ($packagesTest.ExitCode -eq 0) {
-            $packages = Get-Content "$env:TEMP\health_packages.txt" -Raw -ErrorAction SilentlyContinue
-            Remove-Item "$env:TEMP\health_packages.txt" -ErrorAction SilentlyContinue
-            return ($packages -like "*numpy*") -and ($packages -like "*pandas*") -and ($packages -like "*matplotlib*")
+        
+        function showEmailModal() {
+            document.getElementById('emailModal').style.display = 'block';
         }
-        return $false
-    } catch { return $false }
-} "Essential packages missing from first_year environment in fresh shell" -Fix {
-    conda install -n first_year -y numpy pandas matplotlib scipy scikit-learn jupyter ipython requests seaborn
+        
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+        
+        function downloadReport() {
+            const reportContent = document.documentElement.outerHTML;
+            const blob = new Blob([reportContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'DTU_Python_Installation_Report_' + new Date().toISOString().slice(0,10) + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function openEmail() {
+            const subject = encodeURIComponent('DTU Python Installation Support Request');
+            const body = encodeURIComponent('Python environment setup issue\\n\\nCourse: [PLEASE FILL OUT]\\n\\nDiagnostic report attached.\\n\\nComponents:\\n' + 
+                '• Python: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python') ? 'Working' : 'Issue') + '\\n' +
+                '• Packages: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: All DTU packages') ? 'Working' : 'Issue') + '\\n' +
+                '• VS Code: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: VS Code') ? 'Working' : 'Issue') + '\\n\\n' +
+                'Additional notes:\\nIf you have any additional notes\\n\\nThanks');
+            
+            window.location.href = 'mailto:pythonsupport@dtu.dk?subject=' + subject + '&body=' + body;
+            closeEmailModal();
+        }
+        
+        function copyEmail() {
+            const email = 'pythonsupport@dtu.dk';
+            navigator.clipboard.writeText(email).then(function() {
+                // Change button text temporarily to show success
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = email;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show success message
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            });
+        }
+        
+        function copyOutput(button, sectionName) {
+            // Stop event propagation to prevent card toggle
+            event.stopPropagation();
+            
+            // Find the diagnostic-log content within the same card
+            const card = button.closest('.diagnostic-card');
+            const logContent = card.querySelector('.diagnostic-log');
+            const textToCopy = logContent.textContent;
+            
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                // Change button text temporarily to show success
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show success message
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            });
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('emailModal');
+            if (event.target == modal) {
+                closeEmailModal();
+            }
+        }
+        </script>
+        
+        <footer>
+            <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
+                 alt="DTU Logo" class="footer-logo" onerror="this.style.display='none'">
+            <p><strong>DTU Python Installation Support</strong></p>
+            <p>Technical University of Denmark | Danmarks Tekniske Universitet</p>
+        </footer>
+    </div>
+</body>
+</html>
+"@
+
+    $htmlContent | Out-File -FilePath $outputFile -Encoding UTF8
+    return $outputFile, $testExitCode
 }
 
-Test-HealthItem "PowerShell Profile" {
-    if (Test-Path $PROFILE.CurrentUserCurrentHost) {
-        $content = Get-Content $PROFILE.CurrentUserCurrentHost -Raw
-        return $content -like "*conda initialize*"
-    }
-    return $false
-} "Conda not initialized in PowerShell profile" -Fix {
-    conda init powershell
-}
-
-# System checks
-Test-HealthItem "Disk Space" {
-    $drive = Get-PSDrive -Name ([System.IO.Path]::GetPathRoot($env:USERPROFILE).TrimEnd('\'))
-    return ($drive.Free / 1GB) -gt 1
-} "Less than 1GB free disk space available"
-
-Test-HealthItem "Network Connectivity" {
-    try {
-        $response = Invoke-WebRequest -Uri "https://github.com" -Method Head -TimeoutSec 5 -UseBasicParsing
-        return $response.StatusCode -eq 200
-    } catch { return $false }
-} "Cannot reach GitHub (network/firewall issue)"
-
-# Summary
-Write-Host ""
-Write-Host "Health Check Summary" -ForegroundColor White
-Write-Host "===================" -ForegroundColor White
-
-if ($healthStatus) {
-    Write-Host "[OK] All health checks passed!" -ForegroundColor Green
-    Write-Host "Your DTU Python Support installation is healthy." -ForegroundColor Green
-} else {
-    Write-Host "[FAIL] Health check failed with $($healthIssues.Count) issue(s):" -ForegroundColor Red
-    foreach ($issue in $healthIssues) {
-        Write-Host "  • $issue" -ForegroundColor Yellow
+# Main execution
+function Main {
+    Write-Host "Generating installation report..." -ForegroundColor Cyan
+    
+    # Run tests and capture output
+    $testResults = Test-FirstYearSetup 2>&1 | Out-String
+    $testExitCode = $LASTEXITCODE
+    
+    # Display test results in console
+    Write-Host ""
+    Write-Host $testResults
+    Write-Host ""
+    
+    # Generate HTML report
+    $reportFile, $exitCode = New-HTMLReport
+    
+    Write-Host "Report generated: $reportFile" -ForegroundColor Green
+    
+    # Open report in browser
+    if (-not $NoBrowser) {
+        Start-Process $reportFile
+        Write-Host "Report opened in browser" -ForegroundColor Green
     }
     
-    Write-Host ""
-    if (-not $AutoFix) {
-        Write-Host "Run with -AutoFix to attempt automatic repairs." -ForegroundColor Yellow
-    }
-    Write-Host "For detailed verification, run: .\verify_installation.ps1" -ForegroundColor Yellow
-    Write-Host "For help, visit: https://pythonsupport.dtu.dk" -ForegroundColor Yellow
+    # Return the test exit code for Piwik logging
+    return $testExitCode
 }
 
-exit $(if ($healthStatus) { 0 } else { 1 })
+# Only run main if script is executed directly
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Main
+    exit $exitCode
+}
