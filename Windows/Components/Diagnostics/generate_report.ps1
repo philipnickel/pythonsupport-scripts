@@ -16,6 +16,29 @@ param(
 # Get system info
 function Get-SystemInfo {
     Write-Host "DEBUG: Starting Get-SystemInfo function" -ForegroundColor Yellow
+    
+    # Refresh environment variables to pick up any PATH changes from installation
+    Write-Host "DEBUG: Refreshing environment variables..." -ForegroundColor Yellow
+    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    
+    # Add common installation paths that might not be in PATH yet
+    Write-Host "DEBUG: Adding common installation paths to PATH..." -ForegroundColor Yellow
+    $commonPaths = @(
+        "$env:USERPROFILE\miniforge3",
+        "$env:USERPROFILE\miniforge3\Scripts",
+        "$env:USERPROFILE\miniforge3\Library\bin",
+        "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin",
+        "${env:ProgramFiles}\Microsoft VS Code\bin",
+        "${env:ProgramFiles(x86)}\Microsoft VS Code\bin"
+    )
+    
+    foreach ($path in $commonPaths) {
+        if (Test-Path $path -and $env:PATH -notlike "*$path*") {
+            Write-Host "DEBUG: Adding to PATH: $path" -ForegroundColor Yellow
+            $env:PATH = "$env:PATH;$path"
+        }
+    }
+    
     # Self-contained configuration - try external first, fall back to defaults
     $RemotePS = if ($env:REMOTE_PS) { $env:REMOTE_PS } else { "dtudk/pythonsupport-scripts" }
     $BranchPS = if ($env:BRANCH_PS) { $env:BRANCH_PS } else { "main" }
@@ -66,21 +89,60 @@ function Get-SystemInfo {
     
     Write-Host "DEBUG: Collecting Python environment information..." -ForegroundColor Yellow
     Write-Output "=== Python Environment ==="
+    
+    # Try multiple methods to find Python
     Write-Host "DEBUG: Getting python path..." -ForegroundColor Yellow
+    $pythonPath = $null
+    $pythonVersion = $null
+    
+    # Method 1: Try direct command
     $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    Write-Host "DEBUG: Python path: $pythonPath" -ForegroundColor Yellow
-    Write-Host "DEBUG: Getting python version..." -ForegroundColor Yellow
-    $pythonVersion = python --version 2>$null
-    Write-Host "DEBUG: Python version: $pythonVersion" -ForegroundColor Yellow
+    if ($pythonPath) {
+        Write-Host "DEBUG: Python found via command: $pythonPath" -ForegroundColor Yellow
+        $pythonVersion = python --version 2>$null
+    }
+    
+    # Method 2: Try miniforge Python directly
+    if (-not $pythonPath -or $pythonPath -notlike "*miniforge*") {
+        $miniforgePython = "$env:USERPROFILE\miniforge3\python.exe"
+        if (Test-Path $miniforgePython) {
+            Write-Host "DEBUG: Using miniforge Python directly: $miniforgePython" -ForegroundColor Yellow
+            $pythonPath = $miniforgePython
+            $pythonVersion = & $miniforgePython --version 2>$null
+        }
+    }
+    
+    Write-Host "DEBUG: Final Python path: $pythonPath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Final Python version: $pythonVersion" -ForegroundColor Yellow
+    
+    # Try multiple methods to find conda
     Write-Host "DEBUG: Getting conda path..." -ForegroundColor Yellow
+    $condaPath = $null
+    $condaVersion = $null
+    $condaBase = $null
+    
+    # Method 1: Try direct command
     $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    Write-Host "DEBUG: Conda path: $condaPath" -ForegroundColor Yellow
-    Write-Host "DEBUG: Getting conda version..." -ForegroundColor Yellow
-    $condaVersion = conda --version 2>$null
-    Write-Host "DEBUG: Conda version: $condaVersion" -ForegroundColor Yellow
-    Write-Host "DEBUG: Getting conda base..." -ForegroundColor Yellow
-    $condaBase = conda info --base 2>$null
-    Write-Host "DEBUG: Conda base: $condaBase" -ForegroundColor Yellow
+    if ($condaPath) {
+        Write-Host "DEBUG: Conda found via command: $condaPath" -ForegroundColor Yellow
+        $condaVersion = conda --version 2>$null
+        $condaBase = conda info --base 2>$null
+    }
+    
+    # Method 2: Try miniforge conda directly
+    if (-not $condaPath) {
+        $miniforgeConda = "$env:USERPROFILE\miniforge3\Scripts\conda.exe"
+        if (Test-Path $miniforgeConda) {
+            Write-Host "DEBUG: Using miniforge conda directly: $miniforgeConda" -ForegroundColor Yellow
+            $condaPath = $miniforgeConda
+            $condaVersion = & $miniforgeConda --version 2>$null
+            $condaBase = & $miniforgeConda info --base 2>$null
+        }
+    }
+    
+    Write-Host "DEBUG: Final conda path: $condaPath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Final conda version: $condaVersion" -ForegroundColor Yellow
+    Write-Host "DEBUG: Final conda base: $condaBase" -ForegroundColor Yellow
     
     Write-Output "Python Location: $(if ($pythonPath) { $pythonPath } else { 'Not found' })"
     Write-Output "Python Version: $(if ($pythonVersion) { $pythonVersion } else { 'Not found' })"
@@ -96,17 +158,50 @@ function Get-SystemInfo {
     
     Write-Host "DEBUG: Collecting VS Code information..." -ForegroundColor Yellow
     Write-Output "=== VS Code Environment ==="
+    
+    # Try multiple methods to find VS Code
     Write-Host "DEBUG: Getting VS Code path..." -ForegroundColor Yellow
+    $codePath = $null
+    $codeVersion = $null
+    
+    # Method 1: Try direct command
     $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    Write-Host "DEBUG: VS Code path: $codePath" -ForegroundColor Yellow
-    Write-Host "DEBUG: Getting VS Code version..." -ForegroundColor Yellow
-    $codeVersion = code --version 2>$null | Select-Object -First 1
-    Write-Host "DEBUG: VS Code version: $codeVersion" -ForegroundColor Yellow
+    if ($codePath) {
+        Write-Host "DEBUG: VS Code found via command: $codePath" -ForegroundColor Yellow
+        $codeVersion = code --version 2>$null | Select-Object -First 1
+    }
+    
+    # Method 2: Try common VS Code installation paths
+    if (-not $codePath) {
+        $vscodePaths = @(
+            "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
+            "${env:ProgramFiles}\Microsoft VS Code\Code.exe",
+            "${env:ProgramFiles(x86)}\Microsoft VS Code\Code.exe"
+        )
+        
+        foreach ($vscPath in $vscodePaths) {
+            if (Test-Path $vscPath) {
+                Write-Host "DEBUG: VS Code found at: $vscPath" -ForegroundColor Yellow
+                $codePath = $vscPath
+                $codeVersion = & $vscPath --version 2>$null | Select-Object -First 1
+                break
+            }
+        }
+    }
+    
+    Write-Host "DEBUG: Final VS Code path: $codePath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Final VS Code version: $codeVersion" -ForegroundColor Yellow
+    
     Write-Output "VS Code Location: $(if ($codePath) { $codePath } else { 'Not found' })"
     Write-Output "VS Code Version: $(if ($codeVersion) { $codeVersion } else { 'Not found' })"
     Write-Output "Installed Extensions:"
+    
+    # Get VS Code extensions using the found path
     Write-Host "DEBUG: Getting VS Code extensions..." -ForegroundColor Yellow
-    $extensions = code --list-extensions 2>$null | Select-Object -First 10
+    $extensions = @()
+    if ($codePath) {
+        $extensions = & $codePath --list-extensions 2>$null | Select-Object -First 10
+    }
     Write-Host "DEBUG: Found $($extensions.Count) VS Code extensions" -ForegroundColor Yellow
     if ($extensions) {
         $extensions | ForEach-Object { Write-Output "  $_" }
@@ -169,29 +264,56 @@ function Test-FirstYearSetup {
     # Test 3: DTU Packages
     Write-Host "DEBUG: Testing DTU Packages..." -ForegroundColor Yellow
     Write-Output "Testing DTU Packages..."
-    $PythonCmd = "python"
+    
+    # Determine which Python to use for package testing
+    $PythonCmd = $null
+    
+    # Priority 1: Use miniforge Python if available
     if (Test-Path $MiniforgePython) {
         $PythonCmd = $MiniforgePython
+        Write-Host "DEBUG: Using miniforge Python for package testing: $PythonCmd" -ForegroundColor Yellow
     }
-    Write-Host "DEBUG: Using Python command: $PythonCmd" -ForegroundColor Yellow
+    # Priority 2: Use system python if available
+    elseif (Get-Command python -ErrorAction SilentlyContinue) {
+        $PythonCmd = "python"
+        Write-Host "DEBUG: Using system Python for package testing: $PythonCmd" -ForegroundColor Yellow
+    }
+    # Priority 3: Use the Python path we found earlier
+    elseif ($pythonPath) {
+        $PythonCmd = $pythonPath
+        Write-Host "DEBUG: Using found Python path for package testing: $PythonCmd" -ForegroundColor Yellow
+    }
     
-    Write-Host "DEBUG: Attempting to import DTU packages..." -ForegroundColor Yellow
-    $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
-    Write-Host "DEBUG: Package test exit code: $LASTEXITCODE" -ForegroundColor Yellow
-    Write-Host "DEBUG: Package test output: $packageTest" -ForegroundColor Yellow
-    if ($LASTEXITCODE -eq 0) {
-        Write-Output "PASS: All DTU packages imported successfully"
+    if ($PythonCmd) {
+        Write-Host "DEBUG: Attempting to import DTU packages using: $PythonCmd" -ForegroundColor Yellow
+        $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
+        Write-Host "DEBUG: Package test exit code: $LASTEXITCODE" -ForegroundColor Yellow
+        Write-Host "DEBUG: Package test output: $packageTest" -ForegroundColor Yellow
+        if ($LASTEXITCODE -eq 0) {
+            Write-Output "PASS: All DTU packages imported successfully"
+        } else {
+            Write-Output "FAIL: Some DTU packages failed to import"
+            $packagesFailed = $true
+        }
     } else {
-        Write-Output "FAIL: Some DTU packages failed to import"
+        Write-Output "FAIL: No Python available for package testing"
         $packagesFailed = $true
     }
     Write-Output ""
     
     # Test 4: VS Code
     Write-Output "Testing VS Code..."
-    $codeTest = code --version 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Output "PASS: VS Code $($codeTest | Select-Object -First 1)"
+    $codeTest = $null
+    
+    # Try using the VS Code path we found earlier
+    if ($codePath) {
+        $codeTest = & $codePath --version 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Output "PASS: VS Code $($codeTest | Select-Object -First 1)"
+        } else {
+            Write-Output "FAIL: VS Code not available"
+            $vscodeFailed = $true
+        }
     } else {
         Write-Output "FAIL: VS Code not available"
         $vscodeFailed = $true
@@ -200,18 +322,23 @@ function Test-FirstYearSetup {
     
     # Test 5: VS Code Extensions
     Write-Output "Testing VS Code Extensions..."
-    $pythonExtension = code --list-extensions 2>$null | Where-Object { $_ -eq "ms-python.python" }
-    if ($pythonExtension) {
-        Write-Output "PASS: Python extension installed"
-        $jupyterExtension = code --list-extensions 2>$null | Where-Object { $_ -eq "ms-toolsai.jupyter" }
-        if ($jupyterExtension) {
-            Write-Output "PASS: Jupyter extension installed"
+    if ($codePath) {
+        $pythonExtension = & $codePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-python.python" }
+        if ($pythonExtension) {
+            Write-Output "PASS: Python extension installed"
+            $jupyterExtension = & $codePath --list-extensions 2>$null | Where-Object { $_ -eq "ms-toolsai.jupyter" }
+            if ($jupyterExtension) {
+                Write-Output "PASS: Jupyter extension installed"
+            } else {
+                Write-Output "FAIL: Jupyter extension missing"
+                $extensionsFailed = $true
+            }
         } else {
-            Write-Output "FAIL: Jupyter extension missing"
+            Write-Output "FAIL: Python extension missing"
             $extensionsFailed = $true
         }
     } else {
-        Write-Output "FAIL: Python extension missing"
+        Write-Output "FAIL: VS Code not available for extension testing"
         $extensionsFailed = $true
     }
     Write-Output ""
