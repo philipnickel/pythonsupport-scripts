@@ -62,7 +62,7 @@ function Test-SystemRequirements {
     # Check disk space (require at least 2GB) - skip in CI environments
     if ($env:GITHUB_CI -ne "true") {
         try {
-            $driveLetter = [System.IO.Path]::GetPathRoot($env:USERPROFILE).TrimEnd('\')
+            $driveLetter = [System.IO.Path]::GetPathRoot($env:USERPROFILE).TrimEnd('\').TrimEnd(':')
             $drive = Get-PSDrive -Name $driveLetter
             $freeSpaceGB = [Math]::Round($drive.Free / 1GB, 2)
             if ($freeSpaceGB -lt 2) {
