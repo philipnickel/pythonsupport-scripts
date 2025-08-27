@@ -180,13 +180,6 @@ $Proceed = $true
 # Check if we should skip user confirmation
 if ($Force) {
     Write-LogInfo "Force parameter specified, proceeding without confirmation"
-    Write-Host ""
-    Write-Host "This installation will set up:" -ForegroundColor White
-    Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  - Visual Studio Code" -ForegroundColor White
-    Write-Host "  - Essential Python packages" -ForegroundColor White
-    Write-Host "  - VSCode extensions" -ForegroundColor White
-    Write-Host ""
     $Proceed = $true
 
 } elseif ($UseNativeDialogs) {
@@ -282,12 +275,6 @@ if ($UseNativeDialogs) {
         Write-Host "$Status $Component" -ForegroundColor $Color
     }
     
-    Write-Host ""
-    Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "1. Restart your PowerShell/Terminal" -ForegroundColor White
-    Write-Host "2. Run: conda activate first_year" -ForegroundColor White
-    Write-Host "3. Open VSCode and start coding!" -ForegroundColor White
-    Write-Host "4. Visit https://pythonsupport.dtu.dk for help" -ForegroundColor White
 }
 
 # Show final results
