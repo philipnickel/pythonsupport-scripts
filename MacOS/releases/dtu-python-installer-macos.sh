@@ -1,12 +1,6 @@
 #!/bin/bash
 # DTU Python Support - macOS Installer Release
-# Version: 1.0.0
-# Double-click to install Python development environment for DTU students
-# 
-# Usage:
-#   GUI Mode (double-click): Uses native macOS authentication dialogs
-#   CLI Mode (one-liner): DTU_CLI_MODE=true /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/...)"
-#   CLI Mode (downloaded): bash dtu-python-installer-macos.sh --cli
+
 
 # Parse command line arguments for CLI mode or check environment variable
 CLI_MODE=true
@@ -18,10 +12,11 @@ elif [[ "$1" == "--no-cli" ]] || [[ "${DTU_CLI_MODE:-}" == "false" ]]; then
     shift
 fi
 
-# Set release configuration for local testing (configured for current fork/branch)
+# Set release configuration 
 export REMOTE_PS="${REMOTE_PS:-dtudk/pythonsupport-scripts}"
 export BRANCH_PS="${BRANCH_PS:-main}"
 export DTU_INSTALLER_VERSION="1.0.0"
+
 
 # DTU Python installer configuration
 export PYTHON_VERSION_DTU="3.12"
@@ -35,18 +30,18 @@ INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
 # Load Piwik utility for analytics
 # Define dummy piwik_log function if loading fails
-piwik_log() { :; }  # No-op function
-echo "Analytics disabled (could not load utility)"
+# piwik_log() { :; }  # No-op function
+# echo "Analytics disabled (could not load utility)"
 ANALYTICS_ENABLED=false
 
-if [ 0 -eq 1 ]; then
+#if [ 0 -eq 1 ]; then
   # Disabling for now
-  echo "Loading analytics utility..."
-  if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-      echo "Analytics loaded successfully"
-      ANALYTICS_ENABLED=true
-  fi
-fi
+#  echo "Loading analytics utility..."
+#  if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#      echo "Analytics loaded successfully"
+#      ANALYTICS_ENABLED=true
+#  fi
+# fi
 
 echo "DTU Python Support - macOS Installer"
 echo "========================================"
@@ -63,7 +58,6 @@ export BRANCH_PS
 export PIS_ENV
 export PYTHON_VERSION_DTU
 export DTU_PACKAGES
-# VSCODE_EXTENSIONS export removed
 export MINIFORGE_PATH
 export MINIFORGE_BASE_URL
 export INSTALL_LOG
@@ -220,7 +214,7 @@ if [ $phase1_exit_code -ne 0 ]; then
     exit $phase1_exit_code
 fi
 
-# Load pre-installation flags
+ Load pre-installation flags
 if [ -f /tmp/dtu_pre_install_flags.env ]; then
     source /tmp/dtu_pre_install_flags.env
 fi

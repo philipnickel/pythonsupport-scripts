@@ -13,11 +13,11 @@ REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 
 # Load Piwik utility for analytics
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    PIWIK_LOADED=true
-else
-    PIWIK_LOADED=false
-fi
+#if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#    PIWIK_LOADED=true
+#else
+#    PIWIK_LOADED=false
+#fi
 
 # Set up install log for this script  
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -91,11 +91,11 @@ else
     mv "/tmp/Visual Studio Code.app" "/Applications/"
     if [ $? -ne 0 ]; then 
         echo "ERROR: Failed to move VS Code to Applications"
-        [ "$PIWIK_LOADED" = true ] && piwik_log 31  # VS Code Installation fail
-        exit 1
+        # [ "$PIWIK_LOADED" = true ] && piwik_log 31  # VS Code Installation fail
+        # exit 1
     fi
     
-    [ "$PIWIK_LOADED" = true ] && piwik_log 30  # VS Code Installation success
+    # [ "$PIWIK_LOADED" = true ] && piwik_log 30  # VS Code Installation success
     
     # Clean up
     rm -f /tmp/VSCode.zip
@@ -205,15 +205,15 @@ fi
 # Report results
 if [ ${#failed_extensions[@]} -eq 0 ]; then
     echo "All VS Code extensions installed successfully"
-    [ "$PIWIK_LOADED" = true ] && piwik_log 40  # VS Code Extensions success
+    # [ "$PIWIK_LOADED" = true ] && piwik_log 40  # VS Code Extensions success
 elif [ ${#failed_extensions[@]} -eq ${#extensions[@]} ]; then
     echo "All extension installations failed, but continuing installation"
     echo "Extensions can be installed manually later"
-    [ "$PIWIK_LOADED" = true ] && piwik_log 41  # VS Code Extensions fail
+    # [ "$PIWIK_LOADED" = true ] && piwik_log 41  # VS Code Extensions fail
 else
     echo "Some extensions failed to install: ${failed_extensions[*]}"
     echo "Installation will continue (extensions can be installed manually later)"
-    [ "$PIWIK_LOADED" = true ] && piwik_log 40  # VS Code Extensions success (partial)
+    # [ "$PIWIK_LOADED" = true ] && piwik_log 40  # VS Code Extensions success (partial)
 fi
 
 echo "VS Code extensions installation complete"

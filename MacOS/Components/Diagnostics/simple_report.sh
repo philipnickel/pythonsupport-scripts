@@ -1,13 +1,7 @@
 #!/bin/bash
 # Simple Installation Report Generator
 
-# Exit codes for Piwik logging:
-# 0 = All tests passed (complete success)
-# 1 = Python Installation failed (Python 3.11)
-# 2 = Python Environment failed (packages)
-# 3 = VS Code Setup failed (VS Code + extension)
-# 4 = Multiple categories failed
-# 5 = Script error
+
 
 # Get system info
 get_system_info() {

@@ -15,11 +15,11 @@ MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
 DTU_PACKAGES=${DTU_PACKAGES:-"dtumathtools pandas scipy statsmodels uncertainties"}
 
 # Load Piwik utility for analytics
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    PIWIK_LOADED=true
-else
-    PIWIK_LOADED=false
-fi
+#if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#    PIWIK_LOADED=true
+#else
+#    PIWIK_LOADED=false
+#fi
 
 # Set up install log for this script
 [ -z "$INSTALL_LOG" ] && INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
@@ -45,11 +45,11 @@ fi
 
 # Install required packages without verification (verification happens in post-install)
 conda install python=${PYTHON_VERSION_PS:-3.12} dtumathtools pandas scipy statsmodels uncertainties -y
-if [ $? -ne 0 ]; then 
-  [ "$PIWIK_LOADED" = true ] && piwik_log 21  # First Year Setup fail
-  exit 1
-fi
+#if [ $? -ne 0 ]; then 
+#  [ "$PIWIK_LOADED" = true ] && piwik_log 21  # First Year Setup fail
+#  exit 1
+#fi
 
-[ "$PIWIK_LOADED" = true ] && piwik_log 20  # First Year Setup success
+#[ "$PIWIK_LOADED" = true ] && piwik_log 20  # First Year Setup success
 
 clear -x
