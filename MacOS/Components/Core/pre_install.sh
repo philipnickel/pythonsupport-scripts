@@ -161,11 +161,11 @@ if [ "$CONDA_FOUND" = true ]; then
         echo "Uninstalling existing conda installations (running multiple passes to ensure complete removal)..."
         
         # Run the uninstall script multiple times to catch all installations
+        # Download and run the uninstall script
+        curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh" > /tmp/uninstall_conda.sh
         for pass in {1..4}; do
             echo "Pass $pass of 4: Checking for remaining conda installations..."
             
-            # Download and run the uninstall script
-            curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh" > /tmp/uninstall_conda.sh
             bash /tmp/uninstall_conda.sh
             
             if [ $? -eq 0 ]; then
