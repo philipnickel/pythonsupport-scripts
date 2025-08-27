@@ -304,3 +304,26 @@ if ($successfulComponents -eq $totalComponents) {
     Write-LogError "DTU Python Support installation failed"
 }
 Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
+
+# === PHASE 4: GENERATE INSTALLATION REPORT ===
+Write-Host ""
+Write-LogInfo "=== Phase 4: Generating Installation Report ==="
+
+Write-Host "Generating comprehensive installation report..." -ForegroundColor Cyan
+try {
+    # Load and run the report generator
+    $ReportUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Diagnostics/generate_report.ps1"
+    $ReportScript = Invoke-WebRequest -Uri $ReportUrl -UseBasicParsing
+    $ReportParams = @{
+        InstallLog = $env:INSTALL_LOG
+        NoBrowser = $false
+    }
+    
+    # Execute the report generator with the install log
+    Invoke-Expression $ReportScript.Content
+    Write-LogSuccess "Installation report generated successfully"
+} catch {
+    Write-LogError "Failed to generate installation report: $($_.Exception.Message)"
+    Write-Host "You can manually generate a report by running:" -ForegroundColor Yellow
+    Write-Host "Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content" -ForegroundColor Gray
+}
