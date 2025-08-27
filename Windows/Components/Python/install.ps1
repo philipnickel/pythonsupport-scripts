@@ -41,16 +41,31 @@ if ($condaFound) {
     
     # Show native Windows popup asking for manual uninstall (skip in CI)
     if ($env:PIS_ENV -ne "CI") {
-        Add-Type -AssemblyName System.Windows.Forms
-        [System.Windows.Forms.MessageBox]::Show(
-            "An existing conda installation was found at:`n$existingCondaPath`n`nPlease uninstall it manually through Windows Settings (Add or Remove Programs) and run this installer again.`n`nInstallation will now exit.",
-            "DTU Python Setup - Manual Action Required",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Information
-        )
+        try {
+            Add-Type -AssemblyName System.Windows.Forms
+            [System.Windows.Forms.MessageBox]::Show(
+                "An existing conda installation was found at:`n$existingCondaPath`n`nPlease uninstall it manually through Windows Settings (Add or Remove Programs) and run this installer again.`n`nInstallation will now exit.",
+                "DTU Python Setup - Manual Action Required",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Information
+            )
+        } catch {
+            Write-Host "Could not show GUI dialog, showing terminal message instead"
+        }
     }
     
-    Write-Host "Installation aborted. Please uninstall existing conda manually and try again."
+    Write-Host ""
+    Write-Host "❌ INSTALLATION ABORTED" -ForegroundColor Red
+    Write-Host "An existing conda installation was found at: $existingCondaPath" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "To continue with this installer:" -ForegroundColor White
+    Write-Host "1. Open Windows Settings" -ForegroundColor White
+    Write-Host "2. Go to 'Apps' or 'Add or Remove Programs'" -ForegroundColor White
+    Write-Host "3. Find and uninstall the existing conda installation" -ForegroundColor White
+    Write-Host "4. Run this installer again" -ForegroundColor White
+    Write-Host ""
+    Write-Host "For help, visit: https://pythonsupport.dtu.dk" -ForegroundColor Cyan
+    
     exit 1
 }
 
@@ -72,7 +87,7 @@ if (-not $condaFound) {
         Write-Host "Failed to download Miniforge: $($_.Exception.Message)"
         Write-Host "Exception type: $($_.Exception.GetType().Name)"
         Write-Host "Status code: $($_.Exception.Response.StatusCode)"
-        exit 1
+        throw "Failed to download Miniforge"
     }
     
     # Install Miniforge silently
@@ -83,13 +98,13 @@ if (-not $condaFound) {
         $process = Start-Process -FilePath $installerPath -ArgumentList "/S /D=$env:USERPROFILE\miniforge3" -Wait -PassThru
         if ($process.ExitCode -ne 0) {
             Write-Host "Miniforge installation failed with exit code: $($process.ExitCode)"
-            exit 1
+            throw "Miniforge installation failed"
         }
         Write-Host "Miniforge installation completed with exit code: $($process.ExitCode)"
     }
     catch {
         Write-Host "Failed to install Miniforge: $($_.Exception.Message)"
-        exit 1
+        throw "Failed to install Miniforge"
     }
     
     # Clean up installer
@@ -119,14 +134,14 @@ try {
     conda init powershell
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to initialize conda for PowerShell"
-        exit 1
+        throw "Failed to initialize conda for PowerShell"
     }
     
     # Initialize conda for Command Prompt
     conda init cmd.exe
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to initialize conda for Command Prompt"
-        exit 1
+        throw "Failed to initialize conda for Command Prompt"
     }
     
     # Reload environment variables
@@ -134,7 +149,7 @@ try {
 }
 catch {
     Write-Host "Failed to initialize conda: $($_.Exception.Message)"
-    exit 1
+    throw "Failed to initialize conda"
 }
 
 
@@ -145,12 +160,12 @@ try {
     conda info --base
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to get conda base directory"
-        exit 1
+        throw "Failed to get conda base directory"
     }
 }
 catch {
     Write-Host "Failed to get conda base directory: $($_.Exception.Message)"
-    exit 1
+    throw "Failed to get conda base directory"
 }
 
 

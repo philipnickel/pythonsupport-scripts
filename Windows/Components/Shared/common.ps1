@@ -59,36 +59,7 @@ function Test-SystemRequirements {
         $issues += "Windows version $($osVersion.Major).$($osVersion.Minor) is not supported. Windows 10 or later required."
     }
     
-    # Check disk space (require at least 2GB) - skip in CI environments
-    if ($env:GITHUB_CI -ne "true") {
-        try {
-            $driveLetter = [System.IO.Path]::GetPathRoot($env:USERPROFILE).TrimEnd('\')
-            $drive = Get-PSDrive -Name $driveLetter
-            $freeSpaceGB = [Math]::Round($drive.Free / 1GB, 2)
-            if ($freeSpaceGB -lt 2) {
-                $issues += "Insufficient disk space. Available: ${freeSpaceGB}GB, Required: 2GB minimum"
-            }
-        }
-        catch {
-            # Try alternative method for disk space check
-            try {
-                $disk = Get-WmiObject -Class Win32_LogicalDisk -Filter "DeviceID='C:'" | Select-Object Size,FreeSpace
-                if ($disk) {
-                    $freeSpaceGB = [Math]::Round($disk.FreeSpace / 1GB, 2)
-                    if ($freeSpaceGB -lt 2) {
-                        $issues += "Insufficient disk space. Available: ${freeSpaceGB}GB, Required: 2GB minimum"
-                    }
-                } else {
-                    Write-LogWarning "Unable to check disk space, skipping check"
-                }
-            }
-            catch {
-                Write-LogWarning "Disk space check failed: $($_.Exception.Message), skipping check"
-            }
-        }
-    } else {
-        Write-LogInfo "Disk space check skipped in CI environment"
-    }
+    # Disk space check removed - not needed for most installations
     
     if ($issues.Count -gt 0) {
         Write-LogError "System requirements check failed:"

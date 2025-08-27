@@ -18,7 +18,7 @@ try {
 }
 catch {
     Write-Host "Conda is not available in PATH"
-    exit 1
+    throw "Conda is not available in PATH"
 }
 
 # Set Python version (default to 3.12 if not specified)
@@ -37,14 +37,14 @@ try {
     conda install -y "python=$env:PYTHON_VERSION_PS" dtumathtools pandas scipy statsmodels uncertainties
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install Python and packages"
-        exit 1
+        throw "Failed to install Python and packages"
     }
     
     Write-Host "Core packages installed successfully in base environment"
 }
 catch {
     Write-Host "Failed to install packages: $($_.Exception.Message)"
-    exit 1
+    throw "Failed to install packages"
 }
 
 Write-Host "First year Python environment setup completed successfully!"

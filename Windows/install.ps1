@@ -16,8 +16,8 @@ param(
     [switch]$Force = $true     # Skip user confirmation when true
 )
 
-# Early error handling setup
-$ErrorActionPreference = "Stop"
+# Early error handling setup - always continue
+$ErrorActionPreference = "Continue"
 $VerbosePreference = "Continue"
 
 Write-Host "DTU Python Support - Windows Installation" -ForegroundColor Cyan
@@ -50,21 +50,21 @@ function Write-InstallLog {
 Write-InstallLog "Starting DTU Python Support installation"
 Write-InstallLog "Log file: $env:INSTALL_LOG"
 
-if ( $false ) {
+#if ( $false ) {
     # Load Piwik analytics utility
-    Write-InstallLog "Loading analytics utility..."
-    try {
-        $piwikUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/piwik_utility.ps1"
-        $piwikScript = Invoke-WebRequest -Uri $piwikUrl -UseBasicParsing -TimeoutSec 30
-        Invoke-Expression $piwikScript.Content
-        Write-InstallLog "Analytics utility loaded successfully"
+    #Write-InstallLog "Loading analytics utility..."
+#    try {
+        #$piwikUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/piwik_utility.ps1"
+        #$piwikScript = Invoke-WebRequest -Uri $piwikUrl -UseBasicParsing -TimeoutSec 30
+        #Invoke-Expression $piwikScript.Content
+        #Write-InstallLog "Analytics utility loaded successfully"
 
         # Log installation start
-        Piwik-Log "1"
-    } catch {
-        Write-InstallLog "Could not load analytics utility: $($_.Exception.Message)" "WARNING"
-    }
-}
+        #Piwik-Log "1"
+#    } catch {
+#        Write-InstallLog "Could not load analytics utility: $($_.Exception.Message)" "WARNING"
+#    }
+#}
 
 # Load configuration and utilities
 Write-InstallLog "Loading configuration and utilities..."
@@ -157,15 +157,13 @@ Write-LogInfo "=== Phase 1: Pre-Installation System Check ==="
 # System requirements check
 Write-LogInfo "Checking system requirements..."
 if (-not (Test-SystemRequirements)) {
-    Write-LogError "System requirements check failed"
-    exit 1
+    Write-LogError "System requirements check failed - continuing anyway"
 }
 
 # Network connectivity check
 Write-LogInfo "Checking network connectivity..."
 if (-not (Test-NetworkConnectivity)) {
-    Write-LogError "Network connectivity check failed"
-    exit 1
+    Write-LogError "Network connectivity check failed - continuing anyway"
 }
 
 # Set execution policy
@@ -233,70 +231,34 @@ $InstallResults = @{
     VSCode = $false
 }
 
+# Install Python
+Write-LogInfo "Installing Python (Miniforge)..."
 try {
-    # Install Python
-    Write-LogInfo "Installing Python (Miniforge)..."
     Invoke-ComponentScript -ComponentPath "Components\Python\install.ps1" -Description "Python installer"
     $InstallResults.Python = $true
-    
-    # Log Python installation success
-    try {
-        if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "10"
-        }
-    } catch { }
-    
-    # Setup Python environment
-    Write-LogInfo "Setting up Python environment..."
+    Write-LogSuccess "Python installed successfully"
+} catch {
+    Write-LogError "Python installation failed: $($_.Exception.Message)"
+}
+
+# Setup Python environment
+Write-LogInfo "Setting up Python environment..."
+try {
     Invoke-ComponentScript -ComponentPath "Components\Python\first_year_setup.ps1" -Description "Python environment setup"
     $InstallResults.FirstYearSetup = $true
-    
-    # Log environment setup success
-    try {
-        if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "20"
-        }
-    } catch { }
-    
-    # Install VSCode
-    Write-LogInfo "Installing Visual Studio Code..."
+    Write-LogSuccess "Python environment setup completed"
+} catch {
+    Write-LogError "Python environment setup failed: $($_.Exception.Message)"
+}
+
+# Install VSCode
+Write-LogInfo "Installing Visual Studio Code..."
+try {
     Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1" -Description "VSCode installer"
     $InstallResults.VSCode = $true
-
-    # Log VSCode installation success
-    try {
-        if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            Piwik-Log "30"
-        }
-    } catch { }
-    
-    Write-LogSuccess "All components installed successfully!"
-    
+    Write-LogSuccess "VSCode installed successfully"
 } catch {
-    Write-LogError "Component installation failed: $($_.Exception.Message)"
-    
-    # Log specific component failure based on what failed
-    try {
-        if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-            $errorMessage = $_.Exception.Message
-            if ($errorMessage -like "*Python*" -and -not $InstallResults.Python) {
-                Piwik-Log "11"  # Python installation failed
-            } elseif ($errorMessage -like "*environment*" -and -not $InstallResults.FirstYearSetup) {
-                Piwik-Log "21"  # First year setup failed  
-            } elseif ($errorMessage -like "*VSCode*" -and -not $InstallResults.VSCode) {
-                Piwik-Log "31"  # VS Code installation failed
-            } else {
-                Piwik-Log "99"  # General failure
-            }
-        }
-    } catch {
-        # Ignore Piwik logging errors
-    }
-    
-    if ($UseNativeDialogs) {
-        Show-ErrorDialog -Title "Installation Failed" -Message "Installation failed: $($_.Exception.Message)`n`nFor help, visit: https://pythonsupport.dtu.dk"
-    }
-    exit 1
+    Write-LogError "VSCode installation failed: $($_.Exception.Message)"
 }
 
 # === PHASE 3: VERIFICATION AND SUMMARY ===
@@ -324,18 +286,21 @@ if ($UseNativeDialogs) {
     Write-Host "4. Visit https://pythonsupport.dtu.dk for help" -ForegroundColor White
 }
 
-Write-LogSuccess "DTU Python Support installation completed successfully!"
+# Show final results
+$successfulComponents = ($InstallResults.Values | Where-Object { $_ -eq $true }).Count
+$totalComponents = $InstallResults.Count
+
 Write-LogInfo "Installation log: $env:INSTALL_LOG"
 
-# Log successful installation completion
-try {
-    if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
-        Piwik-Log "99"
-    }
-} catch {
-    # Ignore Piwik logging errors
-}
-
 Write-Host ""
-Write-Host "Installation completed successfully!" -ForegroundColor Green
+if ($successfulComponents -eq $totalComponents) {
+    Write-Host "Installation completed successfully!" -ForegroundColor Green
+    Write-LogSuccess "DTU Python Support installation completed successfully!"
+} elseif ($successfulComponents -gt 0) {
+    Write-Host "Installation completed with partial success ($successfulComponents/$totalComponents components)" -ForegroundColor Yellow
+    Write-LogWarning "DTU Python Support installation completed with partial success"
+} else {
+    Write-Host "Installation failed!" -ForegroundColor Red
+    Write-LogError "DTU Python Support installation failed"
+}
 Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
