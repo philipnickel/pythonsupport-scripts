@@ -28,22 +28,64 @@ env:
 
 jobs:
   test-installer:
-    name: ${{ matrix.scenario }}
-    runs-on: windows-latest
+    name: ${{ matrix.architecture }} - ${{ matrix.scenario }}
+    runs-on: ${{ matrix.runner }}
     
     strategy:
       fail-fast: false
       matrix:
-        setup: [clean, existing-conda]
         include:
-          - setup: clean
+          - architecture: x64
+            runner: windows-latest
+            setup: clean
             scenario: "Clean Installation"
-          - setup: existing-conda
+          - architecture: x64
+            runner: windows-latest
+            setup: existing-conda
+            scenario: "Existing Conda (Manual Uninstall)"
+          - architecture: arm64
+            runner: windows-11-arm
+            setup: clean
+            scenario: "Clean Installation"
+          - architecture: arm64
+            runner: windows-11-arm
+            setup: existing-conda
             scenario: "Existing Conda (Manual Uninstall)"
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Test Architecture Detection
+        run: |
+          Write-Host "=== Testing Architecture Detection ==="
+          Write-Host "Matrix architecture: ${{ matrix.architecture }}"
+          Write-Host "PROCESSOR_ARCHITECTURE: $env:PROCESSOR_ARCHITECTURE"
+          
+          # Test our detection logic
+          $architecture = $env:PROCESSOR_ARCHITECTURE
+          Write-Host "Detected architecture: $architecture"
+          
+          switch($architecture) {
+              "ARM64" { 
+                  Write-Host "✅ Would use ARM64 VSCode installer"
+                  $expectedUrl = "https://update.code.visualstudio.com/latest/win32-arm64-user/stable"
+              }
+              default { 
+                  Write-Host "✅ Would use x64 VSCode installer"
+                  $expectedUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+              }
+          }
+          
+          # Verify the URL is accessible
+          Write-Host "Testing VSCode URL: $expectedUrl"
+          try {
+            $response = Invoke-WebRequest -Uri $expectedUrl -Method Head -UseBasicParsing
+            Write-Host "✅ VSCode URL is accessible (Status: $($response.StatusCode))"
+          } catch {
+            Write-Host "❌ VSCode URL failed: $($_.Exception.Message)"
+            exit 1
+          }
 
       - name: Setup test scenario - Clean Installation
         if: matrix.setup == 'clean'

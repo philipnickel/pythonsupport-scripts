@@ -25,7 +25,7 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Ma
 
 **Option 2: PowerShell** - Uses native Windows UAC authentication:
 ```powershell
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1' -UseBasicParsing).Content}"
 ```
 
 ## Utilities
