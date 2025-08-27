@@ -10,15 +10,15 @@
 
 # Allow scripts to continue on errors for complete diagnostics
 
-# Load Piwik utility for analytics
 REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    PIWIK_LOADED=true
-else
-    PIWIK_LOADED=false
-fi
+# Load Piwik utility for analytics
+#if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#    PIWIK_LOADED=true
+#else
+#    PIWIK_LOADED=false
+#fi
 
 # Source shell profile to ensure conda is available in PATH for diagnostics
 echo "Refreshing shell environment for diagnostics..."
@@ -32,10 +32,10 @@ else
 fi
 
 # Log script completion to Piwik if available
-[ "$PIWIK_LOADED" = true ] && piwik_log 99  # Script Finished
+#[ "$PIWIK_LOADED" = true ] && piwik_log 99  # Script Finished
 
 # Clean up Piwik choice file so users get consent dialog again on next run
-rm -f /tmp/piwik_analytics_choice
+#rm -f /tmp/piwik_analytics_choice
 
 # Always exit successfully - issues are reported in the diagnostic report
 # This ensures the installation process doesn't abort due to diagnostic failures

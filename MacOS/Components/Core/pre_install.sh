@@ -13,11 +13,11 @@ BRANCH_PS=${BRANCH_PS:-"main"}
 MINIFORGE_PATH=${MINIFORGE_PATH:-"$HOME/miniforge3"}
 
 # Load Piwik utility for analytics
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    # Remove existing Piwik choice file to ensure fresh consent prompt
-    rm -f /tmp/piwik_analytics_choice
-    piwik_log 1  # Installation Started
-fi
+#if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#    # Remove existing Piwik choice file to ensure fresh consent prompt
+#    rm -f /tmp/piwik_analytics_choice
+#    piwik_log 1  # Installation Started
+#fi
 
 echo "Checking existing installations..."
 

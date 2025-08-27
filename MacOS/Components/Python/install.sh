@@ -16,11 +16,11 @@ REMOTE_PS=${REMOTE_PS:-"dtudk/pythonsupport-scripts"}
 BRANCH_PS=${BRANCH_PS:-"main"}
 
 # Load Piwik utility for analytics
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    PIWIK_LOADED=true
-else
-    PIWIK_LOADED=false
-fi
+#if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+#    PIWIK_LOADED=true
+#else
+#    PIWIK_LOADED=false
+#fi
 
 # Set defaults for required variables
 PYTHON_VERSION_DTU=${PYTHON_VERSION_DTU:-"3.12"}
@@ -65,13 +65,13 @@ else
   echo "Miniforge installer downloaded successfully ($(wc -c < "$temp_installer") bytes)"
   
   bash "$temp_installer" -b -p "$MINIFORGE_PATH"
-  if [ $? -ne 0 ]; then 
-    [ "$PIWIK_LOADED" = true ] && piwik_log 11  # Python Installation fail
-    rm -rf "$temp_dir"
-    exit 1
-  fi
+  #if [ $? -ne 0 ]; then 
+  #  [ "$PIWIK_LOADED" = true ] && piwik_log 11  # Python Installation fail
+  #  rm -rf "$temp_dir"
+  #  exit 1
+  #fi
   
-  [ "$PIWIK_LOADED" = true ] && piwik_log 10  # Python Installation success
+  #[ "$PIWIK_LOADED" = true ] && piwik_log 10  # Python Installation success
   
   rm -rf "$temp_dir"
   
