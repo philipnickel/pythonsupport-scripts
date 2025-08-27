@@ -113,6 +113,18 @@ function Get-SystemInfo {
         }
     }
     
+    # Method 3: Try with refreshed PATH (for post-installation)
+    if (-not $pythonPath) {
+        Write-Host "DEBUG: Trying with refreshed PATH..." -ForegroundColor Yellow
+        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+        $env:PATH = $refreshedPath
+        $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+        if ($pythonPath) {
+            Write-Host "DEBUG: Python found after PATH refresh: $pythonPath" -ForegroundColor Yellow
+            $pythonVersion = python --version 2>$null
+        }
+    }
+    
     Write-Host "DEBUG: Final Python path: $pythonPath" -ForegroundColor Yellow
     Write-Host "DEBUG: Final Python version: $pythonVersion" -ForegroundColor Yellow
     
@@ -138,6 +150,19 @@ function Get-SystemInfo {
             $condaPath = $miniforgeConda
             $condaVersion = & $miniforgeConda --version 2>$null
             $condaBase = & $miniforgeConda info --base 2>$null
+        }
+    }
+    
+    # Method 3: Try with refreshed PATH (for post-installation)
+    if (-not $condaPath) {
+        Write-Host "DEBUG: Trying conda with refreshed PATH..." -ForegroundColor Yellow
+        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+        $env:PATH = $refreshedPath
+        $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+        if ($condaPath) {
+            Write-Host "DEBUG: Conda found after PATH refresh: $condaPath" -ForegroundColor Yellow
+            $condaVersion = conda --version 2>$null
+            $condaBase = conda info --base 2>$null
         }
     }
     
@@ -187,6 +212,18 @@ function Get-SystemInfo {
                 $codeVersion = & $vscPath --version 2>$null | Select-Object -First 1
                 break
             }
+        }
+    }
+    
+    # Method 3: Try with refreshed PATH (for post-installation)
+    if (-not $codePath) {
+        Write-Host "DEBUG: Trying VS Code with refreshed PATH..." -ForegroundColor Yellow
+        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+        $env:PATH = $refreshedPath
+        $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+        if ($codePath) {
+            Write-Host "DEBUG: VS Code found after PATH refresh: $codePath" -ForegroundColor Yellow
+            $codeVersion = code --version 2>$null | Select-Object -First 1
         }
     }
     
