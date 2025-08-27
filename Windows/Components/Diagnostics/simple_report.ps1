@@ -14,46 +14,72 @@ param(
 
 # Get system info
 function Get-SystemInfo {
+    Write-Host "DEBUG: Starting Get-SystemInfo function" -ForegroundColor Yellow
     # Self-contained configuration - try external first, fall back to defaults
     $RemotePS = if ($env:REMOTE_PS) { $env:REMOTE_PS } else { "dtudk/pythonsupport-scripts" }
     $BranchPS = if ($env:BRANCH_PS) { $env:BRANCH_PS } else { "main" }
+    Write-Host "DEBUG: RemotePS=$RemotePS, BranchPS=$BranchPS" -ForegroundColor Yellow
     
     $ConfigURL = "https://raw.githubusercontent.com/$RemotePS/$BranchPS/Windows/config.ps1"
     $ConfigFile = "$env:TEMP\sysinfo_config_$PID.ps1"
+    Write-Host "DEBUG: ConfigURL=$ConfigURL" -ForegroundColor Yellow
+    Write-Host "DEBUG: ConfigFile=$ConfigFile" -ForegroundColor Yellow
     
     try {
+        Write-Host "DEBUG: Attempting to download config file..." -ForegroundColor Yellow
         Invoke-WebRequest -Uri $ConfigURL -OutFile $ConfigFile -UseBasicParsing | Out-Null
         if (Test-Path $ConfigFile) {
+            Write-Host "DEBUG: Config file downloaded successfully, sourcing it..." -ForegroundColor Yellow
             . $ConfigFile
             Remove-Item $ConfigFile -Force
+            Write-Host "DEBUG: Config file sourced and cleaned up" -ForegroundColor Yellow
+        } else {
+            Write-Host "DEBUG: Config file not found after download attempt" -ForegroundColor Yellow
         }
     } catch {
+        Write-Host "DEBUG: Failed to download config file, using defaults: $($_.Exception.Message)" -ForegroundColor Yellow
         # Continue with defaults
     }
     
     # Ensure we always have defaults
     $PythonVersionDTU = if ($env:PYTHON_VERSION_DTU) { $env:PYTHON_VERSION_DTU } else { "3.12" }
     $DTUPackages = if ($env:DTU_PACKAGES) { $env:DTU_PACKAGES -split ',' } else { @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties") }
+    Write-Host "DEBUG: PythonVersionDTU=$PythonVersionDTU" -ForegroundColor Yellow
+    Write-Host "DEBUG: DTUPackages=$($DTUPackages -join ', ')" -ForegroundColor Yellow
     
+    Write-Host "DEBUG: Starting system information collection..." -ForegroundColor Yellow
     Write-Output "=== System Information ==="
     Write-Output "Operating System: $($PSVersionTable.OS) ($([System.Environment]::OSVersion.VersionString))"
     Write-Output "PowerShell Version: $($PSVersionTable.PSVersion)"
     Write-Output "Architecture: $([System.Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE'))"
     Write-Output ""
     
+    Write-Host "DEBUG: Collecting hardware information..." -ForegroundColor Yellow
     Write-Output "=== Hardware Information ==="
     $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
+    Write-Host "DEBUG: Computer system info collected" -ForegroundColor Yellow
     Write-Output "Model: $($computerSystem.Model)"
     Write-Output "Processor: $($computerSystem.Name)"
     Write-Output "Memory: $([math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)) GB"
     Write-Output ""
     
+    Write-Host "DEBUG: Collecting Python environment information..." -ForegroundColor Yellow
     Write-Output "=== Python Environment ==="
+    Write-Host "DEBUG: Getting python path..." -ForegroundColor Yellow
     $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    Write-Host "DEBUG: Python path: $pythonPath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Getting python version..." -ForegroundColor Yellow
     $pythonVersion = python --version 2>$null
+    Write-Host "DEBUG: Python version: $pythonVersion" -ForegroundColor Yellow
+    Write-Host "DEBUG: Getting conda path..." -ForegroundColor Yellow
     $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    Write-Host "DEBUG: Conda path: $condaPath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Getting conda version..." -ForegroundColor Yellow
     $condaVersion = conda --version 2>$null
+    Write-Host "DEBUG: Conda version: $condaVersion" -ForegroundColor Yellow
+    Write-Host "DEBUG: Getting conda base..." -ForegroundColor Yellow
     $condaBase = conda info --base 2>$null
+    Write-Host "DEBUG: Conda base: $condaBase" -ForegroundColor Yellow
     
     Write-Output "Python Location: $(if ($pythonPath) { $pythonPath } else { 'Not found' })"
     Write-Output "Python Version: $(if ($pythonVersion) { $pythonVersion } else { 'Not found' })"
@@ -67,13 +93,20 @@ function Get-SystemInfo {
     Write-Output "Required DTU Packages: $($DTUPackages -join ', ')"
     Write-Output ""
     
+    Write-Host "DEBUG: Collecting VS Code information..." -ForegroundColor Yellow
     Write-Output "=== VS Code Environment ==="
+    Write-Host "DEBUG: Getting VS Code path..." -ForegroundColor Yellow
     $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+    Write-Host "DEBUG: VS Code path: $codePath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Getting VS Code version..." -ForegroundColor Yellow
     $codeVersion = code --version 2>$null | Select-Object -First 1
+    Write-Host "DEBUG: VS Code version: $codeVersion" -ForegroundColor Yellow
     Write-Output "VS Code Location: $(if ($codePath) { $codePath } else { 'Not found' })"
     Write-Output "VS Code Version: $(if ($codeVersion) { $codeVersion } else { 'Not found' })"
     Write-Output "Installed Extensions:"
+    Write-Host "DEBUG: Getting VS Code extensions..." -ForegroundColor Yellow
     $extensions = code --list-extensions 2>$null | Select-Object -First 10
+    Write-Host "DEBUG: Found $($extensions.Count) VS Code extensions" -ForegroundColor Yellow
     if ($extensions) {
         $extensions | ForEach-Object { Write-Output "  $_" }
     } else {
@@ -83,6 +116,7 @@ function Get-SystemInfo {
 
 # Run first year test - all required verifications
 function Test-FirstYearSetup {
+    Write-Host "DEBUG: Starting Test-FirstYearSetup function" -ForegroundColor Yellow
     Write-Output "=== First Year Setup Test ==="
     Write-Output ""
     
@@ -94,8 +128,12 @@ function Test-FirstYearSetup {
     $condaInitFailed = $false
     
     # Test 1: Miniforge Installation
+    Write-Host "DEBUG: Testing Miniforge Installation..." -ForegroundColor Yellow
     Write-Output "Testing Miniforge Installation..."
     $miniforgePath = "$env:USERPROFILE\miniforge3"
+    Write-Host "DEBUG: Miniforge path: $miniforgePath" -ForegroundColor Yellow
+    Write-Host "DEBUG: Miniforge path exists: $(Test-Path $miniforgePath)" -ForegroundColor Yellow
+    Write-Host "DEBUG: Conda command available: $(if (Get-Command conda -ErrorAction SilentlyContinue) { 'Yes' } else { 'No' })" -ForegroundColor Yellow
     if ((Test-Path $miniforgePath) -and (Get-Command conda -ErrorAction SilentlyContinue)) {
         Write-Output "PASS: Miniforge installed at $miniforgePath"
     } else {
@@ -128,13 +166,18 @@ function Test-FirstYearSetup {
     Write-Output ""
     
     # Test 3: DTU Packages
+    Write-Host "DEBUG: Testing DTU Packages..." -ForegroundColor Yellow
     Write-Output "Testing DTU Packages..."
     $PythonCmd = "python"
     if (Test-Path $MiniforgePython) {
         $PythonCmd = $MiniforgePython
     }
+    Write-Host "DEBUG: Using Python command: $PythonCmd" -ForegroundColor Yellow
     
+    Write-Host "DEBUG: Attempting to import DTU packages..." -ForegroundColor Yellow
     $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
+    Write-Host "DEBUG: Package test exit code: $LASTEXITCODE" -ForegroundColor Yellow
+    Write-Host "DEBUG: Package test output: $packageTest" -ForegroundColor Yellow
     if ($LASTEXITCODE -eq 0) {
         Write-Output "PASS: All DTU packages imported successfully"
     } else {
@@ -221,11 +264,20 @@ function Test-FirstYearSetup {
 
 # Generate HTML report
 function New-HTMLReport {
+    Write-Host "DEBUG: Starting New-HTMLReport function" -ForegroundColor Yellow
     $outputFile = "$env:TEMP\dtu_installation_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
+    Write-Host "DEBUG: Output file: $outputFile" -ForegroundColor Yellow
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host "DEBUG: Timestamp: $timestamp" -ForegroundColor Yellow
+    
+    Write-Host "DEBUG: Getting system info..." -ForegroundColor Yellow
     $systemInfo = Get-SystemInfo | Out-String
+    Write-Host "DEBUG: System info collected" -ForegroundColor Yellow
+    
+    Write-Host "DEBUG: Getting test results..." -ForegroundColor Yellow
     $testResults = Test-FirstYearSetup 2>&1 | Out-String
     $testExitCode = $LASTEXITCODE
+    Write-Host "DEBUG: Test results collected, exit code: $testExitCode" -ForegroundColor Yellow
     
     # Parse test results for summary counts
     $passCount = ($testResults -split "`n" | Where-Object { $_ -like "PASS:*" }).Count
@@ -658,28 +710,35 @@ function New-HTMLReport {
 
 # Main execution
 function Main {
+    Write-Host "DEBUG: Starting Main function" -ForegroundColor Yellow
     Write-Host "Generating installation report..." -ForegroundColor Cyan
     
+    Write-Host "DEBUG: About to run Test-FirstYearSetup..." -ForegroundColor Yellow
     # Run tests and capture output
     $testResults = Test-FirstYearSetup 2>&1 | Out-String
     $testExitCode = $LASTEXITCODE
+    Write-Host "DEBUG: Test-FirstYearSetup completed with exit code: $testExitCode" -ForegroundColor Yellow
     
     # Display test results in console
     Write-Host ""
     Write-Host $testResults
     Write-Host ""
     
+    Write-Host "DEBUG: About to generate HTML report..." -ForegroundColor Yellow
     # Generate HTML report
     $reportFile, $exitCode = New-HTMLReport
+    Write-Host "DEBUG: HTML report generation completed" -ForegroundColor Yellow
     
     Write-Host "Report generated: $reportFile" -ForegroundColor Green
     
     # Open report in browser
     if (-not $NoBrowser) {
+        Write-Host "DEBUG: Opening report in browser..." -ForegroundColor Yellow
         Start-Process $reportFile
         Write-Host "Report opened in browser" -ForegroundColor Green
     }
     
+    Write-Host "DEBUG: Main function completed" -ForegroundColor Yellow
     # Return the test exit code for Piwik logging
     return $testExitCode
 }
