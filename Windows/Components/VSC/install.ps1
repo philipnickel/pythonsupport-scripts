@@ -30,9 +30,21 @@ foreach ($path in $vscodePaths) {
 if (-not $vscodeFound) {
     Write-Host "No existing VSCode installation found, installing VSCode..."
     
-    # Download VSCode installer
-    $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user"
-    $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-x64.exe"
+    # Detect system architecture and download appropriate VSCode installer
+    $architecture = $env:PROCESSOR_ARCHITECTURE
+    Write-Host "Detected architecture: $architecture"
+    
+    # Check for ARM64 architecture (Windows on ARM)
+    if ($architecture -eq "ARM64" -or $architecture -eq "arm64") {
+        $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-arm64-user"
+        $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-arm64.exe"
+        Write-Host "Using ARM64 VSCode installer for Windows on ARM"
+    } else {
+        # Default to x64 for x86, AMD64, and unknown architectures
+        $vscodeUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user"
+        $installerPath = Join-Path $env:TEMP "VSCodeUserSetup-x64.exe"
+        Write-Host "Using x64 VSCode installer for $architecture architecture"
+    }
     
     Write-Host "Downloading VSCode installer..."
     try {
@@ -73,6 +85,7 @@ else {
 }
 
 # Add VSCode to PATH for current session (like macOS approach)
+# VSCode installs to the same location regardless of architecture
 $vscodeBinPath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin"
 $vscodeExePath = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"
 
