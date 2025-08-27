@@ -39,12 +39,12 @@ if (-not $vscodeFound) {
         Invoke-WebRequest -Uri $vscodeUrl -OutFile $installerPath -UseBasicParsing
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Failed to download VSCode installer"
-            exit 1
+            throw "Failed to download VSCode installer"
         }
     }
     catch {
         Write-Host "Failed to download VSCode: $($_.Exception.Message)"
-        exit 1
+        throw "Failed to download VSCode"
     }
     
     # Install VSCode silently
@@ -53,12 +53,12 @@ if (-not $vscodeFound) {
         $process = Start-Process -FilePath $installerPath -ArgumentList "/VERYSILENT /NORESTART /TASKS=addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath" -Wait -PassThru
         if ($process.ExitCode -ne 0) {
             Write-Host "VSCode installation failed with exit code: $($process.ExitCode)"
-            exit 1
+            throw "VSCode installation failed"
         }
     }
     catch {
         Write-Host "Failed to install VSCode: $($_.Exception.Message)"
-        exit 1
+        throw "Failed to install VSCode"
     }
     
     # Clean up installer
