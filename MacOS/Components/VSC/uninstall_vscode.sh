@@ -26,6 +26,7 @@ remove_vscode_application() {
         if [ "$needs_sudo" = true ]; then
             if [[ "${CLI_MODE:-}" == "true" ]]; then
                 # CLI mode - use sudo directly
+                echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
                 sudo rm -rf "$app_path"
             else
                 # GUI mode - use osascript for native authentication

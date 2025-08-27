@@ -36,51 +36,102 @@ if [ -d "$MINIFORGE_PATH" ] && [ -x "$MINIFORGE_PATH/bin/conda" ]; then
     CONDA_PATH="$MINIFORGE_PATH"
 fi
 
-# Check for other conda installations if miniforge not found
-if [ "$CONDA_FOUND" = false ]; then
-    # Check various conda installation locations
-    conda_paths=(
+# Function to find all conda installations
+find_all_conda_installations() {
+    local installations=()
+    
+    # Check if conda command is available and get its base
+    if command -v conda >/dev/null 2>&1; then
+        local conda_base=$(conda info --base 2>/dev/null || echo "")
+        if [ -n "$conda_base" ] && [ -d "$conda_base" ]; then
+            installations+=("$conda_base")
+        fi
+    fi
+    
+    # Check common installation locations
+    local common_paths=(
+        "$HOME/miniforge3"
         "$HOME/miniconda3"
         "$HOME/anaconda3"
+        "/opt/miniforge3"
         "/opt/miniconda3"
         "/opt/anaconda3"
+        "/usr/local/miniforge3"
         "/usr/local/miniconda3"
         "/usr/local/anaconda3"
+        "/Applications/miniforge3"
+        "/Applications/miniconda3"
+        "/Applications/anaconda3"
     )
     
-    for conda_path in "${conda_paths[@]}"; do
-        if [ -d "$conda_path" ] && [ -x "$conda_path/bin/conda" ]; then
-            CONDA_FOUND=true
-            CONDA_PATH="$conda_path"
-            if echo "$conda_path" | grep -q "miniconda"; then
-                CONDA_TYPE="Miniconda"
-            elif echo "$conda_path" | grep -q "anaconda"; then
-                CONDA_TYPE="Anaconda"
-            else
-                CONDA_TYPE="Conda"
+    for path in "${common_paths[@]}"; do
+        if [ -d "$path" ] && [ -x "$path/bin/conda" ]; then
+            # Check if this path is not already in the list
+            local found=false
+            for existing in "${installations[@]}"; do
+                if [[ "$existing" == "$path" ]]; then
+                    found=true
+                    break
+                fi
+            done
+            if [ "$found" = false ]; then
+                installations+=("$path")
             fi
-            break
         fi
     done
+    
+    echo "${installations[@]}"
+}
+
+# Find all conda installations
+echo "Scanning for all conda installations..."
+all_conda_installations=($(find_all_conda_installations))
+
+if [ ${#all_conda_installations[@]} -gt 0 ]; then
+    CONDA_FOUND=true
+    echo "Found ${#all_conda_installations[@]} conda installation(s):"
+    for i in "${!all_conda_installations[@]}"; do
+        conda_path="${all_conda_installations[$i]}"
+        conda_type="Conda"
+        if echo "$conda_path" | grep -q "miniforge"; then
+            conda_type="Miniforge"
+        elif echo "$conda_path" | grep -q "miniconda"; then
+            conda_type="Miniconda"
+        elif echo "$conda_path" | grep -q "anaconda"; then
+            conda_type="Anaconda"
+        fi
+        echo "  $((i+1)). $conda_type at: $conda_path"
+    done
+    
+    # Set the first installation as the primary one for backward compatibility
+    CONDA_PATH="${all_conda_installations[0]}"
+    if echo "$CONDA_PATH" | grep -q "miniforge"; then
+        CONDA_TYPE="Miniforge"
+    elif echo "$CONDA_PATH" | grep -q "miniconda"; then
+        CONDA_TYPE="Miniconda"
+    elif echo "$CONDA_PATH" | grep -q "anaconda"; then
+        CONDA_TYPE="Anaconda"
+    else
+        CONDA_TYPE="Conda"
+    fi
+else
+    CONDA_FOUND=false
 fi
 
-# Also check if conda command is in PATH
-if [ "$CONDA_FOUND" = false ] && command -v conda >/dev/null 2>&1; then
-    CONDA_FOUND=true
-    CONDA_TYPE="Conda (in PATH)"
-    CONDA_PATH=$(which conda)
-fi
+
 
 # Handle conda detection results
 if [ "$CONDA_FOUND" = true ]; then
-    echo "Existing conda installation detected: $CONDA_TYPE at $CONDA_PATH"
+    echo ""
+    echo "The uninstaller will remove ALL conda installations listed above."
     
     if [[ "${PIS_ENV:-}" == "CI" ]]; then
         echo "Running in automated mode - automatically uninstalling existing conda..."
         response="yes"
     elif [[ "${CLI_MODE:-}" == "true" ]]; then
-        echo "CLI Mode: You have an existing Anaconda/miniconda/miniforge installation."
-        echo "Uninstall existing version and continue? (y/N)"
+        echo "CLI Mode: You have existing Anaconda/miniconda/miniforge installation(s)."
+        echo "The uninstaller will scan for and remove ALL conda installations found on your system."
+        echo "Uninstall all existing conda installations and continue? (y/N)"
         read -r response
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
             echo "Installation aborted by user."
@@ -91,7 +142,7 @@ if [ "$CONDA_FOUND" = true ]; then
         echo "GUI Mode: DTU Python Support only works with Miniforge."
         
         # Use macOS native dialog for user interaction with authentication
-        response=$(osascript -e 'tell app "System Events" to display dialog "DTU Python Support detected an existing conda installation.\n\nYou have an existing Anaconda/miniconda/miniforge installation.\n\nDo you want to uninstall the existing version and continue with the installation?\n\nYou will be prompted for administrator privileges to complete the uninstallation.\n\nNote: A native macOS popup will appear asking for your password." buttons {"Cancel", "Uninstall & Continue"} default button "Uninstall & Continue" with icon caution')
+        response=$(osascript -e 'tell app "System Events" to display dialog "DTU Python Support detected existing conda installation(s).\n\nYou have existing Anaconda/miniconda/miniforge installation(s).\n\nThe uninstaller will scan for and remove ALL conda installations found on your system.\n\nDo you want to uninstall all existing conda installations and continue with the installation?\n\nYou will be prompted for administrator privileges to complete the uninstallation.\n\nNote: A native macOS popup will appear asking for your password." buttons {"Cancel", "Uninstall All & Continue"} default button "Uninstall All & Continue" with icon caution')
         
         # Check if user cancelled or closed the dialog
         if [[ $? -ne 0 ]] || [[ -z "$response" ]] || [[ "$response" == *"Cancel"* ]]; then
@@ -107,16 +158,27 @@ if [ "$CONDA_FOUND" = true ]; then
     
     # Execute uninstall script for all modes when user agrees
     if [[ "$response" == "yes" ]]; then
-        echo "Uninstalling existing conda..."
-        curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh" | bash
+        echo "Uninstalling existing conda installations (running multiple passes to ensure complete removal)..."
         
-        if [ $? -eq 0 ]; then
-            echo "Conda uninstallation completed successfully"
-        else
-            echo "Conda uninstallation failed"
-            exit 1
-        fi
+        # Run the uninstall script multiple times to catch all installations
+        for pass in {1..4}; do
+            echo "Pass $pass of 4: Checking for remaining conda installations..."
+            
+            # Download and run the uninstall script
+            curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Core/uninstall_conda.sh" > /tmp/uninstall_conda.sh
+            bash /tmp/uninstall_conda.sh
+            
+            if [ $? -eq 0 ]; then
+                echo "Pass $pass completed successfully"
+            else
+                echo "Pass $pass failed or was cancelled"
+                rm -f /tmp/uninstall_conda.sh
+                exit 1
+            fi
+        done
         
+        rm -f /tmp/uninstall_conda.sh
+        echo "All conda uninstallation passes completed successfully"
         echo "Continuing with Miniforge installation..."
     fi
 fi

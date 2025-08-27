@@ -43,6 +43,7 @@ elif [ -d "/Applications/Visual Studio Code.app" ]; then
             export PATH="$HOME/bin:$PATH"
         elif [[ "${CLI_MODE:-}" == "true" ]]; then
             # CLI mode - use sudo directly
+            echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
             sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
         else
             # GUI mode - use osascript for native authentication
@@ -109,6 +110,7 @@ else
         export PATH="$HOME/bin:$PATH"
     elif [[ "${CLI_MODE:-}" == "true" ]]; then
         # CLI mode - use sudo directly
+        echo "Please enter the password to your computer to continue (you will not be able to see what you type)"
         sudo mkdir -p /usr/local/bin 2>/dev/null || true
         sudo ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
     else
