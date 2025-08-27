@@ -55,11 +55,11 @@ function Get-SystemInfo {
     $condaVersion = conda --version 2>$null
     $condaBase = conda info --base 2>$null
     
-    Write-Output "Python Location: $($pythonPath ?? 'Not found')"
-    Write-Output "Python Version: $($pythonVersion ?? 'Not found')"
-    Write-Output "Conda Location: $($condaPath ?? 'Not found')"
-    Write-Output "Conda Version: $($condaVersion ?? 'Not found')"
-    Write-Output "Conda Base: $($condaBase ?? 'Not found')"
+    Write-Output "Python Location: $(if ($pythonPath) { $pythonPath } else { 'Not found' })"
+    Write-Output "Python Version: $(if ($pythonVersion) { $pythonVersion } else { 'Not found' })"
+    Write-Output "Conda Location: $(if ($condaPath) { $condaPath } else { 'Not found' })"
+    Write-Output "Conda Version: $(if ($condaVersion) { $condaVersion } else { 'Not found' })"
+    Write-Output "Conda Base: $(if ($condaBase) { $condaBase } else { 'Not found' })"
     Write-Output ""
     
     Write-Output "=== DTU Configuration ==="
@@ -70,8 +70,8 @@ function Get-SystemInfo {
     Write-Output "=== VS Code Environment ==="
     $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
     $codeVersion = code --version 2>$null | Select-Object -First 1
-    Write-Output "VS Code Location: $($codePath ?? 'Not found')"
-    Write-Output "VS Code Version: $($codeVersion ?? 'Not found')"
+    Write-Output "VS Code Location: $(if ($codePath) { $codePath } else { 'Not found' })"
+    Write-Output "VS Code Version: $(if ($codeVersion) { $codeVersion } else { 'Not found' })"
     Write-Output "Installed Extensions:"
     $extensions = code --list-extensions 2>$null | Select-Object -First 10
     if ($extensions) {
