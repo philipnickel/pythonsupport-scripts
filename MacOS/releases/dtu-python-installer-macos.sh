@@ -9,9 +9,12 @@
 #   CLI Mode (downloaded): bash dtu-python-installer-macos.sh --cli
 
 # Parse command line arguments for CLI mode or check environment variable
-CLI_MODE=false
+CLI_MODE=true
 if [[ "$1" == "--cli" ]] || [[ "${DTU_CLI_MODE:-}" == "true" ]]; then
     CLI_MODE=true
+    shift
+elif [[ "$1" == "--no-cli" ]] || [[ "${DTU_CLI_MODE:-}" == "false" ]]; then
+    CLI_MODE=false
     shift
 fi
 
@@ -31,15 +34,18 @@ export MINIFORGE_BASE_URL="https://github.com/conda-forge/miniforge/releases/lat
 INSTALL_LOG="/tmp/dtu_install_$(date +%Y%m%d_%H%M%S).log"
 
 # Load Piwik utility for analytics
-echo "Loading analytics utility..."
-if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
-    echo "Analytics loaded successfully"
-    ANALYTICS_ENABLED=true
-else
-    # Define dummy piwik_log function if loading fails
-    piwik_log() { :; }  # No-op function
-    echo "Analytics disabled (could not load utility)"
-    ANALYTICS_ENABLED=false
+# Define dummy piwik_log function if loading fails
+piwik_log() { :; }  # No-op function
+echo "Analytics disabled (could not load utility)"
+ANALYTICS_ENABLED=false
+
+if [ 0 -eq 1 ]; then
+  # Disabling for now
+  echo "Loading analytics utility..."
+  if curl -fsSL "https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Shared/piwik_utility.sh" -o /tmp/piwik_utility.sh 2>/dev/null && source /tmp/piwik_utility.sh 2>/dev/null; then
+      echo "Analytics loaded successfully"
+      ANALYTICS_ENABLED=true
+  fi
 fi
 
 echo "DTU Python Support - macOS Installer"
@@ -53,7 +59,7 @@ echo ""
 
 # Export all variables so they're available to child processes
 export REMOTE_PS
-export BRANCH_PS  
+export BRANCH_PS
 export PIS_ENV
 export PYTHON_VERSION_DTU
 export DTU_PACKAGES
@@ -88,20 +94,20 @@ is_ci_mode() {
 download_and_execute() {
     local url="$1"
     local description="$2"
-    
+
     echo "$description..."
-    
+
     # Execute with environment variables passed to preserve sudo credential cache and ensure child scripts have access to variables
     # Use a temporary file to capture exit code
     local temp_script="/tmp/dtu_temp_script_$$.sh"
     curl -fsSL "$url" > "$temp_script"
     local curl_exit_code=$?
-    
+
     if [ $curl_exit_code -eq 0 ]; then
         REMOTE_PS="$REMOTE_PS" BRANCH_PS="$BRANCH_PS" PIS_ENV="$PIS_ENV" PYTHON_VERSION_DTU="$PYTHON_VERSION_DTU" DTU_PACKAGES="$DTU_PACKAGES" MINIFORGE_PATH="$MINIFORGE_PATH" MINIFORGE_BASE_URL="$MINIFORGE_BASE_URL" INSTALL_LOG="$INSTALL_LOG" CLI_MODE="$CLI_MODE" bash "$temp_script"
         local script_exit_code=$?
         rm -f "$temp_script"
-        
+
         if [ $script_exit_code -ne 0 ]; then
             echo "ERROR: $description failed with exit code $script_exit_code"
             echo "Installation aborted."
@@ -120,7 +126,7 @@ show_terms_acceptance() {
         echo "Running in CI mode - accepting terms automatically"
         return 0
     fi
-    
+
     if [ "$CLI_MODE" = true ]; then
         echo ""
         echo "=== Terms and Conditions ==="
@@ -140,7 +146,7 @@ show_terms_acceptance() {
         echo "   • macOS 10.15 or later"
         echo "   • Administrator privileges required for installation"
         echo ""
-        
+
         # Check if we're running in a pipe (curl | bash)
         if [ ! -t 0 ]; then
             echo "WARNING: Running in pipe mode (curl | bash). Terms acceptance may not work properly."
@@ -152,7 +158,7 @@ show_terms_acceptance() {
             echo "Installation aborted. Please run the installer directly to accept terms."
             exit 1
         fi
-        
+
         echo "Do you accept these terms and conditions? (y/N)"
         read -r response
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
@@ -164,13 +170,12 @@ show_terms_acceptance() {
         # GUI mode - use osascript for native dialog with checkbox
         local response
         response=$(osascript -e 'tell app "System Events" to display dialog "DTU Python Support - Terms and Conditions\n\nBy proceeding with this installation, you agree to the following terms:\n\n1. This installer will download and install:\n   • Miniforge (Python environment manager): https://github.com/conda-forge/miniforge\n   • Visual Studio Code: https://code.visualstudio.com/\n\n2. The installer will:\n   • Install Python 3.12 and required packages for DTU coursework\n   • Configure your system for Python development\n   • Install VS Code with Python extensions\n\n3. System Requirements:\n   • macOS 10.15 or later\n   • Administrator privileges required for installation\n\nDo you accept these terms and conditions?" buttons {"Cancel", "Accept and Continue"} default button "Accept and Continue" with icon note')
-        
+
         # Check if user cancelled or closed the dialog
         if [[ $? -ne 0 ]] || [[ -z "$response" ]] || [[ "$response" == *"Cancel"* ]]; then
             echo "Installation cancelled by user."
             exit 0
         fi
-        
 
         echo "Terms accepted. Proceeding with installation..."
     fi
@@ -182,7 +187,7 @@ get_authentication() {
         echo "Running in CI mode - no authentication needed"
         return 0
     fi
-    
+
     if [ "$CLI_MODE" = true ]; then
         echo "CLI Mode: Using terminal-based authentication"
         echo "Administrator privileges may be required for some operations."
@@ -195,7 +200,7 @@ get_authentication() {
 }
 
 # Show terms and conditions acceptance
-show_terms_acceptance
+#show_terms_acceptance
 
 # Get authentication info
 get_authentication

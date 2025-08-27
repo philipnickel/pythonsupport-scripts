@@ -11,9 +11,9 @@
 param(
     [string]$RemoteRepo = "dtudk/pythonsupport-scripts",
     [string]$Branch = "main", 
-    [string]$PythonVersion = "3.11",
+    [string]$PythonVersion = "3.12",
     [switch]$UseGUI = $false,  # Default to false for better testing
-    [switch]$Force = $false     # Skip user confirmation when true
+    [switch]$Force = $true     # Skip user confirmation when true
 )
 
 # Early error handling setup
@@ -48,21 +48,23 @@ function Write-InstallLog {
 }
 
 Write-InstallLog "Starting DTU Python Support installation"
-
-# Load Piwik analytics utility
-Write-InstallLog "Loading analytics utility..."
-try {
-    $piwikUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/piwik_utility.ps1"
-    $piwikScript = Invoke-WebRequest -Uri $piwikUrl -UseBasicParsing -TimeoutSec 30
-    Invoke-Expression $piwikScript.Content
-    Write-InstallLog "Analytics utility loaded successfully"
-    
-    # Log installation start
-    Piwik-Log "1"
-} catch {
-    Write-InstallLog "Could not load analytics utility: $($_.Exception.Message)" "WARNING"
-}
 Write-InstallLog "Log file: $env:INSTALL_LOG"
+
+if ( $false ) {
+    # Load Piwik analytics utility
+    Write-InstallLog "Loading analytics utility..."
+    try {
+        $piwikUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/Components/piwik_utility.ps1"
+        $piwikScript = Invoke-WebRequest -Uri $piwikUrl -UseBasicParsing -TimeoutSec 30
+        Invoke-Expression $piwikScript.Content
+        Write-InstallLog "Analytics utility loaded successfully"
+
+        # Log installation start
+        Piwik-Log "1"
+    } catch {
+        Write-InstallLog "Could not load analytics utility: $($_.Exception.Message)" "WARNING"
+    }
+}
 
 # Load configuration and utilities
 Write-InstallLog "Loading configuration and utilities..."
@@ -100,7 +102,7 @@ try {
     } else {
         throw "Write-LogInfo function not available"
     }
-    
+
     if (Get-Command Test-SystemRequirements -ErrorAction SilentlyContinue) {
         Write-LogInfo "System requirements function available"
     } else {
@@ -133,10 +135,10 @@ function Invoke-ComponentScript {
         [string]$ComponentPath,
         [string]$Description = "component"
     )
-    
+
     Write-LogInfo "Running $Description..."
     Write-LogInfo "Using remote $Description : $ComponentPath"
-    
+
     try {
         $RemoteUrl = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/$ComponentPath"
         $Script = Invoke-WebRequest -Uri $RemoteUrl -UseBasicParsing
@@ -159,7 +161,7 @@ if (-not (Test-SystemRequirements)) {
     exit 1
 }
 
-# Network connectivity check  
+# Network connectivity check
 Write-LogInfo "Checking network connectivity..."
 if (-not (Test-NetworkConnectivity)) {
     Write-LogError "Network connectivity check failed"
@@ -183,31 +185,33 @@ if ($Force) {
     Write-Host ""
     Write-Host "This installation will set up:" -ForegroundColor White
     Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  - Visual Studio Code" -ForegroundColor White  
+    Write-Host "  - Visual Studio Code" -ForegroundColor White
     Write-Host "  - Essential Python packages" -ForegroundColor White
     Write-Host "  - VSCode extensions" -ForegroundColor White
     Write-Host ""
     $Proceed = $true
+
 } elseif ($UseNativeDialogs) {
     $Message = "This installer will set up Python development environment with:`n`n" +
                "- Python $PythonVersion (Miniforge)`n" +
                "- Visual Studio Code`n" +
                "- Essential packages and extensions`n`n" +
                "Continue with installation?"
-    
+
     $Proceed = Show-ConfirmationDialog -Title "DTU Python Support Installation" -Message $Message
     if (-not $Proceed) {
         Show-InfoDialog -Title "Cancelled" -Message "Installation cancelled by user."
     }
+
 } else {
     Write-Host ""
     Write-Host "This installation will set up:" -ForegroundColor White
     Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  - Visual Studio Code" -ForegroundColor White  
+    Write-Host "  - Visual Studio Code" -ForegroundColor White
     Write-Host "  - Essential Python packages" -ForegroundColor White
     Write-Host "  - VSCode extensions" -ForegroundColor White
     Write-Host ""
-    
+
     $Response = Read-Host "Continue? (y/N)"
     $Proceed = ($Response -eq "y" -or $Response -eq "Y")
 }
@@ -258,7 +262,7 @@ try {
     Write-LogInfo "Installing Visual Studio Code..."
     Invoke-ComponentScript -ComponentPath "Components\VSC\install.ps1" -Description "VSCode installer"
     $InstallResults.VSCode = $true
-    
+
     # Log VSCode installation success
     try {
         if (Get-Command "Piwik-Log" -ErrorAction SilentlyContinue) {
