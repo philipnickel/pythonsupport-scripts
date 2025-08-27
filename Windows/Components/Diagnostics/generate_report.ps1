@@ -91,79 +91,37 @@ function Get-SystemInfo {
     Write-Host "DEBUG: Collecting Python environment information..." -ForegroundColor Yellow
     Write-Output "=== Python Environment ==="
     
-    # Try multiple methods to find Python
-    Write-Host "DEBUG: Getting python path..." -ForegroundColor Yellow
+    # Try to find Python - use basic command approach
+    Write-Host "DEBUG: Getting python info..." -ForegroundColor Yellow
     $pythonPath = $null
     $pythonVersion = $null
     
-    # Method 1: Try direct command
-    $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    if ($pythonPath) {
-        Write-Host "DEBUG: Python found via command: $pythonPath" -ForegroundColor Yellow
+    # Simple approach: try python command
+    try {
+        $pythonPath = Get-Command python -ErrorAction Stop | Select-Object -ExpandProperty Source
         $pythonVersion = python --version 2>$null
-    }
-    
-    # Method 2: Try miniforge Python directly
-    if (-not $pythonPath -or $pythonPath -notlike "*miniforge*") {
-        $miniforgePython = "$env:USERPROFILE\miniforge3\python.exe"
-        if (Test-Path $miniforgePython) {
-            Write-Host "DEBUG: Using miniforge Python directly: $miniforgePython" -ForegroundColor Yellow
-            $pythonPath = $miniforgePython
-            $pythonVersion = & $miniforgePython --version 2>$null
-        }
-    }
-    
-    # Method 3: Try with refreshed PATH (for post-installation)
-    if (-not $pythonPath) {
-        Write-Host "DEBUG: Trying with refreshed PATH..." -ForegroundColor Yellow
-        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-        $env:PATH = $refreshedPath
-        $pythonPath = Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-        if ($pythonPath) {
-            Write-Host "DEBUG: Python found after PATH refresh: $pythonPath" -ForegroundColor Yellow
-            $pythonVersion = python --version 2>$null
-        }
+        Write-Host "DEBUG: Python found: $pythonPath" -ForegroundColor Yellow
+    } catch {
+        Write-Host "DEBUG: Python command not found" -ForegroundColor Yellow
     }
     
     Write-Host "DEBUG: Final Python path: $pythonPath" -ForegroundColor Yellow
     Write-Host "DEBUG: Final Python version: $pythonVersion" -ForegroundColor Yellow
     
-    # Try multiple methods to find conda
-    Write-Host "DEBUG: Getting conda path..." -ForegroundColor Yellow
+    # Try to find conda - use basic command approach
+    Write-Host "DEBUG: Getting conda info..." -ForegroundColor Yellow
     $condaPath = $null
     $condaVersion = $null
     $condaBase = $null
     
-    # Method 1: Try direct command
-    $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    if ($condaPath) {
-        Write-Host "DEBUG: Conda found via command: $condaPath" -ForegroundColor Yellow
+    # Simple approach: try conda command
+    try {
+        $condaPath = Get-Command conda -ErrorAction Stop | Select-Object -ExpandProperty Source
         $condaVersion = conda --version 2>$null
         $condaBase = conda info --base 2>$null
-    }
-    
-    # Method 2: Try miniforge conda directly
-    if (-not $condaPath) {
-        $miniforgeConda = "$env:USERPROFILE\miniforge3\Scripts\conda.exe"
-        if (Test-Path $miniforgeConda) {
-            Write-Host "DEBUG: Using miniforge conda directly: $miniforgeConda" -ForegroundColor Yellow
-            $condaPath = $miniforgeConda
-            $condaVersion = & $miniforgeConda --version 2>$null
-            $condaBase = & $miniforgeConda info --base 2>$null
-        }
-    }
-    
-    # Method 3: Try with refreshed PATH (for post-installation)
-    if (-not $condaPath) {
-        Write-Host "DEBUG: Trying conda with refreshed PATH..." -ForegroundColor Yellow
-        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-        $env:PATH = $refreshedPath
-        $condaPath = Get-Command conda -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-        if ($condaPath) {
-            Write-Host "DEBUG: Conda found after PATH refresh: $condaPath" -ForegroundColor Yellow
-            $condaVersion = conda --version 2>$null
-            $condaBase = conda info --base 2>$null
-        }
+        Write-Host "DEBUG: Conda found: $condaPath" -ForegroundColor Yellow
+    } catch {
+        Write-Host "DEBUG: Conda command not found" -ForegroundColor Yellow
     }
     
     Write-Host "DEBUG: Final conda path: $condaPath" -ForegroundColor Yellow
@@ -185,46 +143,18 @@ function Get-SystemInfo {
     Write-Host "DEBUG: Collecting VS Code information..." -ForegroundColor Yellow
     Write-Output "=== VS Code Environment ==="
     
-    # Try multiple methods to find VS Code
-    Write-Host "DEBUG: Getting VS Code path..." -ForegroundColor Yellow
+    # Try to find VS Code - use basic command approach
+    Write-Host "DEBUG: Getting VS Code info..." -ForegroundColor Yellow
     $codePath = $null
     $codeVersion = $null
     
-    # Method 1: Try direct command
-    $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-    if ($codePath) {
-        Write-Host "DEBUG: VS Code found via command: $codePath" -ForegroundColor Yellow
+    # Simple approach: try code command
+    try {
+        $codePath = Get-Command code -ErrorAction Stop | Select-Object -ExpandProperty Source
         $codeVersion = code --version 2>$null | Select-Object -First 1
-    }
-    
-    # Method 2: Try common VS Code installation paths
-    if (-not $codePath) {
-        $vscodePaths = @(
-            "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe",
-            "${env:ProgramFiles}\Microsoft VS Code\Code.exe",
-            "${env:ProgramFiles(x86)}\Microsoft VS Code\Code.exe"
-        )
-        
-        foreach ($vscPath in $vscodePaths) {
-            if (Test-Path $vscPath) {
-                Write-Host "DEBUG: VS Code found at: $vscPath" -ForegroundColor Yellow
-                $codePath = $vscPath
-                $codeVersion = & $vscPath --version 2>$null | Select-Object -First 1
-                break
-            }
-        }
-    }
-    
-    # Method 3: Try with refreshed PATH (for post-installation)
-    if (-not $codePath) {
-        Write-Host "DEBUG: Trying VS Code with refreshed PATH..." -ForegroundColor Yellow
-        $refreshedPath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-        $env:PATH = $refreshedPath
-        $codePath = Get-Command code -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
-        if ($codePath) {
-            Write-Host "DEBUG: VS Code found after PATH refresh: $codePath" -ForegroundColor Yellow
-            $codeVersion = code --version 2>$null | Select-Object -First 1
-        }
+        Write-Host "DEBUG: VS Code found: $codePath" -ForegroundColor Yellow
+    } catch {
+        Write-Host "DEBUG: VS Code command not found" -ForegroundColor Yellow
     }
     
     Write-Host "DEBUG: Final VS Code path: $codePath" -ForegroundColor Yellow
