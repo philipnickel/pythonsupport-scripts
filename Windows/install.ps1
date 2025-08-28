@@ -180,13 +180,6 @@ $Proceed = $true
 # Check if we should skip user confirmation
 if ($Force) {
     Write-LogInfo "Force parameter specified, proceeding without confirmation"
-    Write-Host ""
-    Write-Host "This installation will set up:" -ForegroundColor White
-    Write-Host "  - Python $PythonVersion (via Miniforge)" -ForegroundColor White
-    Write-Host "  - Visual Studio Code" -ForegroundColor White
-    Write-Host "  - Essential Python packages" -ForegroundColor White
-    Write-Host "  - VSCode extensions" -ForegroundColor White
-    Write-Host ""
     $Proceed = $true
 
 } elseif ($UseNativeDialogs) {
@@ -261,6 +254,10 @@ try {
     Write-LogError "VSCode installation failed: $($_.Exception.Message)"
 }
 
+# Set execution policy for current user
+Write-LogInfo "Setting execution policy to RemoteSigned for current user..."
+Set-ExecutionPolicy -WarningAction:SilentlyContinue RemoteSigned -Scope CurrentUser -Force
+
 # === PHASE 3: VERIFICATION AND SUMMARY ===
 Write-Host ""
 Write-LogInfo "=== Phase 3: Installation Summary ==="
@@ -278,12 +275,6 @@ if ($UseNativeDialogs) {
         Write-Host "$Status $Component" -ForegroundColor $Color
     }
     
-    Write-Host ""
-    Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "1. Restart your PowerShell/Terminal" -ForegroundColor White
-    Write-Host "2. Run: conda activate first_year" -ForegroundColor White
-    Write-Host "3. Open VSCode and start coding!" -ForegroundColor White
-    Write-Host "4. Visit https://pythonsupport.dtu.dk for help" -ForegroundColor White
 }
 
 # Show final results
@@ -304,25 +295,3 @@ if ($successfulComponents -eq $totalComponents) {
     Write-LogError "DTU Python Support installation failed"
 }
 Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
-
-# === PHASE 4: GENERATE INSTALLATION REPORT ===
-Write-Host ""
-Write-LogInfo "=== Phase 4: Generating Installation Report ==="
-
-Write-Host "Generating installation report..." -ForegroundColor Cyan
-try {
-    # Refresh environment to pick up any PATH changes from installation
-    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-    
-    # Load and run the simplified report generator
-    $ReportUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Diagnostics/generate_report.ps1"
-    $ReportScript = Invoke-WebRequest -Uri $ReportUrl -UseBasicParsing
-    
-    # Execute the report generator with the install log
-    Invoke-Expression $ReportScript.Content
-    Write-LogSuccess "Installation report generated successfully"
-} catch {
-    Write-LogError "Failed to generate installation report: $($_.Exception.Message)"
-    Write-Host "You can manually generate a report by running:" -ForegroundColor Yellow
-    Write-Host "Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content" -ForegroundColor Gray
-}
