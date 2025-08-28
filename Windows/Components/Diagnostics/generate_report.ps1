@@ -42,13 +42,22 @@ function Get-SystemInfo {
     $PythonVersionDTU = "3.12"
     $DTUPackages = @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties")
     
-    # Find Python
+    # Find Python - prioritize conda Python
     $pythonPath = $null
     $pythonVersion = $null
-    try {
-        $pythonPath = Get-Command python -ErrorAction Stop | Select-Object -ExpandProperty Source
-        $pythonVersion = python --version 2>$null
-    } catch { }
+    
+    # First try to find conda Python specifically
+    $condaPythonPath = "$env:USERPROFILE\miniforge3\python.exe"
+    if (Test-Path $condaPythonPath) {
+        $pythonPath = $condaPythonPath
+        $pythonVersion = & $condaPythonPath --version 2>$null
+    } else {
+        # Fallback to any python in PATH
+        try {
+            $pythonPath = Get-Command python -ErrorAction Stop | Select-Object -ExpandProperty Source
+            $pythonVersion = python --version 2>$null
+        } catch { }
+    }
     
     # Find conda
     $condaPath = $null
@@ -174,9 +183,28 @@ function Test-FirstYearSetup {
     
     # Test 3: DTU Packages
     Write-Output "Testing DTU Packages..."
-    $PythonCmd = $SystemInfo.PythonPath
     
-    if ($PythonCmd) {
+    # Try to use conda Python with environment activation
+    $condaPythonPath = "$env:USERPROFILE\miniforge3\python.exe"
+    $condaScriptsPath = "$env:USERPROFILE\miniforge3\Scripts"
+    
+    if (Test-Path $condaPythonPath) {
+        # Use conda Python directly
+        $PythonCmd = $condaPythonPath
+        Write-Output "Using conda Python: $PythonCmd"
+        
+        $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Output "PASS: All DTU packages imported successfully"
+        } else {
+            Write-Output "FAIL: Some DTU packages failed to import"
+            $failCount++
+        }
+    } elseif ($SystemInfo.PythonPath) {
+        # Fallback to detected Python
+        $PythonCmd = $SystemInfo.PythonPath
+        Write-Output "Using fallback Python: $PythonCmd"
+        
         $packageTest = & $PythonCmd -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('All packages imported successfully')" 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Output "PASS: All DTU packages imported successfully"
