@@ -262,7 +262,8 @@ function New-HTMLReport {
     param(
         [hashtable]$SystemInfo,
         [string]$FormattedSystemInfo,
-        [string]$TestResults
+        [string]$TestResults,
+        [string]$InstallLog = ""
     )
     
     $outputFile = "$env:TEMP\dtu_installation_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
@@ -422,7 +423,7 @@ function Main {
         Write-Host ""
         
         # Generate HTML report
-        $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults
+        $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults -InstallLog $InstallLog
         
         Write-Host "Report generated: $reportFile" -ForegroundColor Green
         
@@ -453,11 +454,7 @@ if ($MyInvocation.InvocationName -ne '.') {
     
     Write-Host "Script completed with exit code: $exitCode" -ForegroundColor Cyan
     
-    # Simple pause for one-liner usage
-    if ($Host.Name -eq "ConsoleHost") {
-        Write-Host "Press any key to continue..." -ForegroundColor Yellow
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    }
-    
-    exit $exitCode
+    # Keep terminal open for one-liner usage
+    Write-Host "Press any key to continue..." -ForegroundColor Yellow
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
