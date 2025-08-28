@@ -309,15 +309,14 @@ Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
 Write-Host ""
 Write-LogInfo "=== Phase 4: Generating Installation Report ==="
 
-Write-Host "Generating comprehensive installation report..." -ForegroundColor Cyan
+Write-Host "Generating installation report..." -ForegroundColor Cyan
 try {
-    # Load and run the report generator
+    # Refresh environment to pick up any PATH changes from installation
+    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    
+    # Load and run the simplified report generator
     $ReportUrl = "https://raw.githubusercontent.com/$RemoteRepo/$Branch/Windows/Components/Diagnostics/generate_report.ps1"
     $ReportScript = Invoke-WebRequest -Uri $ReportUrl -UseBasicParsing
-    $ReportParams = @{
-        InstallLog = $env:INSTALL_LOG
-        NoBrowser = $false
-    }
     
     # Execute the report generator with the install log
     Invoke-Expression $ReportScript.Content
