@@ -35,9 +35,5 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtu
 
 ### Windows Diagnostics
 ```powershell
-# Option 1: Direct execution (recommended)
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1" -UseBasicParsing).Content
-
-# Option 2: If terminal closes too quickly, use this instead:
-powershell.exe -ExecutionPolicy Bypass -Command "& { Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content }"
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Diagnostics/generate_report.ps1" -UseBasicParsing).Content
 ```
