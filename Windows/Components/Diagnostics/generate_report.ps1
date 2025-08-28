@@ -455,6 +455,9 @@ if ($MyInvocation.InvocationName -ne '.') {
     Write-Host "Script completed with exit code: $exitCode" -ForegroundColor Cyan
     
     # Keep terminal open for one-liner usage
-    Write-Host "Press any key to continue..." -ForegroundColor Yellow
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Write-Host "Press Enter to continue..." -ForegroundColor Yellow
+    Read-Host
+    
+    # Prevent script from exiting and closing terminal
+    Write-Host "Script finished. Terminal will remain open." -ForegroundColor Green
 }
