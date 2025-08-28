@@ -37,3 +37,13 @@ Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dtu
 ```powershell
 Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Diagnostics/generate_report.ps1" -UseBasicParsing).Content
 ```
+
+### Windows Conda Uninstaller
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/Core/uninstall_conda.ps1" -UseBasicParsing).Content
+```
+
+### Windows VS Code Uninstaller
+```powershell
+Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/windows_report/Windows/Components/VSC/uninstall.ps1" -UseBasicParsing).Content
+```
