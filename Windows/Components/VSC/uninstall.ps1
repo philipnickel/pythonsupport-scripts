@@ -254,8 +254,141 @@ if ($useNativeDialogs) {
     # Terminal-based uninstall process
     Write-Host "Starting VS Code uninstall process..." -ForegroundColor Green
     
-    # Same uninstall logic as above, but without Update-ProgressDialog calls
-    # [Implementation would be similar but without the GUI progress updates]
+    # Remove VS Code installations
+    Write-Host "Removing VS Code installations..." -ForegroundColor Cyan
+    
+    foreach ($path in $vscodePaths) {
+        try {
+            Write-Host "• Removing VS Code installation: $path"
+            
+            # Try to use uninstaller first if available
+            $uninstallerPath = "$path\unins000.exe"
+            
+            if (Test-Path $uninstallerPath) {
+                Write-Host "  Using VS Code uninstaller: $uninstallerPath"
+                $process = Start-Process -FilePath $uninstallerPath -ArgumentList "/SILENT" -Wait -PassThru
+                if ($process.ExitCode -eq 0) {
+                    Write-Host "  [OK] Uninstaller completed successfully" -ForegroundColor Green
+                } else {
+                    Write-Host "  [WARNING] Uninstaller failed, removing manually" -ForegroundColor Yellow
+                    Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
+                }
+            } else {
+                Write-Host "  No uninstaller found, removing manually"
+                Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
+            }
+            
+            Write-Host "  [OK] Successfully removed $path" -ForegroundColor Green
+            
+        } catch {
+            Write-Host "  [ERROR] Failed to remove $path : $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+    $uninstallResults.VSCodeRemoval = $true
+    
+    # Clean up user data directory
+    Write-Host "Cleaning up user data..." -ForegroundColor Cyan
+    
+    try {
+        $userDataPath = "$env:APPDATA\Code"
+        if (Test-Path $userDataPath) {
+            Write-Host "• Removing VS Code user data: $userDataPath"
+            Remove-Item -Path $userDataPath -Recurse -Force -ErrorAction Stop
+            Write-Host "  [OK] Successfully removed user data" -ForegroundColor Green
+        } else {
+            Write-Host "• No VS Code user data found to remove"
+        }
+        $uninstallResults.UserDataCleanup = $true
+        
+    } catch {
+        Write-Host "  [ERROR] Failed to remove user data: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # Clean up workspace settings
+    Write-Host "Cleaning up workspace settings..." -ForegroundColor Cyan
+    
+    try {
+        $workspaceSettingsPath = "$env:USERPROFILE\.vscode"
+        if (Test-Path $workspaceSettingsPath) {
+            Write-Host "• Removing VS Code workspace settings: $workspaceSettingsPath"
+            Remove-Item -Path $workspaceSettingsPath -Recurse -Force -ErrorAction Stop
+            Write-Host "  [OK] Successfully removed workspace settings" -ForegroundColor Green
+        } else {
+            Write-Host "• No VS Code workspace settings found to remove"
+        }
+        $uninstallResults.ConfigCleanup = $true
+        
+    } catch {
+        Write-Host "  [ERROR] Failed to remove workspace settings: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # Clean up environment variables and PATH
+    Write-Host "Cleaning up environment variables..." -ForegroundColor Cyan
+    
+    try {
+        Write-Host "• Cleaning up PATH environment variable..."
+        
+        # Get current PATH variables
+        $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+        
+        # Clean user PATH
+        if ($userPath) {
+            $cleanUserPath = ($userPath -split ';' | Where-Object { 
+                $_ -notmatch 'Microsoft VS Code'
+            }) -join ';'
+            [Environment]::SetEnvironmentVariable("PATH", $cleanUserPath, "User")
+            Write-Host "  [OK] User PATH cleaned" -ForegroundColor Green
+        }
+        
+        # Note: We don't modify machine PATH as it may require admin privileges
+        Write-Host "  Note: Machine PATH not modified (may require administrator privileges)"
+        
+        $uninstallResults.PathCleanup = $true
+        
+    } catch {
+        Write-Host "  [ERROR] Failed to clean environment variables: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # Clean up Start Menu shortcuts
+    Write-Host "Cleaning up Start Menu shortcuts..." -ForegroundColor Cyan
+    
+    $startMenuPaths = @(
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Visual Studio Code*",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Microsoft VS Code*"
+    )
+    
+    foreach ($pattern in $startMenuPaths) {
+        $shortcuts = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+        foreach ($shortcut in $shortcuts) {
+            try {
+                Write-Host "• Removing Start Menu shortcut: $($shortcut.Name)"
+                Remove-Item -Path $shortcut.FullName -Force -ErrorAction Stop
+                Write-Host "  [OK] Successfully removed shortcut" -ForegroundColor Green
+            } catch {
+                Write-Host "  [ERROR] Failed to remove shortcut: $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+    }
+
+    # Clean up desktop shortcuts
+    Write-Host "Cleaning up desktop shortcuts..." -ForegroundColor Cyan
+    
+    $desktopShortcuts = @(
+        "$env:USERPROFILE\Desktop\Visual Studio Code.lnk",
+        "$env:USERPROFILE\Desktop\Microsoft VS Code.lnk"
+    )
+    
+    foreach ($shortcut in $desktopShortcuts) {
+        if (Test-Path $shortcut) {
+            try {
+                Write-Host "• Removing desktop shortcut: $shortcut"
+                Remove-Item -Path $shortcut -Force -ErrorAction Stop
+                Write-Host "  [OK] Successfully removed desktop shortcut" -ForegroundColor Green
+            } catch {
+                Write-Host "  [ERROR] Failed to remove desktop shortcut: $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+    }
     
     Write-Host ""
     Write-Host "[OK] VS Code uninstall completed!" -ForegroundColor Green
