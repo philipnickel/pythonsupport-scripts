@@ -196,7 +196,11 @@ function Test-FirstYearSetup {
     $InstalledVersion = $SystemInfo.PythonVersion
     $PythonPath = $SystemInfo.PythonPath
     
-    if (($InstalledVersion -like "$ExpectedVersion*") -and ($PythonPath -like "*miniforge3*")) {
+    # Extract just the version number (e.g., "3.12.11" -> "3.12")
+    $VersionMatch = $InstalledVersion -match "Python (\d+\.\d+)"
+    $ExtractedVersion = if ($VersionMatch) { $matches[1] } else { $InstalledVersion }
+    
+    if (($ExtractedVersion -like "$ExpectedVersion*") -and ($PythonPath -like "*miniforge3*")) {
         Write-Output "PASS: Python $InstalledVersion from miniforge"
     } else {
         Write-Output "FAIL: Expected Python $ExpectedVersion from miniforge, found $InstalledVersion at $PythonPath"
