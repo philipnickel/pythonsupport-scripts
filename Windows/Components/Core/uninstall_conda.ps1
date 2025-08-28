@@ -309,10 +309,28 @@ if ($useNativeDialogs) {
                 # Remove conda initialization blocks
                 $content = $content -replace '(?s)# >>> conda initialize >>>.*?# <<< conda initialize <<<\s*', ''
                 
-                # Remove conda-related lines
+                # Remove specific conda-related lines (more conservative approach)
                 $lines = $content -split "`r?`n"
-                $cleanLines = $lines | Where-Object { 
-                    $_ -notmatch 'conda|miniforge|miniconda|anaconda' 
+                $cleanLines = @()
+                
+                for ($i = 0; $i -lt $lines.Count; $i++) {
+                    $line = $lines[$i]
+                    
+                    # Only remove lines that are clearly conda-related and standalone
+                    if ($line -match '^\s*(conda|miniforge|miniconda|anaconda)\s*' -or 
+                        $line -match '^\s*#.*conda' -or
+                        $line -match '^\s*export.*conda' -or
+                        $line -match '^\s*\$env:.*conda') {
+                        # Skip this line
+                        continue
+                    }
+                    
+                    $cleanLines += $line
+                }
+                
+                # Remove trailing empty lines
+                while ($cleanLines.Count -gt 0 -and $cleanLines[-1] -match '^\s*$') {
+                    $cleanLines = $cleanLines[0..($cleanLines.Count-2)]
                 }
                 
                 # Write cleaned content back
