@@ -306,21 +306,21 @@ if ($useNativeDialogs) {
                 # Read and clean profile
                 $content = Get-Content $profilePath -Raw
                 
-                # Remove conda initialization blocks
+                # Remove conda initialization blocks (multiple patterns)
                 $content = $content -replace '(?s)# >>> conda initialize >>>.*?# <<< conda initialize <<<\s*', ''
+                $content = $content -replace '(?s)# >>> miniforge initialize >>>.*?# <<< miniforge initialize <<<\s*', ''
+                $content = $content -replace '(?s)# >>> miniconda initialize >>>.*?# <<< miniconda initialize <<<\s*', ''
+                $content = $content -replace '(?s)# >>> anaconda initialize >>>.*?# <<< anaconda initialize <<<\s*', ''
                 
-                # Remove specific conda-related lines (more conservative approach)
+                # Remove any remaining conda-related lines more aggressively
                 $lines = $content -split "`r?`n"
                 $cleanLines = @()
                 
                 for ($i = 0; $i -lt $lines.Count; $i++) {
                     $line = $lines[$i]
                     
-                    # Only remove lines that are clearly conda-related and standalone
-                    if ($line -match '^\s*(conda|miniforge|miniconda|anaconda)\s*' -or 
-                        $line -match '^\s*#.*conda' -or
-                        $line -match '^\s*export.*conda' -or
-                        $line -match '^\s*\$env:.*conda') {
+                    # Remove lines that contain conda-related content
+                    if ($line -match 'conda|miniforge|miniconda|anaconda') {
                         # Skip this line
                         continue
                     }
