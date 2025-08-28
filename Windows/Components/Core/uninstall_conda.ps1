@@ -354,28 +354,45 @@ if ($useNativeDialogs) {
         # Get current PATH variables
         $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
         
-        # Clean user PATH
+        # Clean user PATH (persistent)
         if ($userPath) {
             $cleanUserPath = ($userPath -split ';' | Where-Object { 
                 $_ -notmatch 'conda|miniforge|miniconda|anaconda'
             }) -join ';'
             [Environment]::SetEnvironmentVariable("PATH", $cleanUserPath, "User")
-            Write-Host "  [OK] User PATH cleaned" -ForegroundColor Green
+            Write-Host "  [OK] User PATH cleaned (persistent)" -ForegroundColor Green
+        }
+        
+        # Clean current session PATH
+        $currentPath = $env:PATH
+        if ($currentPath) {
+            $cleanCurrentPath = ($currentPath -split ';' | Where-Object { 
+                $_ -notmatch 'conda|miniforge|miniconda|anaconda'
+            }) -join ';'
+            $env:PATH = $cleanCurrentPath
+            Write-Host "  [OK] Current session PATH cleaned" -ForegroundColor Green
         }
         
         # Note: We don't modify machine PATH as it may require admin privileges
         Write-Host "  Note: Machine PATH not modified (may require administrator privileges)"
         
-        # Remove conda-related environment variables
+        # Remove conda-related environment variables (both persistent and current session)
         $condaVars = @(
             "CONDA_DEFAULT_ENV", "CONDA_EXE", "CONDA_PREFIX", 
             "CONDA_PROMPT_MODIFIER", "CONDA_PYTHON_EXE", "CONDA_SHLVL"
         )
         
         foreach ($var in $condaVars) {
+            # Remove from persistent User scope
             if ([Environment]::GetEnvironmentVariable($var, "User")) {
                 [Environment]::SetEnvironmentVariable($var, $null, "User")
-                Write-Host "  [OK] Removed environment variable: $var" -ForegroundColor Green
+                Write-Host "  [OK] Removed persistent environment variable: $var" -ForegroundColor Green
+            }
+            
+            # Remove from current session
+            if ($env:$var) {
+                Remove-Item "env:$var" -ErrorAction SilentlyContinue
+                Write-Host "  [OK] Removed current session environment variable: $var" -ForegroundColor Green
             }
         }
         
