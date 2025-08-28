@@ -1,33 +1,49 @@
-# Python Support Scripts
-
-📚 **[View Complete Documentation](https://philipnickel.github.io/pythonsupport-scripts/)**
-
-This repository contains automated installation scripts for Python development environments and associated tools for macOS and Windows.
-
-## Quick Installation
+# DTU Python Support Scripts
+## Installation
 
 ### macOS
-Open Terminal (⌘ + Space, search "Terminal") and run:
+
+#### Active: 
+**Terminal oneliner**  
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
 ```
 
 ### Windows
-Open PowerShell as Administrator (Windows + X, select "Windows PowerShell (Admin)") and run:
+
+**PowerShell oneliner** - Uses native Windows UAC authentication:
 ```powershell
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/main/Windows/install.ps1" -UseBasicParsing).Content
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1' -UseBasicParsing).Content}"
 ```
 
-## Diagnostics
+## Utilities
 
-Check your Python environment installation:
-
-```bash
-REMOTE_PS="philipnickel/pythonsupport-scripts" BRANCH_PS="MacOS_DEV" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/MacOS_DEV/MacOS/Components/Diagnostics/simple_report.sh)"
-```
-
-For testing with your development branch. The default version (using dtudk repo and main branch):
-
+### macOS Diagnostics
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
+```
+
+### macOS Conda Uninstaller
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Core/uninstall_conda.sh)"
+```
+
+### macOS VS Code Uninstaller
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/uninstall_vscode.sh)"
+```
+
+### Windows Diagnostics
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content}"
+```
+
+### Windows Conda Uninstaller
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Core/uninstall_conda.ps1' -UseBasicParsing).Content}"
+```
+
+### Windows VS Code Uninstaller
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/VSC/uninstall.ps1' -UseBasicParsing).Content}"
 ```
