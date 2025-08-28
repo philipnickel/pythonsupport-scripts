@@ -255,11 +255,138 @@ if ($useNativeDialogs) {
     Show-InstallationSummary -Results $uninstallResults
     
 } else {
-    # Terminal-based uninstall process (similar logic without GUI)
-    Write-Host "Starting uninstall process..." -ForegroundColor Green
+    # Terminal-based uninstall process
+    Write-Host "Starting conda uninstall process..." -ForegroundColor Green
     
-    # Same uninstall logic as above, but without Update-ProgressDialog calls
-    # [Implementation would be similar but without the GUI progress updates]
+    # Remove conda installations
+    Write-Host "Removing conda installations..." -ForegroundColor Cyan
+    
+    if ($condaPaths.Count -gt 0) {
+        foreach ($path in $condaPaths) {
+            try {
+                $installType = Split-Path $path -Leaf
+                Write-Host "• Removing $installType installation: $path"
+                
+                if ($path -like "*ProgramData*") {
+                    Write-Host "  ⚠  System installation detected - may require administrator privileges" -ForegroundColor Yellow
+                }
+                
+                if (Test-Path $path) {
+                    Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
+                    Write-Host "  [OK] Successfully removed $path" -ForegroundColor Green
+                }
+            } catch {
+                Write-Host "  [ERROR] Failed to remove $path : $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+        $uninstallResults.CondaRemoval = $true
+    } else {
+        Write-Host "• No conda installations found to remove"
+    }
+    
+    # Clean up PowerShell profiles
+    Write-Host "Cleaning up PowerShell profiles..." -ForegroundColor Cyan
+    
+    try {
+        $profilePaths = @(
+            $PROFILE.CurrentUserCurrentHost,
+            $PROFILE.CurrentUserAllHosts,
+            $PROFILE.AllUsersCurrentHost,
+            $PROFILE.AllUsersAllHosts
+        )
+        
+        foreach ($profilePath in $profilePaths) {
+            if ($profilePath -and (Test-Path $profilePath)) {
+                Write-Host "• Cleaning PowerShell profile: $profilePath"
+                
+                # Create backup
+                $backupPath = "${profilePath}.backup-$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+                Copy-Item $profilePath $backupPath -Force
+                
+                # Read and clean profile
+                $content = Get-Content $profilePath -Raw
+                
+                # Remove conda initialization blocks
+                $content = $content -replace '(?s)# >>> conda initialize >>>.*?# <<< conda initialize <<<\s*', ''
+                
+                # Remove conda-related lines
+                $lines = $content -split "`r?`n"
+                $cleanLines = $lines | Where-Object { 
+                    $_ -notmatch 'conda|miniforge|miniconda|anaconda' 
+                }
+                
+                # Write cleaned content back
+                $cleanLines -join "`r`n" | Set-Content $profilePath -Force
+                
+                Write-Host "  [OK] Profile cleaned (backup: $backupPath)" -ForegroundColor Green
+            }
+        }
+        $uninstallResults.ProfileCleanup = $true
+        
+    } catch {
+        Write-Host "  [ERROR] Failed to clean profiles: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # Clean up environment variables and PATH
+    Write-Host "Cleaning up environment variables..." -ForegroundColor Cyan
+    
+    try {
+        Write-Host "• Cleaning up PATH environment variable..."
+        
+        # Get current PATH variables
+        $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+        
+        # Clean user PATH
+        if ($userPath) {
+            $cleanUserPath = ($userPath -split ';' | Where-Object { 
+                $_ -notmatch 'conda|miniforge|miniconda|anaconda'
+            }) -join ';'
+            [Environment]::SetEnvironmentVariable("PATH", $cleanUserPath, "User")
+            Write-Host "  [OK] User PATH cleaned" -ForegroundColor Green
+        }
+        
+        # Note: We don't modify machine PATH as it may require admin privileges
+        Write-Host "  Note: Machine PATH not modified (may require administrator privileges)"
+        
+        # Remove conda-related environment variables
+        $condaVars = @(
+            "CONDA_DEFAULT_ENV", "CONDA_EXE", "CONDA_PREFIX", 
+            "CONDA_PROMPT_MODIFIER", "CONDA_PYTHON_EXE", "CONDA_SHLVL"
+        )
+        
+        foreach ($var in $condaVars) {
+            if ([Environment]::GetEnvironmentVariable($var, "User")) {
+                [Environment]::SetEnvironmentVariable($var, $null, "User")
+                Write-Host "  [OK] Removed environment variable: $var" -ForegroundColor Green
+            }
+        }
+        
+        $uninstallResults.ConfigCleanup = $true
+        
+    } catch {
+        Write-Host "  [ERROR] Failed to clean environment variables: $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    # Clean up conda configuration directories
+    Write-Host "Removing configuration files..." -ForegroundColor Cyan
+    
+    $configDirs = @(
+        "$env:USERPROFILE\.conda",
+        "$env:USERPROFILE\.condarc",
+        "$env:USERPROFILE\.conda-env"
+    )
+    
+    foreach ($dir in $configDirs) {
+        if (Test-Path $dir) {
+            try {
+                Write-Host "• Removing configuration: $dir"
+                Remove-Item -Path $dir -Recurse -Force -ErrorAction Stop
+                Write-Host "  [OK] Successfully removed $dir" -ForegroundColor Green
+            } catch {
+                Write-Host "  [ERROR] Failed to remove $dir : $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+    }
     
     Write-Host ""
     Write-Host "[OK] Conda uninstall completed!" -ForegroundColor Green
