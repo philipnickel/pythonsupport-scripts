@@ -353,7 +353,7 @@ function New-HTMLReport {
         $installLogContent = "Installation log not available"
     }
     
-    # Simplified HTML (keeping the existing structure but removing complex features)
+    # Full HTML with all interactive features (matching macOS version)
     $htmlContent = @"
 <!DOCTYPE html>
 <html lang="en">
@@ -364,6 +364,7 @@ function New-HTMLReport {
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background: #DADADA; padding: 20px; margin: 0; }
         .container { max-width: 1000px; margin: 0 auto; background: #ffffff; border: 1px solid #ccc; }
+        
         header { background: #990000; color: #ffffff; padding: 30px 20px; display: flex; align-items: center; gap: 25px; }
         .header-left { flex-shrink: 0; }
         .header-content { flex: 1; }
@@ -371,6 +372,7 @@ function New-HTMLReport {
         h1 { font-size: 1.9em; margin: 0; line-height: 1.2; font-weight: bold; }
         .subtitle { font-size: 1.2em; margin-top: 8px; opacity: 0.9; font-weight: normal; }
         .timestamp { font-size: 0.9em; margin-top: 12px; opacity: 0.8; }
+        
         .summary { display: flex; justify-content: center; padding: 30px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
         .status-message { text-align: center; }
         .status-text { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
@@ -379,12 +381,153 @@ function New-HTMLReport {
         .status-warning .status-text { color: #f57c00; }
         .status-error .status-text { color: #E83F48; }
         .status-unknown .status-text { color: #666; }
-        .category-section { margin: 20px 0; padding: 0 20px; }
-        .category-header { font-size: 1.3em; font-weight: bold; color: #990000; padding: 15px 0; border-bottom: 2px solid #990000; margin-bottom: 15px; }
-        .diagnostic-card { background: white; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
-        .diagnostic-header { padding: 12px 16px; background: #f8f9fa; font-weight: 600; font-size: 1.1em; color: #333; }
-        .diagnostic-details { padding: 16px; background: #f8f9fa; border-top: 1px solid #dee2e6; }
-        .diagnostic-log { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; white-space: pre-wrap; line-height: 1.4; font-size: 0.9em; color: #333; max-height: 400px; overflow-y: auto; }
+        .passed { color: #008835; }
+        .failed { color: #E83F48; }
+        .total { color: #990000; }
+        
+        .download-section { text-align: center; padding: 15px; background: #f5f5f5; border-bottom: 1px solid #ccc; }
+        .download-button { padding: 12px 24px; border: 2px solid #990000; background: #ffffff; color: #990000; text-decoration: none; font-weight: bold; border-radius: 4px; cursor: pointer; transition: all 0.3s; font-size: 1em; }
+        .download-button:hover { background: #990000; color: #ffffff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 0; border: none; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { background: #990000; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .modal-header h2 { margin: 0; font-size: 1.4em; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .close:hover { opacity: 0.7; }
+        .modal-body { padding: 30px; }
+        .step { display: flex; align-items: flex-start; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #990000; }
+        .step-number { background: #990000; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0; }
+        .step-content { flex: 1; }
+        .step-title { font-weight: bold; color: #333; margin-bottom: 8px; font-size: 1.1em; }
+        .step-description { color: #666; line-height: 1.5; }
+        .action-button { background: #990000; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: all 0.3s; }
+        .action-button:hover { background: #b30000; transform: translateY(-1px); }
+        
+        .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 20px; color: #856404; }
+        .notice-title { font-weight: bold; margin-bottom: 5px; }
+        
+        .category-section { 
+            margin: 20px 0; 
+            padding: 0 20px;
+        }
+        
+        .category-header { 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            color: #990000; 
+            padding: 15px 0; 
+            border-bottom: 2px solid #990000; 
+            margin-bottom: 15px;
+        }
+        
+        .category-container { 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .diagnostic-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .diagnostic-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .diagnostic-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            background: #f8f9fa;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diagnostic-header:hover {
+            background: #e9ecef;
+        }
+        
+        .diagnostic-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .diagnostic-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .diagnostic-expand-hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .diagnostic-details {
+            display: none;
+            background: #f8f9fa;
+            padding: 16px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .diagnostic-card.expanded .diagnostic-details {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        .diagnostic-log {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 0.9em;
+            color: #333;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .copy-button {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .copy-button:hover {
+            background: #555;
+            transform: translateY(-1px);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         footer { text-align: center; padding: 20px; background: #990000; color: #ffffff; }
         footer p { margin: 5px 0; }
         .footer-logo { height: 30px; margin: 10px 0; filter: brightness(0) invert(1); }
@@ -411,37 +554,217 @@ function New-HTMLReport {
             </div>
         </div>
         
+        <div class="download-section">
+            <button onclick="showEmailModal()" class="download-button">Email Support</button>
+        </div>
+        
+        <!-- Email Support Modal -->
+        <div id="emailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close" onclick="closeEmailModal()">&times;</span>
+                    <h2>Email Support Instructions</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Download Report</div>
+                            <div class="step-description">Click the button below to download this diagnostic report to your computer. You'll need this file for the next step.</div>
+                            <button onclick="downloadReport()" class="action-button">Download Report</button>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Send Email</div>
+                            <div class="step-description">Click below to open your email client with a pre-filled message to DTU Python Support. Attach the downloaded report file from Step 1.</div>
+                            <button onclick="openEmail()" class="action-button">Open Email Client</button>
+                            <button onclick="copyEmail()" class="action-button" style="margin-left: 10px; background: #666;">Copy Email Address</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="notice">
+            <div class="notice-title">First Year Installation Diagnostics</div>
+            This report shows the validation results for your DTU first year Python installation.
+        </div>
+        
         <div class="diagnostics">
             <div class="category-section">
                 <div class="category-header">First Year Setup Validation</div>
-                <div class="diagnostic-card">
-                    <div class="diagnostic-header">Test Results</div>
-                    <div class="diagnostic-details">
-                        <div class="diagnostic-log">$($testResults -replace '"', '\"')</div>
+                <div class="category-container">
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">Test Results</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$($testResults -replace '"', '\"')</div>
+                            <button onclick="copyOutput(this, 'Test Results')" class="copy-button">Copy Output</button>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="category-section">
                 <div class="category-header">System Information</div>
-                <div class="diagnostic-card">
-                    <div class="diagnostic-header">System Details</div>
-                    <div class="diagnostic-details">
-                        <div class="diagnostic-log">$($formattedSystemInfo -replace '"', '\"')</div>
+                <div class="category-container">
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">System Details</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$($formattedSystemInfo -replace '"', '\"')</div>
+                            <button onclick="copyOutput(this, 'System Details')" class="copy-button">Copy Output</button>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="category-section">
                 <div class="category-header">Installation Log</div>
-                <div class="diagnostic-card">
-                    <div class="diagnostic-header">Complete Installation Output</div>
-                    <div class="diagnostic-details">
-                        <div class="diagnostic-log">$($installLogContent -replace '"', '\"')</div>
+                <div class="category-container">
+                    <div class="diagnostic-card" onclick="toggleCard(this)">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-info">
+                                <div class="diagnostic-name">Complete Installation Output</div>
+                                <div class="diagnostic-expand-hint">Click to expand</div>
+                            </div>
+                        </div>
+                        <div class="diagnostic-details">
+                            <div class="diagnostic-log">$($installLogContent -replace '"', '\"')</div>
+                            <button onclick="copyOutput(this, 'Installation Log')" class="copy-button">Copy Output</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <script>
+        function toggleCard(card) {
+            card.classList.toggle('expanded');
+        }
+        
+        function showEmailModal() {
+            document.getElementById('emailModal').style.display = 'block';
+        }
+        
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+        
+        function downloadReport() {
+            const reportContent = document.documentElement.outerHTML;
+            const blob = new Blob([reportContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'DTU_Python_Installation_Report_' + new Date().toISOString().slice(0,10) + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function openEmail() {
+            const subject = encodeURIComponent('DTU Python Installation Support Request');
+            const body = encodeURIComponent('Python environment setup issue\\n\\nCourse: [PLEASE FILL OUT]\\n\\nDiagnostic report attached.\\n\\nComponents:\\n' + 
+                '• Python: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python') ? 'Working' : 'Issue') + '\\n' +
+                '• Packages: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: Python Environment') ? 'Working' : 'Issue') + '\\n' +
+                '• VS Code: ' + (document.querySelector('.diagnostic-log').textContent.includes('PASS: VS Code') ? 'Working' : 'Issue') + '\\n\\n' +
+                'Additional notes:\\nIf you have any additional notes\\n\\nThanks');
+            
+            window.location.href = 'mailto:pythonsupport@dtu.dk?subject=' + subject + '&body=' + body;
+            closeEmailModal();
+        }
+        
+        function copyEmail() {
+            const email = 'pythonsupport@dtu.dk';
+            navigator.clipboard.writeText(email).then(function() {
+                // Change button text temporarily to show success
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = email;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show success message
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            });
+        }
+        
+        function copyOutput(button, sectionName) {
+            // Stop event propagation to prevent card toggle
+            event.stopPropagation();
+            
+            // Find the diagnostic-log content within the same card
+            const card = button.closest('.diagnostic-card');
+            const logContent = card.querySelector('.diagnostic-log');
+            const textToCopy = logContent.textContent;
+            
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                // Change button text temporarily to show success
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show success message
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#008835';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.background = '#666';
+                }, 2000);
+            });
+        }
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('emailModal');
+            if (event.target == modal) {
+                closeEmailModal();
+            }
+        }
+        </script>
         
         <footer>
             <img src="https://designguide.dtu.dk/-/media/subsites/designguide/design-basics/logo/dtu_logo_corporate_red_rgb.png" 
