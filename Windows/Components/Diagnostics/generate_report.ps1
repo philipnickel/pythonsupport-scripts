@@ -36,11 +36,14 @@ function Refresh-Environment {
 
 # Collect system information
 function Get-SystemInfo {
+    Write-Host "  Refreshing environment variables..." -ForegroundColor Gray
     Refresh-Environment
     
     # Default configuration
     $PythonVersionDTU = "3.12"
     $DTUPackages = @("dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties")
+    
+    Write-Host "  Detecting Python installation..." -ForegroundColor Gray
     
     # Find Python - prioritize conda Python
     $pythonPath = $null
@@ -49,16 +52,24 @@ function Get-SystemInfo {
     # First try to find conda Python specifically
     $condaPythonPath = "$env:USERPROFILE\miniforge3\python.exe"
     if (Test-Path $condaPythonPath) {
+        Write-Host "    Found conda Python at: $condaPythonPath" -ForegroundColor Gray
         $pythonPath = $condaPythonPath
         $pythonVersion = & $condaPythonPath --version 2>$null
+        Write-Host "    Python version: $pythonVersion" -ForegroundColor Gray
     } else {
+        Write-Host "    Conda Python not found, checking PATH..." -ForegroundColor Gray
         # Fallback to any python in PATH
         try {
             $pythonPath = Get-Command python -ErrorAction Stop | Select-Object -ExpandProperty Source
             $pythonVersion = python --version 2>$null
-        } catch { }
+            Write-Host "    Found Python in PATH: $pythonPath" -ForegroundColor Gray
+            Write-Host "    Python version: $pythonVersion" -ForegroundColor Gray
+        } catch { 
+            Write-Host "    No Python found in PATH" -ForegroundColor Gray
+        }
     }
     
+    Write-Host "  Detecting conda installation..." -ForegroundColor Gray
     # Find conda
     $condaPath = $null
     $condaVersion = $null
@@ -67,20 +78,32 @@ function Get-SystemInfo {
         $condaPath = Get-Command conda -ErrorAction Stop | Select-Object -ExpandProperty Source
         $condaVersion = conda --version 2>$null
         $condaBase = conda info --base 2>$null
-    } catch { }
+        Write-Host "    Found conda at: $condaPath" -ForegroundColor Gray
+        Write-Host "    Conda version: $condaVersion" -ForegroundColor Gray
+        Write-Host "    Conda base: $condaBase" -ForegroundColor Gray
+    } catch { 
+        Write-Host "    No conda found in PATH" -ForegroundColor Gray
+    }
     
+    Write-Host "  Detecting VS Code installation..." -ForegroundColor Gray
     # Find VS Code
     $codePath = $null
     $codeVersion = $null
     try {
         $codePath = Get-Command code -ErrorAction Stop | Select-Object -ExpandProperty Source
         $codeVersion = code --version 2>$null | Select-Object -First 1
-    } catch { }
+        Write-Host "    Found VS Code at: $codePath" -ForegroundColor Gray
+        Write-Host "    VS Code version: $codeVersion" -ForegroundColor Gray
+    } catch { 
+        Write-Host "    No VS Code found in PATH" -ForegroundColor Gray
+    }
     
     # Get VS Code extensions
     $extensions = @()
     if ($codePath) {
+        Write-Host "    Getting VS Code extensions..." -ForegroundColor Gray
         $extensions = & $codePath --list-extensions 2>$null | Select-Object -First 10
+        Write-Host "    Found $($extensions.Count) VS Code extensions" -ForegroundColor Gray
     }
     
     # Get hardware info
@@ -433,37 +456,53 @@ function New-HTMLReport {
 
 # Main execution
 function Main {
-    Write-Host "Generating installation report..." -ForegroundColor Cyan
+    Write-Host "Starting DTU Python Support Diagnostics..." -ForegroundColor Green
+    Write-Host ""
     
     try {
-        # Collect system information
+        # Step 1: Collect system information
+        Write-Host "Step 1/4: Collecting system information..." -ForegroundColor Cyan
         $systemInfo = Get-SystemInfo
-        $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
+        Write-Host "✓ System information collected" -ForegroundColor Green
         
-        # Run tests
+        # Step 2: Format system information
+        Write-Host "Step 2/4: Formatting system information..." -ForegroundColor Cyan
+        $formattedSystemInfo = Format-SystemInfo -SystemInfo $systemInfo | Out-String
+        Write-Host "✓ System information formatted" -ForegroundColor Green
+        
+        # Step 3: Run diagnostic tests
+        Write-Host "Step 3/4: Running diagnostic tests..." -ForegroundColor Cyan
         $testResults = Test-FirstYearSetup -SystemInfo $systemInfo 2>&1 | Out-String
         $testExitCode = $LASTEXITCODE
+        Write-Host "✓ Diagnostic tests completed" -ForegroundColor Green
         
         # Display results in console
         Write-Host ""
+        Write-Host "=== CONSOLE OUTPUT ===" -ForegroundColor Yellow
         Write-Host $formattedSystemInfo
         Write-Host $testResults
+        Write-Host "=====================" -ForegroundColor Yellow
         Write-Host ""
         
-        # Generate HTML report
+        # Step 4: Generate HTML report
+        Write-Host "Step 4/4: Generating HTML report..." -ForegroundColor Cyan
         $reportFile, $exitCode = New-HTMLReport -SystemInfo $systemInfo -FormattedSystemInfo $formattedSystemInfo -TestResults $testResults -InstallLog $InstallLog
         
-        Write-Host "Report generated: $reportFile" -ForegroundColor Green
+        Write-Host "✓ HTML report generated: $reportFile" -ForegroundColor Green
         
         # Open report in browser
         if (-not $NoBrowser) {
+            Write-Host "Opening report in browser..." -ForegroundColor Cyan
             Start-Process $reportFile
-            Write-Host "Report opened in browser" -ForegroundColor Green
+            Write-Host "✓ Report opened in browser" -ForegroundColor Green
         }
         
+        Write-Host ""
+        Write-Host "=== DIAGNOSTICS COMPLETE ===" -ForegroundColor Green
         return $testExitCode
     } catch {
-        Write-Host "Failed to generate report: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "❌ Failed to generate report: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Stack trace: $($_.ScriptStackTrace)" -ForegroundColor Red
         return 1
     }
 }
