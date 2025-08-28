@@ -295,3 +295,13 @@ if ($successfulComponents -eq $totalComponents) {
     Write-LogError "DTU Python Support installation failed"
 }
 Write-Host "Log file: $env:INSTALL_LOG" -ForegroundColor Gray
+
+# Generate installation report silently as the very last step
+Write-LogInfo "Generating installation report..."
+try {
+    PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content}"
+    Write-LogSuccess "Installation report generated successfully"
+} catch {
+    Write-LogWarning "Could not generate installation report: $($_.Exception.Message)"
+    Write-Host "NOTE: Installation may still have been successful. Please verify manually." -ForegroundColor Yellow
+}
