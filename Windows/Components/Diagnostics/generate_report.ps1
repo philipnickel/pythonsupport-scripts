@@ -28,7 +28,7 @@ function Refresh-Environment {
     )
     
     foreach ($path in $commonPaths) {
-        if (Test-Path $path -and $env:PATH -notlike "*$path*") {
+        if ((Test-Path $path) -and ($env:PATH -notlike "*$path*")) {
             $env:PATH = "$env:PATH;$path"
         }
     }
@@ -150,7 +150,7 @@ function Test-FirstYearSetup {
     # Test 1: Miniforge Installation
     Write-Output "Testing Miniforge Installation..."
     $miniforgePath = "$env:USERPROFILE\miniforge3"
-    if ((Test-Path $miniforgePath) -and $SystemInfo.CondaPath) {
+    if ((Test-Path $miniforgePath) -and ($SystemInfo.CondaPath)) {
         Write-Output "PASS: Miniforge installed at $miniforgePath"
     } else {
         Write-Output "FAIL: Miniforge not found or conda command not available"
@@ -164,7 +164,7 @@ function Test-FirstYearSetup {
     $InstalledVersion = $SystemInfo.PythonVersion
     $PythonPath = $SystemInfo.PythonPath
     
-    if ($InstalledVersion -like "$ExpectedVersion*" -and $PythonPath -like "*miniforge3*") {
+    if (($InstalledVersion -like "$ExpectedVersion*") -and ($PythonPath -like "*miniforge3*")) {
         Write-Output "PASS: Python $InstalledVersion from miniforge"
     } else {
         Write-Output "FAIL: Expected Python $ExpectedVersion from miniforge, found $InstalledVersion at $PythonPath"
@@ -275,7 +275,7 @@ function New-HTMLReport {
     $totalCount = $passCount + $failCount
     
     # Status message
-    if ($failCount -eq 0 -and $totalCount -gt 0) {
+    if (($failCount -eq 0) -and ($totalCount -gt 0)) {
         $statusMessage = "Everything is set up and working correctly"
         $statusClass = "status-success"
     } elseif ($failCount -eq 1) {
@@ -290,9 +290,9 @@ function New-HTMLReport {
     }
     
     # Read installation log if available
-    if ($InstallLog -and (Test-Path $InstallLog)) {
+    if (($InstallLog) -and (Test-Path $InstallLog)) {
         $installLogContent = Get-Content $InstallLog -Raw -ErrorAction SilentlyContinue
-    } elseif ($env:INSTALL_LOG -and (Test-Path $env:INSTALL_LOG)) {
+    } elseif (($env:INSTALL_LOG) -and (Test-Path $env:INSTALL_LOG)) {
         $installLogContent = Get-Content $env:INSTALL_LOG -Raw -ErrorAction SilentlyContinue
     } else {
         $installLogContent = "Installation log not available"
