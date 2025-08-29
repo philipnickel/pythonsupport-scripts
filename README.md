@@ -33,4 +33,17 @@ PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebReq
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/uninstall_vscode.sh)"
 ```
 
+### Windows Diagnostics
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content}"
+```
 
+### Windows Conda Uninstaller
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Core/uninstall_conda.ps1' -UseBasicParsing).Content}"
+```
+
+### Windows VS Code Uninstaller
+```powershell
+PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/VSC/uninstall.ps1' -UseBasicParsing).Content}"
+```
