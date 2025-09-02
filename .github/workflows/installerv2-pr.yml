@@ -1,0 +1,52 @@
+name: InstallerV2 PR
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'InstallerV2/**'
+      - '.github/workflows/installerv2-pr.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+
+      - name: Show workspace files (debug)
+        run: |
+          echo "pwd=$(pwd)"
+          ls -la
+
+      - name: Build universal installer
+        shell: bash
+        run: |
+          bash InstallerV2/build/create-universal-installer.sh
+          ls -la dist
+
+      - name: Smoke test (CLI, dry-run)
+        shell: bash
+        env:
+          CI: true
+          DTU_ANALYTICS_ENABLED: "0"
+        run: |
+          ./dist/dtu-installer.sh --cli --dry-run
+
+      - name: Smoke test (GUI, dry-run)
+        shell: bash
+        env:
+          CI: true
+          DTU_ANALYTICS_ENABLED: "0"
+        run: |
+          ./dist/dtu-installer.sh --gui --dry-run
+
+      - name: Direct run via repo entry (CLI, dry-run)
+        shell: bash
+        env:
+          CI: true
+          DTU_ANALYTICS_ENABLED: "0"
+        run: |
+          ./InstallerV2/install.sh --cli --dry-run
+
