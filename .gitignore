@@ -25,6 +25,9 @@ __pycache__/
 *.so
 .Python
 build/
+!InstallerV2/
+!InstallerV2/build/
+!InstallerV2/build/create-universal-installer.sh
 develop-eggs/
 dist/
 downloads/
