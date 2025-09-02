@@ -9,8 +9,16 @@ jobs:
   build-and-smoke:
     runs-on: macos-latest
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Show workspace files (debug)
+        run: |
+          pwd
+          ls -la
 
       - name: Build universal installer
         shell: bash
@@ -38,4 +46,3 @@ jobs:
           CI: true
         run: |
           ./InstallerV2/bin/install.sh --cli --dry-run
-
