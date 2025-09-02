@@ -1,0 +1,41 @@
+name: InstallerV2 CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build universal installer
+        shell: bash
+        run: |
+          bash InstallerV2/build/create-universal-installer.sh
+          ls -la dist
+
+      - name: Smoke test (CLI, dry-run)
+        shell: bash
+        env:
+          CI: true
+        run: |
+          ./dist/dtu-installer.sh --cli --dry-run
+
+      - name: Smoke test (GUI, dry-run)
+        shell: bash
+        env:
+          CI: true
+        run: |
+          ./dist/dtu-installer.sh --gui --dry-run
+
+      - name: Direct run via repo entry (CLI, dry-run)
+        shell: bash
+        env:
+          CI: true
+        run: |
+          ./InstallerV2/bin/install.sh --cli --dry-run
+
