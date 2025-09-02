@@ -34,6 +34,14 @@ downloads/
 eggs/
 .eggs/
 lib/
+!InstallerV2/lib/
+!InstallerV2/lib/logging.sh
+!InstallerV2/lib/config.sh
+!InstallerV2/lib/platform.sh
+!InstallerV2/lib/telemetry.sh
+!InstallerV2/lib/ui-cli.sh
+!InstallerV2/lib/ui-gui.sh
+!InstallerV2/lib/core.sh
 lib64/
 parts/
 sdist/
