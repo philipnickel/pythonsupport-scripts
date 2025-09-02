@@ -28,36 +28,34 @@ jobs:
       - name: Build universal installer
         shell: bash
         run: |
-          cd pr_head || true
           if [[ -d pr_head ]]; then cd pr_head; fi
-          if [[ -f InstallerV2/build/create-universal-installer.sh ]]; then
-            bash InstallerV2/build/create-universal-installer.sh
-            ls -la dist
-          else
-            echo "InstallerV2 not found in PR head; skipping build" && exit 1
-          fi
+          test -f InstallerV2/build/create-universal-installer.sh || { echo "InstallerV2 build script missing"; ls -la InstallerV2 || true; exit 1; }
+          bash InstallerV2/build/create-universal-installer.sh
+          ls -la dist
 
       - name: Smoke test (CLI, dry-run)
         shell: bash
         env:
           CI: true
+          DTU_ANALYTICS_ENABLED: "0"
         run: |
-          cd pr_head
+          if [[ -d pr_head ]]; then cd pr_head; fi
           ./dist/dtu-installer.sh --cli --dry-run
 
       - name: Smoke test (GUI, dry-run)
         shell: bash
         env:
           CI: true
+          DTU_ANALYTICS_ENABLED: "0"
         run: |
-          cd pr_head
+          if [[ -d pr_head ]]; then cd pr_head; fi
           ./dist/dtu-installer.sh --gui --dry-run
 
       - name: Direct run via repo entry (CLI, dry-run)
         shell: bash
         env:
           CI: true
+          DTU_ANALYTICS_ENABLED: "0"
         run: |
-          cd pr_head
-          ./InstallerV2/bin/install.sh --cli --dry-run
-
+          if [[ -d pr_head ]]; then cd pr_head; fi
+          ./InstallerV2/install.sh --cli --dry-run
