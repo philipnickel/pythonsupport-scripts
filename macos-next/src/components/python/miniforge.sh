@@ -23,7 +23,7 @@ python::miniforge::install() {
   if [[ "${DRY_RUN:-false}" == true ]]; then return 0; fi
   mkdir -p "$(dirname "$MINIFORGE_PATH")"
   local tmp_installer="/tmp/miniforge_installer.sh"
-  net::get "$url" "$tmp_installer" "$sha"
+  net::get "$url" "$tmp_installer"
   bash "$tmp_installer" -b -p "$MINIFORGE_PATH"
 }
 
@@ -34,4 +34,3 @@ python::miniforge::verify() {
   fi
   return 1
 }
-

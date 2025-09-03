@@ -7,7 +7,7 @@ vscode::install() {
   echo "Install VS Code from pinned URL"
   if [[ "${DRY_RUN:-false}" == true ]]; then return 0; fi
   local zip="/tmp/VSCode.zip"
-  net::get "$VSCODE_URL_UNIVERSAL" "$zip" "${VSCODE_SHA256_UNIVERSAL:-}"
+  net::get "$VSCODE_URL_UNIVERSAL" "$zip"
   unzip -qq -o "$zip" -d /tmp/
   local target_app
   target_app="$HOME/Applications/Visual Studio Code.app"
@@ -21,4 +21,3 @@ vscode::install() {
 vscode::verify() {
   if [[ -x "$HOME/bin/code" ]]; then "$HOME/bin/code" --version || true; fi
 }
-
