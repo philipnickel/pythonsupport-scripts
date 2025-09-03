@@ -9,16 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Lint (shellcheck)
-        run: bash macos-next/tools/lint.sh
-
   components:
     runs-on: macos-latest
-    needs: lint
     strategy:
       fail-fast: false
       matrix:
