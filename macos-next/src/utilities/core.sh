@@ -91,6 +91,43 @@ conda::find_all() {
   fi
 }
 
+# Conda initialization (optional; only when explicitly allowed)
+conda::init_shells() {
+  if [[ ! -x "${MINIFORGE_PATH:-$HOME/miniforge3}/bin/conda" ]]; then
+    log_warn "Conda not found at ${MINIFORGE_PATH:-$HOME/miniforge3}; skipping shell init"
+    return 0
+  fi
+  if [[ "${PIS_ENV:-}" == "CI" ]]; then
+    log_info "CI mode: skipping conda init"
+    return 0
+  fi
+  if [[ "${DRY_RUN:-false}" == true ]]; then
+    log_info "[PLAN] Initialize conda for bash and zsh"
+    return 0
+  fi
+  log_info "Initializing conda for bash and zsh"
+  "${MINIFORGE_PATH:-$HOME/miniforge3}/bin/conda" init bash zsh || log_warn "conda init failed"
+  log_info "Shells initialized. You may need to restart your terminal."
+}
+
+# Post-install summary and hints
+summary::print_next_steps() {
+  log_info ""
+  log_info "Installation Summary"
+  log_info "===================="
+  log_info "Miniforge: ${MINIFORGE_PATH:-$HOME/miniforge3}"
+  if [[ -x "${MINIFORGE_PATH:-$HOME/miniforge3}/bin/python3" ]]; then
+    "${MINIFORGE_PATH:-$HOME/miniforge3}/bin/python3" --version || true
+  fi
+  log_info "VS Code CLI symlink (if installed): $HOME/bin/code"
+  log_info "Log file: $DTU_LOG_FILE"
+  log_info ""
+  log_info "Next steps:"
+  log_info " - Close and reopen your terminal (or run: exec \"$SHELL\")"
+  log_info " - Ensure \"$HOME/bin\" is in your PATH for 'code' command"
+  log_info " - To activate conda in new shells: restart terminal (or run 'conda init bash zsh' manually)"
+}
+
 # Precheck: emit simple key=value schema
 precheck::run() {
   local env_file="/tmp/macos_next_precheck_$$.env"

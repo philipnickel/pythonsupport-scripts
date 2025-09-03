@@ -61,12 +61,20 @@ USAGE
   run_step "Ensure DTU base Python env" python::base_env::ensure
   run_step "Verify DTU base Python env" python::base_env::verify
 
+  # Optionally initialize conda for shells if explicitly allowed
+  if $ASSUME_YES && [[ "${PIS_ENV:-}" != "CI" ]]; then
+    run_step "Initialize Conda for shells" conda::init_shells
+  else
+    log_info "Skipping conda init (use -y to auto-init, or run 'conda init bash zsh' manually)"
+  fi
+
   if $WITH_VSCODE; then
     run_step "Install VS Code" vscode::install
     run_step "Verify VS Code" vscode::verify
   fi
 
   log_info "Installation completed. Log: $DTU_LOG_FILE"
+  summary::print_next_steps
 }
 
 main "$@"
