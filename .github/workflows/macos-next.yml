@@ -3,9 +3,6 @@ name: macos-next
 on:
   pull_request:
     branches: [ "main" ]
-    paths:
-      - 'macos-next/**'
-      - '.github/workflows/macos-next.yml'
   push:
     branches:
       - macOS_improved_arch
