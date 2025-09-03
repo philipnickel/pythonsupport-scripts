@@ -11,9 +11,15 @@ python::base_env::ensure() {
   fi
   # Ensure Python via conda in base env
   "${MINIFORGE_PATH}/bin/conda" install -y python="${PYTHON_VERSION_DTU}" || return 1
-  # Install packages via pip for broader availability
-  "${MINIFORGE_PATH}/bin/python3" -m pip install --upgrade pip || true
-  "${MINIFORGE_PATH}/bin/python3" -m pip install "${DTU_PACKAGES[@]}" || return 1
+  # Install conda packages first (fast, with binaries)
+  if [[ ${#CONDA_PACKAGES[@]:-0} -gt 0 ]]; then
+    "${MINIFORGE_PATH}/bin/conda" install -y "${CONDA_PACKAGES[@]}" || return 1
+  fi
+  # Then pip packages (DTU-specific)
+  if [[ ${#PIP_PACKAGES[@]:-0} -gt 0 ]]; then
+    "${MINIFORGE_PATH}/bin/python3" -m pip install --upgrade pip || true
+    PIP_NO_INPUT=1 "${MINIFORGE_PATH}/bin/python3" -m pip install "${PIP_PACKAGES[@]}" || return 1
+  fi
 }
 
 python::base_env::verify() {

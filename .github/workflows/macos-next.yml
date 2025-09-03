@@ -121,7 +121,7 @@ jobs:
         run: |
           "$HOME/miniforge3/bin/python3" - <<'PY'
 import sys
-mods = ["dtumathtools", "pandas", "scipy", "statsmodels", "uncertainties"]
+mods = ["pandas", "scipy", "statsmodels", "uncertainties", "dtumathtools"]
 failed = []
 for m in mods:
     try:

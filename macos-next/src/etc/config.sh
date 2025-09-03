@@ -15,9 +15,11 @@ MINIFORGE_SHA256_X86_64="TBD"
 
 # Python version and DTU packages
 PYTHON_VERSION_DTU="3.12"
-DTU_PACKAGES=(dtumathtools pandas scipy statsmodels uncertainties)
+# Package sets
+# Prefer conda for heavy scientific packages; use pip for DTU-specific ones
+CONDA_PACKAGES=(pandas scipy statsmodels uncertainties)
+PIP_PACKAGES=(dtumathtools)
 
 # VS Code (optional; pins when enabled)
 VSCODE_URL_UNIVERSAL="https://update.code.visualstudio.com/latest/darwin/universal/stable"
 VSCODE_SHA256_UNIVERSAL="TBD"
-
