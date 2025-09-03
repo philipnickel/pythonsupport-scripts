@@ -76,7 +76,7 @@ os::version() { sw_vers -productVersion 2>/dev/null || echo "unknown"; }
 
 # Conda detection (lightweight)
 conda::find_all() {
-  local paths=()
+  local -a paths=()
   local candidates=("$HOME/miniforge3" "$HOME/miniconda3" "$HOME/anaconda3" \
                     "/opt/miniforge3" "/opt/miniconda3" "/opt/anaconda3")
   for p in "${candidates[@]}"; do
@@ -86,7 +86,9 @@ conda::find_all() {
     local base; base=$(conda info --base 2>/dev/null || true)
     if [[ -n "${base:-}" && -d "$base" ]]; then paths+=("$base"); fi
   fi
-  printf '%s\n' "${paths[@]}" | awk '!seen[$0]++'
+  if ((${#paths[@]})); then
+    printf '%s\n' "${paths[@]}" | awk '!seen[$0]++'
+  fi
 }
 
 # Precheck: emit simple key=value schema
