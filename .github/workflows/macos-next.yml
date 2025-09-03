@@ -1,0 +1,63 @@
+name: macos-next
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'macos-next/**'
+      - '.github/workflows/macos-next.yml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint (shellcheck)
+        run: bash macos-next/tools/lint.sh
+
+  components:
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - utilities/precheck
+          - components/python
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run component test
+        run: |
+          case "${{ matrix.test }}" in
+            utilities/precheck)
+              bash macos-next/tests/utilities/precheck.sh
+              ;;
+            components/python)
+              bash macos-next/tests/components/python.sh
+              ;;
+          esac
+
+  build:
+    runs-on: ubuntu-latest
+    needs: components
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build single-file installer
+        run: bash macos-next/tools/build.sh
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-next-dist
+          path: macos-next/dist/
+
+  smoke:
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run integration dry-run
+        run: |
+          bash macos-next/tools/build.sh
+          bash macos-next/tests/smoke.sh
+
