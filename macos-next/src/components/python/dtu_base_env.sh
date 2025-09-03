@@ -9,6 +9,8 @@ python::base_env::ensure() {
   if [[ ! -x "${MINIFORGE_PATH}/bin/conda" ]]; then
     echo "Conda not found at ${MINIFORGE_PATH}; abort"; return 1
   fi
+  echo "Conda base: ${MINIFORGE_PATH}"
+  "${MINIFORGE_PATH}/bin/conda" info || true
   # Ensure Python via conda in base env
   "${MINIFORGE_PATH}/bin/conda" install -y python="${PYTHON_VERSION_DTU}" || return 1
   # Install conda packages first (fast, with binaries)
