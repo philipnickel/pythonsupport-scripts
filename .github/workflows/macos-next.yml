@@ -17,7 +17,7 @@ jobs:
         run: bash macos-next/tools/lint.sh
 
   components:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     needs: lint
     strategy:
       fail-fast: false
@@ -60,4 +60,3 @@ jobs:
         run: |
           bash macos-next/tools/build.sh
           bash macos-next/tests/smoke.sh
-
