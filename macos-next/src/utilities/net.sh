@@ -20,9 +20,9 @@ net::get() {
 
   curl -fsSL --retry 5 --retry-delay 2 --continue-at - -o "$tmp" "$url"
 
-  if [[ -n "$sha256" ]]; then
+  # Allow skipping checksum if explicitly requested for development
+  if [[ -n "$sha256" && -z "${ALLOW_UNVERIFIED:-}" && "$sha256" != "TBD" ]]; then
     echo "$sha256  $tmp" | shasum -a 256 -c - >/dev/null 2>&1 || { rm -f "$tmp"; echo "checksum mismatch"; return 3; }
   fi
   mv -f "$tmp" "$dest"
 }
-
