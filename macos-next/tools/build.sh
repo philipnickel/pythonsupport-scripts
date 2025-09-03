@@ -27,6 +27,19 @@ append_file() {
   echo "##### END: $title ($path) #####" >> "$OUT"
 }
 
+append_main() {
+  local path="$1"
+  echo "" >> "$OUT"
+  echo "##### BEGIN: main/install (inlined) #####" >> "$OUT"
+  # Strip shebang and any source lines; modules are inlined below
+  awk '
+    NR==1 && $0 ~ /^#!\// {next}
+    $1 == "source" {next}
+    {print}
+  ' "$path" >> "$OUT"
+  echo "##### END: main/install (inlined) #####" >> "$OUT"
+}
+
 # Sanity: ensure modules have no top-level side effects (heuristic)
 ensure_functions_only() {
   local path="$1"
@@ -38,17 +51,16 @@ ensure_functions_only() {
 build() {
   : > "$OUT"
   header > "$OUT"
-  append_file "main/install" "$ROOT_DIR/src/main/install.sh"
   append_file "utilities/core" "$ROOT_DIR/src/utilities/core.sh"
   append_file "utilities/net" "$ROOT_DIR/src/utilities/net.sh"
   append_file "etc/config" "$ROOT_DIR/src/etc/config.sh"
   append_file "components/python/miniforge" "$ROOT_DIR/src/components/python/miniforge.sh"
   append_file "components/python/dtu_base_env" "$ROOT_DIR/src/components/python/dtu_base_env.sh"
   append_file "components/vscode/install" "$ROOT_DIR/src/components/vscode/install.sh"
+  append_main "$ROOT_DIR/src/main/install.sh"
   chmod +x "$OUT"
   shasum -a 256 "$OUT" | awk '{print $1}' > "$SHA"
   echo "Built: $OUT"
 }
 
 build "$@"
-
