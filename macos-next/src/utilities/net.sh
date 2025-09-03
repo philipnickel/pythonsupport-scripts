@@ -10,6 +10,6 @@ net::get() {
   local url="$1" dest="$2" tmp
   [[ -z "$url" || -z "$dest" ]] && { echo "net::get: missing args"; return 2; }
   tmp="$dest.part"
-  curl -fsSL --retry 5 --retry-delay 2 --continue-at - -o "$tmp" "$url"
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 --max-time 600 --location --continue-at - -o "$tmp" "$url"
   mv -f "$tmp" "$dest"
 }

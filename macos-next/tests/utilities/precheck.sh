@@ -12,4 +12,6 @@ grep -q "^DISK_FREE_GB=" /tmp/precheck_ci.env
 grep -q "^HAS_CLT=" /tmp/precheck_ci.env
 grep -q "^MIN_MACOS_OK=" /tmp/precheck_ci.env
 grep -q "^UNDER_ROSETTA=" /tmp/precheck_ci.env
+grep -q "^SHELL=" /tmp/precheck_ci.env
+grep -q "^PATH=" /tmp/precheck_ci.env
 echo "Precheck test passed"

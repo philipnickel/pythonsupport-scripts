@@ -57,6 +57,8 @@ args::parse() {
   done
   # In CI default to dry-run
   if [[ "${PIS_ENV:-}" == "CI" ]]; then DRY_RUN=true; fi
+  # Enable shell trace in verbose mode (except when building the single-file script)
+  if $VERBOSE; then set -x; fi
 }
 
 # Runner
@@ -131,12 +133,14 @@ summary::print_next_steps() {
 # Precheck: emit simple key=value schema
 precheck::run() {
   local env_file="/tmp/macos_next_precheck_$$.env"
-  local arch ver conda_list disk_free_gb has_clt min_ok rosetta translated
+  local arch ver conda_list disk_free_gb has_clt min_ok rosetta translated user_shell path_str
   arch=$(os::arch)
   ver=$(os::version)
   conda_list=$(conda::find_all | tr '\n' ',')
   # Disk free in GB (integer)
   disk_free_gb=$(df -g / | awk 'NR==2{print $4}')
+  user_shell="$SHELL"
+  path_str="$PATH"
   # Command Line Tools
   if /usr/bin/xcode-select -p >/dev/null 2>&1; then has_clt=yes; else has_clt=no; fi
   # Minimal supported macOS (10.15+). Compare major.minor
@@ -160,6 +164,8 @@ precheck::run() {
     echo "MIN_MACOS_OK=${min_ok}"
     echo "UNDER_ROSETTA=${rosetta}"
     echo "CONDA_INSTALLS=${conda_list}"
+    echo "SHELL=${user_shell}"
+    echo "PATH=${path_str}"
   } | tee "$env_file"
 
   # Human-readable hints
