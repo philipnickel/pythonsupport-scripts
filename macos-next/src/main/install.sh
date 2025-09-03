@@ -13,6 +13,25 @@ source "$ROOT_DIR/src/components/python/dtu_base_env.sh"
 source "$ROOT_DIR/src/components/vscode/install.sh"
 
 main() {
+  # Usage/help
+  if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+    cat <<'USAGE'
+DTU macOS Installer (next)
+
+Usage: install.sh [options]
+
+Options:
+  --dry-run           Print plan and perform precheck only (default in CI)
+  -y, --yes           Non-interactive; assume "yes" to prompts
+  --with-vscode       Include VS Code installation
+  --gui               Use native macOS dialogs for confirmations (Phase 2)
+  --no-gui            Force CLI prompts
+  -v, --verbose       Verbose logging
+  -h, --help          Show this help and exit
+USAGE
+    exit 0
+  fi
+
   args::parse "$@"
   ui::notify "DTU macOS Installer (next) starting"
 
