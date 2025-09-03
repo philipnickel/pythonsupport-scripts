@@ -13,3 +13,8 @@ grep -q "Execution plan:" /tmp/macos_next_smoke.log
 grep -q "Dry-run complete" /tmp/macos_next_smoke.log
 
 echo "Smoke test passed"
+
+# Also test with VS Code flag (still dry-run)
+"$ROOT_DIR/dist/dtu-python-installer-macos.sh" --dry-run --with-vscode | tee /tmp/macos_next_smoke_vscode.log
+grep -q "Install VS Code" /tmp/macos_next_smoke_vscode.log
+echo "Smoke with VS Code flag passed"

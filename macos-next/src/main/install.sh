@@ -40,13 +40,14 @@ main() {
   fi
 
   run_step "Ensure DTU base Python env" python::base_env::ensure
+  run_step "Verify DTU base Python env" python::base_env::verify
 
   if $WITH_VSCODE; then
     run_step "Install VS Code" vscode::install
+    run_step "Verify VS Code" vscode::verify
   fi
 
   log_info "Installation completed. Log: $DTU_LOG_FILE"
 }
 
 main "$@"
-
