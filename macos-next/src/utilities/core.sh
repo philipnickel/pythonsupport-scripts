@@ -92,17 +92,42 @@ conda::find_all() {
 # Precheck: emit simple key=value schema
 precheck::run() {
   local env_file="/tmp/macos_next_precheck_$$.env"
-  local arch ver conda_list disk_free
+  local arch ver conda_list disk_free_gb has_clt min_ok rosetta translated
   arch=$(os::arch)
   ver=$(os::version)
   conda_list=$(conda::find_all | tr '\n' ',')
-  disk_free=$(df -H / | awk 'NR==2{print $4}')
+  # Disk free in GB (integer)
+  disk_free_gb=$(df -g / | awk 'NR==2{print $4}')
+  # Command Line Tools
+  if /usr/bin/xcode-select -p >/dev/null 2>&1; then has_clt=yes; else has_clt=no; fi
+  # Minimal supported macOS (10.15+). Compare major.minor
+  min_ok=no
+  if [[ "$ver" =~ ^([0-9]+)\.([0-9]+) ]]; then
+    local major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]}
+    if (( major > 10 )) || (( major == 10 && minor >= 15 )); then min_ok=yes; fi
+  fi
+  # Rosetta/translation detection (best-effort)
+  translated=0
+  if command -v sysctl >/dev/null 2>&1; then
+    translated=$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)
+  fi
+  if [[ "$arch" == "arm64" && "$translated" == "1" ]]; then rosetta=yes; else rosetta=no; fi
+
   {
     echo "VERSION=${ver}"
     echo "ARCH=${arch}"
-    echo "DISK_FREE=${disk_free}"
+    echo "DISK_FREE_GB=${disk_free_gb}"
+    echo "HAS_CLT=${has_clt}"
+    echo "MIN_MACOS_OK=${min_ok}"
+    echo "UNDER_ROSETTA=${rosetta}"
     echo "CONDA_INSTALLS=${conda_list}"
   } | tee "$env_file"
+
+  # Human-readable hints
+  [[ "$min_ok" == no ]] && log_warn "Unsupported macOS version: $ver (requires 10.15 or newer)"
+  if (( disk_free_gb < 5 )); then log_warn "Low disk space: ${disk_free_gb}G free"; fi
+  [[ "$has_clt" == no ]] && log_warn "Xcode Command Line Tools not found; some features may require them"
+  [[ "$rosetta" == yes ]] && log_warn "Running under Rosetta; prefer native arm64 tools when possible"
+
   log_info "Precheck written to $env_file"
 }
-
