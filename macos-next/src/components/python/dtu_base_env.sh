@@ -9,8 +9,11 @@ python::base_env::ensure() {
   if [[ ! -x "${MINIFORGE_PATH}/bin/conda" ]]; then
     echo "Conda not found at ${MINIFORGE_PATH}; abort"; return 1
   fi
+  # Ensure Python via conda in base env
   "${MINIFORGE_PATH}/bin/conda" install -y python="${PYTHON_VERSION_DTU}" || return 1
-  "${MINIFORGE_PATH}/bin/conda" install -y "${DTU_PACKAGES[@]}" || return 1
+  # Install packages via pip for broader availability
+  "${MINIFORGE_PATH}/bin/python3" -m pip install --upgrade pip || true
+  "${MINIFORGE_PATH}/bin/python3" -m pip install "${DTU_PACKAGES[@]}" || return 1
 }
 
 python::base_env::verify() {
