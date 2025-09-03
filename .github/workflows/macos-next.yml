@@ -3,6 +3,7 @@ name: macos-next
 on:
   pull_request:
     branches: [ "main" ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
   push:
     branches:
       - macOS_improved_arch
