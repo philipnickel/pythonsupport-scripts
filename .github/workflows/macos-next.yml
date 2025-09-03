@@ -17,6 +17,7 @@ jobs:
         test:
           - utilities/precheck
           - components/python
+          - components/vscode
     steps:
       - uses: actions/checkout@v4
       - name: Show runner info
@@ -33,6 +34,9 @@ jobs:
               ;;
             components/python)
               bash macos-next/tests/components/python.sh
+              ;;
+            components/vscode)
+              bash macos-next/tests/components/vscode.sh
               ;;
           esac
 

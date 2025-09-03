@@ -17,6 +17,7 @@ test: test-components
 test-components:
 	bash macos-next/tests/utilities/precheck.sh
 	bash macos-next/tests/components/python.sh
+	bash macos-next/tests/components/vscode.sh
 
 smoke: build
 	bash macos-next/tests/smoke.sh
