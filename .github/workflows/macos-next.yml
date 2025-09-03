@@ -74,3 +74,4 @@ jobs:
           path: |
             /tmp/dtu_macos_next_*.log
             /tmp/macos_next_precheck_*.env
+          if-no-files-found: ignore
