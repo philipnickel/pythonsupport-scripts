@@ -8,8 +8,9 @@ export PYTHON_VERSION_DTU="3.12"
 export DTU_PACKAGES=("dtumathtools" "pandas" "scipy" "statsmodels" "uncertainties")
 
 # VS Code extensions
-export VSCODE_EXTENSIONS=("ms-python.python" "ms-toolsai.jupyter" "tomoki1207.pdf")
+export VSCODE_EXTENSIONS=("ms-python.python" "ms-toolsai.jupyter")
 
 # Miniforge configuration
 export MINIFORGE_PATH="$HOME/miniforge3"
 export MINIFORGE_BASE_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX"
+

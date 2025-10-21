@@ -18,7 +18,7 @@ $script:VSCODE_EXTENSIONS = @(
     "ms-python.python"
     "ms-python.pylint"
     "ms-toolsai.jupyter"
-    "tomoki1207.pdf"
+    #"tomoki1207.pdf"
 )
 
 # Installation paths

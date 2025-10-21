@@ -118,7 +118,7 @@ Write-Host "Installing VSCode extensions..."
 $extensions = @(
     "ms-python.python",
     "ms-toolsai.jupyter", 
-    "tomoki1207.pdf"
+    #"tomoki1207.pdf"
 )
 
 $failedExtensions = @()
