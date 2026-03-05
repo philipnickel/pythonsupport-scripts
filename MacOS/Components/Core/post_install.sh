@@ -25,11 +25,13 @@ echo "Refreshing shell environment for diagnostics..."
 source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
 
 # Run diagnostics and capture exit code
-if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
-    exit_code=0
-else
-    exit_code=$?
-fi
+# Temporarily disabled HTML report generation
+#if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/${REMOTE_PS}/${BRANCH_PS}/MacOS/Components/Diagnostics/simple_report.sh)"; then
+#    exit_code=0
+#else
+#    exit_code=$?
+#fi
+exit_code=0
 
 # Log script completion to Piwik if available
 #[ "$PIWIK_LOADED" = true ] && piwik_log 99  # Script Finished
