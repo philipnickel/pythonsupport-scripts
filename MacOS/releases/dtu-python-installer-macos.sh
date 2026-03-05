@@ -262,6 +262,6 @@ echo "DTU Python Support Installation Complete!"
 echo "========================================"
 echo "Installation log: $INSTALL_LOG"
 echo "Next steps:"
-echo "• See the Installation HTML report for details"
+# echo "• See the Installation HTML report for details"  # Temporarily disabled
 echo "Need help? Visit: https://pythonsupport.dtu.dk"
 } 2>&1 | log_and_display
