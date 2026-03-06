@@ -64,9 +64,9 @@ else
     ARCH=$(uname -m)
     echo "Detected architecture: $ARCH"
     if [[ "$ARCH" == "arm64" ]]; then
-        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-arm64"
+        VSCODE_URL="https://update.code.visualstudio.com/latest/darwin-arm64/stable"
     else
-        VSCODE_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin"
+        VSCODE_URL="https://update.code.visualstudio.com/latest/darwin/stable"
     fi
     
     echo "Downloading VS Code from: $VSCODE_URL"
