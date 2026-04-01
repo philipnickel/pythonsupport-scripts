@@ -1,0 +1,142 @@
+name: macos-next
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, reopened, synchronize, ready_for_review ]
+
+jobs:
+  components:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - utilities/precheck
+          - components/python
+          - components/vscode
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show runner info
+        run: |
+          uname -a || true
+          sw_vers || true
+          which bash || true
+          bash --version || true
+      - name: Run component test
+        run: |
+          case "${{ matrix.test }}" in
+            utilities/precheck)
+              bash macos-next/tests/utilities/precheck.sh
+              ;;
+            components/python)
+              bash macos-next/tests/components/python.sh
+              ;;
+            components/vscode)
+              bash macos-next/tests/components/vscode.sh
+              ;;
+          esac
+
+  build:
+    runs-on: ubuntu-latest
+    needs: components
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build single-file installer
+        run: bash macos-next/tools/build.sh
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-next-dist
+          path: macos-next/dist/
+
+  smoke:
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run integration dry-run
+        run: |
+          bash macos-next/tools/build.sh
+          bash macos-next/tests/smoke.sh
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-next-logs
+          path: |
+            /tmp/dtu_macos_next_*.log
+            /tmp/macos_next_precheck_*.env
+          if-no-files-found: ignore
+
+  functional:
+    runs-on: macos-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [ clean, existing-conda ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: bash macos-next/tools/build.sh
+      - name: Setup scenario - clean
+        if: matrix.scenario == 'clean'
+        run: |
+          echo "Clean scenario: no pre-existing conda"
+          if command -v conda >/dev/null 2>&1; then
+            echo "Conda found in PATH; printing info (not removing)"
+            conda info --base || true
+          fi
+      - name: Setup scenario - existing-conda
+        if: matrix.scenario == 'existing-conda'
+        run: |
+          echo "Installing Miniconda to simulate existing conda"
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            arm64) MC_ARCH="arm64" ;;
+            x86_64) MC_ARCH="x86_64" ;;
+            *) MC_ARCH="x86_64" ;;
+          esac
+          curl -fsSL "https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-${MC_ARCH}.sh" -o /tmp/miniconda.sh
+          bash /tmp/miniconda.sh -b -p "$HOME/miniconda3"
+          rm -f /tmp/miniconda.sh
+          echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
+      - name: Run installer (non-dry-run)
+        env:
+          PIS_ENV: ""  # ensure not CI to avoid auto-dry-run
+        run: |
+          macos-next/dist/dtu-python-installer-macos.sh --yes
+      - name: Verify installation - conda and python
+        run: |
+          "$HOME/miniforge3/bin/conda" --version
+          "$HOME/miniforge3/bin/python3" --version
+          INSTALLED_VERSION=$("$HOME/miniforge3/bin/python3" -c 'import sys; print("%d.%d"% (sys.version_info[0], sys.version_info[1]))')
+          test "$INSTALLED_VERSION" = "3.12"
+      - name: Verify DTU packages import
+        run: |
+          "$HOME/miniforge3/bin/python3" - <<'PY'
+          import sys
+          mods = ["pandas", "scipy", "statsmodels", "uncertainties", "dtumathtools"]
+          failed = []
+          for m in mods:
+              try:
+                  __import__(m)
+              except Exception as e:
+                  failed.append((m, str(e)))
+          if failed:
+              print("Missing/broken:")
+              for m, err in failed:
+                  print(f" - {m}: {err}")
+              sys.exit(1)
+          print("Packages import OK")
+          PY
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-next-functional-${{ matrix.scenario }}-logs
+          path: |
+            /tmp/dtu_macos_next_*.log
+            /tmp/macos_next_precheck_*.env
+          if-no-files-found: ignore
