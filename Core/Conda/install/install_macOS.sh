@@ -25,7 +25,7 @@ if [ -d "$install_dir" ] && [ -x "$install_dir/bin/conda" ]; then
 else
     # Download
     tmpdir_path="$(mktemp -d)"
-    trap "rm -rf '$tmpdir_path'" EXIT KILL INT
+    trap "rm -rf '$tmpdir_path'" EXIT
 
     echo "  Downloading ${installer_name}..."
     curl -fSL "${PS_FORGE_URL}/${installer_name}" -o "$tmpdir_path/${installer_name}"
