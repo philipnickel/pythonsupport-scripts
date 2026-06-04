@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-REPO_BASE_URL="${REPO_BASE_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
+REPO_BASE_URL="${REPO_BASE_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}" 
 export REPO_BASE_URL
 
 # Load the progress UI (defines the `progress` helper; the source guard in

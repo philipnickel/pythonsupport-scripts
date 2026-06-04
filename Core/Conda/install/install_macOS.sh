@@ -12,7 +12,7 @@ set -euo pipefail
 
 #BASE_URL="https://github.com/philipnickel/miniforge-PIS/releases/latest/download"
 
-BASE_URL="https://github.com/dtudk/pythonsupport-forge/releases/latest/download"
+BASE_URL="https://github.com/dtudk/pythonsupport-forge/releases/latest/download" #TODO: change to internal site 
 #https://github.com/dtudk/pythonsupport-forge
 
 ARCH="$(uname -m)"
