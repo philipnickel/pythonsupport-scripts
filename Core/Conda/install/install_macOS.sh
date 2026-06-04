@@ -10,7 +10,11 @@
 
 set -euo pipefail
 
-BASE_URL="https://github.com/philipnickel/miniforge-PIS/releases/latest/download"
+#BASE_URL="https://github.com/philipnickel/miniforge-PIS/releases/latest/download"
+
+BASE_URL="https://github.com/dtudk/pythonsupport-forge/releases/latest/download"
+#https://github.com/dtudk/pythonsupport-forge
+
 ARCH="$(uname -m)"
 INSTALLER_NAME="Miniforge3-MacOSX-${ARCH}.sh"
 INSTALL_DIR="$HOME/miniforge3-dtu"

@@ -13,20 +13,22 @@ set -euo pipefail
 REPO_BASE_URL="${REPO_BASE_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
 export REPO_BASE_URL
 
+# Load the progress UI (defines the `progress` helper; the source guard in
+# progress.sh skips its self-test when sourced rather than executed directly).
+source <(curl -fsSL "$REPO_BASE_URL/Utils/progress.sh")
+
 echo "========================================="
 echo "  DTU Python Support - Full Installation"
 echo "========================================="
 echo ""
 
 # Step 1: Install Miniforge/Conda
-echo "--- Step 1/2: Miniforge ---"
-bash <(curl -fsSL "$REPO_BASE_URL/Core/Conda/install/install_macOS.sh")
-echo ""
+progress "Step 1/2: Miniforge" 10 \
+    bash <(curl -fsSL "$REPO_BASE_URL/Core/Conda/install/install_macOS.sh")
 
 # Step 2: Install VS Code (includes extensions and settings)
-echo "--- Step 2/2: VS Code ---"
-bash <(curl -fsSL "$REPO_BASE_URL/Core/VsCode/install/install_macOS.sh")
-echo ""
+progress "Step 2/2: VS Code" 5 \
+    bash <(curl -fsSL "$REPO_BASE_URL/Core/VsCode/install/install_macOS.sh")
 
 echo "========================================="
 echo "  Installation complete!"
