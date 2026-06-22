@@ -45,9 +45,9 @@ if (Get-Command code -ErrorAction SilentlyContinue -or (Test-Path $AppPath)) {
 }
 
 # Apply settings
-Invoke-Expression (Invoke-WebRequest -Uri "$PS_REPO_URL/Core/VsCode/config/settings_windows.ps1" -UseBasicParsing).Content
+Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/settings_windows.ps1" -UseBasicParsing).Content
 
 # Install extensions
-Invoke-Expression (Invoke-WebRequest -Uri "$PS_REPO_URL/Core/VsCode/config/extensions_windows.ps1" -UseBasicParsing).Content
+Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/extensions_windows.ps1" -UseBasicParsing).Content
 
 Write-Host "`n=== VS Code installation complete! ==="
