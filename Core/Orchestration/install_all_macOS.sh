@@ -17,10 +17,6 @@ export PS_REPO_URL
 # progress.sh skips its self-test when sourced rather than executed directly).
 source <(curl -fsSL "$PS_REPO_URL/Utils/progress.sh")
 
-# Load the progress UI (defines the `progress` helper; the source guard in
-# progress.sh skips its self-test when sourced rather than executed directly).
-source <(curl -fsSL "$REPO_BASE_URL/Utils/progress.sh")
-
 echo "========================================="
 echo "  DTU Python Support - Full Installation"
 echo "========================================="
