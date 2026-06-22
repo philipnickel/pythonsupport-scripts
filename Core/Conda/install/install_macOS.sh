@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-PS_FORGE_URL="${PS_FORGE_URL:-https://github.com/philipnickel/miniforge-PIS/releases/latest/download}"
+PS_FORGE_URL="${PS_FORGE_URL:-https://github.com/dtudk/pythonsupport-forge/releases/latest/download}" #TODO: change to internal site 
 arch="$(uname -m)"
 installer_name="Miniforge3-MacOSX-${arch}.sh"
 install_dir="$HOME/miniforge3-dtu"
