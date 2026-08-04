@@ -11,11 +11,14 @@ $ErrorActionPreference = "Stop"
 
 $AppPath = "$Env:LOCALAPPDATA\Programs\Microsoft VS Code"
 $DownloadUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
+    $DownloadUrl = "https://update.code.visualstudio.com/latest/win32-arm64-user/stable"
+}
 
 Write-Host "=== Installing VS Code ===`n"
 
 # Check if already installed
-if (Get-Command code -ErrorAction SilentlyContinue -or (Test-Path $AppPath)) {
+if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $AppPath)) {
     Write-Host "  VS Code is already installed."
     Write-Host "  [OK] Skipping download"
 } else {

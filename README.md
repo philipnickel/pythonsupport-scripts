@@ -5,11 +5,16 @@
 ### Remote (end-user install)
 
 ```bash
-# Install
+# Install (macOS)
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_macOS.sh | bash
 
-# Uninstall
+# Uninstall (macOS)
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_macOS.sh | bash
+```
+
+```powershell
+# Install (Windows)
+irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
 ```
 
 ### Local development
@@ -47,6 +52,7 @@ All scripts use `curl -fsSL "$PS_REPO_URL/..."` to reference other files in the 
 - **Orchestration scripts** default `PS_REPO_URL` to the GitHub raw URL and export it so child scripts inherit it.
 - **Child scripts** expect `PS_REPO_URL` to be set in the environment.
 - For local testing, `export PS_REPO_URL="file://$PWD"` makes `curl` read from the local filesystem instead.
+- Windows note: `Invoke-WebRequest` in PowerShell 7 does not support `file://` URLs, so the `.ps1` scripts need an HTTP `PS_REPO_URL` for local testing — see `Testing/docker/README.md`.
 
 ### Error handling
 

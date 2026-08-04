@@ -1,0 +1,26 @@
+# Windows-like test environment for the *_windows.ps1 scripts.
+#
+# NOTE: Docker on macOS cannot run real Windows containers (they need a
+# Windows kernel). This image runs PowerShell (pwsh) on Debian instead,
+# which is enough to test script syntax and logic. Things that require a
+# real Windows (registry, .exe installers like the VS Code setup) will
+# not work.
+FROM mcr.microsoft.com/powershell:lts-debian-12
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# pwsh 7's Invoke-WebRequest only supports http(s), so PS_REPO_URL points
+# at a tiny HTTP server (serve.py) started by run.sh that serves the
+# mounted /repo directory with text/* MIME types (like raw.githubusercontent.com).
+COPY serve.py /serve.py
+
+ENV PS_REPO_URL="http://127.0.0.1:8000" \
+    APPDATA="/root/AppData/Roaming" \
+    LOCALAPPDATA="/root/AppData/Local" \
+    USERPROFILE="/root" \
+    TEMP="/tmp"
+
+WORKDIR /repo
+CMD ["pwsh"]
