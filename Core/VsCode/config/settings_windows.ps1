@@ -17,7 +17,7 @@ Write-Host "=== Applying VS Code Settings ===`n"
 
 New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
 
-Invoke-WebRequest -Uri "$env:REPO_BASE_URL/Core/VsCode/config/default_settings_Windows.json" `
+Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/default_settings_Windows.json" `
                   -OutFile $settingsFile `
                   -UseBasicParsing
 

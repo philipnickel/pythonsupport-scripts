@@ -16,30 +16,30 @@ echo ""
 removed_something=false
 
 # Find conda base prefix
-CONDA_BASE=""
+conda_base=""
 
 # Try conda command first
 if command -v conda &>/dev/null; then
-    CONDA_BASE="$(conda info --base 2>/dev/null || true)"
+    conda_base="$(conda info --base 2>/dev/null || true)"
 fi
 
 # Fallback: check common install locations
-if [ -z "$CONDA_BASE" ] || [ ! -d "$CONDA_BASE" ]; then
+if [ -z "$conda_base" ] || [ ! -d "$conda_base" ]; then
     for candidate in "$HOME/miniforge3" "$HOME/miniconda3" "$HOME/anaconda3"; do
         if [ -d "$candidate" ]; then
-            CONDA_BASE="$candidate"
+            conda_base="$candidate"
             break
         fi
     done
 fi
 
-if [ -z "$CONDA_BASE" ]; then
+if [ -z "$conda_base" ]; then
     echo "  conda not found"
 else
-    echo "  Found conda at: $CONDA_BASE"
+    echo "  Found conda at: $conda_base"
 
     # Safety check: refuse to delete home or root
-    resolved_path="$(cd "$CONDA_BASE" && pwd)"
+    resolved_path="$(cd "$conda_base" && pwd)"
     if [ "$resolved_path" = "/" ] || [ "$resolved_path" = "$HOME" ]; then
         echo "  ERROR: Refusing to delete unsafe path: $resolved_path"
         exit 1
@@ -53,11 +53,11 @@ else
     fi
 
     # Remove conda installation
-    if [ -d "$CONDA_BASE" ]; then
-        if [ -w "$CONDA_BASE" ]; then
-            rm -rf "$CONDA_BASE"
+    if [ -d "$conda_base" ]; then
+        if [ -w "$conda_base" ]; then
+            rm -rf "$conda_base"
         else
-            sudo rm -rf "$CONDA_BASE"
+            sudo rm -rf "$conda_base"
         fi
         echo "  [OK] Conda installation removed"
         removed_something=true

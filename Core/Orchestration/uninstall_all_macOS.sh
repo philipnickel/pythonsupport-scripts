@@ -10,8 +10,8 @@
 
 set -euo pipefail
 
-REPO_BASE_URL="${REPO_BASE_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
-export REPO_BASE_URL
+PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
+export PS_REPO_URL
 
 echo "========================================="
 echo "  DTU Python Support - Full Uninstall"
@@ -20,12 +20,12 @@ echo ""
 
 # Step 1: Uninstall VS Code
 echo "--- Step 1/2: VS Code ---"
-bash <(curl -fsSL "$REPO_BASE_URL/Utils/VsCode/uninstall_macOS.sh")
+bash <(curl -fsSL "$PS_REPO_URL/Utils/VsCode/uninstall_macOS.sh")
 echo ""
 
 # Step 2: Uninstall Conda
 echo "--- Step 2/2: Conda ---"
-bash <(curl -fsSL "$REPO_BASE_URL/Utils/Conda/uninstall_macOS.sh")
+bash <(curl -fsSL "$PS_REPO_URL/Utils/Conda/uninstall_macOS.sh")
 echo ""
 
 echo "========================================="

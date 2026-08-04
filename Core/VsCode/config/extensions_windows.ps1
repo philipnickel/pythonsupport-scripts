@@ -13,7 +13,7 @@ $codeCli = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd"
 
 Write-Host "=== Installing VS Code Extensions ===`n"
 
-$extensionsUrl = "$env:REPO_BASE_URL/Core/VsCode/config/extensions.txt"
+$extensionsUrl = "$env:PS_REPO_URL/Core/VsCode/config/extensions.txt"
 $lines = (Invoke-WebRequest -Uri $extensionsUrl -UseBasicParsing).Content -split "`n"
 
 foreach ($line in $lines) {

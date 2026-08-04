@@ -22,3 +22,7 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Ut
 - Disable chat agent
 - Set Python locator to JS
 - Disable telemetry
+
+## Extensions
+
+Listed and commented in `config/extensions.txt`.
