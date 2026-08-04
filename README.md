@@ -2,22 +2,28 @@
 
 ## Usage
 
-### Remote (end-user install)
+### MacOS
 
 ```bash
-# Install (macOS)
+# Install (everything)
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_macOS.sh | bash
 
-# Uninstall (macOS)
+```
+
+```bash
+# uninstall (everything)
+
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_macOS.sh | bash
 ```
 
+### Windows 
 ```powershell
 # Install (Windows)
 irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
 ```
 
-### Local development
+
+## Local development
 
 To test scripts against your local checkout instead of the remote GitHub repo, point `PS_REPO_URL` at the local repo root using a `file://` URL. All internal `curl` calls will then read from disk, so uncommitted changes are tested too.
 
@@ -52,16 +58,5 @@ All scripts use `curl -fsSL "$PS_REPO_URL/..."` to reference other files in the 
 - **Orchestration scripts** default `PS_REPO_URL` to the GitHub raw URL and export it so child scripts inherit it.
 - **Child scripts** expect `PS_REPO_URL` to be set in the environment.
 - For local testing, `export PS_REPO_URL="file://$PWD"` makes `curl` read from the local filesystem instead.
-- Windows note: `Invoke-WebRequest` in PowerShell 7 does not support `file://` URLs, so the `.ps1` scripts need an HTTP `PS_REPO_URL` for local testing — see `Testing/docker/README.md`.
 
-### Error handling
 
-All scripts use `set -euo pipefail`.
-
-- `-e`: Exit immediately if a command fails.
-- `-u`: Using an unset variable yields an error.
-- `-o pipefail`: Pipes return the error code of the first failure.
-
-### TODO
-
-- Directory structure too complex, i.e. do we need separate install uninstall dirs?
