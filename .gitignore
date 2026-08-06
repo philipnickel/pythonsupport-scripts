@@ -107,3 +107,6 @@ docs/_build/
 # Application specific
 *.dmg
 *.app
+
+# macos-next build artifacts
+macos-next/dist/
