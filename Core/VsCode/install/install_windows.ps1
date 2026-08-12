@@ -38,7 +38,7 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
         # Install silently
         Write-Host "  Installing..."
         $proc = Start-Process -FilePath $installerPath -ArgumentList "/silent /mergetasks=!runcode" `
-                              -Wait -PassThru
+                              -NoNewWindow -Wait -PassThru
         if ($proc.ExitCode -ne 0) {
             throw "VS Code installer exited with code $($proc.ExitCode)"
         }

@@ -22,8 +22,9 @@ irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orche
 
 ## Uninstall everything (Windows)
 
-This removes all Conda distributions and environments under the current user's
-profile, Conda user data, VS Code, VS Code settings, and extensions:
+This removes detected per-user and machine-wide Conda distributions and
+environments, current-user Conda data, VS Code, VS Code settings, and
+extensions. Run PowerShell as Administrator for machine-wide installations:
 
 ```powershell
 irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_windows.ps1 | iex

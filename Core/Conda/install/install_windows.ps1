@@ -38,11 +38,9 @@ if (Test-Path $condaExe) {
         # (https://conda.github.io/constructor/cli-options/#windows-installers):
         Write-Host "  Running installer..."
         $argString = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$installDir"
-        $installLog = Join-Path $tmpDir.FullName "install.log"
         $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
-                            -NoNewWindow -Wait -PassThru -RedirectStandardOutput $installLog
+                            -NoNewWindow -Wait -PassThru
         if ($proc.ExitCode -ne 0) {
-            if (Test-Path $installLog) { Get-Content $installLog | Write-Host }
             throw "Miniforge installer exited with code $($proc.ExitCode)"
         }
         Write-Host "  [OK] Miniforge installed to $installDir"

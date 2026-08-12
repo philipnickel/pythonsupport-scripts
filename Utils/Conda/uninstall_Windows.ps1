@@ -1,11 +1,12 @@
 # @doc
 # @name: Conda Distribution Uninstall (Windows)
-# @description: Uninstall all Conda distributions and remove Conda user data for the current user
+# @description: Uninstall all detected Conda distributions and remove Conda user data
 # @category: Utilities
 # @usage: powershell -File Utils/Conda/uninstall_Windows.ps1
 # @requirements: Windows, PowerShell 5.1+
-# @notes: Removes detected and common Conda distributions below USERPROFILE,
-#   including Miniforge, Miniconda, Anaconda, and Mambaforge installations.
+# @notes: Removes positively identified per-user and machine-wide Miniforge,
+#   Miniconda, Anaconda, and Mambaforge installations. Administrator rights may
+#   be required for machine-wide installations.
 # @/doc
 
 $ErrorActionPreference = "Stop"
@@ -24,11 +25,31 @@ $userProfilePath = $userProfileFullPath.TrimEnd(
     [System.IO.Path]::DirectorySeparatorChar,
     [System.IO.Path]::AltDirectorySeparatorChar
 )
-$profilePrefix = $userProfilePath + [System.IO.Path]::DirectorySeparatorChar
 $condarcPath = Join-Path $userProfilePath ".condarc"
 $condaDataPath = Join-Path $userProfilePath ".conda"
 $removedSomething = $false
 $installDirs = New-Object System.Collections.ArrayList
+$protectedPaths = New-Object System.Collections.ArrayList
+
+$protectedPathValues = @(
+    [System.IO.Path]::GetPathRoot($userProfilePath),
+    $userProfilePath,
+    $env:SystemRoot,
+    $env:windir,
+    $env:ProgramData,
+    $env:ProgramFiles,
+    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+)
+foreach ($path in $protectedPathValues) {
+    if (-not [string]::IsNullOrWhiteSpace($path)) {
+        [void]$protectedPaths.Add(
+            [System.IO.Path]::GetFullPath($path).TrimEnd(
+                [System.IO.Path]::DirectorySeparatorChar,
+                [System.IO.Path]::AltDirectorySeparatorChar
+            )
+        )
+    }
+}
 
 function Add-CondaInstallCandidate {
     param(
@@ -40,11 +61,23 @@ function Add-CondaInstallCandidate {
         [System.IO.Path]::DirectorySeparatorChar,
         [System.IO.Path]::AltDirectorySeparatorChar
     )
-    if (-not $fullPath.StartsWith($profilePrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
-        $fullPath.Equals($userProfilePath, [System.StringComparison]::OrdinalIgnoreCase) -or
-        $fullPath.Equals([System.IO.Path]::GetPathRoot($fullPath), [System.StringComparison]::OrdinalIgnoreCase)) {
-        Write-Host "  [WARNING] Skipping Conda path outside the current user profile: $fullPath" -ForegroundColor Yellow
+    if ($protectedPaths | Where-Object { $_.Equals($fullPath, [System.StringComparison]::OrdinalIgnoreCase) }) {
+        Write-Host "  [WARNING] Skipping protected Conda path: $fullPath" -ForegroundColor Yellow
         return
+    }
+
+    if (Test-Path $fullPath) {
+        $item = Get-Item -Path $fullPath -Force
+        if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+            Write-Host "  [WARNING] Skipping Conda path that is a symbolic link or junction: $fullPath" -ForegroundColor Yellow
+            return
+        }
+
+        if (-not (Test-CondaInstallRoot -Path $fullPath) -and
+            -not ([System.IO.Path]::GetFileName($fullPath) -ieq "miniforge3-dtu")) {
+            Write-Host "  [WARNING] Skipping directory without Conda installation markers: $fullPath" -ForegroundColor Yellow
+            return
+        }
     }
 
     if (-not ($Candidates | Where-Object { $_.Equals($fullPath, [System.StringComparison]::OrdinalIgnoreCase) })) {
@@ -77,21 +110,61 @@ $commonInstallNames = @(
     "anaconda",
     "mambaforge"
 )
-foreach ($name in $commonInstallNames) {
-    Add-CondaInstallCandidate -Path (Join-Path $userProfilePath $name) -Candidates $installDirs
+$searchRoots = @(
+    $userProfilePath,
+    $env:ProgramData,
+    $env:ProgramFiles,
+    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+)
+foreach ($searchRoot in $searchRoots) {
+    if ([string]::IsNullOrWhiteSpace($searchRoot)) {
+        continue
+    }
+    foreach ($name in $commonInstallNames) {
+        Add-CondaInstallCandidate -Path (Join-Path $searchRoot $name) -Candidates $installDirs
+    }
 }
 
-# Discover custom-named Conda roots directly below the current user's profile.
-Get-ChildItem -Path $userProfilePath -Directory -ErrorAction SilentlyContinue | ForEach-Object {
-    if (Test-CondaInstallRoot -Path $_.FullName) {
-        Add-CondaInstallCandidate -Path $_.FullName -Candidates $installDirs
+# Discover custom-named Conda roots directly below standard install roots.
+foreach ($searchRoot in $searchRoots) {
+    if ([string]::IsNullOrWhiteSpace($searchRoot) -or -not (Test-Path $searchRoot -PathType Container)) {
+        continue
+    }
+    Get-ChildItem -Path $searchRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        if (Test-CondaInstallRoot -Path $_.FullName) {
+            Add-CondaInstallCandidate -Path $_.FullName -Candidates $installDirs
+        }
+    }
+}
+
+# Include registered installations with a usable InstallLocation.
+$registryRoots = @(
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
+foreach ($registryRoot in $registryRoots) {
+    if (-not (Test-Path $registryRoot)) {
+        continue
+    }
+    Get-ItemProperty -Path "$registryRoot\*" -ErrorAction SilentlyContinue | Where-Object {
+        $_.DisplayName -match "(?i)(Anaconda|Miniconda|Miniforge|Mambaforge)"
+    } | ForEach-Object {
+        if (-not [string]::IsNullOrWhiteSpace($_.InstallLocation)) {
+            Add-CondaInstallCandidate -Path $_.InstallLocation -Candidates $installDirs
+        }
     }
 }
 
 $condaCommand = Get-Command conda -ErrorAction SilentlyContinue
 if ($condaCommand) {
     try {
-        $detectedBase = (& $condaCommand.Source info --base 2>$null | Select-Object -First 1).Trim()
+        $condaInvoker = if ([string]::IsNullOrWhiteSpace($condaCommand.Source)) {
+            $condaCommand.Name
+        } else {
+            $condaCommand.Source
+        }
+        $detectedBase = (& $condaInvoker info --base 2>$null | Select-Object -First 1).Trim()
         if (-not [string]::IsNullOrWhiteSpace($detectedBase)) {
             if (Test-CondaInstallRoot -Path $detectedBase) {
                 Add-CondaInstallCandidate -Path $detectedBase -Candidates $installDirs
@@ -114,13 +187,6 @@ foreach ($installDir in $installDirs) {
     Write-Host "  Found Conda installation at $installDir"
     $uninstaller = Get-ChildItem -Path $installDir -Filter "Uninstall-*.exe" -File -ErrorAction SilentlyContinue |
                    Select-Object -First 1
-
-    if (-not $uninstaller -and
-        -not (Test-CondaInstallRoot -Path $installDir) -and
-        -not ([System.IO.Path]::GetFileName($installDir) -ieq "miniforge3-dtu")) {
-        Write-Host "  [WARNING] Skipping directory without Conda installation markers: $installDir" -ForegroundColor Yellow
-        continue
-    }
 
     if ($uninstaller) {
         Write-Host "  Running $($uninstaller.Name)..."

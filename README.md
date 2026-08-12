@@ -35,9 +35,9 @@ the Python and Jupyter extensions. The production installer sources are:
 Miniforge currently provides an x64 installer on Windows; Windows ARM64 runs it
 under emulation. VS Code uses its native ARM64 installer automatically.
 
-To remove the complete Windows installation from the current user, including
-all Conda distributions and environments under `%USERPROFILE%`, Conda user
-data, VS Code settings, and extensions:
+To remove the complete Windows installation, including detected per-user and
+machine-wide Conda distributions and environments, current-user Conda data,
+VS Code settings, and extensions, run PowerShell as Administrator:
 
 ```powershell
 $env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex

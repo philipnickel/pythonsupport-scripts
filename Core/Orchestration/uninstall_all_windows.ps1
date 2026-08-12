@@ -1,10 +1,10 @@
 # @doc
 # @name: Full Uninstall (Windows)
-# @description: Uninstall VS Code and all Conda distributions from the current Windows user
+# @description: Uninstall VS Code and all detected Conda distributions on Windows
 # @category: Core
 # @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_windows.ps1 | iex
 # @requirements: Windows, PowerShell 5.1+
-# @notes: Removes VS Code first, followed by current-user Conda distributions and data.
+# @notes: Removes VS Code first, followed by per-user and machine-wide Conda distributions and current-user data.
 # @/doc
 
 $ErrorActionPreference = "Stop"

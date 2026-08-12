@@ -33,16 +33,33 @@ foreach ($line in $lines) {
         continue
     }
 
+    $previousErrorActionPreference = $ErrorActionPreference
+    $invocationError = $null
+    $exitCode = $null
+
     try {
-        & $codeCli --install-extension $line --force 2>$null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "  [OK] $line"
-        } else {
-            Write-Host "  [FAIL] $line (exit code $LASTEXITCODE)" -ForegroundColor Red
-            $failedExtensions += $line
-        }
+        # Windows PowerShell 5.1 promotes native stderr to its Error stream.
+        # Keep it non-terminating so output remains visible and use the native
+        # exit code to decide whether installation succeeded.
+        $ErrorActionPreference = "Continue"
+        & $codeCli --install-extension $line --force
+        $exitCode = $LASTEXITCODE
     } catch {
-        Write-Host "  [FAIL] $line ($($_.Exception.Message))" -ForegroundColor Red
+        $invocationError = $_.Exception.Message
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($invocationError) {
+        Write-Host "  [FAIL] $line ($invocationError)" -ForegroundColor Red
+        $failedExtensions += $line
+    } elseif ($null -eq $exitCode) {
+        Write-Host "  [FAIL] $line (VS Code CLI did not report an exit code)" -ForegroundColor Red
+        $failedExtensions += $line
+    } elseif ($exitCode -eq 0) {
+        Write-Host "  [OK] $line"
+    } else {
+        Write-Host "  [FAIL] $line (exit code $exitCode)" -ForegroundColor Red
         $failedExtensions += $line
     }
 }

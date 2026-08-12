@@ -60,8 +60,8 @@ Then test the fork-pinned complete uninstall:
 $env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
 ```
 
-Confirm that VS Code, `%APPDATA%\Code`, `%USERPROFILE%\.vscode`, all Conda
-installations under `%USERPROFILE%`, `%USERPROFILE%\.conda`, and
+Confirm that VS Code, `%APPDATA%\Code`, `%USERPROFILE%\.vscode`, all detected
+per-user and machine-wide Conda installations, `%USERPROFILE%\.conda`, and
 `%USERPROFILE%\.condarc` are gone. Running the uninstall one-liner a second time
 must succeed as a no-op.
 

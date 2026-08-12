@@ -25,10 +25,14 @@ $script:originalEnvironment = @{
     PROGRESS_LOG_FILE = $env:PROGRESS_LOG_FILE
     PS_TEST_CODE_LOG = $env:PS_TEST_CODE_LOG
     PS_TEST_CODE_FAIL = $env:PS_TEST_CODE_FAIL
+    PS_TEST_CODE_WARN = $env:PS_TEST_CODE_WARN
     PS_TEST_CONDA_EXIT_CODE = $env:PS_TEST_CONDA_EXIT_CODE
     PS_TEST_VSCODE_EXIT_CODE = $env:PS_TEST_VSCODE_EXIT_CODE
     PS_TEST_CONDA_UNINSTALL_EXIT_CODE = $env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE
     PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE
+    ProgramData = $env:ProgramData
+    ProgramFiles = $env:ProgramFiles
+    "ProgramFiles(x86)" = [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
 }
 
 $script:testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("dtu windows tests " + [System.Guid]::NewGuid())
@@ -145,6 +149,9 @@ function New-FakeCodeCli {
     $scriptText = @'
 #!/bin/sh
 printf '%s\n' "$*" >> "$PS_TEST_CODE_LOG"
+if [ -n "$PS_TEST_CODE_WARN" ]; then
+    printf '%s\n' "$PS_TEST_CODE_WARN" >&2
+fi
 if [ -n "$PS_TEST_CODE_FAIL" ]; then
     if printf '%s\n' "$*" | grep -F -q -- "$PS_TEST_CODE_FAIL"; then
         exit 23
@@ -173,7 +180,11 @@ function Reset-TestEnvironment {
     $appData = Join-Path $userProfile "App Data/Roaming"
     $localAppData = Join-Path $userProfile "App Data/Local"
     $tempDir = Join-Path $script:currentCaseRoot "Temporary Files"
-    New-Item -ItemType Directory -Path $appData, $localAppData, $tempDir -Force | Out-Null
+    $programData = Join-Path $script:currentCaseRoot "Program Data"
+    $programFiles = Join-Path $script:currentCaseRoot "Program Files"
+    $programFilesX86 = Join-Path $script:currentCaseRoot "Program Files x86"
+    New-Item -ItemType Directory -Path $appData, $localAppData, $tempDir, `
+        $programData, $programFiles, $programFilesX86 -Force | Out-Null
 
     $env:USERPROFILE = $userProfile
     $env:APPDATA = $appData
@@ -189,10 +200,14 @@ function Reset-TestEnvironment {
     $env:PROGRESS_LOG_FILE = Join-Path $tempDir "dtu_log.txt"
     $env:PS_TEST_CODE_LOG = Join-Path $tempDir "code calls.log"
     $env:PS_TEST_CODE_FAIL = $null
+    $env:PS_TEST_CODE_WARN = $null
     $env:PS_TEST_CONDA_EXIT_CODE = "0"
     $env:PS_TEST_VSCODE_EXIT_CODE = "0"
     $env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE = "0"
     $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = "0"
+    $env:ProgramData = $programData
+    $env:ProgramFiles = $programFiles
+    [System.Environment]::SetEnvironmentVariable("ProgramFiles(x86)", $programFilesX86, "Process")
 
     $global:DTUTestProcessCalls = @()
     $global:DTUTestWebRequests = @()
@@ -344,6 +359,24 @@ try {
             -Message "Jupyter extension arguments were incorrect."
     }
 
+    Invoke-Test "Extension stderr remains visible without causing false failures" {
+        Reset-TestEnvironment "extensions stderr warning"
+        New-FakeCodeCli | Out-Null
+        $env:PS_TEST_CODE_WARN = "[DEP0169] DeprecationWarning: url.parse() behavior is not standardized"
+
+        $result = Invoke-RepoScript "Core/VsCode/config/extensions_windows.ps1"
+        Assert-True -Condition ($null -eq $result.Error) `
+            -Message "A successful CLI warning caused extension failure: $($result.Error)"
+        Assert-Contains -Text $result.Output -Expected "[OK] ms-python.python" `
+            -Message "Python extension was not reported as successful."
+        Assert-Contains -Text $result.Output -Expected "[OK] ms-toolsai.jupyter" `
+            -Message "Jupyter extension was not reported as successful."
+        Assert-Contains -Text $result.Output -Expected "DEP0169" `
+            -Message "VS Code CLI stderr was redirected away from the terminal output."
+        Assert-Equal -Expected 2 -Actual @(Get-Content $env:PS_TEST_CODE_LOG).Count `
+            -Message "Not every extension was attempted after a stderr warning."
+    }
+
     Invoke-Test "Extension failures try all IDs and then fail" {
         Reset-TestEnvironment "extensions failure"
         $codeCli = New-FakeCodeCli
@@ -357,7 +390,7 @@ try {
         Assert-True -Condition ($null -ne $result.Error) `
             -Message "An extension failure was reported as success.`nOutput:`n$($result.Output)"
         Assert-Contains -Text $result.Output -Expected "[FAIL] ms-python.python" `
-            -Message "The failed extension was not reported."
+            -Message "The failed extension was not reported. Error: $($result.Error)"
         $calls = @(Get-Content $env:PS_TEST_CODE_LOG)
         Assert-Equal -Expected 2 -Actual $calls.Count -Message "Processing stopped before every extension was attempted."
     }
@@ -376,6 +409,9 @@ try {
         Assert-Equal -Expected $expectedArgs -Actual $call.Arguments -Message "Conda installer arguments changed."
         Assert-True -Condition $call.Wait -Message "Conda installer was not awaited."
         Assert-True -Condition $call.PassThru -Message "Conda installer process was not captured."
+        Assert-True -Condition $call.NoNewWindow -Message "Conda installer was not attached to the current terminal."
+        Assert-True -Condition ([string]::IsNullOrEmpty($call.RedirectStandardOutput)) `
+            -Message "Conda installer output was redirected away from the terminal."
         Assert-False -Condition (Test-Path (Split-Path -Parent $call.FilePath)) `
             -Message "Conda temporary directory was not removed."
     }
@@ -421,6 +457,9 @@ try {
             -Message "VS Code silent arguments changed."
         Assert-True -Condition $call.Wait -Message "VS Code installer was not awaited."
         Assert-True -Condition $call.PassThru -Message "VS Code installer process was not captured."
+        Assert-True -Condition $call.NoNewWindow -Message "VS Code installer was not attached to the current terminal."
+        Assert-True -Condition ([string]::IsNullOrEmpty($call.RedirectStandardOutput)) `
+            -Message "VS Code installer output was redirected away from the terminal."
         Assert-False -Condition (Test-Path (Split-Path -Parent $call.FilePath)) `
             -Message "VS Code temporary directory was not removed."
         Assert-True -Condition (Test-Path (Join-Path $env:APPDATA "Code/User/settings.json")) `
@@ -495,8 +534,8 @@ try {
             -Message "Success banner was not printed."
         Assert-Contains -Text $result.Output -Expected "Open Miniforge Prompt" `
             -Message "Miniforge Prompt guidance was not printed."
-        Assert-NotContains -Text $result.Output -Unexpected "demo failure" `
-            -Message "Loading progress.ps1 ran its self-test."
+        Assert-False -Condition (Test-Path $env:PROGRESS_LOG_FILE) `
+            -Message "The Windows orchestrator unexpectedly used the progress helper."
         Assert-True -Condition $global:DTUTestProcessCalls[0].Arguments.Contains($env:USERPROFILE) `
             -Message "The Conda install path with spaces was not preserved in the installer arguments."
     }
@@ -585,19 +624,19 @@ try {
             -Message "VS Code files were removed after its uninstaller failed."
     }
 
-    Invoke-Test "Conda uninstall removes all current-user distributions and user data" {
+    Invoke-Test "Conda uninstall removes per-user and machine-wide distributions" {
         Reset-TestEnvironment "conda uninstall"
         $distributions = @(
-            @{ Directory = "miniforge3-dtu"; Uninstaller = "Uninstall-Miniforge3.exe" },
-            @{ Directory = "miniconda3"; Uninstaller = "Uninstall-Miniconda3.exe" },
-            @{ Directory = "anaconda3"; Uninstaller = "Uninstall-Anaconda3.exe" },
-            @{ Directory = "mambaforge"; Uninstaller = "Uninstall-Mambaforge.exe" },
-            @{ Directory = "custom-course-conda"; Uninstaller = "Uninstall-CustomConda.exe" }
+            @{ Path = (Join-Path $env:USERPROFILE "miniforge3-dtu"); Uninstaller = "Uninstall-Miniforge3.exe" },
+            @{ Path = (Join-Path $env:USERPROFILE "miniconda3"); Uninstaller = "Uninstall-Miniconda3.exe" },
+            @{ Path = (Join-Path $env:USERPROFILE "custom-course-conda"); Uninstaller = "Uninstall-CustomConda.exe" },
+            @{ Path = (Join-Path $env:ProgramData "anaconda3"); Uninstaller = "Uninstall-Anaconda3.exe" },
+            @{ Path = (Join-Path $env:ProgramFiles "mambaforge"); Uninstaller = "Uninstall-Mambaforge.exe" }
         )
         $condarcPath = Join-Path $env:USERPROFILE ".condarc"
         $condaDataFile = Join-Path $env:USERPROFILE ".conda/environments.txt"
         foreach ($distribution in $distributions) {
-            $directory = Join-Path $env:USERPROFILE $distribution.Directory
+            $directory = $distribution.Path
             New-Item -ItemType Directory -Path $directory -Force | Out-Null
             [System.IO.File]::WriteAllText(
                 (Join-Path $directory $distribution.Uninstaller), "test marker"
@@ -616,9 +655,9 @@ try {
         Assert-Equal -Expected $distributions.Count -Actual $global:DTUTestProcessCalls.Count `
             -Message "Not every Conda distribution uninstaller was called."
         foreach ($distribution in $distributions) {
-            $directory = Join-Path $env:USERPROFILE $distribution.Directory
+            $directory = $distribution.Path
             Assert-False -Condition (Test-Path $directory) `
-                -Message "$($distribution.Directory) remains installed."
+                -Message "$directory remains installed."
             Assert-True -Condition ($global:DTUTestProcessCalls.LeafName -contains $distribution.Uninstaller) `
                 -Message "$($distribution.Uninstaller) was not called."
         }
