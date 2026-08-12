@@ -106,7 +106,8 @@ function global:progress {
 # Self-test: only runs when the file is executed directly, not when it is
 # dot-sourced or loaded via Invoke-Expression (mirror of the BASH_SOURCE guard
 # in progress.sh).
-if ($PSCommandPath -and ($MyInvocation.InvocationName -ne '.')) {
+if (($MyInvocation.MyCommand -is [System.Management.Automation.ExternalScriptInfo]) -and
+    ($MyInvocation.InvocationName -ne '.')) {
     progress "Step 1/1: Installing XYZ" 15 {
         1..6 | ForEach-Object { Write-Host $_; Start-Sleep -Milliseconds 500 }
         throw "demo failure"

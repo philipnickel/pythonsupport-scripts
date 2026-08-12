@@ -34,5 +34,5 @@ progress "Step 2/2: VS Code" 5 {
 
 Write-Host "========================================="
 Write-Host "  Installation complete!"
-Write-Host "  Restart your terminal to activate conda."
+Write-Host "  Open Miniforge Prompt from the Start menu to use conda."
 Write-Host "========================================="

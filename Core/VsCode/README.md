@@ -8,6 +8,18 @@ Installs VS Code, applies default settings, and installs extensions.
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/VsCode/install/install_macOS.sh | bash
 ```
 
+## Install (Windows)
+
+The full Windows one-liner installs VS Code after Miniforge:
+
+```powershell
+irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
+```
+
+For local integration tests, `PS_VSCODE_URL` can override the VS Code installer
+download URL. Production installs leave it unset and select the x64 or ARM64
+stable user installer automatically.
+
 ## Uninstall (macOS)
 
 Removes VS Code, settings, extensions, and user data.

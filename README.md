@@ -25,6 +25,21 @@ irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orche
 
 ## Local development
 
+### Windows
+
+Windows installer logic is tested with PowerShell in Docker. Docker Desktop
+must be running:
+
+```bash
+Testing/docker/test.sh
+```
+
+This rebuilds the test image, resets the test container, and runs the complete
+dependency-free integration suite. Real `.exe` execution is intentionally
+mocked and must be smoke-tested once on Windows; see `Testing/docker/README.md`.
+
+### macOS
+
 To test scripts against your local checkout instead of the remote GitHub repo, point `PS_REPO_URL` at the local repo root using a `file://` URL. All internal `curl` calls will then read from disk, so uncommitted changes are tested too.
 
 1. Open a terminal at the repo root (the directory containing this README).
@@ -58,5 +73,4 @@ All scripts use `curl -fsSL "$PS_REPO_URL/..."` to reference other files in the 
 - **Orchestration scripts** default `PS_REPO_URL` to the GitHub raw URL and export it so child scripts inherit it.
 - **Child scripts** expect `PS_REPO_URL` to be set in the environment.
 - For local testing, `export PS_REPO_URL="file://$PWD"` makes `curl` read from the local filesystem instead.
-
 

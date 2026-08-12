@@ -11,6 +11,9 @@ serves it at `http://127.0.0.1:8000` (`$PS_REPO_URL`), since pwsh 7's
 ## Usage
 
 ```bash
+# Rebuild the image, reset the container, and run the full Windows test suite
+Testing/docker/test.sh
+
 # Interactive pwsh shell (repo mounted at /repo)
 Testing/docker/run.sh
 
@@ -21,9 +24,42 @@ Testing/docker/run.sh -File ./Core/VsCode/config/settings_windows.ps1
 Testing/docker/reset.sh
 ```
 
+The test suite uses temporary Windows-style user directories whose names contain
+spaces. It serves the real repository scripts over local HTTP, replaces only
+installer process execution and the VS Code CLI, and verifies:
+
+- PowerShell parsing for every `.ps1` file
+- Conda and VS Code download selection, silent arguments, exit codes, and cleanup
+- settings creation and preservation
+- extension filtering, invocation, and failure propagation
+- full Conda-then-VS-Code orchestration and success-banner behavior
+
+No downloaded fixture is executed. The small `.exe` files under
+`Testing/windows/fixtures/` are plain-text HTTP fixtures.
+
+## Final Windows smoke test
+
+After the local suite passes, run the production command once from Windows
+PowerShell 5.1 on a clean Windows x64 account:
+
+```powershell
+irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
+```
+
+Confirm that:
+
+1. Miniforge is available from **Miniforge Prompt**.
+2. VS Code launches and retains the installed Windows defaults.
+3. `ms-python.python` and `ms-toolsai.jupyter` are installed.
+4. The command prints the final success banner only after both installation steps finish.
+
+The local suite validates ARM64 URL selection and the x64 Miniforge emulation
+message. A real ARM64 installation is optional unless suitable hardware is
+available.
+
 ## Limitations
 
 - Not a real Windows: no registry, no `.exe` installers (e.g. the VS Code
   setup in `install_windows.ps1` cannot run).
-- Windows-style paths (`$env:APPDATA\Code\User`) become literal filenames
-  containing backslashes on Linux — functional, but not identical layout.
+- PowerShell 7 on Debian cannot prove Windows PowerShell 5.1 runtime behavior;
+  the final Windows smoke test remains required.

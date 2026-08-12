@@ -27,8 +27,9 @@ if (Test-Path $condaExe) {
     Write-Host "  Miniforge is already installed at $installDir"
     Write-Host "  [OK] Skipping download"
 } else {
-    $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("miniforge_" + [System.Guid]::NewGuid())
+    $tmpDir = $null
     try {
+        $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("miniforge_" + [System.Guid]::NewGuid())
         $installerPath = Join-Path $tmpDir.FullName $installerName
 
         Write-Host "  Downloading $installerName..."
@@ -50,7 +51,9 @@ if (Test-Path $condaExe) {
         Write-Host "  [OK] Miniforge installed to $installDir"
     }
     finally {
-        Remove-Item -Recurse -Force $tmpDir.FullName -ErrorAction SilentlyContinue
+        if ($tmpDir -and (Test-Path $tmpDir.FullName)) {
+            Remove-Item -Recurse -Force $tmpDir.FullName -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -72,4 +75,4 @@ if (Test-Path $condaExe) {
 #}
 #Write-Host "  [OK] conda init complete (restart your terminal to activate)"
 
-#Write-Host "`n=== Miniforge installation complete! ==="
+Write-Host "`n=== Miniforge installation complete! ==="
