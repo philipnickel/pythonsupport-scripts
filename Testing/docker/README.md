@@ -33,6 +33,7 @@ installer process execution and the VS Code CLI, and verifies:
 - settings creation and preservation
 - extension filtering, invocation, and failure propagation
 - full Conda-then-VS-Code orchestration and success-banner behavior
+- complete Windows uninstall ordering, cleanup, idempotency, and failure propagation
 
 No downloaded fixture is executed. The small `.exe` files under
 `Testing/windows/fixtures/` are plain-text HTTP fixtures.
@@ -53,9 +54,19 @@ Confirm that:
 3. `ms-python.python` and `ms-toolsai.jupyter` are installed.
 4. The command prints the final success banner only after both installation steps finish.
 
-The local suite validates ARM64 URL selection and the x64 Miniforge emulation
-message. A real ARM64 installation is optional unless suitable hardware is
-available.
+Then test the fork-pinned complete uninstall:
+
+```powershell
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+```
+
+Confirm that VS Code, `%APPDATA%\Code`, `%USERPROFILE%\.vscode`, all Conda
+installations under `%USERPROFILE%`, `%USERPROFILE%\.conda`, and
+`%USERPROFILE%\.condarc` are gone. Running the uninstall one-liner a second time
+must succeed as a no-op.
+
+The local suite validates ARM64 VS Code URL selection. A real ARM64 installation
+is optional unless suitable hardware is available.
 
 ## Limitations
 

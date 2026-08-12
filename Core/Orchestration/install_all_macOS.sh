@@ -28,7 +28,7 @@ bash <(curl -fsSL "$PS_REPO_URL/Core/Conda/install/install_macOS.sh")
 
 # Step 2: Install VS Code (includes extensions and settings)
 #progress "Step 2/2: VS Code" 5 \
-#bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/install/install_macOS.sh")
+bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/install/install_macOS.sh")
 
 echo "========================================="
 echo "  Installation complete!"

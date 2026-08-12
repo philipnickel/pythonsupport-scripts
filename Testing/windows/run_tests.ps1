@@ -27,6 +27,8 @@ $script:originalEnvironment = @{
     PS_TEST_CODE_FAIL = $env:PS_TEST_CODE_FAIL
     PS_TEST_CONDA_EXIT_CODE = $env:PS_TEST_CONDA_EXIT_CODE
     PS_TEST_VSCODE_EXIT_CODE = $env:PS_TEST_VSCODE_EXIT_CODE
+    PS_TEST_CONDA_UNINSTALL_EXIT_CODE = $env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE
+    PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE
 }
 
 $script:testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("dtu windows tests " + [System.Guid]::NewGuid())
@@ -189,6 +191,8 @@ function Reset-TestEnvironment {
     $env:PS_TEST_CODE_FAIL = $null
     $env:PS_TEST_CONDA_EXIT_CODE = "0"
     $env:PS_TEST_VSCODE_EXIT_CODE = "0"
+    $env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE = "0"
+    $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = "0"
 
     $global:DTUTestProcessCalls = @()
     $global:DTUTestWebRequests = @()
@@ -217,7 +221,17 @@ function global:Start-Process {
         RedirectStandardOutput = $RedirectStandardOutput
     }
 
-    if ($leafName -like "Miniforge3-Windows-*.exe") {
+    if ($leafName -like "Uninstall-*.exe") {
+        $exitCode = [int]$env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE
+        if ($exitCode -eq 0) {
+            Remove-Item -Path (Split-Path -Parent $FilePath) -Recurse -Force
+        }
+    } elseif ($leafName -eq "unins000.exe") {
+        $exitCode = [int]$env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE
+        if ($exitCode -eq 0) {
+            Remove-Item -Path (Split-Path -Parent $FilePath) -Recurse -Force
+        }
+    } elseif ($leafName -like "Miniforge3-Windows-*.exe") {
         $exitCode = [int]$env:PS_TEST_CONDA_EXIT_CODE
         if ($RedirectStandardOutput) {
             [System.IO.File]::WriteAllText($RedirectStandardOutput, "fake Miniforge installer output")
@@ -366,7 +380,7 @@ try {
             -Message "Conda temporary directory was not removed."
     }
 
-    Invoke-Test "Conda already-installed and ARM64 branches behave correctly" {
+    Invoke-Test "Conda already-installed branch skips the installer" {
         Reset-TestEnvironment "conda installed arm"
         $env:PROCESSOR_ARCHITECTURE = "ARM64"
         $condaExe = Join-Path $env:USERPROFILE "miniforge3-dtu/Scripts/conda.exe"
@@ -377,8 +391,6 @@ try {
         Assert-True -Condition ($null -eq $result.Error) -Message "Installed Conda branch failed."
         Assert-Equal -Expected 0 -Actual $global:DTUTestProcessCalls.Count `
             -Message "Already-installed Conda unexpectedly ran an installer."
-        Assert-Contains -Text $result.Output -Expected "using the x64 installer" `
-            -Message "ARM64 emulation guidance was not printed."
         Assert-Contains -Text $result.Output -Expected "Skipping download" `
             -Message "Already-installed Conda was not reported."
     }
@@ -528,6 +540,191 @@ try {
             -Message "Not every extension was attempted before orchestration failed."
         Assert-NotContains -Text $result.Output -Unexpected "Installation complete!" `
             -Message "A false success banner was printed after an extension failure."
+    }
+
+    Invoke-Test "VS Code uninstall removes the application and current-user data" {
+        Reset-TestEnvironment "vscode uninstall"
+        $appPath = Join-Path $env:LOCALAPPDATA "Programs/Microsoft VS Code"
+        $uninstallerPath = Join-Path $appPath "unins000.exe"
+        $configPath = Join-Path $env:APPDATA "Code/User/settings.json"
+        $extensionPath = Join-Path $env:USERPROFILE ".vscode/extensions/test.extension"
+        New-Item -ItemType Directory -Path $appPath, (Split-Path -Parent $configPath), `
+            (Split-Path -Parent $extensionPath) -Force | Out-Null
+        [System.IO.File]::WriteAllText($uninstallerPath, "test marker")
+        [System.IO.File]::WriteAllText($configPath, "test marker")
+        [System.IO.File]::WriteAllText($extensionPath, "test marker")
+
+        $result = Invoke-RepoScript "Utils/VsCode/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -eq $result.Error) -Message "VS Code uninstall failed: $($result.Error)"
+        Assert-Equal -Expected 1 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "VS Code uninstaller was not called exactly once."
+        Assert-Equal -Expected "unins000.exe" -Actual $global:DTUTestProcessCalls[0].LeafName `
+            -Message "Unexpected VS Code uninstaller."
+        Assert-Equal -Expected "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES" `
+            -Actual $global:DTUTestProcessCalls[0].Arguments -Message "VS Code uninstall arguments changed."
+        Assert-False -Condition (Test-Path $appPath) -Message "VS Code application files remain."
+        Assert-False -Condition (Test-Path (Join-Path $env:APPDATA "Code")) `
+            -Message "VS Code settings remain."
+        Assert-False -Condition (Test-Path (Join-Path $env:USERPROFILE ".vscode")) `
+            -Message "VS Code extensions remain."
+    }
+
+    Invoke-Test "VS Code uninstall failure preserves files and propagates" {
+        Reset-TestEnvironment "vscode uninstall failure"
+        $appPath = Join-Path $env:LOCALAPPDATA "Programs/Microsoft VS Code"
+        $uninstallerPath = Join-Path $appPath "unins000.exe"
+        New-Item -ItemType Directory -Path $appPath -Force | Out-Null
+        [System.IO.File]::WriteAllText($uninstallerPath, "test marker")
+        $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = "31"
+
+        $result = Invoke-RepoScript "Utils/VsCode/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -ne $result.Error) -Message "VS Code uninstall failure was swallowed."
+        Assert-Contains -Text "$($result.Error)" -Expected "exited with code 31" `
+            -Message "VS Code uninstall exit code was not propagated."
+        Assert-True -Condition (Test-Path $appPath) `
+            -Message "VS Code files were removed after its uninstaller failed."
+    }
+
+    Invoke-Test "Conda uninstall removes all current-user distributions and user data" {
+        Reset-TestEnvironment "conda uninstall"
+        $distributions = @(
+            @{ Directory = "miniforge3-dtu"; Uninstaller = "Uninstall-Miniforge3.exe" },
+            @{ Directory = "miniconda3"; Uninstaller = "Uninstall-Miniconda3.exe" },
+            @{ Directory = "anaconda3"; Uninstaller = "Uninstall-Anaconda3.exe" },
+            @{ Directory = "mambaforge"; Uninstaller = "Uninstall-Mambaforge.exe" },
+            @{ Directory = "custom-course-conda"; Uninstaller = "Uninstall-CustomConda.exe" }
+        )
+        $condarcPath = Join-Path $env:USERPROFILE ".condarc"
+        $condaDataFile = Join-Path $env:USERPROFILE ".conda/environments.txt"
+        foreach ($distribution in $distributions) {
+            $directory = Join-Path $env:USERPROFILE $distribution.Directory
+            New-Item -ItemType Directory -Path $directory -Force | Out-Null
+            [System.IO.File]::WriteAllText(
+                (Join-Path $directory $distribution.Uninstaller), "test marker"
+            )
+            New-Item -ItemType Directory -Path (Join-Path $directory "conda-meta") -Force | Out-Null
+            $condaExe = Join-Path $directory "Scripts/conda.exe"
+            New-Item -ItemType Directory -Path (Split-Path -Parent $condaExe) -Force | Out-Null
+            [System.IO.File]::WriteAllText($condaExe, "test marker")
+        }
+        New-Item -ItemType Directory -Path (Split-Path -Parent $condaDataFile) -Force | Out-Null
+        [System.IO.File]::WriteAllText($condarcPath, "test marker")
+        [System.IO.File]::WriteAllText($condaDataFile, "test marker")
+
+        $result = Invoke-RepoScript "Utils/Conda/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -eq $result.Error) -Message "Conda uninstall failed: $($result.Error)"
+        Assert-Equal -Expected $distributions.Count -Actual $global:DTUTestProcessCalls.Count `
+            -Message "Not every Conda distribution uninstaller was called."
+        foreach ($distribution in $distributions) {
+            $directory = Join-Path $env:USERPROFILE $distribution.Directory
+            Assert-False -Condition (Test-Path $directory) `
+                -Message "$($distribution.Directory) remains installed."
+            Assert-True -Condition ($global:DTUTestProcessCalls.LeafName -contains $distribution.Uninstaller) `
+                -Message "$($distribution.Uninstaller) was not called."
+        }
+        foreach ($call in $global:DTUTestProcessCalls) {
+            Assert-Equal -Expected "/S" -Actual $call.Arguments `
+                -Message "Conda uninstall arguments changed."
+        }
+        Assert-False -Condition (Test-Path $condarcPath) -Message ".condarc remains."
+        Assert-False -Condition (Test-Path (Join-Path $env:USERPROFILE ".conda")) `
+            -Message ".conda user data remains."
+    }
+
+    Invoke-Test "Miniforge uninstall failure preserves files and propagates" {
+        Reset-TestEnvironment "conda uninstall failure"
+        $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
+        $uninstallerPath = Join-Path $installDir "Uninstall-Miniforge3.exe"
+        New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+        [System.IO.File]::WriteAllText($uninstallerPath, "test marker")
+        $env:PS_TEST_CONDA_UNINSTALL_EXIT_CODE = "29"
+
+        $result = Invoke-RepoScript "Utils/Conda/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -ne $result.Error) -Message "Miniforge uninstall failure was swallowed."
+        Assert-Contains -Text "$($result.Error)" -Expected "exited with code 29" `
+            -Message "Miniforge uninstall exit code was not propagated."
+        Assert-True -Condition (Test-Path $installDir) `
+            -Message "Miniforge files were removed after its uninstaller failed."
+    }
+
+    Invoke-Test "Uninstall utilities clean managed remnants when uninstallers are missing" {
+        Reset-TestEnvironment "uninstall remnant cleanup"
+        $appPath = Join-Path $env:LOCALAPPDATA "Programs/Microsoft VS Code"
+        $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
+        New-Item -ItemType Directory -Path $appPath, $installDir -Force | Out-Null
+        [System.IO.File]::WriteAllText((Join-Path $appPath "Code.exe"), "remnant")
+        [System.IO.File]::WriteAllText((Join-Path $installDir "python.exe"), "remnant")
+
+        $vscode = Invoke-RepoScript "Utils/VsCode/uninstall_Windows.ps1"
+        $conda = Invoke-RepoScript "Utils/Conda/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -eq $vscode.Error) -Message "VS Code remnant cleanup failed."
+        Assert-True -Condition ($null -eq $conda.Error) -Message "Miniforge remnant cleanup failed."
+        Assert-Equal -Expected 0 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "A missing uninstaller was unexpectedly invoked."
+        Assert-False -Condition (Test-Path $appPath) -Message "VS Code remnants remain."
+        Assert-False -Condition (Test-Path $installDir) -Message "Miniforge remnants remain."
+        Assert-Contains -Text $vscode.Output -Expected "[WARNING]" `
+            -Message "VS Code remnant fallback was not disclosed."
+        Assert-Contains -Text $conda.Output -Expected "[WARNING]" `
+            -Message "Miniforge remnant fallback was not disclosed."
+    }
+
+    Invoke-Test "Miniforge uninstall rejects an unsafe user profile" {
+        Reset-TestEnvironment "conda unsafe path"
+        $env:USERPROFILE = [System.IO.Path]::GetPathRoot($script:testRoot)
+        $result = Invoke-RepoScript "Utils/Conda/uninstall_Windows.ps1"
+        Assert-True -Condition ($null -ne $result.Error) `
+            -Message "An unsafe Miniforge path was accepted."
+        Assert-Contains -Text "$($result.Error)" -Expected "Refusing" `
+            -Message "Unsafe-path refusal was not reported."
+        Assert-Equal -Expected 0 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "Unsafe-path handling invoked an uninstaller."
+    }
+
+    Invoke-Test "Full uninstall runs VS Code before Miniforge and is idempotent" {
+        Reset-TestEnvironment "full uninstall"
+        $appPath = Join-Path $env:LOCALAPPDATA "Programs/Microsoft VS Code"
+        $vscodeUninstaller = Join-Path $appPath "unins000.exe"
+        $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
+        $condaUninstaller = Join-Path $installDir "Uninstall-Miniforge3.exe"
+        New-Item -ItemType Directory -Path $appPath, $installDir -Force | Out-Null
+        [System.IO.File]::WriteAllText($vscodeUninstaller, "test marker")
+        [System.IO.File]::WriteAllText($condaUninstaller, "test marker")
+
+        $first = Invoke-RepoScript "Core/Orchestration/uninstall_all_windows.ps1"
+        Assert-True -Condition ($null -eq $first.Error) -Message "Full uninstall failed: $($first.Error)"
+        Assert-Equal -Expected 2 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "Full uninstall did not execute both uninstallers."
+        Assert-Equal -Expected "unins000.exe" -Actual $global:DTUTestProcessCalls[0].LeafName `
+            -Message "VS Code was not uninstalled first."
+        Assert-Equal -Expected "Uninstall-Miniforge3.exe" -Actual $global:DTUTestProcessCalls[1].LeafName `
+            -Message "Miniforge was not uninstalled second."
+        Assert-Contains -Text $first.Output -Expected "Uninstall complete!" `
+            -Message "Full uninstall success banner was not printed."
+
+        $global:DTUTestProcessCalls = @()
+        $second = Invoke-RepoScript "Core/Orchestration/uninstall_all_windows.ps1"
+        Assert-True -Condition ($null -eq $second.Error) -Message "Idempotent uninstall rerun failed."
+        Assert-Equal -Expected 0 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "An idempotent uninstall rerun invoked an uninstaller."
+        Assert-Contains -Text $second.Output -Expected "No changes made" `
+            -Message "Idempotent uninstall rerun did not report its no-op state."
+    }
+
+    Invoke-Test "Full uninstall suppresses success when a product uninstaller fails" {
+        Reset-TestEnvironment "full uninstall failure"
+        $appPath = Join-Path $env:LOCALAPPDATA "Programs/Microsoft VS Code"
+        $vscodeUninstaller = Join-Path $appPath "unins000.exe"
+        New-Item -ItemType Directory -Path $appPath -Force | Out-Null
+        [System.IO.File]::WriteAllText($vscodeUninstaller, "test marker")
+        $env:PS_TEST_VSCODE_UNINSTALL_EXIT_CODE = "19"
+
+        $result = Invoke-RepoScript "Core/Orchestration/uninstall_all_windows.ps1"
+        Assert-True -Condition ($null -ne $result.Error) -Message "Full uninstall swallowed a product failure."
+        Assert-Equal -Expected 1 -Actual $global:DTUTestProcessCalls.Count `
+            -Message "Full uninstall continued after VS Code failed."
+        Assert-NotContains -Text $result.Output -Unexpected "Uninstall complete!" `
+            -Message "A false uninstall success banner was printed."
     }
 } finally {
     foreach ($name in $script:originalEnvironment.Keys) {

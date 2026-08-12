@@ -16,9 +16,6 @@ $installerName = "Miniforge3-Windows-x86_64.exe"
 $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
 $condaExe = Join-Path $installDir "Scripts\conda.exe"
 
-if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
-    Write-Host "  NOTE: no native ARM64 Miniforge installer; using the x64 installer (runs under emulation)."
-}
 
 Write-Host "=== Installing Miniforge ===`n"
 
