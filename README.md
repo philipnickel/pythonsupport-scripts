@@ -16,12 +16,24 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Cor
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_macOS.sh | bash
 ```
 
-### Windows 
+### Windows
+
+Run this one-liner in **Windows PowerShell 5.1**. It pins the complete install
+to this fork's `august` branch, including every child script:
+
 ```powershell
-# Install (Windows)
-irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
+This installs Miniforge first, followed by VS Code, the default settings, and
+the Python and Jupyter extensions. The production installer sources are:
+
+- [DTU Miniforge for Windows x64](https://github.com/dtudk/pythonsupport-forge/releases/latest/download/Miniforge3-Windows-x86_64.exe)
+- [VS Code stable user installer for Windows x64](https://update.code.visualstudio.com/latest/win32-x64-user/stable)
+- [VS Code stable user installer for Windows ARM64](https://update.code.visualstudio.com/latest/win32-arm64-user/stable)
+
+Miniforge currently provides an x64 installer on Windows; Windows ARM64 runs it
+under emulation. VS Code uses its native ARM64 installer automatically.
 
 ## Local development
 
@@ -73,4 +85,3 @@ All scripts use `curl -fsSL "$PS_REPO_URL/..."` to reference other files in the 
 - **Orchestration scripts** default `PS_REPO_URL` to the GitHub raw URL and export it so child scripts inherit it.
 - **Child scripts** expect `PS_REPO_URL` to be set in the environment.
 - For local testing, `export PS_REPO_URL="file://$PWD"` makes `curl` read from the local filesystem instead.
-

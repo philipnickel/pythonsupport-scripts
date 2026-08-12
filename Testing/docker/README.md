@@ -43,7 +43,7 @@ After the local suite passes, run the production command once from Windows
 PowerShell 5.1 on a clean Windows x64 account:
 
 ```powershell
-irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
 Confirm that:
