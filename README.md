@@ -6,14 +6,14 @@
 
 ```bash
 # Install (everything)
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/install_all_macOS.sh | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh" | bash
 
 ```
 
 ```bash
 # uninstall (everything)
 
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/uninstall_all_macOS.sh | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh" | bash
 ```
 
 ### Windows
@@ -21,14 +21,14 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Co
 #### Install (everything)
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
 #### uninstall (everything)
 
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
 ```
 
 # Dev 
@@ -37,14 +37,14 @@ $env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport
 
 ```bash
 # Install (everything)
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_macOS.sh | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh" | bash
 
 ```
 
 ```bash
 # uninstall (everything)
 
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_macOS.sh | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh" | bash
 ```
 
 ### Windows
@@ -52,14 +52,14 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Cor
 #### Install (everything)
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
 #### uninstall (everything)
 
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
 ```
 
 
@@ -95,4 +95,3 @@ To test scripts against your local checkout instead of the remote GitHub repo, p
    ```
 
 The variable only lives in the current shell session. Open a new terminal, or run `unset PS_REPO_URL`, to go back to testing against the remote repo.
-

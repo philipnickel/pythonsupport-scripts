@@ -2,7 +2,7 @@
 # @name: Full Uninstall (Windows)
 # @description: Uninstall VS Code and all detected Conda distributions on Windows
 # @category: Core
-# @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/uninstall_all_windows.ps1 | iex
+# @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/uninstall_all_windows.ps1 | iex
 # @requirements: Windows, PowerShell 5.1+
 # @notes: Removes VS Code first, followed by per-user and machine-wide Conda distributions and current-user data.
 # @/doc
@@ -10,7 +10,7 @@
 $ErrorActionPreference = "Stop"
 
 if (-not $env:PS_REPO_URL) {
-    $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"
+    $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"
 }
 
 Write-Host "========================================="

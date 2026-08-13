@@ -2,7 +2,7 @@
 # @name: Full Installation (Windows)
 # @description: Orchestrate the full installation of Miniforge and VS Code on Windows
 # @category: Core
-# @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
+# @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/install_all_windows.ps1 | iex
 # @requirements: Windows, PowerShell 5.1+
 # @notes: Runs all installation steps in order: Miniforge, VS Code (with extensions and settings)
 # @/doc

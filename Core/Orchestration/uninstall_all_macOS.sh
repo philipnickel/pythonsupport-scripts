@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
+PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main}"
 export PS_REPO_URL
 
 echo "========================================="
