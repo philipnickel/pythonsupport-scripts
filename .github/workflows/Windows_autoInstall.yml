@@ -23,7 +23,7 @@ on:
         type: string
 
 env:
-  PYTHON_VERSION_PS: "3.12"
+  PYTHON_VERSION_PS: "3.14"
   PIS_ENV: "CI"
 
 jobs:
@@ -54,7 +54,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Test Architecture Detection
         run: |
@@ -124,7 +124,7 @@ jobs:
           if ("${{ matrix.setup }}" -eq "existing-conda") {
             # For existing conda scenario, we expect the installer to abort
             Write-Host "Expected behavior: Installation should abort due to existing conda"
-            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "$env:PYTHON_VERSION_PS" -Force
             if ($LASTEXITCODE -eq 1) {
               Write-Host "[OK] Installation correctly aborted due to existing conda"
               exit 0  # Test passed - installer correctly aborted
@@ -134,7 +134,7 @@ jobs:
             }
           } else {
             # For clean installation, run normally  
-            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "3.12" -Force
+            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "$env:PYTHON_VERSION_PS" -Force
           }
           
           Remove-Item $TempScript -Force -ErrorAction SilentlyContinue
@@ -207,7 +207,7 @@ jobs:
           Write-Host "Verifying Python version..."
           
           # Verify the installed Python version
-          $expectedVersion = "3.12"
+          $expectedVersion = "$env:PYTHON_VERSION_PS"
           $installedVersion = (python --version).Split(" ")[1].Trim()
           if (-not $installedVersion.StartsWith($expectedVersion)) {
             Write-Host "ERROR: Python version ($installedVersion) does not match expected ($expectedVersion)"

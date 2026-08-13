@@ -23,7 +23,7 @@ on:
         type: string
 
 env:
-  PYTHON_VERSION_PS: "3.12"
+  PYTHON_VERSION_PS: "3.14"
   PIS_ENV: "CI"
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup test scenario - Clean Installation
         if: matrix.setup == 'clean'
@@ -71,7 +71,6 @@ jobs:
           bash /tmp/miniconda.sh -b -p $HOME/miniconda3
           rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
-
 
 
       - name: Run DTU Python Installer (CLI Mode)
@@ -115,7 +114,7 @@ jobs:
           which python3
           
           # Verify the installed Python version
-          EXPECTED_VERSION="3.12"
+          EXPECTED_VERSION="$PYTHON_VERSION_PS"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
