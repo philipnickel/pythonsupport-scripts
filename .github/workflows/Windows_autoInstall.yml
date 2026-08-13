@@ -117,7 +117,7 @@ jobs:
           Write-Host "Testing ${{ matrix.scenario }} from: $env:REMOTE_PS/$env:BRANCH_PS"
           
           # Download and execute the installer with parameters
-          $InstallScript = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Windows/install.ps1" -UseBasicParsing
+          $InstallScript = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Core/Orchestration/install_all_windows.ps1" -UseBasicParsing
           $TempScript = "$env:TEMP\install_test.ps1"
           Set-Content -Path $TempScript -Value $InstallScript.Content
           

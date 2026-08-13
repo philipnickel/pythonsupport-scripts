@@ -84,12 +84,7 @@ jobs:
           echo "PIS_ENV is set to: $PIS_ENV"
           
           # Use the new CLI mode one-liner approach
-          echo "Running installer using CLI mode one-liner"
-          if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh" | bash -s -- --cli
-          else
-            curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh" | bash -s -- --cli
-          fi
+          curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/Core/Orchestration/install_all_macOS.sh" | bash -s
 
       - name: Verify Installation - Conda
         run: |
