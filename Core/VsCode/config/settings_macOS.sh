@@ -10,15 +10,20 @@
 
 set -euo pipefail
 
-SETTINGS_DIR="$HOME/Library/Application Support/Code/User"
-SETTINGS_FILE="$SETTINGS_DIR/settings.json"
+settings_dir="$HOME/Library/Application Support/Code/User"
+settings_file="$settings_dir/settings.json"
 
 echo "=== Applying VS Code Settings ==="
 echo ""
 
-mkdir -p "$SETTINGS_DIR"
-curl -fsSL "$REPO_BASE_URL/Core/VsCode/config/default_settings_MacOS.json" > "$SETTINGS_FILE"
-echo "  [OK] Settings applied to $SETTINGS_FILE"
+if [[ -e "$settings_file" ]]; then
+  echo "  [ERROR] $settings_file already exists. Aborting to avoid overwrite." >&2
+  exit 1
+fi
+
+mkdir -p "$settings_dir"
+curl -fsSL "$PS_REPO_URL/Core/VsCode/config/default_settings_MacOS.json" > "$settings_file"
+echo "  [OK] Settings applied to $settings_file"
 
 echo ""
 echo "=== VS Code settings complete! ==="

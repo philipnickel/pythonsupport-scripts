@@ -10,9 +10,9 @@
 
 set -euo pipefail
 
-APP_PATH="/Applications/Visual Studio Code.app"
-CONFIG_DIR="$HOME/Library/Application Support/Code"
-VSCODE_DIR="$HOME/.vscode"
+app_path="/Applications/Visual Studio Code.app"
+config_dir="$HOME/Library/Application Support/Code"
+vscode_dir="$HOME/.vscode"
 
 echo "=== Uninstalling VS Code ==="
 echo ""
@@ -20,12 +20,12 @@ echo ""
 removed_something=false
 
 # Remove application
-if [ -d "$APP_PATH" ]; then
-    echo "  Found VS Code at $APP_PATH"
-    if [ -w "$APP_PATH" ]; then
-        rm -rf "$APP_PATH"
+if [ -d "$app_path" ]; then
+    echo "  Found VS Code at $app_path"
+    if [ -w "$app_path" ]; then
+        rm -rf "$app_path"
     else
-        sudo rm -rf "$APP_PATH"
+        sudo rm -rf "$app_path"
     fi
     echo "  [OK] Application removed"
     removed_something=true
@@ -34,15 +34,15 @@ else
 fi
 
 # Remove settings and extensions
-if [ -d "$CONFIG_DIR" ]; then
-    rm -rf "$CONFIG_DIR"
+if [ -d "$config_dir" ]; then
+    rm -rf "$config_dir"
     echo "  [OK] Settings and extensions removed"
     removed_something=true
 fi
 
 # Remove user data
-if [ -d "$VSCODE_DIR" ]; then
-    rm -rf "$VSCODE_DIR"
+if [ -d "$vscode_dir" ]; then
+    rm -rf "$vscode_dir"
     echo "  [OK] User data (~/.vscode) removed"
     removed_something=true
 fi
