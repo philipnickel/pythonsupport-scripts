@@ -1,0 +1,7 @@
+# Python
+ms-python.python
+
+# Jupyter
+ms-toolsai.jupyter
+
+

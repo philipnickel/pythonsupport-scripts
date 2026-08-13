@@ -23,7 +23,7 @@ on:
         type: string
 
 env:
-  PYTHON_VERSION_PS: "3.12"
+  PYTHON_VERSION_PS: "3.14"
   PIS_ENV: "CI"
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup test scenario - Clean Installation
         if: matrix.setup == 'clean'
@@ -73,7 +73,6 @@ jobs:
           echo "$HOME/miniconda3/bin" >> $GITHUB_PATH
 
 
-
       - name: Run DTU Python Installer (CLI Mode)
         env:
           REMOTE_PS: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
@@ -85,12 +84,8 @@ jobs:
           echo "PIS_ENV is set to: $PIS_ENV"
           
           # Use the new CLI mode one-liner approach
-          echo "Running installer using CLI mode one-liner"
-          if [ -n "${{ matrix.input }}" ]; then
-            printf "%s\n" "${{ matrix.input }}" | curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh" | bash -s -- --cli
-          else
-            curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/MacOS/releases/dtu-python-installer-macos.sh" | bash -s -- --cli
-          fi
+          export PS_REPO_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS"
+          curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/Core/Orchestration/install_all_macOS.sh" | bash -s
 
       - name: Verify Installation - Conda
         run: |
@@ -115,7 +110,7 @@ jobs:
           which python3
           
           # Verify the installed Python version
-          EXPECTED_VERSION="3.12"
+          EXPECTED_VERSION="$PYTHON_VERSION_PS"
           INSTALLED_VERSION=$(python3 --version | cut -d " " -f 2)
           if [[ "$INSTALLED_VERSION" != "$EXPECTED_VERSION"* ]]; then
             echo "Installed Python version ($INSTALLED_VERSION) does not match expected version ($EXPECTED_VERSION)"
@@ -139,7 +134,7 @@ jobs:
           source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
           
           # Verify Python package imports
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          python3 -c "import numpy, sympy, spb, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       # Temporarily disabled VS Code verification
       # - name: Verify Installation - VS Code

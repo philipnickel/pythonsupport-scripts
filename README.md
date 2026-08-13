@@ -1,49 +1,97 @@
 # DTU Python Support Scripts
-## Installation
 
-### macOS
+## Usage
 
-#### Active: 
-**Terminal oneliner**  
+### MacOS
+
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/releases/dtu-python-installer-macos.sh)"
+# Install (everything)
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh" | bash
+
+```
+
+```bash
+# uninstall (everything)
+
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh" | bash
 ```
 
 ### Windows
 
-**PowerShell oneliner** - Uses native Windows UAC authentication:
+#### Install (everything)
 ```powershell
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/install.ps1' -UseBasicParsing).Content}"
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
-## Utilities
+#### uninstall (everything)
 
-### macOS Diagnostics
+```powershell
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+```
+
+# Dev 
+
+### MacOS
+
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Diagnostics/simple_report.sh)"
+# Install (everything)
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh" | bash
+
 ```
 
-### macOS Conda Uninstaller
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/Core/uninstall_conda.sh)"
+# uninstall (everything)
+
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh" | bash
 ```
 
-### macOS VS Code Uninstaller
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/MacOS/Components/VSC/uninstall_vscode.sh)"
-```
+### Windows
 
-### Windows Diagnostics
+#### Install (everything)
 ```powershell
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Diagnostics/generate_report.ps1' -UseBasicParsing).Content}"
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
-### Windows Conda Uninstaller
+#### uninstall (everything)
+
 ```powershell
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/Core/uninstall_conda.ps1' -UseBasicParsing).Content}"
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
 ```
 
-### Windows VS Code Uninstaller
-```powershell
-PowerShell -ExecutionPolicy Bypass -Command "& {Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Windows/Components/VSC/uninstall.ps1' -UseBasicParsing).Content}"
-```
+
+
+
+
+## Local development
+
+### macOS
+
+To test scripts against your local checkout instead of the remote GitHub repo, point `PS_REPO_URL` at the local repo root using a `file://` URL. All internal `curl` calls will then read from disk, so uncommitted changes are tested too.
+
+1. Open a terminal at the repo root (the directory containing this README).
+2. Export the repo root as a `file://` URL:
+
+   ```bash
+   export PS_REPO_URL="file://$PWD"
+   ```
+
+   If you are in a subdirectory, use an absolute path instead:
+
+   ```bash
+   export PS_REPO_URL="file:///path/to/pythonsupport-scripts"
+   ```
+
+3. Run any script directly:
+
+   ```bash
+   bash Core/Orchestration/install_all_macOS.sh
+   bash Core/VsCode/config/settings_macOS.sh
+   bash Core/VsCode/config/extensions_macOS.sh
+   bash Core/Orchestration/uninstall_all_macOS.sh
+   ```
+
+The variable only lives in the current shell session. Open a new terminal, or run `unset PS_REPO_URL`, to go back to testing against the remote repo.

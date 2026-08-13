@@ -1,0 +1,6 @@
+{
+    "chat.disableAIFeatures": true,
+    "chat.agent.enabled": false,
+    "telemetry.telemetryLevel": "off",
+    "python.locator": "js"
+}
