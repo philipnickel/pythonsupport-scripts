@@ -1,11 +1,11 @@
 #!/bin/bash
 # @doc
-# @name: Miniforge Install (macOS)
+# @name: DTU Miniforge Install (macOS)
 # @description: Download and install Miniforge (conda) on macOS
 # @category: Core
 # @usage: bash Core/Conda/install/install_macOS.sh
 # @requirements: macOS, curl
-# @notes: Downloads the latest Miniforge installer and runs it in batch mode
+# @notes: Downloads the latest DTU Miniforge installer and runs it in batch mode
 # @/doc
 
 set -euo pipefail

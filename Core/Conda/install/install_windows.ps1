@@ -1,10 +1,10 @@
 # @doc
-# @name: Miniforge Install (Windows)
+# @name: DTU Miniforge Install (Windows)
 # @description: Download and install Miniforge (conda) on Windows
 # @category: Core
 # @usage: powershell -File Core/Conda/install/install_windows.ps1
 # @requirements: Windows, PowerShell 5.1+
-# @notes: Downloads the latest Miniforge installer and runs it silently.
+# @notes: Downloads the latest DTU Miniforge installer and runs it silently.
 #   The installer bundles Python and all required course packages.
 # @/doc
 
