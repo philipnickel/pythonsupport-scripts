@@ -10,11 +10,10 @@
 
 set -euo pipefail
 
-PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev}"
+PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main}"
 export PS_REPO_URL
 
 # Load the progress UI (defines the `progress` helper; the source guard in
-# progress.sh skips its self-test when sourced rather than executed directly).
 #source <(curl -fsSL "$PS_REPO_URL/Utils/progress.sh")
 
 echo "========================================="
