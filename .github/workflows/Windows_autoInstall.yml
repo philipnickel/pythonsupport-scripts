@@ -117,6 +117,7 @@ jobs:
           Write-Host "Testing ${{ matrix.scenario }} from: $env:REMOTE_PS/$env:BRANCH_PS"
           
           # Download and execute the installer with parameters
+          $env:PS_REPO_URL = "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS"
           $InstallScript = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$env:REMOTE_PS/$env:BRANCH_PS/Core/Orchestration/install_all_windows.ps1" -UseBasicParsing
           $TempScript = "$env:TEMP\install_test.ps1"
           Set-Content -Path $TempScript -Value $InstallScript.Content
@@ -124,7 +125,7 @@ jobs:
           if ("${{ matrix.setup }}" -eq "existing-conda") {
             # For existing conda scenario, we expect the installer to abort
             Write-Host "Expected behavior: Installation should abort due to existing conda"
-            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "$env:PYTHON_VERSION_PS" -Force
+            & $TempScript
             if ($LASTEXITCODE -eq 1) {
               Write-Host "[OK] Installation correctly aborted due to existing conda"
               exit 0  # Test passed - installer correctly aborted
@@ -133,8 +134,8 @@ jobs:
               exit 1
             }
           } else {
-            # For clean installation, run normally  
-            & $TempScript -RemoteRepo $env:REMOTE_PS -Branch $env:BRANCH_PS -PythonVersion "$env:PYTHON_VERSION_PS" -Force
+            # For clean installation, run normally
+            & $TempScript
           }
           
           Remove-Item $TempScript -Force -ErrorAction SilentlyContinue
@@ -221,7 +222,7 @@ jobs:
         run: |
           Write-Host "Verifying DTU packages..."
           try {
-            python -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
+            python -c "import spb, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
           } catch {
             Write-Host "ERROR: Failed to import DTU packages"
             conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"

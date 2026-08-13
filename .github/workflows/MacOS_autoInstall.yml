@@ -84,6 +84,7 @@ jobs:
           echo "PIS_ENV is set to: $PIS_ENV"
           
           # Use the new CLI mode one-liner approach
+          export PS_REPO_URL="https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS"
           curl -fsSL "https://raw.githubusercontent.com/$REMOTE_PS/$BRANCH_PS/Core/Orchestration/install_all_macOS.sh" | bash -s
 
       - name: Verify Installation - Conda
@@ -133,7 +134,7 @@ jobs:
           source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
           
           # Verify Python package imports
-          python3 -c "import dtumathtools, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          python3 -c "import spb, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       # Temporarily disabled VS Code verification
       # - name: Verify Installation - VS Code
