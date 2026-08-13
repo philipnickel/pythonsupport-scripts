@@ -32,8 +32,8 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
         $installerPath = Join-Path $tmpDir.FullName "VSCode.exe"
 
         Write-Host "  Downloading VS Code..."
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing `
-            -ProgressAction SilentlyContinue `
             -OutFile $installerPath
         Write-Host "  [OK] Download complete"
 
