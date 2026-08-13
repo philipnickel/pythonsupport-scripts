@@ -222,10 +222,10 @@ jobs:
         run: |
           Write-Host "Verifying DTU packages..."
           try {
-            python -c "import spb, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
+            python -c "import numpy, sympy, spb, pandas, scipy, statsmodels, uncertainties; print('[OK] All DTU packages imported successfully')"
           } catch {
             Write-Host "ERROR: Failed to import DTU packages"
-            conda list | Select-String -Pattern "(dtumathtools|pandas|scipy|statsmodels|uncertainties)"
+            conda list | Select-String -Pattern "(numpy|sympy|spb|pandas|scipy|statsmodels|uncertainties)"
             exit 1
           }
 

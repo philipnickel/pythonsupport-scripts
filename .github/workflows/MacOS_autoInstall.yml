@@ -134,7 +134,7 @@ jobs:
           source ~/.zshrc 2>/dev/null || source ~/.bash_profile 2>/dev/null || source ~/.bashrc 2>/dev/null || true
           
           # Verify Python package imports
-          python3 -c "import spb, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
+          python3 -c "import numpy, sympy, spb, pandas, scipy, statsmodels, uncertainties; print('Packages imported successfully')" || { echo "Failed to import Python packages"; exit 1; }
 
       # Temporarily disabled VS Code verification
       # - name: Verify Installation - VS Code
