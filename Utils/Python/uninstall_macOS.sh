@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-FRAMEWORK_DIR="/Library/Frameworks/Python.framework"
-APPLICATIONS_DIR="/Applications"
+framework_dir="/Library/Frameworks/Python.framework"
+applications_dir="/Applications"
 
 echo "=== Uninstalling python.org Python installations ==="
 echo ""
@@ -20,8 +20,8 @@ echo ""
 removed_something=false
 
 # Find installed Python versions in the framework directory
-if [ -d "$FRAMEWORK_DIR/Versions" ]; then
-    for version_dir in "$FRAMEWORK_DIR/Versions"/3.*; do
+if [ -d "$framework_dir/Versions" ]; then
+    for version_dir in "$framework_dir/Versions"/3.*; do
         [ -d "$version_dir" ] || continue
         version="$(basename "$version_dir")"
         echo "  Found Python $version"
@@ -35,17 +35,17 @@ fi
 
 # Remove Python framework
 echo ""
-echo "  Removing $FRAMEWORK_DIR ..."
-if [ -w "$FRAMEWORK_DIR" ]; then
-    rm -rf "$FRAMEWORK_DIR"
+echo "  Removing $framework_dir ..."
+if [ -w "$framework_dir" ]; then
+    rm -rf "$framework_dir"
 else
-    sudo rm -rf "$FRAMEWORK_DIR"
+    sudo rm -rf "$framework_dir"
 fi
 echo "  [OK] Python framework removed"
 removed_something=true
 
 # Remove Python application folders (e.g. /Applications/Python 3.12)
-for app_dir in "$APPLICATIONS_DIR"/Python\ 3.*; do
+for app_dir in "$applications_dir"/Python\ 3.*; do
     [ -d "$app_dir" ] || continue
     echo "  Removing $app_dir ..."
     if [ -w "$app_dir" ]; then

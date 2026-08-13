@@ -107,3 +107,7 @@ docs/_build/
 # Application specific
 *.dmg
 *.app
+
+# Locally cached release assets (installers)
+release_assets/dtu-miniconda
+release_assets/vsCode

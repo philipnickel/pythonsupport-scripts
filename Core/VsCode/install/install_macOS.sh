@@ -10,51 +10,51 @@
 
 set -euo pipefail
 
-APP_PATH="/Applications/Visual Studio Code.app"
-DOWNLOAD_URL="https://update.code.visualstudio.com/latest/darwin-universal/stable"
+app_path="/Applications/Visual Studio Code.app"
+download_url="https://update.code.visualstudio.com/latest/darwin-universal/stable"
 
 echo "=== Installing VS Code ==="
 echo ""
 
 # Check if already installed
-if command -v code &>/dev/null || [ -d "$APP_PATH" ]; then
+if command -v code &>/dev/null || [ -d "$app_path" ]; then
     echo "  VS Code is already installed."
     echo "  [OK] Skipping download"
 else
     # Download
-    TMPDIR_PATH="$(mktemp -d)"
-    trap "rm -rf '$TMPDIR_PATH'" EXIT
+    tmpdir_path="$(mktemp -d)"
+    trap "rm -rf '$tmpdir_path'" EXIT
 
     echo "  Downloading VS Code..."
-    curl -fSL "$DOWNLOAD_URL" -o "$TMPDIR_PATH/VSCode.zip"
+    curl -fSL "$download_url" -o "$tmpdir_path/VSCode.zip"
     echo "  [OK] Download complete"
 
     # Extract
     echo "  Extracting..."
-    unzip -q "$TMPDIR_PATH/VSCode.zip" -d "$TMPDIR_PATH/vscode_extracted"
+    unzip -q "$tmpdir_path/VSCode.zip" -d "$tmpdir_path/vscode_extracted"
     echo "  [OK] Extraction complete"
 
     # Remove existing installation if present
-    if [ -d "$APP_PATH" ]; then
+    if [ -d "$app_path" ]; then
         echo "  Removing existing installation..."
-        if [ -w "$APP_PATH" ]; then
-            rm -rf "$APP_PATH"
+        if [ -w "$app_path" ]; then
+            rm -rf "$app_path"
         else
-            sudo rm -rf "$APP_PATH"
+            sudo rm -rf "$app_path"
         fi
     fi
 
     # Move to /Applications
     echo "  Moving to /Applications..."
-    mv "$TMPDIR_PATH/vscode_extracted/Visual Studio Code.app" "$APP_PATH"
+    mv "$tmpdir_path/vscode_extracted/Visual Studio Code.app" "$app_path"
     echo "  [OK] VS Code installed"
 fi
 
 # Apply settings
-bash <(curl -fsSL "$REPO_BASE_URL/Core/VsCode/config/settings_macOS.sh")
+bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/config/settings_macOS.sh")
 
 # Install extensions
-bash <(curl -fsSL "$REPO_BASE_URL/Core/VsCode/config/extensions_macOS.sh")
+bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/config/extensions_macOS.sh")
 
 echo ""
 echo "=== VS Code installation complete! ==="

@@ -10,40 +10,40 @@
 
 set -euo pipefail
 
-#BASE_URL="https://github.com/philipnickel/miniforge-PIS/releases/latest/download"
-
-BASE_URL="https://github.com/dtudk/pythonsupport-forge/releases/latest/download" #TODO: change to internal site 
-#https://github.com/dtudk/pythonsupport-forge
-
-ARCH="$(uname -m)"
-INSTALLER_NAME="Miniforge3-MacOSX-${ARCH}.sh"
-INSTALL_DIR="$HOME/miniforge3-dtu"
+PS_FORGE_URL="${PS_FORGE_URL:-https://github.com/dtudk/pythonsupport-forge/releases/latest/download}" #TODO: change to internal site 
+arch="$(uname -m)"
+installer_name="Miniforge3-MacOSX-${arch}.sh"
+install_dir="$HOME/miniforge3-dtu"
 
 echo "=== Installing Miniforge ==="
 echo ""
 
 # Check if already installed
-if [ -d "$INSTALL_DIR" ] && [ -x "$INSTALL_DIR/bin/conda" ]; then
-    echo "  Miniforge is already installed at $INSTALL_DIR"
+if [ -d "$install_dir" ] && [ -x "$install_dir/bin/conda" ]; then
+    echo "  Miniforge is already installed at $install_dir"
     echo "  [OK] Skipping download"
 else
     # Download
-    TMPDIR_PATH="$(mktemp -d)"
-    trap "rm -rf '$TMPDIR_PATH'" EXIT
+    tmpdir_path="$(mktemp -d)"
+    trap "rm -rf '$tmpdir_path'" EXIT
 
-    echo "  Downloading ${INSTALLER_NAME}..."
-    curl -fSL "${BASE_URL}/${INSTALLER_NAME}" -o "$TMPDIR_PATH/${INSTALLER_NAME}"
+    echo "  Downloading ${installer_name}..."
+    curl -fSL "${PS_FORGE_URL}/${installer_name}" -o "$tmpdir_path/${installer_name}"
     echo "  [OK] Download complete"
 
     # Run installer in batch mode (no prompts, no PATH modification)
     echo "  Running installer..."
-    bash "$TMPDIR_PATH/${INSTALLER_NAME}" -buc -p "$INSTALL_DIR"
-    echo "  [OK] Miniforge installed to $INSTALL_DIR"
+    # Installer options:
+    # '-b': run non interactively
+    # '-u': update an existing installation if there is one
+    # '-c': don't modify shell rc files
+    bash "$tmpdir_path/${installer_name}" -buc -p "$install_dir"
+    echo "  [OK] Miniforge installed to $install_dir"
 fi
 
 # Load conda shell functions and activate the base environment
 echo "  Initializing conda..."
-. "${INSTALL_DIR}/etc/profile.d/conda.sh" && conda activate "${INSTALL_DIR}"
+source "${install_dir}/etc/profile.d/conda.sh" && conda activate "${install_dir}"
 
 # Initialize conda for all supported shells on this machine
 conda init --all
