@@ -30,7 +30,9 @@ if (Test-Path $condaExe) {
         $installerPath = Join-Path $tmpDir.FullName $installerName
 
         Write-Host "  Downloading $installerName..."
-        Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -OutFile $installerPath -UseBasicParsing
+        Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -UseBasicParsing `
+            -ProgressAction SilentlyContinue `
+            -OutFile $installerPath
         Write-Host "  [OK] Download complete"
 
         # Run installer
