@@ -6,6 +6,37 @@
 
 ```bash
 # Install (everything)
+curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/install_all_macOS.sh | bash
+
+```
+
+```bash
+# uninstall (everything)
+
+curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/uninstall_all_macOS.sh | bash
+```
+
+### Windows
+
+#### Install (everything)
+```powershell
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
+```
+
+#### uninstall (everything)
+
+```powershell
+
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+```
+
+# Dev 
+
+### MacOS
+
+```bash
+# Install (everything)
 curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_macOS.sh | bash
 
 ```
@@ -18,17 +49,21 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Cor
 
 ### Windows
 
+#### Install (everything)
 ```powershell
 
-# Install (everything)
 $env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
 ```
 
+#### uninstall (everything)
+
 ```powershell
 
-# uninstall (everything)
 $env:PS_REPO_URL = "https://raw.githubusercontent.com/philipnickel/pythonsupport-scripts/august"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
 ```
+
+
+
 
 
 ## Local development

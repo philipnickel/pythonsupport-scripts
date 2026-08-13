@@ -26,5 +26,5 @@ Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/install/
 
 Write-Host "========================================="
 Write-Host "  Installation complete!"
-Write-Host "  Open Miniforge Prompt from the Start menu to use conda."
+Write-Host "  Open Miniforge Prompt from the Start menu to interact with conda."
 Write-Host "========================================="
