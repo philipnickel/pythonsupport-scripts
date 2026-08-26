@@ -13,7 +13,17 @@ $ErrorActionPreference = "Stop"
 $PS_FORGE_URL = $env:PS_FORGE_URL
 if (-not $PS_FORGE_URL) { $PS_FORGE_URL = "https://github.com/dtudk/pythonsupport-forge/releases/latest/download" } #TODO: change to internal site
 $installerName = "Miniforge3-Windows-x86_64.exe"
-$installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
+
+if ($env:PS_CONDA_INSTALL_DIR) {
+    $installDir = $env:PS_CONDA_INSTALL_DIR
+} elseif ($env:USERPROFILE -match '\s') {
+    $systemDrive = if ($env:SystemDrive) { $env:SystemDrive } else { "C:" }
+    $installDir = Join-Path $systemDrive "miniforge3-dtu"
+    Write-Host "  [NOTE] User profile path contains spaces. Installing to '$installDir' to avoid Conda issues." -ForegroundColor Cyan
+} else {
+    $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
+}
+
 $condaExe = Join-Path $installDir "Scripts\conda.exe"
 
 

@@ -114,8 +114,15 @@ $searchRoots = @(
     $userProfilePath,
     $env:ProgramData,
     $env:ProgramFiles,
-    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)"),
+    $env:SystemDrive,
+    $env:PUBLIC
 )
+
+if (-not [string]::IsNullOrWhiteSpace($env:PS_CONDA_INSTALL_DIR)) {
+    Add-CondaInstallCandidate -Path $env:PS_CONDA_INSTALL_DIR -Candidates $installDirs
+}
+
 foreach ($searchRoot in $searchRoots) {
     if ([string]::IsNullOrWhiteSpace($searchRoot)) {
         continue
