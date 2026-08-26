@@ -28,6 +28,9 @@ $condaExe = Join-Path $installDir "Scripts\conda.exe"
 
 
 Write-Host "=== Installing Miniforge ===`n"
+Write-Host "  [DEBUG] User profile:    '$env:USERPROFILE'"
+Write-Host "  [DEBUG] Custom env var:  '$env:PS_CONDA_INSTALL_DIR'"
+Write-Host "  [DEBUG] Target dir:      '$installDir'"
 
 # Check if already installed
 if (Test-Path $condaExe) {
@@ -48,8 +51,8 @@ if (Test-Path $condaExe) {
         # Run installer
         # Flag rules per the constructor docs
         # (https://conda.github.io/constructor/cli-options/#windows-installers):
-        Write-Host "  Running installer..."
         $argString = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$installDir"
+        Write-Host "  Running installer with arguments: $argString"
         $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
                             -NoNewWindow -Wait -PassThru
         if ($proc.ExitCode -ne 0) {

@@ -37,14 +37,14 @@ $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-script
 
 ```bash
 # Install (everything)
-export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh" | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/install_all_macOS.sh?cacheBust=$RANDOM" | bash
 
 ```
 
 ```bash
 # uninstall (everything)
 
-export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh" | bash
+export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; curl -fsSL "$PS_REPO_URL/Core/Orchestration/uninstall_all_macOS.sh?cacheBust=$RANDOM" | bash
 ```
 
 ### Windows
@@ -52,14 +52,14 @@ export PS_REPO_URL="https://raw.githubusercontent.com/dtudk/pythonsupport-script
 #### Install (everything)
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/install_all_windows.ps1?cacheBust=$(Get-Random)" | iex
 ```
 
 #### uninstall (everything)
 
 ```powershell
 
-$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1" | iex
+$env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev"; irm "$env:PS_REPO_URL/Core/Orchestration/uninstall_all_windows.ps1?cacheBust=$(Get-Random)" | iex
 ```
 
 
