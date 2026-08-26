@@ -33,9 +33,9 @@ function Test-PathWritable {
 if ($env:PS_CONDA_INSTALL_DIR) {
     $installDir = $env:PS_CONDA_INSTALL_DIR
 } elseif ($env:USERPROFILE -match '\s') {
-    $publicDir = if ($env:PUBLIC) { $env:PUBLIC } else { "C:\Users\Public" }
-    $installDir = Join-Path $publicDir "miniforge3-dtu"
-    Write-Host "  [NOTE] User profile path contains spaces. Installing to '$installDir' (no admin rights needed)." -ForegroundColor Cyan
+    $systemDrive = if ($env:SystemDrive) { $env:SystemDrive } else { "C:" }
+    $installDir = Join-Path $systemDrive "miniforge3-dtu"
+    Write-Host "  [NOTE] User profile path contains spaces. Defaulting to '$installDir' (will request administrator privileges)." -ForegroundColor Cyan
 } else {
     $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
 }
@@ -64,20 +64,31 @@ if (Test-Path $condaExe) {
             -OutFile $installerPath
         Write-Host "  [OK] Download complete"
 
+        # Determine installation type and elevation requirement
+        $isUnderUserProfile = $installDir.StartsWith($env:USERPROFILE, [System.StringComparison]::OrdinalIgnoreCase)
+        $isWritable = Test-PathWritable -Path $installDir
+
+        if ($isUnderUserProfile -and $isWritable) {
+            $installType = "JustMe"
+            $useElevation = $false
+        } else {
+            $installType = "AllUsers"
+            $useElevation = $true
+        }
+
         # Run installer
         # Flag rules per the constructor docs
         # (https://conda.github.io/constructor/cli-options/#windows-installers):
-        $argString = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$installDir"
-        $isWritable = Test-PathWritable -Path $installDir
+        $argString = "/S /InstallationType=$installType /RegisterPython=0 /AddToPath=0 /D=$installDir"
 
-        if ($isWritable) {
+        if ($useElevation) {
+            Write-Host "  [NOTE] Installing to '$installDir' requires administrator privileges. Prompting for elevation..." -ForegroundColor Yellow
+            $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
+                                -Verb RunAs -Wait -PassThru
+        } else {
             Write-Host "  Running installer with arguments: $argString"
             $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
                                 -NoNewWindow -Wait -PassThru
-        } else {
-            Write-Host "  [NOTE] Target directory '$installDir' requires administrator privileges. Prompting for elevation..." -ForegroundColor Yellow
-            $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
-                                -Verb RunAs -Wait -PassThru
         }
 
         if ($proc.ExitCode -ne 0) {
