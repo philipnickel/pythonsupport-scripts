@@ -14,12 +14,28 @@ $PS_FORGE_URL = $env:PS_FORGE_URL
 if (-not $PS_FORGE_URL) { $PS_FORGE_URL = "https://github.com/dtudk/pythonsupport-forge/releases/latest/download" } #TODO: change to internal site
 $installerName = "Miniforge3-Windows-x86_64.exe"
 
+function Test-PathWritable {
+    param([string]$Path)
+    try {
+        $parent = if (Test-Path $Path) { $Path } else { Split-Path $Path -Parent }
+        if ([string]::IsNullOrWhiteSpace($parent) -or -not (Test-Path $parent)) {
+            $parent = [System.IO.Path]::GetPathRoot($Path)
+        }
+        $testFile = Join-Path $parent ("dtu_perm_test_" + [System.Guid]::NewGuid())
+        [System.IO.File]::WriteAllText($testFile, "test")
+        Remove-Item -Path $testFile -Force -ErrorAction SilentlyContinue
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 if ($env:PS_CONDA_INSTALL_DIR) {
     $installDir = $env:PS_CONDA_INSTALL_DIR
 } elseif ($env:USERPROFILE -match '\s') {
-    $systemDrive = if ($env:SystemDrive) { $env:SystemDrive } else { "C:" }
-    $installDir = Join-Path $systemDrive "miniforge3-dtu"
-    Write-Host "  [NOTE] User profile path contains spaces. Installing to '$installDir' to avoid Conda issues." -ForegroundColor Cyan
+    $publicDir = if ($env:PUBLIC) { $env:PUBLIC } else { "C:\Users\Public" }
+    $installDir = Join-Path $publicDir "miniforge3-dtu"
+    Write-Host "  [NOTE] User profile path contains spaces. Installing to '$installDir' (no admin rights needed)." -ForegroundColor Cyan
 } else {
     $installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
 }
@@ -52,9 +68,18 @@ if (Test-Path $condaExe) {
         # Flag rules per the constructor docs
         # (https://conda.github.io/constructor/cli-options/#windows-installers):
         $argString = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$installDir"
-        Write-Host "  Running installer with arguments: $argString"
-        $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
-                            -NoNewWindow -Wait -PassThru
+        $isWritable = Test-PathWritable -Path $installDir
+
+        if ($isWritable) {
+            Write-Host "  Running installer with arguments: $argString"
+            $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
+                                -NoNewWindow -Wait -PassThru
+        } else {
+            Write-Host "  [NOTE] Target directory '$installDir' requires administrator privileges. Prompting for elevation..." -ForegroundColor Yellow
+            $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
+                                -Verb RunAs -Wait -PassThru
+        }
+
         if ($proc.ExitCode -ne 0) {
             throw "Miniforge installer exited with code $($proc.ExitCode)"
         }
