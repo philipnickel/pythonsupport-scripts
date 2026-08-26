@@ -114,8 +114,15 @@ $searchRoots = @(
     $userProfilePath,
     $env:ProgramData,
     $env:ProgramFiles,
-    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+    [System.Environment]::GetEnvironmentVariable("ProgramFiles(x86)"),
+    $env:SystemDrive,
+    $env:PUBLIC
 )
+
+if (-not [string]::IsNullOrWhiteSpace($env:PS_CONDA_INSTALL_DIR)) {
+    Add-CondaInstallCandidate -Path $env:PS_CONDA_INSTALL_DIR -Candidates $installDirs
+}
+
 foreach ($searchRoot in $searchRoots) {
     if ([string]::IsNullOrWhiteSpace($searchRoot)) {
         continue
@@ -190,7 +197,16 @@ foreach ($installDir in $installDirs) {
 
     if ($uninstaller) {
         Write-Host "  Running $($uninstaller.Name)..."
-        $proc = Start-Process -FilePath $uninstaller.FullName -ArgumentList "/S" -Wait -PassThru
+        $isAllUsers = -not $installDir.StartsWith($env:USERPROFILE, [System.StringComparison]::OrdinalIgnoreCase)
+        $procArgs = @{
+            FilePath     = $uninstaller.FullName
+            ArgumentList = "/S"
+            Wait         = $true
+            PassThru     = $true
+        }
+        if ($isAllUsers) { $procArgs.Verb = "RunAs" }
+
+        $proc = Start-Process @procArgs
         if ($proc.ExitCode -ne 0) {
             throw "$($uninstaller.Name) exited with code $($proc.ExitCode)"
         }
