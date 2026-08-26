@@ -10,12 +10,13 @@
 
 $ErrorActionPreference = "Stop"
 
-$PS_FORGE_URL = $env:PS_FORGE_URL
-if (-not $PS_FORGE_URL) { $PS_FORGE_URL = "https://github.com/dtudk/pythonsupport-forge/releases/latest/download" } #TODO: change to internal site
+$PS_FORGE_URL = if ($env:PS_FORGE_URL) { $env:PS_FORGE_URL } else { "https://github.com/dtudk/pythonsupport-forge/releases/latest/download" }
 $installerName = "Miniforge3-Windows-x86_64.exe"
-$installDir = Join-Path $env:USERPROFILE "miniforge3-dtu"
-$condaExe = Join-Path $installDir "Scripts\conda.exe"
 
+# Resolve install directory
+$baseDir = if ($env:USERPROFILE -match '\s') { $env:SystemDrive } else { $env:USERPROFILE }
+$installDir = if ($env:PS_CONDA_INSTALL_DIR) { $env:PS_CONDA_INSTALL_DIR } else { Join-Path $baseDir "miniforge3-dtu" }
+$condaExe = Join-Path $installDir "Scripts\conda.exe"
 
 Write-Host "=== Installing Miniforge ===`n"
 
@@ -24,52 +25,36 @@ if (Test-Path $condaExe) {
     Write-Host "  Miniforge is already installed at $installDir"
     Write-Host "  [OK] Skipping download"
 } else {
-    $tmpDir = $null
+    $installerPath = Join-Path ([System.IO.Path]::GetTempPath()) $installerName
     try {
-        $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("miniforge_" + [System.Guid]::NewGuid())
-        $installerPath = Join-Path $tmpDir.FullName $installerName
-
         Write-Host "  Downloading $installerName..."
         $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -UseBasicParsing `
-            -OutFile $installerPath
+        Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -UseBasicParsing -OutFile $installerPath
         Write-Host "  [OK] Download complete"
 
-        # Run installer
-        # Flag rules per the constructor docs
-        # (https://conda.github.io/constructor/cli-options/#windows-installers):
+        $isAllUsers = -not $installDir.StartsWith($env:USERPROFILE, [System.StringComparison]::OrdinalIgnoreCase)
+        $installType = if ($isAllUsers) { "AllUsers" } else { "JustMe" }
+
         Write-Host "  Running installer..."
-        $argString = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$installDir"
-        $proc = Start-Process -FilePath $installerPath -ArgumentList $argString `
-                            -NoNewWindow -Wait -PassThru
+        $procArgs = @{
+            FilePath     = $installerPath
+            ArgumentList = "/S /InstallationType=$installType /RegisterPython=0 /AddToPath=0 /D=$installDir"
+            Wait         = $true
+            PassThru     = $true
+        }
+        if ($isAllUsers) { $procArgs.Verb = "RunAs" }
+
+        $proc = Start-Process @procArgs
         if ($proc.ExitCode -ne 0) {
             throw "Miniforge installer exited with code $($proc.ExitCode)"
         }
         Write-Host "  [OK] Miniforge installed to $installDir"
     }
     finally {
-        if ($tmpDir -and (Test-Path $tmpDir.FullName)) {
-            Remove-Item -Recurse -Force $tmpDir.FullName -ErrorAction SilentlyContinue
+        if (Test-Path $installerPath) {
+            Remove-Item -Force $installerPath -ErrorAction SilentlyContinue
         }
     }
 }
-
-#NOTE: Not needed if we just use miniconda prompt 
-# Load conda shell integration and activate the base environment
-# (mirror of 'source conda.sh && conda activate' in the macOS script)
-#Write-Host "  Initializing conda..."
-#$condaHook = Join-Path $installDir "shell\condabin\conda-hook.ps1"
-#if (Test-Path $condaHook) {
-#    & $condaHook
-#    conda activate $installDir
-#}
-
-# Initialize conda for all supported shells on this machine
-# (on Windows: PowerShell profile + cmd.exe autorun)
-#& $condaExe init --all
-#if ($LASTEXITCODE -ne 0) {
-#    throw "conda init --all failed with exit code $LASTEXITCODE"
-#}
-#Write-Host "  [OK] conda init complete (restart your terminal to activate)"
 
 Write-Host "`n=== Miniforge installation complete! ==="
