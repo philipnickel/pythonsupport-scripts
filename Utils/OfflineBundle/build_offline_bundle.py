@@ -334,7 +334,9 @@ def build_bundle(
             for platform_name, url in filtered_vscode_urls.items():
                 suffix = ".zip" if platform_name == "macos-universal" else ".exe"
                 download = downloader.download(
-                    url, cache_dir / "vscode" / platform_name / f"VSCode{suffix}"
+                    url,
+                    cache_dir / "vscode" / platform_name / f"VSCode{suffix}",
+                    immutable=not refresh,
                 )
                 vscode_downloads[platform_name] = download
 
