@@ -274,9 +274,10 @@ def build_bundle(
     *,
     output_dir: Path,
     cache_dir: Path,
-    refresh: bool,
-    keep_staging: bool,
-    verbose: bool,
+    platform: str = "all",
+    refresh: bool = False,
+    keep_staging: bool = False,
+    verbose: bool = False,
     repo_root: Path = REPO_ROOT,
 ) -> Path:
     require_clean_worktree(repo_root)
@@ -289,7 +290,27 @@ def build_bundle(
         git_commit = run_git("rev-parse", "HEAD", repo_root=repo_root)
         git_sha = run_git("rev-parse", "--short", "HEAD", repo_root=repo_root)
         date_stamp = datetime.now(UTC).strftime("%Y.%m.%d")
-        bundle_name = f"DTU-Python-Support-Offline-{date_stamp}-{git_sha}"
+
+        target_platform = platform.lower()
+        if target_platform == "current":
+            target_platform = "macos" if sys.platform == "darwin" else "windows"
+
+        if target_platform == "macos":
+            bundle_name = f"DTU-Python-Support-Offline-macOS-{date_stamp}-{git_sha}"
+            miniforge_filter = lambda plat: plat.startswith("macos")
+            vscode_filter = lambda plat: plat.startswith("macos")
+            extension_filter = lambda plat: plat.startswith("darwin")
+        elif target_platform == "windows":
+            bundle_name = f"DTU-Python-Support-Offline-Windows-{date_stamp}-{git_sha}"
+            miniforge_filter = lambda plat: plat.startswith("windows")
+            vscode_filter = lambda plat: plat.startswith("windows")
+            extension_filter = lambda plat: plat.startswith("win32")
+        else:
+            bundle_name = f"DTU-Python-Support-Offline-{date_stamp}-{git_sha}"
+            miniforge_filter = lambda plat: True
+            vscode_filter = lambda plat: True
+            extension_filter = lambda plat: True
+
         bundle_root = staging_parent / bundle_name
 
         CONSOLE.print(f"[bold]Exporting repository at {git_sha}...[/bold]")
@@ -302,7 +323,10 @@ def build_bundle(
             CONSOLE.print("[bold]Resolving DTU Miniforge release...[/bold]")
             miniforge_release = fetch_latest_miniforge_release(client)
             miniforge_version = str(miniforge_release.get("tag_name") or "latest")
-            miniforge_targets = select_miniforge_assets(miniforge_release)
+            miniforge_targets = [
+                t for t in select_miniforge_assets(miniforge_release)
+                if miniforge_filter(t["platform"])
+            ]
             for item in miniforge_targets:
                 upstream_sha256 = None
                 if item["checksum_url"]:
@@ -341,15 +365,23 @@ def build_bundle(
 
             CONSOLE.print("[bold]Downloading stable VS Code...[/bold]")
             vscode_downloads: dict[str, DownloadResult] = {}
-            for platform_name, url in VSCODE_URLS.items():
+            filtered_vscode_urls = {
+                plat: url for plat, url in VSCODE_URLS.items() if vscode_filter(plat)
+            }
+            for platform_name, url in filtered_vscode_urls.items():
                 suffix = ".zip" if platform_name == "macos-universal" else ".exe"
                 download = downloader.download(
                     url, cache_dir / "vscode" / platform_name / f"VSCode{suffix}"
                 )
                 vscode_downloads[platform_name] = download
-            vscode_version = vscode_version_from_archive(
-                vscode_downloads["macos-universal"].path
-            )
+
+            if "macos-universal" in vscode_downloads:
+                vscode_version = vscode_version_from_archive(
+                    vscode_downloads["macos-universal"].path
+                )
+            else:
+                vscode_version = "latest"
+
             for platform_name, download in vscode_downloads.items():
                 suffix = ".zip" if platform_name == "macos-universal" else ".exe"
                 bundled_path = f"bundle_assets/vscode/{platform_name}/VSCode{suffix}"
@@ -371,7 +403,10 @@ def build_bundle(
             CONSOLE.print("[bold]Resolving offline VS Code extensions...[/bold]")
             marketplace = MarketplaceClient(client)
             extension_ids = read_extension_ids(repo_root / "Core/VsCode/config/extensions.txt")
-            for platform_name in EXTENSION_PLATFORMS:
+            filtered_extension_platforms = [
+                plat for plat in EXTENSION_PLATFORMS if extension_filter(plat)
+            ]
+            for platform_name in filtered_extension_platforms:
                 extensions = resolve_extensions(
                     platform_name,
                     marketplace,
@@ -417,6 +452,7 @@ def build_bundle(
                     "commit": git_commit,
                     "short_commit": git_sha,
                 },
+                "target_platform": target_platform,
                 "vscode_version": vscode_version,
                 "assets": [asdict(record) for record in records],
             }
@@ -444,6 +480,14 @@ def main(
     cache_dir: Annotated[
         Path, typer.Option(help="Persistent download cache")
     ] = Path("release_assets/offline-cache"),
+    platform: Annotated[
+        str,
+        typer.Option(
+            "--platform",
+            "-p",
+            help="Target platform bundle: 'all', 'macos', 'windows', or 'current'",
+        ),
+    ] = "all",
     refresh: Annotated[bool, typer.Option(help="Redownload all assets")] = False,
     keep_staging: Annotated[
         bool, typer.Option(help="Keep the staging directory when a build fails")
@@ -459,6 +503,7 @@ def main(
         output_path = build_bundle(
             output_dir=resolved_output,
             cache_dir=resolved_cache,
+            platform=platform,
             refresh=refresh,
             keep_staging=keep_staging,
             verbose=verbose,

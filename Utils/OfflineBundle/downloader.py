@@ -1,4 +1,4 @@
-"""HTTP download manager with atomic caching and checksum verification."""
+"""HTTP download manager with atomic caching, resume support, and progress bars."""
 
 from __future__ import annotations
 
@@ -11,6 +11,15 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 
 RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
 
@@ -50,10 +59,12 @@ class Downloader:
         *,
         max_retries: int = 5,
         retry_delay: float = 1.0,
+        show_progress: bool = True,
     ) -> None:
         self.client = client
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.show_progress = show_progress
 
     def _metadata_path(self, target: Path) -> Path:
         return target.with_suffix(target.suffix + ".json")
@@ -121,9 +132,18 @@ class Downloader:
                     pass
 
         part_file = target.with_suffix(target.suffix + ".part")
-        part_file.unlink(missing_ok=True)
-        request_headers: dict[str, str] = {}
+        if refresh:
+            part_file.unlink(missing_ok=True)
+
+        filename = target.name
         for attempt in range(1, self.max_retries + 1):
+            request_headers: dict[str, str] = {}
+            initial_bytes = 0
+            if part_file.exists() and not refresh:
+                initial_bytes = part_file.stat().st_size
+                if initial_bytes > 0:
+                    request_headers["Range"] = f"bytes={initial_bytes}-"
+
             try:
                 with self.client.stream(
                     "GET", url, headers=request_headers, follow_redirects=True
@@ -134,15 +154,59 @@ class Downloader:
                     ):
                         time.sleep(self.retry_delay * attempt)
                         continue
+                    if response.status_code == 416:
+                        # Range Not Satisfiable: file already completed or corrupt, restart
+                        part_file.unlink(missing_ok=True)
+                        initial_bytes = 0
+                        continue
                     response.raise_for_status()
-                    digest = hashlib.sha256()
-                    bytes_written = 0
-                    with part_file.open("wb") as handle:
-                        for chunk in response.iter_bytes(chunk_size=1024 * 1024):
-                            handle.write(chunk)
-                            digest.update(chunk)
-                            bytes_written += len(chunk)
-                    calculated_sha256 = digest.hexdigest()
+
+                    resuming = response.status_code == 206
+                    write_mode = "ab" if resuming else "wb"
+                    if not resuming and initial_bytes > 0:
+                        initial_bytes = 0
+
+                    content_length = response.headers.get("content-length")
+                    total_bytes = (
+                        initial_bytes + int(content_length)
+                        if content_length and content_length.isdigit()
+                        else None
+                    )
+
+                    progress = None
+                    task_id = None
+                    if self.show_progress:
+                        progress = Progress(
+                            SpinnerColumn(),
+                            TextColumn("[bold blue]{task.fields[filename]}"),
+                            BarColumn(bar_width=30),
+                            "[progress.percentage]{task.percentage:>3.1f}%",
+                            "•",
+                            DownloadColumn(),
+                            "•",
+                            TransferSpeedColumn(),
+                            "•",
+                            TimeRemainingColumn(),
+                        )
+                        progress.start()
+                        task_id = progress.add_task(
+                            "download",
+                            filename=filename,
+                            total=total_bytes,
+                            completed=initial_bytes,
+                        )
+
+                    try:
+                        with part_file.open(write_mode) as handle:
+                            for chunk in response.iter_bytes(chunk_size=512 * 1024):
+                                handle.write(chunk)
+                                if progress and task_id is not None:
+                                    progress.update(task_id, advance=len(chunk))
+                    finally:
+                        if progress:
+                            progress.stop()
+
+                    calculated_sha256 = sha256_file(part_file)
                     if (
                         expected_sha256
                         and calculated_sha256.lower() != expected_sha256.lower()
@@ -158,7 +222,7 @@ class Downloader:
                         source_url=url,
                         resolved_url=str(response.url),
                         sha256=calculated_sha256,
-                        size=bytes_written,
+                        size=target.stat().st_size,
                         etag=response.headers.get("etag"),
                         last_modified=response.headers.get("last_modified"),
                     )
@@ -179,7 +243,6 @@ class Downloader:
                     )
                     return result
             except (httpx.HTTPError, OSError) as exc:
-                part_file.unlink(missing_ok=True)
                 if attempt >= self.max_retries:
                     raise BundleError(f"Failed to download {url}: {exc}") from exc
                 time.sleep(self.retry_delay * attempt)
