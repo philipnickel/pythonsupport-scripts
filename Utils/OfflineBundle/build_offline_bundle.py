@@ -8,6 +8,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -20,14 +21,18 @@ import httpx
 import typer
 from rich.console import Console
 
-from .downloader import (
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from Utils.OfflineBundle.downloader import (
     BundleError,
     Downloader,
     DownloadResult,
     normalized_url,
     sha256_file,
 )
-from .vscode_extensions import (
+from Utils.OfflineBundle.vscode_extensions import (
     EXTENSION_PLATFORMS,
     MARKETPLACE_QUERY_URL,
     MarketplaceClient,
@@ -38,7 +43,6 @@ from .vscode_extensions import (
 
 APP = typer.Typer(add_completion=False, no_args_is_help=False)
 CONSOLE = Console()
-REPO_ROOT = Path(__file__).resolve().parents[2]
 GITHUB_RELEASE_API = (
     "https://api.github.com/repos/dtudk/pythonsupport-forge/releases/latest"
 )

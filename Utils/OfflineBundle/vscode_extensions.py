@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import httpx
 
-from .downloader import BundleError, Downloader, DownloadResult
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from Utils.OfflineBundle.downloader import BundleError, Downloader, DownloadResult
 
 MARKETPLACE_QUERY_URL = (
     "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery"
