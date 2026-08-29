@@ -13,7 +13,6 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any
@@ -54,21 +53,6 @@ VSCODE_URLS = {
 }
 MIN_FREE_BYTES = 4 * 1024**3
 CHECKSUM_RE = re.compile(r"^([0-9a-fA-F]{64})(?:\s+[* ]?)(.+)?$")
-
-
-@dataclass
-class AssetRecord:
-    name: str
-    kind: str
-    platform: str
-    version: str
-    source_url: str
-    resolved_url: str
-    bundled_path: str
-    sha256: str
-    size: int
-    dependencies: list[str] = field(default_factory=list)
-    upstream_sha256: str | None = None
 
 
 def nearest_existing_parent(path: Path) -> Path:
@@ -217,13 +201,6 @@ def copy_download(download: DownloadResult, destination: Path) -> None:
     shutil.copyfile(download.path, destination)
 
 
-def write_json(path: Path, data: Any) -> None:
-    path.write_text(
-        json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-
-
 def relative_files(root: Path) -> list[Path]:
     return sorted(
         (path.relative_to(root) for path in root.rglob("*") if path.is_file()),
@@ -319,7 +296,6 @@ def build_bundle(
 
         with httpx.Client(timeout=60.0, follow_redirects=True) as client:
             downloader = Downloader(client)
-            records: list[AssetRecord] = []
 
             CONSOLE.print("[bold]Resolving DTU Miniforge release...[/bold]")
             miniforge_release = fetch_latest_miniforge_release(client)
@@ -349,20 +325,6 @@ def build_bundle(
                     f"bundle_assets/miniforge/{item['platform']}/Miniforge3{bundled_ext}"
                 )
                 copy_download(download, bundle_root / bundled_path)
-                records.append(
-                    AssetRecord(
-                        name="DTU Miniforge",
-                        kind="miniforge",
-                        platform=item["platform"],
-                        version=miniforge_version,
-                        source_url=download.source_url,
-                        resolved_url=download.resolved_url,
-                        bundled_path=bundled_path,
-                        sha256=download.sha256,
-                        size=download.size,
-                        upstream_sha256=upstream_sha256,
-                    )
-                )
 
             CONSOLE.print("[bold]Downloading stable VS Code...[/bold]")
             vscode_downloads: dict[str, DownloadResult] = {}
@@ -387,19 +349,6 @@ def build_bundle(
                 suffix = ".zip" if platform_name == "macos-universal" else ".exe"
                 bundled_path = f"bundle_assets/vscode/{platform_name}/VSCode{suffix}"
                 copy_download(download, bundle_root / bundled_path)
-                records.append(
-                    AssetRecord(
-                        name="Visual Studio Code",
-                        kind="vscode",
-                        platform=platform_name,
-                        version=vscode_version,
-                        source_url=download.source_url,
-                        resolved_url=download.resolved_url,
-                        bundled_path=bundled_path,
-                        sha256=download.sha256,
-                        size=download.size,
-                    )
-                )
 
             CONSOLE.print("[bold]Resolving offline VS Code extensions...[/bold]")
             marketplace = MarketplaceClient(client)
@@ -426,38 +375,21 @@ def build_bundle(
                     bundled_path = f"bundle_assets/extensions/{target_folder}/{filename}"
                     copy_download(download, bundle_root / bundled_path)
                     index_lines.append(bundled_path)
-                    records.append(
-                        AssetRecord(
-                            name=marketplace_version.extension_id,
-                            kind="vscode-extension",
-                            platform=platform_name,
-                            version=marketplace_version.version,
-                            source_url=download.source_url,
-                            resolved_url=download.resolved_url,
-                            bundled_path=bundled_path,
-                            sha256=download.sha256,
-                            size=download.size,
-                        )
-                    )
                 index_path = (
                     bundle_root / "bundle_assets" / "extensions" / platform_name / "index.txt"
                 )
                 index_path.parent.mkdir(parents=True, exist_ok=True)
                 index_path.write_text("\n".join(index_lines) + "\n", encoding="utf-8")
 
-            manifest = {
-                "schema_version": 1,
-                "bundle_name": bundle_name,
-                "built_at": datetime.now(UTC).isoformat(),
-                "repository": {
-                    "commit": git_commit,
-                    "short_commit": git_sha,
-                },
-                "target_platform": target_platform,
-                "vscode_version": vscode_version,
-                "assets": [asdict(record) for record in records],
-            }
-            write_json(bundle_root / "bundle-manifest.json", manifest)
+            version_text = (
+                f"DTU Python Support Offline Installer\n"
+                f"Bundle: {bundle_name}\n"
+                f"Built: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                f"Commit: {git_sha} ({git_commit})\n"
+                f"Platform: {target_platform}\n"
+                f"VS Code: {vscode_version}\n"
+            )
+            (bundle_root / "VERSION").write_text(version_text, encoding="utf-8")
 
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{bundle_name}.zip"
