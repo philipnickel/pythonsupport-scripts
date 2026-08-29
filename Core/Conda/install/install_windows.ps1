@@ -26,14 +26,23 @@ if (Test-Path $condaExe) {
 } else {
     $tmpDir = $null
     try {
-        $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("miniforge_" + [System.Guid]::NewGuid())
-        $installerPath = Join-Path $tmpDir.FullName $installerName
+        if ($env:PS_OFFLINE -eq "1") {
+            if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
+            $installerPath = Join-Path $env:PS_BUNDLE_ROOT "bundle_assets\miniforge\windows-x64\Miniforge3.exe"
+            if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
+                throw "Missing offline Miniforge installer: $installerPath"
+            }
+            Write-Host "  Using bundled $installerName"
+        } else {
+            $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("miniforge_" + [System.Guid]::NewGuid())
+            $installerPath = Join-Path $tmpDir.FullName $installerName
 
-        Write-Host "  Downloading $installerName..."
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -UseBasicParsing `
-            -OutFile $installerPath
-        Write-Host "  [OK] Download complete"
+            Write-Host "  Downloading $installerName..."
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri "$PS_FORGE_URL/$installerName" -UseBasicParsing `
+                -OutFile $installerPath
+            Write-Host "  [OK] Download complete"
+        }
 
         # Run installer
         # Flag rules per the constructor docs

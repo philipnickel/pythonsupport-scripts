@@ -1,7 +1,13 @@
 # Python
 ms-python.python
+ms-python.vscode-pylance
+ms-python.debugpy
 
 # Jupyter
 ms-toolsai.jupyter
+ms-toolsai.jupyter-renderers
+ms-toolsai.jupyter-keymap
+ms-toolsai.vscode-jupyter-cell-tags
+ms-toolsai.vscode-jupyter-slideshow
 
 

@@ -2,6 +2,20 @@
 
 ## Usage
 
+### Fully offline USB bundle
+
+Maintainers can build a ZIP containing the repository, DTU
+Miniforge, VS Code, and all VSIX extension dependencies:
+
+```bash
+uv sync --locked
+uv run --locked Utils/OfflineBundle/build_offline_bundle.py
+```
+
+The builder packages the committed `HEAD`, so the worktree must be clean. See
+[OFFLINE_BUNDLE.md](OFFLINE_BUNDLE.md) for the bundle layout, installation
+instructions, and architecture support.
+
 ### MacOS
 
 ```bash

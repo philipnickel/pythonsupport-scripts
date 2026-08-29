@@ -111,3 +111,4 @@ docs/_build/
 # Locally cached release assets (installers)
 release_assets/dtu-miniconda
 release_assets/vsCode
+release_assets/offline-cache/

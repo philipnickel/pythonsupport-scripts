@@ -20,9 +20,18 @@ if (Test-Path $settingsFile) {
 } else {
     New-Item -ItemType Directory -Path $settingsDir -Force | Out-Null
 
-    Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/default_settings_Windows.json" `
-                      -OutFile $settingsFile `
-                      -UseBasicParsing
+    if ($env:PS_OFFLINE -eq "1") {
+        if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
+        $bundledSettings = Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\default_settings_Windows.json"
+        if (-not (Test-Path -LiteralPath $bundledSettings -PathType Leaf)) {
+            throw "Missing bundled VS Code settings: $bundledSettings"
+        }
+        Copy-Item -LiteralPath $bundledSettings -Destination $settingsFile
+    } else {
+        Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/default_settings_Windows.json" `
+                          -OutFile $settingsFile `
+                          -UseBasicParsing
+    }
 
     Write-Host "  [OK] Settings applied to $settingsFile"
 }

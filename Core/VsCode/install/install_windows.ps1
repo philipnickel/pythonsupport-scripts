@@ -28,14 +28,38 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
 } else {
     $tmpDir = $null
     try {
-        $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("vscode_" + [System.Guid]::NewGuid())
-        $installerPath = Join-Path $tmpDir.FullName "VSCode.exe"
+        if ($env:PS_OFFLINE -eq "1") {
+            if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
+            if (-not $env:PS_BUNDLE_PLATFORM) {
+                $architecture = $env:PROCESSOR_ARCHITECTURE
+                if ([Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITEW6432) {
+                    $architecture = $env:PROCESSOR_ARCHITEW6432
+                }
+                switch ($architecture.ToUpperInvariant()) {
+                    "ARM64" { $env:PS_BUNDLE_PLATFORM = "windows-arm64" }
+                    "AMD64" { $env:PS_BUNDLE_PLATFORM = "windows-x64" }
+                    default { throw "Unsupported Windows architecture: $architecture" }
+                }
+            }
+            $bundlePlatform = $env:PS_BUNDLE_PLATFORM
+            if ($bundlePlatform -notin @("windows-x64", "windows-arm64")) {
+                throw "Invalid or missing PS_BUNDLE_PLATFORM: $bundlePlatform"
+            }
+            $installerPath = Join-Path $env:PS_BUNDLE_ROOT "bundle_assets\vscode\$bundlePlatform\VSCode.exe"
+            if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
+                throw "Missing offline VS Code installer: $installerPath"
+            }
+            Write-Host "  Using bundled VS Code installer"
+        } else {
+            $tmpDir = New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath()) -Name ("vscode_" + [System.Guid]::NewGuid())
+            $installerPath = Join-Path $tmpDir.FullName "VSCode.exe"
 
-        Write-Host "  Downloading VS Code..."
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing `
-            -OutFile $installerPath
-        Write-Host "  [OK] Download complete"
+            Write-Host "  Downloading VS Code..."
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing `
+                -OutFile $installerPath
+            Write-Host "  [OK] Download complete"
+        }
 
         # Install silently
         Write-Host "  Installing..."
@@ -54,9 +78,17 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
 }
 
 # Apply settings
-Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/settings_windows.ps1" -UseBasicParsing).Content
+if ($env:PS_OFFLINE -eq "1") {
+    & (Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\settings_windows.ps1")
+} else {
+    Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/settings_windows.ps1" -UseBasicParsing).Content
+}
 
 # Install extensions
-Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/extensions_windows.ps1" -UseBasicParsing).Content
+if ($env:PS_OFFLINE -eq "1") {
+    & (Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\extensions_windows.ps1")
+} else {
+    Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/extensions_windows.ps1" -UseBasicParsing).Content
+}
 
 Write-Host "`n=== VS Code installation complete! ==="

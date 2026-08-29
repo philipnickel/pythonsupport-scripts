@@ -13,6 +13,23 @@ set -euo pipefail
 PS_REPO_URL="${PS_REPO_URL:-https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main}"
 export PS_REPO_URL
 
+run_repo_script() {
+    local relative_path="$1"
+    if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
+        /bin/bash "${PS_BUNDLE_ROOT:?PS_BUNDLE_ROOT is required in offline mode}/$relative_path"
+    else
+        /bin/bash <(curl -fsSL "$PS_REPO_URL/$relative_path")
+    fi
+}
+
+if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
+    case "$(uname -m)" in
+        arm64) export PS_BUNDLE_PLATFORM="macos-arm64" ;;
+        x86_64) export PS_BUNDLE_PLATFORM="macos-x86_64" ;;
+        *) echo "Unsupported macOS architecture: $(uname -m)" >&2; exit 1 ;;
+    esac
+fi
+
 # Load the progress UI (defines the `progress` helper; the source guard in
 #source <(curl -fsSL "$PS_REPO_URL/Utils/progress.sh")
 
@@ -23,11 +40,11 @@ echo ""
 
 # Step 1: Install Miniforge/Conda
 #progress "Step 1/2: Miniforge" 10 \
-bash <(curl -fsSL "$PS_REPO_URL/Core/Conda/install/install_macOS.sh")
+run_repo_script "Core/Conda/install/install_macOS.sh"
 
 # Step 2: Install VS Code (includes extensions and settings)
 #progress "Step 2/2: VS Code" 5 \
-bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/install/install_macOS.sh")
+run_repo_script "Core/VsCode/install/install_macOS.sh"
 
 echo "========================================="
 echo "  Installation complete!"

@@ -13,17 +13,31 @@ if (-not $env:PS_REPO_URL) {
     $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"
 }
 
+function Invoke-RepositoryScript {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+    if ($env:PS_OFFLINE -eq "1") {
+        if (-not $env:PS_BUNDLE_ROOT) {
+            throw "PS_BUNDLE_ROOT is required in offline mode"
+        }
+        $scriptPath = Join-Path $env:PS_BUNDLE_ROOT ($RelativePath -replace '/', '\')
+        & $scriptPath
+    } else {
+        Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/$RelativePath" -UseBasicParsing).Content
+    }
+}
+
 Write-Host "========================================="
 Write-Host "  DTU Python Support - Full Uninstall"
 Write-Host "========================================="
 Write-Host ""
 
 Write-Host "--- Step 1/2: VS Code ---"
-Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Utils/VsCode/uninstall_Windows.ps1" -UseBasicParsing).Content
+Invoke-RepositoryScript "Utils/VsCode/uninstall_Windows.ps1"
 Write-Host ""
 
 Write-Host "--- Step 2/2: Conda distributions ---"
-Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Utils/Conda/uninstall_Windows.ps1" -UseBasicParsing).Content
+Invoke-RepositoryScript "Utils/Conda/uninstall_Windows.ps1"
 Write-Host ""
 
 Write-Host "========================================="

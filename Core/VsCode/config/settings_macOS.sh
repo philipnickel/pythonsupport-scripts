@@ -22,7 +22,16 @@ if [[ -e "$settings_file" ]]; then
 fi
 
 mkdir -p "$settings_dir"
-curl -fsSL "$PS_REPO_URL/Core/VsCode/config/default_settings_MacOS.json" > "$settings_file"
+if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
+  bundled_settings="${PS_BUNDLE_ROOT:?PS_BUNDLE_ROOT is required in offline mode}/Core/VsCode/config/default_settings_MacOS.json"
+  [[ -f "$bundled_settings" ]] || {
+    echo "  [ERROR] Missing bundled VS Code settings: $bundled_settings" >&2
+    exit 1
+  }
+  cp "$bundled_settings" "$settings_file"
+else
+  curl -fsSL "$PS_REPO_URL/Core/VsCode/config/default_settings_MacOS.json" > "$settings_file"
+fi
 echo "  [OK] Settings applied to $settings_file"
 
 echo ""
