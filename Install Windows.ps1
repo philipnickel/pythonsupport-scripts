@@ -119,9 +119,9 @@ while ($true) {
     $success = Invoke-Action $choice
     if ($success) {
         Write-Host ""
-        $after = Read-Host "Press Enter to return to menu, or 'q' to quit"
-        if ($after -in @("q", "Q")) {
-            break
-        }
+        Write-Host "=====================================================" -ForegroundColor Green
+        Write-Host " [OK] Completed successfully! Closing window..." -ForegroundColor Green
+        Write-Host "=====================================================" -ForegroundColor Green
+        exit 0
     }
 }

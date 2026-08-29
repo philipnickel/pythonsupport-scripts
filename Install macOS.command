@@ -96,9 +96,11 @@ while true; do
 
     if run_action "$choice"; then
         echo ""
-        read -r -p "Press Enter to return to menu, or 'q' to quit: " after_choice
-        if [[ "$after_choice" =~ ^[qQ]$ ]]; then
-            break
-        fi
+        echo "====================================================="
+        echo " [OK] Completed successfully! Closing window..."
+        echo "====================================================="
+        osascript -e 'tell application "Terminal" to close (every window whose name contains "Install macOS")' 2>/dev/null || \
+        osascript -e 'tell application "Terminal" to close front window' 2>/dev/null || true
+        exit 0
     fi
 done
