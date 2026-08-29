@@ -104,8 +104,11 @@ trap 'rm -rf "$tmp_dir"' EXIT
 unzip -q "$latest_zip" -d "$tmp_dir"
 bundle_folder="$(ls "$tmp_dir")"
 
-echo "Syncing files (with progress):"
-rsync -ah --delete --progress "$tmp_dir/$bundle_folder/" "$DEST_VOLUME/"
+echo "Syncing files to USB..."
+rsync -rtv --progress \
+    --exclude=".*" \
+    --exclude="._*" \
+    "$tmp_dir/$bundle_folder/" "$DEST_VOLUME/"
 echo ""
 
 # 4. Finalize permissions and flush disk cache
