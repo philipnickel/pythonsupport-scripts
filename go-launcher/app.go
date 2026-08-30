@@ -303,6 +303,12 @@ func resolveBundleRoot(explicitRoot string, executablePath string) (string, erro
 			return "", errors.New("cannot determine executable location; use --bundle-root")
 		}
 		root = filepath.Dir(executablePath)
+		// Release images keep the executable visible at the volume root while
+		// scripts and payloads live in a hidden adjacent resource directory.
+		resourceRoot := filepath.Join(root, ".dtu-python-support")
+		if info, err := os.Stat(resourceRoot); err == nil && info.IsDir() {
+			root = resourceRoot
+		}
 	}
 	absoluteRoot, err := filepath.Abs(root)
 	if err != nil {

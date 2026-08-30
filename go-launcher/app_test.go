@@ -357,6 +357,38 @@ func TestHelpDoesNotRequireBundle(t *testing.T) {
 	}
 }
 
+func TestResolveBundleRootUsesAdjacentReleaseResources(t *testing.T) {
+	volumeRoot := t.TempDir()
+	resourceRoot := filepath.Join(volumeRoot, ".dtu-python-support")
+	if err := os.Mkdir(resourceRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	root, err := resolveBundleRoot("", filepath.Join(volumeRoot, "DTU Python Support.command"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root != resourceRoot {
+		t.Fatalf("bundle root = %q, want %q", root, resourceRoot)
+	}
+}
+
+func TestResolveBundleRootExplicitPathWinsOverReleaseResources(t *testing.T) {
+	volumeRoot := t.TempDir()
+	if err := os.Mkdir(filepath.Join(volumeRoot, ".dtu-python-support"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	explicitRoot := t.TempDir()
+
+	root, err := resolveBundleRoot(explicitRoot, filepath.Join(volumeRoot, "DTU Python Support.command"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root != explicitRoot {
+		t.Fatalf("bundle root = %q, want %q", root, explicitRoot)
+	}
+}
+
 func TestMacOSLeafRunnerIntegration(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		t.Skip("macOS integration test")

@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-for tool in gh curl shasum go lipo hdiutil; do
+for tool in gh curl shasum go lipo codesign hdiutil; do
     command -v "$tool" >/dev/null 2>&1 || {
         echo "Missing required build tool: $tool" >&2
         exit 1
@@ -205,6 +205,7 @@ lipo -create \
     "$binary_root/pis-launcher-darwin-arm64" \
     "$binary_root/pis-launcher-darwin-amd64" \
     -output "$binary_root/pis-launcher-macos-universal"
+codesign --force --sign - --timestamp=none "$binary_root/pis-launcher-macos-universal"
 
 stage_runtime() {
     local root="$1"
@@ -259,13 +260,12 @@ mac_volume="$staging_root/macos-volume"
 mac_resources="$mac_volume/.dtu-python-support"
 mkdir -p "$mac_resources"
 stage_runtime "$mac_resources" macos
-copy_file "$repo_root/Utils/OfflineBundle/macos/DTU Python Support.command" \
+copy_file "$binary_root/pis-launcher-macos-universal" \
     "$mac_volume/DTU Python Support.command"
-copy_file "$binary_root/pis-launcher-macos-universal" "$mac_resources/pis-launcher"
 copy_file "$miniforge_mac_arm" "$mac_resources/bundle_assets/miniforge/macos-arm64/Miniforge3.sh"
 copy_file "$miniforge_mac_intel" "$mac_resources/bundle_assets/miniforge/macos-x86_64/Miniforge3.sh"
 copy_file "$vscode_macos" "$mac_resources/bundle_assets/vscode/macos-universal/VSCode.zip"
-chmod +x "$mac_volume/DTU Python Support.command" "$mac_resources/pis-launcher"
+chmod +x "$mac_volume/DTU Python Support.command"
 
 windows_volume="$staging_root/windows-volume"
 windows_resources="$windows_volume/.dtu-python-support"
@@ -288,6 +288,17 @@ echo "Creating universal macOS disk image..."
 hdiutil create -quiet -volname "DTU Python Support" -srcfolder "$mac_volume" \
     -format UDZO -ov "$dmg_temp"
 hdiutil verify "$dmg_temp" >/dev/null
+
+echo "Smoke-testing the launcher from the mounted macOS image..."
+dmg_mount="$staging_root/macos-mounted"
+mkdir -p "$dmg_mount"
+hdiutil attach -quiet -readonly -nobrowse -mountpoint "$dmg_mount" "$dmg_temp"
+if ! "$dmg_mount/DTU Python Support.command" --help >/dev/null; then
+    hdiutil detach "$dmg_mount" >/dev/null || true
+    echo "The launcher could not run from the generated macOS image" >&2
+    exit 1
+fi
+hdiutil detach "$dmg_mount" >/dev/null
 
 echo "Creating universal Windows disk image..."
 hdiutil makehybrid -quiet -iso -joliet -udf \
