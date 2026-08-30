@@ -9,12 +9,15 @@ network connection.
 The worktree must be clean because the builder packages the committed `HEAD`.
 
 ```bash
-uv sync --locked
-uv run --locked Utils/OfflineBundle/build_offline_bundle.py
+# Prepare USB drive directly (macOS):
+bash Utils/OfflineBundle/prepare_usb.sh
+
+# Or build standalone release ZIP:
+uv run Utils/OfflineBundle/build_offline_bundle.py
 ```
 
-The finished archive is written to `dist/`. Copy the ZIP to an exFAT-formatted
-USB drive and extract it on the target computer.
+The builder writes release archives to `dist/`, or flashes a USB drive directly
+when run with `prepare_usb.sh` (or `--target-dir`).
 
 ## Running on macOS
 

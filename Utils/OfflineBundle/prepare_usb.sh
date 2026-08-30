@@ -1,7 +1,7 @@
 #!/bin/bash
 # @doc
 # @name: Prepare USB Drive (macOS)
-# @description: Builds the latest offline bundle and flashes it onto a USB drive named PISscript
+# @description: Builds the latest offline bundle and flashes it directly onto a USB drive named PISscript
 # @category: OfflineBundle
 # @usage: bash Utils/OfflineBundle/prepare_usb.sh [--platform macos|all|windows] [--format]
 # @requirements: macOS, USB flash drive
@@ -48,21 +48,7 @@ echo "Target Volume:   $DEST_VOLUME"
 echo "====================================================="
 echo ""
 
-# 1. Build the offline bundle
-echo ">>> [1/4] Building offline bundle..."
-(cd "$REPO_ROOT" && uv run Utils/OfflineBundle/build_offline_bundle.py --platform "$PLATFORM")
-
-# Find the latest generated ZIP in dist/
-latest_zip="$(ls -t "$REPO_ROOT/dist"/DTU-Python-Support-Offline-*.zip 2>/dev/null | head -n 1)"
-if [[ -z "$latest_zip" ]]; then
-    echo "Error: No bundle ZIP found in dist/!" >&2
-    exit 1
-fi
-echo "[OK] Built bundle: $(basename "$latest_zip")"
-echo ""
-
-# 2. Check USB mount or format
-echo ">>> [2/4] Checking USB drive..."
+# 1. Format if requested or unmounted
 if [[ "$DO_FORMAT" == "1" && -d "$DEST_VOLUME" ]]; then
     echo "Forced format requested. Looking up disk for $DEST_VOLUME..."
     disk_id="$(diskutil info "$DEST_VOLUME" | awk -F': *' '/Part of Whole/ {print $2}')"
@@ -90,29 +76,19 @@ if [[ ! -d "$DEST_VOLUME" ]]; then
 fi
 
 if [[ ! -d "$DEST_VOLUME" ]]; then
-    echo "Error: $DEST_VOLUME is not mounted after formatting." >&2
+    echo "Error: $DEST_VOLUME is not mounted." >&2
     exit 1
 fi
 echo "[OK] USB drive ready at: $DEST_VOLUME"
 echo ""
 
-# 3. Unpack and sync to USB
-echo ">>> [3/4] Copying offline bundle to $DEST_VOLUME..."
-tmp_dir="$(mktemp -d)"
-trap 'rm -rf "$tmp_dir"' EXIT
-
-unzip -q "$latest_zip" -d "$tmp_dir"
-bundle_folder="$(ls "$tmp_dir")"
-
-echo "Syncing files to USB..."
-rsync -rtv --progress \
-    --exclude=".*" \
-    --exclude="._*" \
-    "$tmp_dir/$bundle_folder/" "$DEST_VOLUME/"
+# 2. Build and sync directly to USB (no intermediate ZIP needed)
+echo ">>> Building and syncing bundle directly to $DEST_VOLUME..."
+(cd "$REPO_ROOT" && uv run Utils/OfflineBundle/build_offline_bundle.py --platform "$PLATFORM" --target-dir "$DEST_VOLUME")
 echo ""
 
-# 4. Finalize permissions and flush disk cache
-echo ">>> [4/4] Finalizing USB drive..."
+# 3. Finalize permissions and flush disk cache
+echo ">>> Finalizing USB drive..."
 chmod +x "$DEST_VOLUME/Install macOS.command" 2>/dev/null || true
 echo "Flushing disk cache (syncing)..."
 sync

@@ -252,6 +252,7 @@ def build_bundle(
     *,
     output_dir: Path,
     cache_dir: Path,
+    target_dir: Path | None = None,
     platform: str = "all",
     refresh: bool = False,
     keep_staging: bool = False,
@@ -259,7 +260,10 @@ def build_bundle(
     repo_root: Path = REPO_ROOT,
 ) -> Path:
     require_clean_worktree(repo_root)
-    ensure_free_space(output_dir)
+    if target_dir is None:
+        ensure_free_space(output_dir)
+    else:
+        ensure_free_space(target_dir)
     ensure_free_space(cache_dir)
     staging_parent = Path(tempfile.mkdtemp(prefix="dtu-offline-bundle-"))
     ensure_free_space(staging_parent)
@@ -393,6 +397,31 @@ def build_bundle(
             )
             (bundle_root / "VERSION").write_text(version_text, encoding="utf-8")
 
+            if target_dir is not None:
+                target_dir.mkdir(parents=True, exist_ok=True)
+                CONSOLE.print(f"[bold]Syncing directly to {target_dir}...[/bold]")
+                rsync_bin = shutil.which("rsync")
+                if rsync_bin:
+                    subprocess.run(
+                        [
+                            rsync_bin,
+                            "-rt",
+                            "--progress",
+                            "--exclude=.*",
+                            "--exclude=._*",
+                            f"{bundle_root}/",
+                            f"{target_dir}/",
+                        ],
+                        check=True,
+                    )
+                else:
+                    for src_file in relative_files(bundle_root):
+                        dest_file = target_dir / src_file
+                        dest_file.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copyfile(bundle_root / src_file, dest_file)
+                success = True
+                return target_dir
+
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{bundle_name}.zip"
             CONSOLE.print(f"[bold]Creating {output_path.name}...[/bold]")
@@ -415,6 +444,14 @@ def main(
     cache_dir: Annotated[
         Path, typer.Option(help="Persistent download cache")
     ] = Path("release_assets/offline-cache"),
+    target_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--target-dir",
+            "-t",
+            help="Directory to copy bundle files directly without creating a ZIP (e.g. /Volumes/PISscript)",
+        ),
+    ] = None,
     platform: Annotated[
         str,
         typer.Option(
@@ -431,13 +468,19 @@ def main(
         bool, typer.Option("--verbose", "-v", help="Show diagnostics")
     ] = False,
 ) -> None:
-    """Build a fully offline installer ZIP."""
+    """Build a fully offline installer ZIP or copy directly to a directory."""
     resolved_output = output_dir if output_dir.is_absolute() else REPO_ROOT / output_dir
     resolved_cache = cache_dir if cache_dir.is_absolute() else REPO_ROOT / cache_dir
+    resolved_target = (
+        (target_dir if target_dir.is_absolute() else REPO_ROOT / target_dir)
+        if target_dir
+        else None
+    )
     try:
         output_path = build_bundle(
             output_dir=resolved_output,
             cache_dir=resolved_cache,
+            target_dir=resolved_target,
             platform=platform,
             refresh=refresh,
             keep_staging=keep_staging,

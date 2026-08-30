@@ -4,12 +4,20 @@
 
 ### Fully offline USB bundle
 
-Maintainers can build a ZIP containing the repository, DTU
-Miniforge, VS Code, and all VSIX extension dependencies:
+**One-touch USB flash (macOS):**
+Plug in your USB drive named `PISscript` and run:
 
 ```bash
-uv sync --locked
-uv run --locked Utils/OfflineBundle/build_offline_bundle.py
+bash Utils/OfflineBundle/prepare_usb.sh
+```
+
+This builds/refreshes the latest bundle and syncs it directly to the USB drive with zero manual steps.
+
+**Build standalone release ZIP:**
+```bash
+uv run Utils/OfflineBundle/build_offline_bundle.py
+# Or for macOS only:
+uv run Utils/OfflineBundle/build_offline_bundle.py --platform macos
 ```
 
 The builder packages the committed `HEAD`, so the worktree must be clean. See

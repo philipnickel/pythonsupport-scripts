@@ -30,20 +30,15 @@ if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
     esac
 fi
 
-# Load the progress UI (defines the `progress` helper; the source guard in
-#source <(curl -fsSL "$PS_REPO_URL/Utils/progress.sh")
-
 echo "========================================="
 echo "  DTU Python Support - Full Installation"
 echo "========================================="
 echo ""
 
 # Step 1: Install Miniforge/Conda
-#progress "Step 1/2: Miniforge" 10 \
 run_repo_script "Core/Conda/install/install_macOS.sh"
 
 # Step 2: Install VS Code (includes extensions and settings)
-#progress "Step 2/2: VS Code" 5 \
 run_repo_script "Core/VsCode/install/install_macOS.sh"
 
 echo "========================================="
