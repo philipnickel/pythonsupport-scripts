@@ -2,7 +2,7 @@
 # @name: VS Code Install (Windows)
 # @description: Download and install VS Code on Windows
 # @category: Core
-# @usage: powershell -File Core/VsCode/install/install_windows.ps1
+# @usage: .\Install Windows.ps1 -Action install-vscode
 # @requirements: Windows
 # @notes: Downloads the architecture-appropriate user installer and installs VS Code.
 #   PS_VSCODE_URL may override the installer URL for local testing.
@@ -10,14 +10,11 @@
 
 $ErrorActionPreference = "Stop"
 
-$appPath = Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code"
-$downloadUrl = $env:PS_VSCODE_URL
-if (-not $downloadUrl) {
-    $downloadUrl = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
-    if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
-        $downloadUrl = "https://update.code.visualstudio.com/latest/win32-arm64-user/stable"
-    }
+if ($env:PS_ENV_INITIALIZED -ne "1") {
+    throw "Environment is not initialized. Use Install Windows.ps1 or install_all_windows.ps1."
 }
+
+$appPath = Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code"
 
 Write-Host "=== Installing VS Code ===`n"
 
@@ -28,19 +25,8 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
 } else {
     $tmpDir = $null
     try {
-        if ($env:PS_OFFLINE -eq "1") {
+        if ($env:PS_ENV -eq "offline") {
             if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
-            if (-not $env:PS_BUNDLE_PLATFORM) {
-                $architecture = $env:PROCESSOR_ARCHITECTURE
-                if ([Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITEW6432) {
-                    $architecture = $env:PROCESSOR_ARCHITEW6432
-                }
-                switch ($architecture.ToUpperInvariant()) {
-                    "ARM64" { $env:PS_BUNDLE_PLATFORM = "windows-arm64" }
-                    "AMD64" { $env:PS_BUNDLE_PLATFORM = "windows-x64" }
-                    default { throw "Unsupported Windows architecture: $architecture" }
-                }
-            }
             $bundlePlatform = $env:PS_BUNDLE_PLATFORM
             if ($bundlePlatform -notin @("windows-x64", "windows-arm64")) {
                 throw "Invalid or missing PS_BUNDLE_PLATFORM: $bundlePlatform"
@@ -56,7 +42,7 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
 
             Write-Host "  Downloading VS Code..."
             $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri $downloadUrl -UseBasicParsing `
+            Invoke-WebRequest -Uri $env:PS_VSCODE_URL -UseBasicParsing `
                 -OutFile $installerPath
             Write-Host "  [OK] Download complete"
         }
@@ -75,20 +61,6 @@ if ((Get-Command code -ErrorAction SilentlyContinue) -or (Test-Path $appPath)) {
             Remove-Item -Recurse -Force $tmpDir.FullName -ErrorAction SilentlyContinue
         }
     }
-}
-
-# Apply settings
-if ($env:PS_OFFLINE -eq "1") {
-    & (Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\settings_windows.ps1")
-} else {
-    Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/settings_windows.ps1" -UseBasicParsing).Content
-}
-
-# Install extensions
-if ($env:PS_OFFLINE -eq "1") {
-    & (Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\extensions_windows.ps1")
-} else {
-    Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/Core/VsCode/config/extensions_windows.ps1" -UseBasicParsing).Content
 }
 
 Write-Host "`n=== VS Code installation complete! ==="

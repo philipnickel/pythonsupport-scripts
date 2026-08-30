@@ -1,15 +1,18 @@
 # @doc
-# @name: VS Code Extensions (windows)
-# @description: Install VS Code extensions from extensions.txt
+# @name: Install required VS Code extensions
+# @description: Install required extensions from the VS Code Marketplace (internet required)
 # @category: Core
-# @usage: . .\Core\VsCode\config\extensions_windows.ps1
-# @requirements: windows, VS Code installed
-# @notes: Reads extension IDs from extensions_windows.txt (one per line, # comments and blank lines skipped)
+# @usage: .\Install Windows.ps1 -Action install-vscode
+# @requirements: Windows, VS Code installed, internet connection
+# @notes: Reads extension IDs from extensions.txt; VS Code resolves versions and dependencies
 # @/doc
 
 $ErrorActionPreference = "Stop"
 
-# Resolve the VS Code CLI: prefer the default install location, fall back to PATH
+if ($env:PS_ENV_INITIALIZED -ne "1") {
+    throw "Environment is not initialized. Use Install Windows.ps1 or install_all_windows.ps1."
+}
+
 $codeCli = Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code\bin\code.cmd"
 if (-not (Test-Path $codeCli)) {
     $codeCmd = Get-Command code -ErrorAction SilentlyContinue
@@ -20,69 +23,35 @@ if (-not (Test-Path $codeCli)) {
     }
 }
 
-Write-Host "=== Installing VS Code Extensions ===`n"
+Write-Host "=== Installing VS Code Extensions (internet required) ===`n"
 
-$offlineExtensions = $env:PS_OFFLINE -eq "1"
-if ($offlineExtensions) {
-    if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
-    if (-not $env:PS_BUNDLE_PLATFORM) {
-        $architecture = $env:PROCESSOR_ARCHITECTURE
-        if ([Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITEW6432) {
-            $architecture = $env:PROCESSOR_ARCHITEW6432
-        }
-        switch ($architecture.ToUpperInvariant()) {
-            "ARM64" { $env:PS_BUNDLE_PLATFORM = "windows-arm64" }
-            "AMD64" { $env:PS_BUNDLE_PLATFORM = "windows-x64" }
-            default { throw "Unsupported Windows architecture: $architecture" }
-        }
+if ($env:PS_ENV -eq "offline") {
+    if ([string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT)) {
+        throw "PS_BUNDLE_ROOT is required in offline mode"
     }
-    switch ($env:PS_BUNDLE_PLATFORM) {
-        "windows-x64" { $extensionPlatform = "win32-x64" }
-        "windows-arm64" { $extensionPlatform = "win32-arm64" }
-        default { throw "Invalid or missing PS_BUNDLE_PLATFORM: $env:PS_BUNDLE_PLATFORM" }
+    $extensionsFile = Join-Path $env:PS_BUNDLE_ROOT "Core\VsCode\config\extensions.txt"
+    if (-not (Test-Path -LiteralPath $extensionsFile -PathType Leaf)) {
+        throw "Missing extension list: $extensionsFile"
     }
-    $extensionIndex = Join-Path $env:PS_BUNDLE_ROOT "bundle_assets\extensions\$extensionPlatform\index.txt"
-    if (-not (Test-Path -LiteralPath $extensionIndex -PathType Leaf)) {
-        throw "Missing offline extension index: $extensionIndex"
-    }
-    $lines = [IO.File]::ReadAllLines($extensionIndex)
+    $lines = [IO.File]::ReadAllLines($extensionsFile)
 } else {
     $extensionsUrl = "$env:PS_REPO_URL/Core/VsCode/config/extensions.txt"
     $lines = (Invoke-WebRequest -Uri $extensionsUrl -UseBasicParsing).Content -split "`n"
 }
+
 $failedExtensions = @()
-$offlineArguments = @()
-
 foreach ($line in $lines) {
-    $line = $line.Trim()
-
-    if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith("#")) {
-        continue
-    }
-
-    $extensionArgument = $line
-    if ($offlineExtensions) {
-        $extensionArgument = Join-Path $env:PS_BUNDLE_ROOT ($line -replace '/', '\')
-        if (-not (Test-Path -LiteralPath $extensionArgument -PathType Leaf)) {
-            $failedExtensions += $line
-            Write-Host "  [FAIL] Missing VSIX: $line" -ForegroundColor Red
-            continue
-        }
-        $offlineArguments += "--install-extension"
-        $offlineArguments += $extensionArgument
+    $extensionId = $line.Trim()
+    if ([string]::IsNullOrWhiteSpace($extensionId) -or $extensionId.StartsWith("#")) {
         continue
     }
 
     $previousErrorActionPreference = $ErrorActionPreference
     $invocationError = $null
     $exitCode = $null
-
     try {
-        # Windows PowerShell 5.1 promotes native stderr to its Error stream.
-        # Keep it non-terminating so output remains visible and use the native
-        # exit code to decide whether installation succeeded.
         $ErrorActionPreference = "Continue"
-        & $codeCli --install-extension $extensionArgument --force
+        & $codeCli --install-extension $extensionId --force
         $exitCode = $LASTEXITCODE
     } catch {
         $invocationError = $_.Exception.Message
@@ -91,39 +60,21 @@ foreach ($line in $lines) {
     }
 
     if ($invocationError) {
-        Write-Host "  [FAIL] $line ($invocationError)" -ForegroundColor Red
-        $failedExtensions += $line
+        Write-Host "  [FAIL] $extensionId ($invocationError)" -ForegroundColor Red
+        $failedExtensions += $extensionId
     } elseif ($null -eq $exitCode) {
-        Write-Host "  [FAIL] $line (VS Code CLI did not report an exit code)" -ForegroundColor Red
-        $failedExtensions += $line
+        Write-Host "  [FAIL] $extensionId (VS Code CLI did not report an exit code)" -ForegroundColor Red
+        $failedExtensions += $extensionId
     } elseif ($exitCode -eq 0) {
-        Write-Host "  [OK] $line"
+        Write-Host "  [OK] $extensionId"
     } else {
-        Write-Host "  [FAIL] $line (exit code $exitCode)" -ForegroundColor Red
-        $failedExtensions += $line
+        Write-Host "  [FAIL] $extensionId (exit code $exitCode)" -ForegroundColor Red
+        $failedExtensions += $extensionId
     }
 }
 
 if ($failedExtensions.Count -gt 0) {
-    throw "Failed to install VS Code extension(s): $($failedExtensions -join ', ')"
-}
-
-if ($offlineExtensions) {
-    if ($offlineArguments.Count -eq 0) {
-        throw "Offline extension index is empty: $extensionIndex"
-    }
-    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = "Continue"
-        & $codeCli @offlineArguments --force
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousErrorActionPreference
-    }
-    if ($exitCode -ne 0) {
-        throw "Failed to install bundled VS Code extensions (exit code $exitCode)"
-    }
-    Write-Host "  [OK] Bundled extensions installed"
+    throw "Could not install extension(s): $($failedExtensions -join ', '). Connect to the internet and run the VS Code setup again."
 }
 
 Write-Host "`n=== Extensions complete! ==="

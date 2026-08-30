@@ -1,5 +1,5 @@
 # @doc
-# @name: Full Installation (Windows)
+# @name: Install everything
 # @description: Orchestrate the full installation of Miniforge and VS Code on Windows
 # @category: Core
 # @usage: irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/Orchestration/install_all_windows.ps1 | iex
@@ -9,38 +9,35 @@
 
 $ErrorActionPreference = "Stop"
 
-if (-not $env:PS_REPO_URL) {
-    $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"
+if (Test-Path Env:PS_OFFLINE) {
+    throw "PS_OFFLINE is no longer supported; use PS_ENV=offline."
 }
 
-function Invoke-RepositoryScript {
-    param([Parameter(Mandatory = $true)][string]$RelativePath)
-
-    if ($env:PS_OFFLINE -eq "1") {
-        if (-not $env:PS_BUNDLE_ROOT) {
-            throw "PS_BUNDLE_ROOT is required in offline mode"
+function Import-Environment {
+    if ($env:PS_ENV -eq "offline" -or
+        ([string]::IsNullOrWhiteSpace($env:PS_ENV) -and -not [string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT))) {
+        if ([string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT)) {
+            throw "PS_BUNDLE_ROOT is required for offline initialization"
         }
-        $scriptPath = Join-Path $env:PS_BUNDLE_ROOT ($RelativePath -replace '/', '\')
-        & $scriptPath
+        . (Join-Path $env:PS_BUNDLE_ROOT "Core\env.ps1")
+        return
+    }
+
+    if ($env:PS_ENV -eq "main") {
+        $envSource = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/env.ps1"
+    } elseif (-not [string]::IsNullOrWhiteSpace($env:PS_REPO_URL)) {
+        $envSource = "$(($env:PS_REPO_URL).TrimEnd('/'))/Core/env.ps1"
     } else {
-        Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/$RelativePath" -UseBasicParsing).Content
+        $repoUser = if ($env:PS_REPO_USER) { $env:PS_REPO_USER } else { "dtudk" }
+        $branch = if ($env:PS_BRANCH) { $env:PS_BRANCH } else { "main" }
+        $envSource = "https://raw.githubusercontent.com/$repoUser/pythonsupport-scripts/$branch/Core/env.ps1"
     }
+
+    $content = (Invoke-WebRequest -Uri $envSource -UseBasicParsing).Content
+    . ([ScriptBlock]::Create($content))
 }
 
-if ($env:PS_OFFLINE -eq "1") {
-    if (-not $env:PS_BUNDLE_ROOT) { throw "PS_BUNDLE_ROOT is required in offline mode" }
-
-    $architecture = $env:PROCESSOR_ARCHITECTURE
-    if ([Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITEW6432) {
-        $architecture = $env:PROCESSOR_ARCHITEW6432
-    }
-    switch ($architecture.ToUpperInvariant()) {
-        "ARM64" { $platform = "windows-arm64" }
-        "AMD64" { $platform = "windows-x64" }
-        default { throw "Unsupported Windows architecture: $architecture" }
-    }
-    $env:PS_BUNDLE_PLATFORM = $platform
-}
+Import-Environment
 
 Write-Host "========================================="
 Write-Host "  DTU Python Support - Full Installation"
@@ -52,6 +49,12 @@ Invoke-RepositoryScript "Core/Conda/install/install_windows.ps1"
 
 # Step 2: Install VS Code (includes extensions and settings)
 Invoke-RepositoryScript "Core/VsCode/install/install_windows.ps1"
+Invoke-RepositoryScript "Core/VsCode/config/settings_windows.ps1"
+try {
+    Invoke-RepositoryScript "Core/VsCode/config/extensions_windows.ps1"
+} catch {
+    Write-Warning "VS Code extensions were not installed. Connect to the internet and run the VS Code setup again. $($_.Exception.Message)"
+}
 
 Write-Host "========================================="
 Write-Host "  Installation complete!"

@@ -106,6 +106,7 @@ docs/_build/
 
 # Application specific
 *.dmg
+*.iso
 *.app
 
 # Locally cached release assets (installers)

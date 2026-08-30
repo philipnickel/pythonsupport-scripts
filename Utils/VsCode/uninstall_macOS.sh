@@ -1,14 +1,19 @@
 #!/bin/bash
 # @doc
-# @name: VS Code Uninstall (macOS)
+# @name: Uninstall VS Code
 # @description: Uninstall VS Code and remove all user data on macOS
 # @category: Utilities
-# @usage: bash Utils/VsCode/uninstall_macOS.sh
+# @usage: bash "Install macOS.command" uninstall-vscode
 # @requirements: macOS
 # @notes: Removes app, settings, extensions, and user data
 # @/doc
 
 set -euo pipefail
+
+if [[ "${PS_ENV_INITIALIZED:-0}" != "1" ]]; then
+    echo "Environment is not initialized. Use Install macOS.command." >&2
+    exit 2
+fi
 
 app_path="/Applications/Visual Studio Code.app"
 config_dir="$HOME/Library/Application Support/Code"

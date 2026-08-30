@@ -1,18 +1,13 @@
 [project]
-name = "pythonsupport-offline-bundle"
+name = "pythonsupport-scripts-tests"
 version = "0.1.0"
-description = "Build fully offline DTU Python Support installer bundles"
+description = "Tests for DTU Python Support launcher scripts"
 requires-python = ">=3.12,<3.13"
-dependencies = [
-    "httpx>=0.28.1,<0.29",
-    "rich>=14.1.0,<15",
-    "typer>=0.16.1,<0.17",
-]
+dependencies = []
 
 [dependency-groups]
 dev = [
     "pytest>=8.4.1,<9",
-    "respx>=0.22.0,<0.23",
 ]
 
 [tool.uv]

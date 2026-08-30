@@ -1,56 +1,52 @@
-# Offline USB bundle
+# Universal offline-core images
 
-The generated ZIP contains everything required to install DTU Miniforge,
-Visual Studio Code, the DTU settings, and the configured extensions without a
-network connection.
+The release consists of exactly two mounted images:
 
-## Build the ZIP
+- `DTU Python Support.dmg` supports Intel and Apple Silicon macOS.
+- `DTU Python Support Windows.iso` supports x64 and ARM64 Windows.
 
-The worktree must be clean because the builder packages the committed `HEAD`.
+Both contain DTU Miniforge, Visual Studio Code, launcher scripts, and DTU
+settings. Required VS Code extensions are installed by ID from the Marketplace,
+so that final step needs internet access. An extension failure leaves the core
+installation intact and can be retried later.
 
-```bash
-# Prepare USB drive directly (macOS):
-bash Utils/OfflineBundle/prepare_usb.sh
+## Build
 
-# Or build standalone release ZIP:
-uv run Utils/OfflineBundle/build_offline_bundle.py
-```
-
-The builder writes release archives to `dist/`, or flashes a USB drive directly
-when run with `prepare_usb.sh` (or `--target-dir`).
-
-## Running on macOS
-
-Open `Install macOS.command` in the extracted folder. If macOS does not retain
-the executable bit, run it from Terminal instead:
+On macOS, install `go`, `gh`, `curl`, and the standard Xcode command-line tools,
+then run:
 
 ```bash
-bash "/path/to/DTU-Python-Support-Offline-.../Install macOS.command"
+bash Utils/OfflineBundle/build_release.sh
 ```
 
-## Running on Windows
+The same build can be started manually from GitHub Actions with the
+**Build offline installers** workflow. It publishes the DMG, Windows ISO, and
+their checksums as separate downloadable artifacts for seven days. The ISO is
+then mounted and smoke-tested on a Windows runner.
 
-Double-click `Install Windows.cmd` in the extracted folder.
+Use `--refresh` to redownload current installers. Otherwise the builder reuses
+assets cached under `release_assets/offline-cache/`, keyed by the DTU release
+tag and VS Code source commit.
 
-## Interactive Menu
+The builder obtains the three required Miniforge assets with `gh`, verifies
+their release checksums, downloads the three VS Code architectures from the
+official stable endpoints, and verifies Microsoft's SHA-256 response headers.
+It cross-builds the four Go targets and injects the DTU and Miniforge versions
+into the binaries. No bundle manifest, release ZIP, or persistent log is made.
 
-The launchers present an interactive menu in the terminal:
-- **1) Full Installation (Default):** Installs Miniforge, VS Code, settings, and extensions.
-- **2) Install Miniforge only:** Installs DTU Miniforge conda environment.
-- **3) Install VS Code only:** Installs VS Code with DTU settings and extensions.
-- **4) Full Uninstall:** Completely removes VS Code and Conda distributions.
-- **5) Uninstall Miniforge only**
-- **6) Uninstall VS Code only**
-- **q) Quit**
+## Use
 
-Pressing `Enter` defaults to option `1` (Full Installation). Offline mode never
-falls back to the network.
+On macOS, mount the DMG and double-click `DTU Python Support.command`.
 
-The build manifest records extension dependency cycles. Current Microsoft
-Python tooling contains such a cycle; every member is bundled once and the
-generated installation order remains finite.
+On Windows, mount the ISO and double-click `DTU Python Support.cmd`. The wrapper
+selects the x64 or ARM64 Go launcher. Windows ARM64 uses native ARM64 VS Code and
+runs the x64 DTU Miniforge installer through Windows emulation.
 
-On Windows ARM64, VS Code is native ARM64 while the current DTU Miniforge x64
-build runs under Windows emulation.
+The launcher checks the machine before presenting actions. A fresh computer
+gets the fast “Install everything” choice; every other state opens the grouped
+install/uninstall overview. Installer output streams directly in the terminal,
+and no logs directory is created.
 
-Extensions installed from VSIX files do not automatically update by default.
+The mounted image must remain available until the chosen operation completes.
+The images and Go launchers are unsigned, so Gatekeeper or SmartScreen may still
+show a warning depending on system policy.

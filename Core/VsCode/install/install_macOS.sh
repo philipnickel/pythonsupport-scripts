@@ -3,15 +3,19 @@
 # @name: VS Code Install (macOS)
 # @description: Download and install VS Code on macOS
 # @category: Core
-# @usage: bash Core/VsCode/install/install_macOS.sh
+# @usage: bash "Install macOS.command" install-vscode
 # @requirements: macOS, curl, unzip
 # @notes: Downloads the universal binary, installs to /Applications, and adds 'code' to PATH
 # @/doc
 
 set -euo pipefail
 
+if [[ "${PS_ENV_INITIALIZED:-0}" != "1" ]]; then
+    echo "Environment is not initialized. Use Install macOS.command or install_all_macOS.sh." >&2
+    exit 2
+fi
+
 app_path="/Applications/Visual Studio Code.app"
-download_url="https://update.code.visualstudio.com/latest/darwin-universal/stable"
 
 echo "=== Installing VS Code ==="
 echo ""
@@ -23,7 +27,7 @@ if command -v code &>/dev/null || [ -d "$app_path" ]; then
 else
     tmpdir_path="$(mktemp -d)"
     trap "rm -rf '$tmpdir_path'" EXIT
-    if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
+    if [[ "$PS_ENV" == "offline" ]]; then
         vscode_archive="${PS_BUNDLE_ROOT:?PS_BUNDLE_ROOT is required in offline mode}/bundle_assets/vscode/macos-universal/VSCode.zip"
         [[ -f "$vscode_archive" ]] || {
             echo "Missing offline VS Code archive: $vscode_archive" >&2
@@ -33,7 +37,7 @@ else
     else
         vscode_archive="$tmpdir_path/VSCode.zip"
         echo "  Downloading VS Code..."
-        curl -fSL "$download_url" -o "$vscode_archive"
+        curl -fSL "${PS_VSCODE_URL:?PS_VSCODE_URL is required online}" -o "$vscode_archive"
         echo "  [OK] Download complete"
     fi
 
@@ -56,20 +60,6 @@ else
     echo "  Moving to /Applications..."
     mv "$tmpdir_path/vscode_extracted/Visual Studio Code.app" "$app_path"
     echo "  [OK] VS Code installed"
-fi
-
-# Apply settings
-if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
-    /bin/bash "${PS_BUNDLE_ROOT:?}/Core/VsCode/config/settings_macOS.sh"
-else
-    /bin/bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/config/settings_macOS.sh")
-fi
-
-# Install extensions
-if [[ "${PS_OFFLINE:-0}" == "1" ]]; then
-    /bin/bash "${PS_BUNDLE_ROOT:?}/Core/VsCode/config/extensions_macOS.sh"
-else
-    /bin/bash <(curl -fsSL "$PS_REPO_URL/Core/VsCode/config/extensions_macOS.sh")
 fi
 
 echo ""

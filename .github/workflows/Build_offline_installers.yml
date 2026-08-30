@@ -1,0 +1,134 @@
+name: Build offline installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: Download fresh copies of all installer payloads
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-installers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-images:
+    name: Build images (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go-launcher/go.mod
+          cache-dependency-path: go-launcher/go.sum
+
+      - name: Test Go launcher
+        working-directory: go-launcher
+        run: go test ./...
+
+      - name: Build DMG and Windows ISO
+        env:
+          REFRESH: ${{ inputs.refresh }}
+        run: |
+          args=()
+          if [[ "$REFRESH" == "true" ]]; then
+            args+=(--refresh)
+          fi
+          bash Utils/OfflineBundle/build_release.sh "${args[@]}"
+
+      - name: Record image checksums
+        run: |
+          shasum -a 256 "DTU Python Support.dmg" "DTU Python Support Windows.iso" \
+            | tee installer-checksums.txt
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v7
+        with:
+          path: DTU Python Support.dmg
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Windows ISO
+        uses: actions/upload-artifact@v7
+        with:
+          path: DTU Python Support Windows.iso
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v7
+        with:
+          path: installer-checksums.txt
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+
+  validate-windows:
+    name: Validate Windows ISO (Windows)
+    needs: build-images
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download Windows ISO
+        uses: actions/download-artifact@v8
+        with:
+          name: DTU Python Support Windows.iso
+          path: ${{ runner.temp }}/windows-image
+
+      - name: Mount and inspect ISO
+        shell: pwsh
+        run: |
+          $iso = Get-ChildItem -LiteralPath "${{ runner.temp }}/windows-image" -Filter '*.iso' |
+            Select-Object -First 1
+          if (-not $iso) {
+            throw 'The Windows ISO artifact was not downloaded.'
+          }
+
+          $disk = Mount-DiskImage -ImagePath $iso.FullName -PassThru
+          try {
+            $volume = $disk | Get-Volume
+            if (-not $volume.DriveLetter) {
+              throw 'The Windows ISO mounted without a drive letter.'
+            }
+            $root = "$($volume.DriveLetter):\"
+            $required = @(
+              'DTU Python Support.cmd',
+              '.dtu-python-support\pis-launcher-windows-amd64.exe',
+              '.dtu-python-support\pis-launcher-windows-arm64.exe',
+              '.dtu-python-support\Core\Launcher\run_windows.ps1',
+              '.dtu-python-support\bundle_assets\miniforge\windows-x64\Miniforge3.exe',
+              '.dtu-python-support\bundle_assets\vscode\windows-x64\VSCode.exe',
+              '.dtu-python-support\bundle_assets\vscode\windows-arm64\VSCode.exe'
+            )
+
+            foreach ($relative in $required) {
+              $path = Join-Path $root $relative
+              if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                throw "Missing required ISO file: $relative"
+              }
+            }
+
+            $launcher = Join-Path $root '.dtu-python-support\pis-launcher-windows-amd64.exe'
+            & $launcher --help
+            if ($LASTEXITCODE -ne 0) {
+              throw "The Windows x64 launcher failed its smoke test with exit code $LASTEXITCODE."
+            }
+          }
+          finally {
+            Dismount-DiskImage -ImagePath $iso.FullName
+          }

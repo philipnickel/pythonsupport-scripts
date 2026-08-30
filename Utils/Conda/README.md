@@ -7,6 +7,6 @@ Anaconda, and Mambaforge installations for the current user and the machine. It
 also removes the current user's `.condarc` and `.conda` data. Machine-wide
 installations may require running PowerShell as Administrator.
 
-```powershell
-irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Utils/Conda/uninstall_Windows.ps1 | iex
-```
+Run it through the `uninstall-conda` or `uninstall-all` command-launcher action.
+Utility scripts require the shared environment to be initialized and are not
+standalone remote entrypoints.

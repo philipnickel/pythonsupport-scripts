@@ -1,8 +1,8 @@
 # @doc
-# @name: Conda Distribution Uninstall (Windows)
+# @name: Uninstall Conda distributions
 # @description: Uninstall all detected Conda distributions and remove Conda user data
 # @category: Utilities
-# @usage: powershell -File Utils/Conda/uninstall_Windows.ps1
+# @usage: .\Install Windows.ps1 -Action uninstall-conda
 # @requirements: Windows, PowerShell 5.1+
 # @notes: Removes positively identified per-user and machine-wide Miniforge,
 #   Miniconda, Anaconda, and Mambaforge installations. Administrator rights may
@@ -10,6 +10,10 @@
 # @/doc
 
 $ErrorActionPreference = "Stop"
+
+if ($env:PS_ENV_INITIALIZED -ne "1") {
+    throw "Environment is not initialized. Use Install Windows.ps1."
+}
 
 if ([string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
     throw "USERPROFILE is not set; refusing to resolve Conda uninstall paths."

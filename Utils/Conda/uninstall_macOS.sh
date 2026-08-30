@@ -1,14 +1,19 @@
 #!/bin/bash
 # @doc
-# @name: Conda/Miniforge Uninstall (macOS)
+# @name: Uninstall Miniforge/Conda
 # @description: Uninstall Miniforge3/conda and remove all user data on macOS
 # @category: Utilities
-# @usage: bash Utils/Conda/uninstall_macOS.sh
+# @usage: bash "Install macOS.command" uninstall-conda
 # @requirements: macOS
 # @notes: Removes conda installation, shell initialization, and config files
 # @/doc
 
 set -euo pipefail
+
+if [[ "${PS_ENV_INITIALIZED:-0}" != "1" ]]; then
+    echo "Environment is not initialized. Use Install macOS.command." >&2
+    exit 2
+fi
 
 echo "=== Uninstalling Miniforge3/Conda ==="
 echo ""

@@ -13,68 +13,81 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $env:PS_REPO_URL) {
-    $env:PS_REPO_URL = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main"
+if (Test-Path Env:PS_OFFLINE) {
+    throw "PS_OFFLINE is no longer supported; use PS_ENV=offline."
 }
 
-# Auto-resolve bundle root if running offline and not set
-if ($env:PS_OFFLINE -eq "1" -and (-not $env:PS_BUNDLE_ROOT)) {
-    $env:PS_BUNDLE_ROOT = Split-Path -Parent $MyInvocation.MyCommand.Definition
+if ([string]::IsNullOrWhiteSpace($env:PS_ENV) -and
+    [string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT) -and
+    [string]::IsNullOrWhiteSpace($env:PS_REPO_URL) -and
+    [string]::IsNullOrWhiteSpace($env:PS_REPO_USER) -and
+    [string]::IsNullOrWhiteSpace($env:PS_BRANCH) -and
+    [string]::IsNullOrWhiteSpace($env:PS_FORGE_URL) -and
+    [string]::IsNullOrWhiteSpace($env:PS_VSCODE_URL)) {
+    $env:PS_ENV = "offline"
+    $env:PS_BUNDLE_ROOT = $PSScriptRoot
+} elseif ($env:PS_ENV -eq "offline" -and [string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT)) {
+    $env:PS_BUNDLE_ROOT = $PSScriptRoot
 }
 
-# Auto-detect architecture if running offline
-if ($env:PS_OFFLINE -eq "1" -and (-not $env:PS_BUNDLE_PLATFORM)) {
-    $architecture = $env:PROCESSOR_ARCHITECTURE
-    if ([Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITEW6432) {
-        $architecture = $env:PROCESSOR_ARCHITEW6432
+function Import-Environment {
+    if ($env:PS_ENV -eq "offline" -or
+        ([string]::IsNullOrWhiteSpace($env:PS_ENV) -and -not [string]::IsNullOrWhiteSpace($env:PS_BUNDLE_ROOT))) {
+        . (Join-Path $env:PS_BUNDLE_ROOT "Core\env.ps1")
+        return
     }
-    switch ($architecture.ToUpperInvariant()) {
-        "ARM64" { $platform = "windows-arm64" }
-        "AMD64" { $platform = "windows-x64" }
-        default { throw "Unsupported Windows architecture: $architecture" }
-    }
-    $env:PS_BUNDLE_PLATFORM = $platform
-}
 
-function Invoke-RepositoryScript {
-    param([Parameter(Mandatory = $true)][string]$RelativePath)
-
-    if ($env:PS_OFFLINE -eq "1") {
-        if (-not $env:PS_BUNDLE_ROOT) {
-            throw "PS_BUNDLE_ROOT is required in offline mode"
-        }
-        $scriptPath = Join-Path $env:PS_BUNDLE_ROOT ($RelativePath -replace '/', '\')
-        & $scriptPath
+    if ($env:PS_ENV -eq "main") {
+        $envSource = "https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/env.ps1"
+    } elseif (-not [string]::IsNullOrWhiteSpace($env:PS_REPO_URL)) {
+        $envSource = "$(($env:PS_REPO_URL).TrimEnd('/'))/Core/env.ps1"
     } else {
-        Invoke-Expression (Invoke-WebRequest -Uri "$env:PS_REPO_URL/$RelativePath" -UseBasicParsing).Content
+        $repoUser = if ($env:PS_REPO_USER) { $env:PS_REPO_USER } else { "dtudk" }
+        $branch = if ($env:PS_BRANCH) { $env:PS_BRANCH } else { "main" }
+        $envSource = "https://raw.githubusercontent.com/$repoUser/pythonsupport-scripts/$branch/Core/env.ps1"
     }
+
+    $content = (Invoke-WebRequest -Uri $envSource -UseBasicParsing).Content
+    . ([ScriptBlock]::Create($content))
 }
+
+Import-Environment
 
 function Invoke-Action {
     param([string]$Choice)
 
     switch ($Choice) {
-        "1" {
+        { $_ -in @("1", "install-all") } {
             Write-Host "`n>>> Running Full Installation..."
-            Invoke-RepositoryScript "Core/Orchestration/install_all_windows.ps1"
+            Invoke-RepositoryScript "Core/Conda/install/install_windows.ps1"
+            Invoke-RepositoryScript "Core/VsCode/install/install_windows.ps1"
+            Invoke-RepositoryScript "Core/VsCode/config/settings_windows.ps1"
+            try {
+                Invoke-RepositoryScript "Core/VsCode/config/extensions_windows.ps1"
+            } catch {
+                Write-Warning "VS Code extensions were not installed. Connect to the internet and run the VS Code setup again. $($_.Exception.Message)"
+            }
         }
-        "2" {
+        { $_ -in @("2", "install-conda") } {
             Write-Host "`n>>> Installing Miniforge..."
             Invoke-RepositoryScript "Core/Conda/install/install_windows.ps1"
         }
-        "3" {
+        { $_ -in @("3", "install-vscode") } {
             Write-Host "`n>>> Installing VS Code (with extensions & settings)..."
             Invoke-RepositoryScript "Core/VsCode/install/install_windows.ps1"
+            Invoke-RepositoryScript "Core/VsCode/config/settings_windows.ps1"
+            Invoke-RepositoryScript "Core/VsCode/config/extensions_windows.ps1"
         }
-        "4" {
+        { $_ -in @("4", "uninstall-all") } {
             Write-Host "`n>>> Running Full Uninstall..."
-            Invoke-RepositoryScript "Core/Orchestration/uninstall_all_windows.ps1"
+            Invoke-RepositoryScript "Utils/VsCode/uninstall_Windows.ps1"
+            Invoke-RepositoryScript "Utils/Conda/uninstall_Windows.ps1"
         }
-        "5" {
+        { $_ -in @("5", "uninstall-conda") } {
             Write-Host "`n>>> Uninstalling Miniforge..."
             Invoke-RepositoryScript "Utils/Conda/uninstall_Windows.ps1"
         }
-        "6" {
+        { $_ -in @("6", "uninstall-vscode") } {
             Write-Host "`n>>> Uninstalling VS Code..."
             Invoke-RepositoryScript "Utils/VsCode/uninstall_Windows.ps1"
         }
@@ -91,8 +104,9 @@ function Invoke-Action {
 }
 
 if ($Action) {
-    $null = Invoke-Action $Action
-    exit $LASTEXITCODE
+    $success = Invoke-Action $Action
+    if ($success -eq $false) { exit 1 }
+    exit 0
 }
 
 while ($true) {
@@ -100,13 +114,13 @@ while ($true) {
     Write-Host "=====================================================" -ForegroundColor Cyan
     Write-Host "            DTU Python Support (Windows)" -ForegroundColor Cyan
     Write-Host "=====================================================" -ForegroundColor Cyan
-    Write-Host "  [1] Full Installation (Miniforge + VS Code) [Default]"
-    Write-Host "  [2] Install Miniforge only"
-    Write-Host "  [3] Install VS Code only (with extensions & settings)"
+    Write-Host "  [1] Full Installation (install-all) [Default]"
+    Write-Host "  [2] Install Miniforge only (install-conda)"
+    Write-Host "  [3] Install VS Code only (install-vscode)"
     Write-Host "  ---------------------------------------------------"
-    Write-Host "  [4] Full Uninstall (Miniforge + VS Code)"
-    Write-Host "  [5] Uninstall Miniforge only"
-    Write-Host "  [6] Uninstall VS Code only"
+    Write-Host "  [4] Full Uninstall (uninstall-all)"
+    Write-Host "  [5] Uninstall Miniforge only (uninstall-conda)"
+    Write-Host "  [6] Uninstall VS Code only (uninstall-vscode)"
     Write-Host "  ---------------------------------------------------"
     Write-Host "  [q] Quit"
     Write-Host "=====================================================" -ForegroundColor Cyan

@@ -1,32 +1,11 @@
 # VS Code
 
-## Install (macOS)
+The VS Code installer, settings, and extension scripts are environment-dependent
+leaf operations. Use the full online installer or the command launcher's
+`install-vscode` action, which runs all three operations in order.
 
-Installs VS Code, applies default settings, and installs extensions.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Core/VsCode/install/install_macOS.sh | bash
-```
-
-## Install (Windows)
-
-The full Windows one-liner installs VS Code after Miniforge:
-
-```powershell
-irm https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/dev/Core/Orchestration/install_all_windows.ps1 | iex
-```
-
-For local integration tests, `PS_VSCODE_URL` can override the VS Code installer
-download URL. Production installs leave it unset and select the x64 or ARM64
-stable user installer automatically.
-
-## Uninstall (macOS)
-
-Removes VS Code, settings, extensions, and user data.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Utils/VsCode/uninstall_macOS.sh | bash
-```
+For custom online integration tests, `PS_VSCODE_URL` may override the
+architecture-appropriate stable installer selected by `Core/env.*`.
 
 ## Default settings
 
@@ -35,6 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/dtudk/pythonsupport-scripts/main/Ut
 - Set Python locator to JS
 - Disable telemetry
 
-## Extensions
-
-Listed and commented in `config/extensions.txt`.
+Extensions are listed and documented in `config/extensions.txt`. Both online
+and offline-core setups install those IDs through the VS Code Marketplace, so
+the extension step requires internet access. A Marketplace failure is reported
+as a warning by the aggregate installers and can be retried later.

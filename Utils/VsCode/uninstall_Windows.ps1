@@ -1,14 +1,18 @@
 # @doc
-# @name: VS Code Uninstall (Windows)
+# @name: Uninstall VS Code
 # @description: Uninstall the DTU user installation of VS Code and remove its user data
 # @category: Utilities
-# @usage: powershell -File Utils/VsCode/uninstall_Windows.ps1
+# @usage: .\Install Windows.ps1 -Action uninstall-vscode
 # @requirements: Windows, PowerShell 5.1+
 # @notes: Runs the VS Code user uninstaller when present, then removes settings,
 #   extensions, and remaining files from the current user's profile.
 # @/doc
 
 $ErrorActionPreference = "Stop"
+
+if ($env:PS_ENV_INITIALIZED -ne "1") {
+    throw "Environment is not initialized. Use Install Windows.ps1."
+}
 
 $appPath = Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code"
 $uninstallerPath = Join-Path $appPath "unins000.exe"
