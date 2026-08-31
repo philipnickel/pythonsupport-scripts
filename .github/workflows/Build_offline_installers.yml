@@ -1,14 +1,6 @@
 name: Build offline installers
 
 on:
-  # Temporary trigger for validating this feature-branch revision.
-  push:
-    branches:
-      - feat/offline-installers
-    paths:
-      - .github/workflows/Build_offline_installers.yml
-      - go-launcher/**
-      - Utils/OfflineBundle/**
   workflow_dispatch:
     inputs:
       refresh:
