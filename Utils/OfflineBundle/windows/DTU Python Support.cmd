@@ -1,5 +1,6 @@
 @echo off
 setlocal
+title DTU Python Support
 
 set "BUNDLE_ROOT=%~dp0.dtu-python-support"
 set "LAUNCHER=%BUNDLE_ROOT%\pis-launcher-windows-amd64.exe"

@@ -43,7 +43,9 @@ its disk icon, launcher icon, and Finder background.
 
 On Windows, mount the ISO and double-click `DTU Python Support.cmd`. The wrapper
 selects the x64 or ARM64 Go launcher. Windows ARM64 uses native ARM64 VS Code and
-runs the x64 DTU Miniforge installer through Windows emulation.
+runs the x64 DTU Miniforge installer through Windows emulation. Explorer shows
+the official DTU icon for the mounted image, and the launcher sets a DTU Python
+Support console title.
 
 The launcher checks the machine before presenting actions. A fresh computer
 gets the fast “Install everything” choice; every other state opens the grouped

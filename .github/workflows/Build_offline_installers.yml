@@ -1,6 +1,13 @@
 name: Build offline installers
 
 on:
+  # Temporary trigger for validating this feature-branch revision.
+  push:
+    branches:
+      - feat/offline-installers
+    paths:
+      - .github/workflows/Build_offline_installers.yml
+      - Utils/OfflineBundle/**
   workflow_dispatch:
     inputs:
       refresh:
@@ -108,6 +115,8 @@ jobs:
             $root = "$($volume.DriveLetter):\"
             $required = @(
               'DTU Python Support.cmd',
+              'autorun.inf',
+              '.dtu-python-support\DTU-Python-Support.ico',
               '.dtu-python-support\pis-launcher-windows-amd64.exe',
               '.dtu-python-support\pis-launcher-windows-arm64.exe',
               '.dtu-python-support\Core\Launcher\run_windows.ps1',
@@ -121,6 +130,11 @@ jobs:
               if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
                 throw "Missing required ISO file: $relative"
               }
+            }
+
+            $autorun = Get-Content -LiteralPath (Join-Path $root 'autorun.inf') -Raw
+            if ($autorun -notmatch 'DTU-Python-Support\.ico') {
+              throw 'The Windows ISO does not reference its DTU drive icon.'
             }
 
             $launcher = Join-Path $root '.dtu-python-support\pis-launcher-windows-amd64.exe'

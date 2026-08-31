@@ -216,3 +216,8 @@ def test_windows_wrapper_selects_both_native_launchers() -> None:
     assert "pis-launcher-windows-arm64.exe" in wrapper
     assert "PROCESSOR_ARCHITECTURE" in wrapper
     assert "PS_ENV=offline" in wrapper
+    assert "title DTU Python Support" in wrapper
+
+    autorun = (REPO_ROOT / "Utils/OfflineBundle/windows/autorun.inf").read_text()
+    assert "label=DTU Python Support" in autorun
+    assert "DTU-Python-Support.ico" in autorun

@@ -296,6 +296,10 @@ mkdir -p "$windows_resources"
 stage_runtime "$windows_resources" windows
 copy_file "$repo_root/Utils/OfflineBundle/windows/DTU Python Support.cmd" \
     "$windows_volume/DTU Python Support.cmd"
+copy_file "$repo_root/Utils/OfflineBundle/windows/autorun.inf" \
+    "$windows_volume/autorun.inf"
+copy_file "$repo_root/Utils/OfflineBundle/branding/DTU-Python-Support.ico" \
+    "$windows_resources/DTU-Python-Support.ico"
 copy_file "$binary_root/pis-launcher-windows-amd64.exe" "$windows_resources/pis-launcher-windows-amd64.exe"
 copy_file "$binary_root/pis-launcher-windows-arm64.exe" "$windows_resources/pis-launcher-windows-arm64.exe"
 copy_file "$miniforge_windows" "$windows_resources/bundle_assets/miniforge/windows-x64/Miniforge3.exe"
