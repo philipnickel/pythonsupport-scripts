@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-for tool in gh curl shasum go lipo codesign hdiutil; do
+for tool in gh curl shasum go lipo codesign hdiutil sips Rez DeRez SetFile; do
     command -v "$tool" >/dev/null 2>&1 || {
         echo "Missing required build tool: $tool" >&2
         exit 1
@@ -175,7 +175,14 @@ download_vscode vscode_windows_arm64 windows-arm64 \
     "https://update.code.visualstudio.com/latest/win32-arm64-user/stable" "VSCode.exe"
 
 staging_root="$(mktemp -d "${TMPDIR:-/private/tmp}/dtu-python-support.XXXXXX")"
-trap 'rm -rf "$staging_root"' EXIT
+active_mount=""
+cleanup() {
+    if [[ -n "$active_mount" ]]; then
+        hdiutil detach "$active_mount" >/dev/null 2>&1 || true
+    fi
+    rm -rf "$staging_root"
+}
+trap cleanup EXIT
 binary_root="$staging_root/bin"
 mkdir -p "$binary_root"
 
@@ -262,10 +269,26 @@ mkdir -p "$mac_resources"
 stage_runtime "$mac_resources" macos
 copy_file "$binary_root/pis-launcher-macos-universal" \
     "$mac_volume/DTU Python Support.command"
+copy_file "$repo_root/Utils/OfflineBundle/branding/dmg-background.png" \
+    "$mac_volume/.background.png"
+copy_file "$repo_root/Utils/OfflineBundle/branding/DTU-Python-Support.icns" \
+    "$mac_volume/.VolumeIcon.icns"
+copy_file "$repo_root/Utils/OfflineBundle/branding/dmg-layout.DS_Store" \
+    "$mac_volume/.DS_Store"
 copy_file "$miniforge_mac_arm" "$mac_resources/bundle_assets/miniforge/macos-arm64/Miniforge3.sh"
 copy_file "$miniforge_mac_intel" "$mac_resources/bundle_assets/miniforge/macos-x86_64/Miniforge3.sh"
 copy_file "$vscode_macos" "$mac_resources/bundle_assets/vscode/macos-universal/VSCode.zip"
 chmod +x "$mac_volume/DTU Python Support.command"
+
+# Give the visible executable a custom Finder icon without changing its data
+# fork or invalidating its ad-hoc code signature.
+launcher_icon="$staging_root/launcher-icon.png"
+launcher_icon_resource="$staging_root/launcher-icon.rsrc"
+copy_file "$repo_root/Utils/OfflineBundle/branding/DTU-Python-Support-icon.png" "$launcher_icon"
+sips -i "$launcher_icon" >/dev/null
+DeRez -only icns "$launcher_icon" > "$launcher_icon_resource"
+Rez -append "$launcher_icon_resource" -o "$mac_volume/DTU Python Support.command"
+SetFile -a C "$mac_volume/DTU Python Support.command"
 
 windows_volume="$staging_root/windows-volume"
 windows_resources="$windows_volume/.dtu-python-support"
@@ -282,23 +305,37 @@ copy_file "$vscode_windows_arm64" "$windows_resources/bundle_assets/vscode/windo
 dmg_output="$repo_root/DTU Python Support.dmg"
 iso_output="$repo_root/DTU Python Support Windows.iso"
 dmg_temp="$staging_root/DTU Python Support.dmg"
+dmg_readwrite="$staging_root/DTU Python Support read-write.dmg"
 iso_temp="$staging_root/DTU Python Support Windows.iso"
 
 echo "Creating universal macOS disk image..."
 hdiutil create -quiet -volname "DTU Python Support" -srcfolder "$mac_volume" \
-    -format UDZO -ov "$dmg_temp"
+    -format UDRW -ov "$dmg_readwrite"
+
+echo "Applying the DTU Finder layout..."
+dmg_layout_mount="$staging_root/macos-layout"
+mkdir -p "$dmg_layout_mount"
+active_mount="$dmg_layout_mount"
+hdiutil attach -quiet -readwrite -nobrowse -mountpoint "$dmg_layout_mount" "$dmg_readwrite"
+SetFile -a C "$dmg_layout_mount"
+sync
+hdiutil detach "$dmg_layout_mount" >/dev/null
+active_mount=""
+hdiutil convert -quiet "$dmg_readwrite" -format UDZO -imagekey zlib-level=9 \
+    -o "$dmg_temp"
 hdiutil verify "$dmg_temp" >/dev/null
 
 echo "Smoke-testing the launcher from the mounted macOS image..."
 dmg_mount="$staging_root/macos-mounted"
 mkdir -p "$dmg_mount"
+active_mount="$dmg_mount"
 hdiutil attach -quiet -readonly -nobrowse -mountpoint "$dmg_mount" "$dmg_temp"
 if ! "$dmg_mount/DTU Python Support.command" --help >/dev/null; then
-    hdiutil detach "$dmg_mount" >/dev/null || true
     echo "The launcher could not run from the generated macOS image" >&2
     exit 1
 fi
 hdiutil detach "$dmg_mount" >/dev/null
+active_mount=""
 
 echo "Creating universal Windows disk image..."
 hdiutil makehybrid -quiet -iso -joliet -udf \

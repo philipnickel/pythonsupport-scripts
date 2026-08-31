@@ -25,6 +25,10 @@ def test_release_builder_is_valid_and_documents_both_images() -> None:
     assert help_result.returncode == 0, help_result.stderr
     assert "DTU Python Support.dmg" in help_result.stdout
     assert "DTU Python Support Windows.iso" in help_result.stdout
+    builder_text = builder.read_text()
+    assert "dmg-background.png" in builder_text
+    assert "DTU-Python-Support.icns" in builder_text
+    assert "Applying the DTU Finder layout" in builder_text
 
 
 def test_bundle_runtime_has_no_launcher_metadata_or_manifest_dependency() -> None:

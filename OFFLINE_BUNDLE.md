@@ -38,7 +38,8 @@ into the binaries. No bundle manifest, release ZIP, or persistent log is made.
 
 On macOS, mount the DMG and double-click `DTU Python Support.command`. This
 visible file is the universal Go executable itself, rather than a shell wrapper
-which launches a second executable.
+which launches a second executable. The image uses DTU's corporate-red logo for
+its disk icon, launcher icon, and Finder background.
 
 On Windows, mount the ISO and double-click `DTU Python Support.cmd`. The wrapper
 selects the x64 or ARM64 Go launcher. Windows ARM64 uses native ARM64 VS Code and
